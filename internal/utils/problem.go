@@ -1,0 +1,128 @@
+package utils
+
+import (
+	"encoding/json"
+	"net/http"
+)
+
+type ProblemDetails struct {
+	Status     int            `json:"status"`
+	Title      string         `json:"title"`
+	Detail     string         `json:"detail"`
+	Type       string         `json:"type,omitempty"`
+	Instance   string         `json:"instance,omitempty"`
+	Extensions map[string]any `json:"extensions,omitempty"`
+	err        error          `json:"-"`
+}
+
+func (p *ProblemDetails) With(key string, value any) *ProblemDetails {
+	if p.Extensions == nil {
+		p.Extensions = make(map[string]any)
+	}
+	p.Extensions[key] = value
+	return p
+}
+
+func (p *ProblemDetails) WithError(err error) *ProblemDetails {
+	p.err = err
+	return p
+}
+
+func (p *ProblemDetails) Error() string {
+	return p.Detail
+}
+
+func (p *ProblemDetails) Unwrap() error {
+	return p.err
+}
+
+func (p *ProblemDetails) Is(target error) bool {
+	if pd, ok := target.(*ProblemDetails); ok {
+		return p.Status == pd.Status && p.Title == pd.Title && p.Detail == pd.Detail && p.Type == pd.Type && p.Instance == pd.Instance
+	}
+	return false
+}
+
+func (p *ProblemDetails) As(target any) bool {
+	if pd, ok := target.(**ProblemDetails); ok {
+		*pd = p
+		return true
+	}
+	return false
+}
+
+func (p *ProblemDetails) ServeJSON(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "application/problem+json")
+	w.WriteHeader(p.Status)
+	_ = json.NewEncoder(w).Encode(p)
+}
+
+func (p *ProblemDetails) ServeText(w http.ResponseWriter) {
+	w.Header().Set("Content-Type", "text/plain")
+	w.WriteHeader(p.Status)
+	_, _ = w.Write([]byte(p.Detail))
+}
+
+func (p *ProblemDetails) JSON() ([]byte, error) {
+	return json.Marshal(p)
+}
+
+type problemdetailsHelper struct{}
+
+func (problemdetailsHelper) New(status int, title, detail, typeURL, instance string) *ProblemDetails {
+	p := &ProblemDetails{
+		Status:   status,
+		Title:    title,
+		Detail:   detail,
+		Type:     typeURL,
+		Instance: instance,
+	}
+	if p.Type == "" {
+		p.Type = "about:blank"
+	}
+	return p
+}
+
+func (problemdetailsHelper) InternalError() *ProblemDetails {
+	return &ProblemDetails{
+		Status: 500, Title: "Internal Server Error", Detail: "An internal server error occurred", Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) NotFound(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 404, Title: "Not Found", Detail: detail, Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) BadRequest(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 400, Title: "Bad Request", Detail: detail, Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) Unauthorized(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 401, Title: "Unauthorized", Detail: detail, Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) Forbidden(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 403, Title: "Forbidden", Detail: detail, Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) UnprocessableEntity(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 422, Title: "Unprocessable Entity", Detail: detail, Type: "about:blank",
+	}
+}
+
+func (problemdetailsHelper) Conflict(detail string) *ProblemDetails {
+	return &ProblemDetails{
+		Status: 409, Title: "Conflict", Detail: detail, Type: "about:blank",
+	}
+}
+
+var Problem = problemdetailsHelper{}

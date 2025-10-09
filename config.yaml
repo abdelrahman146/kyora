@@ -1,0 +1,20 @@
+app:
+  name: zard
+  version: 1.0.0
+  domain: "localhost"
+server:
+  port: ":8080"
+  trace_id_header: "X-Trace-ID"
+site:
+  name: "Zard Portal"
+  description: "A sample web application"
+  base_url: "http://localhost:8080"
+db:
+  dsn: "host=localhost user=postgres password=postgres dbname=zard port=5432 sslmode=disable TimeZone=Asia/Dubai"
+  memcache_hosts:
+    - "localhost:11211"
+log:
+  level: "info"
+jwt:
+  secret: "your_jwt_secret_key"
+  expiry: 3600 # in seconds

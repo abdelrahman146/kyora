@@ -1,0 +1,49 @@
+package elements
+
+type AlertProps struct {
+	Type        string
+	Content     string
+	Title       string
+	Extra       string
+	Dismissible bool
+}
+
+type AlertType string
+
+const (
+	AlertSuccess   AlertType = "alert-success"
+	AlertDanger    AlertType = "alert-danger"
+	AlertWarning   AlertType = "alert-warning"
+	AlertInfo      AlertType = "alert-info"
+	AlertDark      AlertType = "alert-dark"
+	AlertPrimary   AlertType = "alert-primary"
+	AlertLight     AlertType = "alert-light"
+	AlertSecondary AlertType = "alert-secondary"
+	AlertNone      AlertType = ""
+)
+
+func createAlertClass(props AlertProps) string {
+	c := "alert"
+	if props.Type != "" {
+		c += " " + props.Type
+	}
+	if props.Dismissible {
+		c += " alert-dismissible fade show"
+	}
+	return c
+}
+
+templ Alert(props AlertProps) {
+	<div class={ createAlertClass(props) } role="alert">
+		if props.Title != "" {
+			<h4 class="alert-heading">{ props.Title }</h4>
+		}
+		if props.Content != "" {
+			<p>{ props.Content }</p>
+		}
+		if props.Extra != "" {
+			<hr/>
+			<p class="mb-0">{ props.Extra }</p>
+		}
+	</div>
+}

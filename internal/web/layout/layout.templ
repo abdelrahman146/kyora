@@ -1,0 +1,32 @@
+package layout
+
+import "github.com/abdelrahman146/kyora/internal/web/components/sections"
+
+templ Layout(content templ.Component) {
+	@Root() {
+		<!-- [ Pre-loader ] start -->
+		<div class="loader-bg"></div>
+		<!-- [ Pre-loader ] End -->
+		@Header()
+		<!-- [ Sidebar Menu ] start -->
+		@Side()
+		<!-- [ Sidebar Menu ] end -->
+		<!-- [ Main Content ] start -->
+		<div class="pc-container">
+			<div class="pc-content">
+				<!-- [ breadcrumb ] start -->
+				@sections.PageHeader()
+				<!-- [ breadcrumb ] end -->
+				<!-- [ Main Content ] start -->
+				<div class="row">
+					@content
+				</div>
+				<!-- [ Main Content ] end -->
+			</div>
+		</div>
+		<!-- [ Main Content ] end -->
+		<!-- [ Footer ] start -->
+		@Footer()
+		<!-- [ Footer ] end -->
+	}
+}

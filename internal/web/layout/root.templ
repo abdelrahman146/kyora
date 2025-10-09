@@ -1,0 +1,70 @@
+package layout
+
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
+
+script HtmxHandle400Swap() {
+	document.addEventListener('htmx:beforeSwap', function(evt) {
+		const xhr = evt.detail.xhr;
+		if (xhr.status < 500 && xhr.status >= 400) {
+			evt.detail.shouldSwap = true; 
+		}
+	});
+}
+
+templ Root() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<!-- [Head] start -->
+		<head>
+			<title>{ webcontext.ComposeFullTitle(webcontext.GetPageTitle(ctx)) }</title>
+			<!-- [Meta] -->
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=0, minimal-ui"/>
+			<meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+			<meta name="description" content={ webcontext.GetPageDescription(ctx) }/>
+			<meta name="keywords" content={ webcontext.GetPageKeywords(ctx) }/>
+			<!-- [Favicon] icon -->
+			<link rel="icon" href="/static/images/favicon.svg" type="image/x-icon"/>
+			<!-- [Google Font] Family -->
+			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap" id="main-font-link"/>
+			<!-- [Tabler Icons] https://tablericons.com -->
+			<link rel="stylesheet" href="/static/fonts/tabler-icons.min.css"/>
+			<!-- [Feather Icons] https://feathericons.com -->
+			<link rel="stylesheet" href="/static/fonts/feather.css"/>
+			<!-- [Font Awesome Icons] https://fontawesome.com/icons -->
+			<link rel="stylesheet" href="/static/fonts/fontawesome.css"/>
+			<!-- [Material Icons] https://fonts.google.com/icons -->
+			<link rel="stylesheet" href="/static/fonts/material.css"/>
+			<!-- [Template CSS Files] -->
+			<link rel="stylesheet" href="/static/css/style-preset.css" id="preset-style-link"/>
+			<link rel="stylesheet" href="/static/css/style.css" id="main-style-link"/>
+			<!-- HTMX -->
+			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"></script>
+		</head>
+		<!-- [Head] end -->
+		<!-- [Body] Start -->
+		<body>
+			{ children... }
+			<script src="/static/js/plugins/popper.min.js"></script>
+			<script src="/static/js/plugins/simplebar.min.js"></script>
+			<script src="/static/js/plugins/bootstrap.min.js"></script>
+			<script src="/static/js/plugins/i18next.min.js"></script>
+			<script src="/static/js/plugins/i18nextHttpBackend.min.js"></script>
+			<script src="/static/js/icon/custom-font.js"></script>
+			<script src="/static/js/script.js"></script>
+			<script src="/static/js/theme.js"></script>
+			<script src="/static/js/multi-lang.js"></script>
+			<script src="/static/js/plugins/feather.min.js"></script>
+			<!-- [Initialize Custom JavaScript] start -->
+			@HtmxHandle400Swap()
+			@templ.JSFuncCall("layout_change", "system")
+			@templ.JSFuncCall("change_box_container", "false")
+			@templ.JSFuncCall("font_change", "Inter")
+			@templ.JSFuncCall("layout_caption_change", "true")
+			@templ.JSFuncCall("layout_rtl_change", "false")
+			@templ.JSFuncCall("preset_change", "preset-3")
+			<!-- [Initialize Custom JavaScript] end -->
+		</body>
+		<!-- [Body] end -->
+	</html>
+}

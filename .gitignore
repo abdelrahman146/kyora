@@ -1,0 +1,128 @@
+# General
+.DS_Store
+__MACOSX/
+.AppleDouble
+.LSOverride
+Icon[
+]
+
+# Thumbnails
+._*
+
+# Files that might appear in the root of a volume
+.DocumentRevisions-V100
+.fseventsd
+.Spotlight-V100
+.TemporaryItems
+.Trashes
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent
+
+# Directories potentially created on remote AFP share
+.AppleDB
+.AppleDesktop
+Network Trash Folder
+Temporary Items
+.apdisk
+
+# --------------------------------------------------
+# Go build artifacts
+# --------------------------------------------------
+# Compiled binaries
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.a
+
+# Go build output (when using go build -o)
+/build/
+/bin/
+/dist/
+/out/
+/release/
+
+# Temporary build cache (rarely appears in repo root)
+*.o
+
+# --------------------------------------------------
+# Test / profiling / coverage
+# --------------------------------------------------
+*.cover
+*.coverage
+coverage.*
+cover.out
+profile.out
+cpu.prof
+mem.prof
+block.prof
+trace.out
+
+# --------------------------------------------------
+# Logs & runtime files
+# --------------------------------------------------
+*.log
+*.pid
+*.pid.lock
+
+# --------------------------------------------------
+# Dependency / module related
+# (go.mod and go.sum SHOULD be committed)
+# --------------------------------------------------
+# Uncomment if you do not vendor dependencies
+# /vendor/
+
+# Workspace files (optional to ignore)
+# go.work
+# go.work.sum
+
+# --------------------------------------------------
+# Environment / local config
+# --------------------------------------------------
+.env
+.env.*
+!.env.example
+
+# --------------------------------------------------
+# IDE / editor settings
+# --------------------------------------------------
+.idea/
+*.iml
+.fleet/
+*.swp
+*.swo
+
+# --------------------------------------------------
+# OS / miscellaneous
+# --------------------------------------------------
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# --------------------------------------------------
+# Tool specific
+# --------------------------------------------------
+# Air / Fresh / Reflex / CompileDaemon reload tools
+tmp/
+
+# Docker
+docker-compose.override.yml
+
+# --------------------------------------------------
+# Archives / packaged releases
+# --------------------------------------------------
+*.tar
+*.tar.gz
+*.tgz
+*.zip
+
+# --------------------------------------------------
+# Security
+# --------------------------------------------------
+# Private keys (avoid generating here)
+*.key
+*.pem
+
+/template/

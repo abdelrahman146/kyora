@@ -1,0 +1,25 @@
+package layout
+
+import "time"
+
+templ Footer() {
+	<footer class="pc-footer">
+		<div class="footer-wrapper container">
+			<div class="row">
+				<div class="col-sm-6 my-1">
+					<p class="m-0">
+						{ time.Now().Year() } &copy; All Rights Reserved. 
+						<a href="https://zard.one" target="_blank">Zard.one</a>
+					</p>
+				</div>
+				<div class="col-sm-6 ms-auto my-1">
+					<ul class="list-inline footer-link mb-0 justify-content-sm-end d-flex">
+						<li class="list-inline-item"><a href="/">Home</a></li>
+						<li class="list-inline-item"><a href="https://zard.one/docs" target="_blank">Documentation</a></li>
+						<li class="list-inline-item"><a href="https://zard.one/support" target="_blank">Support</a></li>
+					</ul>
+				</div>
+			</div>
+		</div>
+	</footer>
+}
