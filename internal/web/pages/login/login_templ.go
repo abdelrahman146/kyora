@@ -5,11 +5,10 @@ package loginPage
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import (
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
-	"github.com/abdelrahman146/kyora/internal/web/layout"
-)
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
+import "github.com/abdelrahman146/kyora/internal/web/layout"
 
 func Login() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
@@ -44,7 +43,7 @@ func Login() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"auth-main\"><div class=\"auth-wrapper v3\"><form id=\"login-form\" class=\"auth-form\" hx-post=\"/login\" hx-target=\"#login-failed-message\" hx-swap=\"innerHTML\"><div class=\"card my-5\"><div class=\"card-body\"><a href=\"#\" class=\"d-flex justify-content-center\"><img src=\"/static/images/logo-dark.svg\" alt=\"image\" class=\"img-fluid brand-logo\"></a><div class=\"row\"><div class=\"d-flex justify-content-center\"><div class=\"auth-header\"><h2 class=\"text-secondary mt-5\"><b>Hi, Welcome Back</b></h2><p class=\"f-16 mt-2\">Enter your credentials to continue</p></div></div></div><div class=\"d-grid\"><button type=\"button\" class=\"btn mt-2 bg-light-primary bg-light text-muted\"><img src=\"/static/images/authentication/google-icon.svg\" alt=\"image\"> Sign In With Google</button></div><div class=\"saprator mt-3\"><span>or</span></div><h5 class=\"my-4 d-flex justify-content-center\">Sign in with Email address</h5><div class=\"form-floating mb-3\"><input type=\"email\" class=\"form-control\" name=\"email\" id=\"email\" placeholder=\"Email address / Username\"> <label for=\"email\">Email address / Username</label></div><div class=\"form-floating mb-3\"><input type=\"password\" class=\"form-control\" name=\"password\" id=\"password\" placeholder=\"Password\"> <label for=\"password\">Password</label></div><div class=\"d-flex mt-1 justify-content-between\"><div class=\"form-check\"><input class=\"form-check-input input-primary\" type=\"checkbox\" name=\"rememberMe\" id=\"rememberMe\" checked=\"\"> <label class=\"form-check-label text-muted\" for=\"rememberMe\">Remember me</label></div><h5 class=\"text-secondary\">Forgot Password?</h5></div><div class=\"mt-3\" id=\"login-failed-message\"></div><div class=\"d-grid mt-4\"><button type=\"submit\" class=\"btn btn-secondary\">Sign In</button></div><hr><h5 class=\"d-flex justify-content-center\">Don't have an account?</h5></div></div></form></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div>login page</div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
@@ -86,7 +85,7 @@ func LoginFailed(message string) templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(message)
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pages/login/login.templ`, Line: 64, Col: 11}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/pages/login/login.templ`, Line: 15, Col: 11}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {

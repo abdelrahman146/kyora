@@ -1,5 +1,6 @@
-.PHONY: server.dev
-server.dev:
-	cd server && air serve
-web.dev:
-	cd web && yarn dev
+.PHONY: dev templates
+templates:
+	@templ generate
+dev:
+	@rm -rf tmp
+	@yarn watch:css & air web

@@ -5,11 +5,10 @@ package layout
 
 //lint:file-ignore SA4006 This context is only used if a nested component is present.
 
-import (
-	"github.com/a-h/templ"
-	templruntime "github.com/a-h/templ/runtime"
-	"github.com/abdelrahman146/kyora/internal/web/webcontext"
-)
+import "github.com/a-h/templ"
+import templruntime "github.com/a-h/templ/runtime"
+
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
 
 func HtmxHandle400Swap() templ.ComponentScript {
 	return templ.ComponentScript{
@@ -86,7 +85,7 @@ func Root() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><!-- [Favicon] icon --><link rel=\"icon\" href=\"/static/images/favicon.svg\" type=\"image/x-icon\"><!-- [Google Font] Family --><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap\" id=\"main-font-link\"><!-- [Tabler Icons] https://tablericons.com --><link rel=\"stylesheet\" href=\"/static/fonts/tabler-icons.min.css\"><!-- [Feather Icons] https://feathericons.com --><link rel=\"stylesheet\" href=\"/static/fonts/feather.css\"><!-- [Font Awesome Icons] https://fontawesome.com/icons --><link rel=\"stylesheet\" href=\"/static/fonts/fontawesome.css\"><!-- [Material Icons] https://fonts.google.com/icons --><link rel=\"stylesheet\" href=\"/static/fonts/material.css\"><!-- [Template CSS Files] --><link rel=\"stylesheet\" href=\"/static/css/style-preset.css\" id=\"preset-style-link\"><link rel=\"stylesheet\" href=\"/static/css/style.css\" id=\"main-style-link\"><!-- HTMX --><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js\"></script></head><!-- [Head] end --><!-- [Body] Start --><body>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "\"><!-- [Favicon] icon --><link rel=\"icon\" href=\"/static/images/favicon.svg\" type=\"image/x-icon\"><!-- [Google Font] Family --><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Roboto:wght@400;500;700&display=swap\" id=\"main-font-link\"><!-- [Tabler Icons] https://tablericons.com --><link rel=\"stylesheet\" href=\"/static/fonts/tabler-icons.min.css\"><!-- [Feather Icons] https://feathericons.com --><link rel=\"stylesheet\" href=\"/static/fonts/feather.css\"><!-- [Font Awesome Icons] https://fontawesome.com/icons --><link rel=\"stylesheet\" href=\"/static/fonts/fontawesome.css\"><!-- [Material Icons] https://fonts.google.com/icons --><link rel=\"stylesheet\" href=\"/static/fonts/material.css\"><!-- [Template CSS Files] --><link rel=\"stylesheet\" href=\"/static/css/tw.css\" id=\"preset-style-link\"><link rel=\"stylesheet\" href=\"/static/css/style.css\" id=\"main-style-link\"><!-- HTMX --><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js\"></script></head><!-- [Head] end --><!-- [Body] Start --><body>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -94,35 +93,11 @@ func Root() templ.Component {
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<script src=\"/static/js/plugins/popper.min.js\"></script><script src=\"/static/js/plugins/simplebar.min.js\"></script><script src=\"/static/js/plugins/bootstrap.min.js\"></script><script src=\"/static/js/plugins/i18next.min.js\"></script><script src=\"/static/js/plugins/i18nextHttpBackend.min.js\"></script><script src=\"/static/js/icon/custom-font.js\"></script><script src=\"/static/js/script.js\"></script><script src=\"/static/js/theme.js\"></script><script src=\"/static/js/multi-lang.js\"></script><script src=\"/static/js/plugins/feather.min.js\"></script><!-- [Initialize Custom JavaScript] start -->")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 5, "<!-- [Initialize Custom JavaScript] start -->")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = HtmxHandle400Swap().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("layout_change", "system").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("change_box_container", "false").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("font_change", "Inter").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("layout_caption_change", "true").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("layout_rtl_change", "false").Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = templ.JSFuncCall("preset_change", "preset-3").Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

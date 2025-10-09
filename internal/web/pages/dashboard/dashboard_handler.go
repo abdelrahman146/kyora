@@ -2,7 +2,6 @@ package dashboardPage
 
 import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
-	"github.com/abdelrahman146/kyora/internal/web/layout"
 	"github.com/abdelrahman146/kyora/internal/web/middleware"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
@@ -34,5 +33,5 @@ func (h *DashboardHandler) Index(c *gin.Context) {
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, layout.Layout(Dashboard()))
+	webutils.Render(c, 200, Dashboard())
 }

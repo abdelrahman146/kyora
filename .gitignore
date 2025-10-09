@@ -125,4 +125,4 @@ docker-compose.override.yml
 *.key
 *.pem
 
-/template/
+/node_modules/

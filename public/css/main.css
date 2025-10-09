@@ -1,0 +1,5 @@
+/* This file is not meant to be used directly.
+It is used as an entry point for Tailwind CSS to generate the final CSS file. */
+@import "tailwindcss";
+@source "../../internal/web/**/*.templ";
+@plugin "daisyui";
