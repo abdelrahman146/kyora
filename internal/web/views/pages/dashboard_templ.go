@@ -8,6 +8,8 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+
 type Stat struct {
 	Label string
 	Value string
@@ -35,7 +37,25 @@ func Dashboard(stats []Stat) templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"p-4 lg:p-8 space-y-6\"><!-- KPI cards --><section class=\"grid gap-4 sm:grid-cols-2 xl:grid-cols-4\"><div class=\"stat bg-base-100 rounded-box\"><div class=\"stat-title\">Revenue</div><div class=\"stat-value\">$24.7k</div><div class=\"stat-desc\">+8% vs last month</div></div><div class=\"stat bg-base-100 rounded-box\"><div class=\"stat-title\">New Users</div><div class=\"stat-value\">1,203</div><div class=\"stat-desc\">+3.1% today</div></div><div class=\"stat bg-base-100 rounded-box\"><div class=\"stat-title\">Orders</div><div class=\"stat-value\">312</div><div class=\"stat-desc\">-1.2% week</div></div><div class=\"stat bg-base-100 rounded-box\"><div class=\"stat-title\">Uptime</div><div class=\"stat-value\">99.98%</div><div class=\"stat-desc text-success\">All systems go</div></div></section><!-- Actions --><section class=\"flex flex-wrap gap-2\"><button class=\"btn btn-primary\">New Report</button> <button class=\"btn\">Export CSV</button> <button class=\"btn btn-outline\">Invite</button></section><!-- Table --><section class=\"card bg-base-100\"><div class=\"card-body\"><div class=\"flex items-center justify-between\"><h2 class=\"card-title\">Recent Activity</h2><input type=\"text\" class=\"input input-bordered w-48\" placeholder=\"Search…\"></div><div class=\"overflow-x-auto\"><table class=\"table\"><thead><tr><th>Project</th><th>Status</th><th>Owner</th><th>Date</th><th></th></tr></thead> <tbody><tr><td>Alpha</td><td><span class=\"badge badge-success\">Live</span></td><td>Ada</td><td>2025-10-01</td><td><button class=\"btn btn-xs\">Open</button></td></tr><tr><td>Beta</td><td><span class=\"badge badge-warning\">Review</span></td><td>Lin</td><td>2025-10-06</td><td><button class=\"btn btn-xs btn-outline\">Open</button></td></tr><tr><td>Gamma</td><td><span class=\"badge\">Queued</span></td><td>Max</td><td>2025-10-08</td><td><button class=\"btn btn-xs\">Open</button></td></tr></tbody></table></div></div></section><!-- Footer --><footer class=\"py-8 text-center opacity-70 text-sm\">Built with Tailwind v4, daisyUI v5, and Alpine v3.</footer></div>")
+		templ_7745c5c3_Var2 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+			templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+			templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+			if !templ_7745c5c3_IsBuffer {
+				defer func() {
+					templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+					if templ_7745c5c3_Err == nil {
+						templ_7745c5c3_Err = templ_7745c5c3_BufErr
+					}
+				}()
+			}
+			ctx = templ.InitializeContext(ctx)
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"prose max-w-none\"><h1 class=\"text-2xl font-bold mb-4\">Dashboard Overview</h1><p>Welcome back! Here's a quick look at your business.</p><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6\"><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">Revenue (30d)</h2><p class=\"text-3xl font-bold\">$12,450</p><p class=\"text-success\">+12% from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">New Orders (30d)</h2><p class=\"text-3xl font-bold\">82</p><p class=\"text-success\">+5 from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">Avg. Order Value</h2><p class=\"text-3xl font-bold\">$151.83</p><p class=\"text-error\">-3% from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">New Customers</h2><p class=\"text-3xl font-bold\">35</p><p class=\"text-success\">+20% from last month</p></div></div></div></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			return nil
+		})
+		templ_7745c5c3_Err = layouts.AppLayout().Render(templ.WithChildren(ctx, templ_7745c5c3_Var2), templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}

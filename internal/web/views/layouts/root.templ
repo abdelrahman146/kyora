@@ -48,7 +48,7 @@ templ Root() {
 			<script defer src="/static/js/app-init.js"></script>
 			<meta name="theme-color" content="#111827"/>
 		</head>
-		<body class="min-h-dvh bg-base-200 text-base-content antialiased">
+		<body class="bg-base-200" x-data>
 			{ children... }
 			@HtmxHandle400Swap()
 			@components.FlashToasts()

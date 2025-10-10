@@ -1,7 +1,6 @@
 package handlers
 
 import (
-	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
@@ -40,5 +39,5 @@ func (h *DashboardHandler) Index(c *gin.Context) {
 		{Label: "New Customers", Value: "12", Delta: "+4"},
 		{Label: "Unpaid Invoices", Value: "3", Delta: ""},
 	}
-	webutils.Render(c, 200, layouts.AppLayout(pages.Dashboard(stats)))
+	webutils.Render(c, 200, pages.Dashboard(stats))
 }
