@@ -1,0 +1,106 @@
+// file: web/template/pages/invoice_view.templ
+package pages
+
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+templ InvoiceViewQuickActions() {
+	<div class="flex gap-2">
+		<button class="btn btn-outline">
+			<i data-feather="printer" class="h-4 w-4"></i>
+			Print PDF
+		</button>
+		<button class="btn btn-primary" onclick="add_payment_modal.showModal()">
+			<i data-feather="dollar-sign" class="h-4 w-4"></i>
+			Record Payment
+		</button>
+	</div>
+}
+
+templ InvoiceView(invoiceID string) {
+	@layouts.AppLayout() {
+		@components.AddPaymentModal()
+		<div class="space-y-6">
+			// Page Header
+			@components.PageHeader(InvoiceViewQuickActions())
+			// Main Content Grid
+			<div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+				// Left Column: Invoice Preview
+				<div class="lg:col-span-2 card bg-base-100 shadow">
+					<div class="card-body p-8 sm:p-12">
+						<div class="flex justify-between items-start">
+							<div>
+								<h2 class="text-2xl font-bold">Your Business Name</h2>
+								<p>123 Business St.</p>
+								<p>Your City, 12345</p>
+							</div>
+							<div class="text-right">
+								<h2 class="text-3xl font-bold uppercase text-base-content/50">Invoice</h2>
+								<p class="font-mono">{ invoiceID }</p>
+							</div>
+						</div>
+						<div class="divider"></div>
+						<div class="grid grid-cols-2 gap-4">
+							<div>
+								<p class="font-bold">Bill To:</p>
+								<p>Emily Johnson</p>
+								<p>456 Customer Ave.</p>
+								<p>Client City, 54321</p>
+							</div>
+							<div class="text-right">
+								<p><span class="font-bold">Issue Date:</span> 29 May 2024</p>
+								<p><span class="font-bold">Due Date:</span> 28 Jun 2024</p>
+							</div>
+						</div>
+						<div class="overflow-x-auto mt-6">
+							<table class="table">
+								<thead class="bg-base-200">
+									<tr>
+										<th>Item</th>
+										<th class="text-right">Price</th>
+									</tr>
+								</thead>
+								<tbody>
+									<tr>
+										<td>5 Items from Order #21001</td>
+										<td class="text-right">$342.00</td>
+									</tr>
+								</tbody>
+								<tfoot>
+									<tr>
+										<th class="text-right">Total</th>
+										<th class="text-right">$342.00</th>
+									</tr>
+									<tr>
+										<th class="text-right">Amount Paid</th>
+										<th class="text-right">-$342.00</th>
+									</tr>
+									<tr class="text-lg font-bold">
+										<th class="text-right">Balance Due</th>
+										<th class="text-right">$0.00</th>
+									</tr>
+								</tfoot>
+							</table>
+						</div>
+					</div>
+				</div>
+				// Right Column: Payment Timeline
+				<div class="lg:col-span-1 card bg-base-100 shadow">
+					<div class="card-body">
+						<h3 class="card-title">Payment Timeline</h3>
+						<ul class="timeline timeline-vertical mt-4">
+							<li>
+								<div class="timeline-start">29 May 2024</div>
+								<div class="timeline-middle"><i data-feather="check-circle" class="h-4 w-4 text-success"></i></div>
+								<div class="timeline-end timeline-box">
+									<p class="font-semibold">$342.00 Paid</p>
+									<p class="text-xs">Credit Card - Ref #ABCD</p>
+								</div>
+							</li>
+						</ul>
+					</div>
+				</div>
+			</div>
+		</div>
+	}
+}

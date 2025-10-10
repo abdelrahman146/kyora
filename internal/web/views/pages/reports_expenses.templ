@@ -1,0 +1,91 @@
+// file: web/template/pages/report_expenses.templ
+package pages
+
+import (
+	"github.com/abdelrahman146/kyora/internal/web/views/components"
+	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
+)
+
+script ExpenseBreakdownChart() {
+      document.addEventListener('DOMContentLoaded', () => {
+            const colors = window.kyora.colors();
+
+            // Expense Breakdown Chart
+            window.kyora.renderChart('expenseBreakdownChart', {
+                  type: 'pie',
+                  data: {
+                        labels: ['COGS: Materials', 'COGS: Packaging', 'Opex: Marketing', 'Opex: Software', 'Opex: Admin'],
+                        datasets: [{
+                              data: [1800, 350, 1200, 870, 600],
+                              backgroundColor: [colors.primary, `rgba(${colors.primary.slice(4,-1)}, 0.7)`, colors.secondary, `rgba(${colors.secondary.slice(4,-1)}, 0.7)`, colors.accent]
+                        }]
+                  },
+                  options: { scales: { x: { display: false }, y: { display: false } } }
+            });
+      });
+}
+
+script COGSvsOpexChart() {
+      document.addEventListener('DOMContentLoaded', () => {
+            const colors = window.kyora.colors();
+
+            // COGS vs Opex Chart
+            window.kyora.renderChart('cogsVsOpexChart', {
+                  type: 'bar',
+                  data: {
+                        labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun'],
+                        datasets: [{
+                              label: 'COGS',
+                              data: [500, 600, 550, 700, 800, 950],
+                              backgroundColor: colors.primary,
+                        },{
+                              label: 'Opex',
+                              data: [800, 850, 900, 950, 1100, 1200],
+                              backgroundColor: colors.secondary,
+                        }]
+                  },
+                  options: { scales: { x: { stacked: true }, y: { stacked: true } } }
+            });
+      });
+}
+
+templ ExpensesReport() {
+	@layouts.AppLayout() {
+		<div class="space-y-6">
+			// Page Header
+			@components.PageHeader(EmptyQuickActions())
+			// KPI Cards
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+				@components.StatCard("Total Expenses", "$4,820", "5.1%", "increase", "This Period", "trending-down")
+				@components.StatCard("COGS", "$2,150", "3.2%", "increase", "Cost of Goods Sold", "package")
+				@components.StatCard("Opex", "$2,670", "7.8%", "increase", "Operating Expenses", "briefcase")
+				@components.StatCard("Top Category", "Marketing", "$1,200", "increase", "This Period", "bar-chart")
+			</div>
+			// Charts
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				// Expense Breakdown
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">Expense Breakdown</h2>
+						<p class="text-sm text-base-content/60">This shows where your money is going. High COGS might impact margins, while high Opex could mean high operational costs. Keep an eye on both.</p>
+						<div class="h-96 mt-4 flex items-center justify-center">
+							<canvas id="expenseBreakdownChart"></canvas>
+						</div>
+					</div>
+				</div>
+				// COGS vs. Opex Over Time
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">COGS vs. Opex Over Time</h2>
+						<p class="text-sm text-base-content/60">Tracks your direct costs (COGS) vs. your operational costs (Opex). This helps you see if costs are scaling appropriately with your sales.</p>
+						<div class="h-96 mt-4">
+							<canvas id="cogsVsOpexChart"></canvas>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		@ExpenseBreakdownChart()
+		@COGSvsOpexChart()
+	}
+}

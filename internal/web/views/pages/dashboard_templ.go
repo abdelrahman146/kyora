@@ -8,7 +8,10 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import (
+	"github.com/abdelrahman146/kyora/internal/web/views/components"
+	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
+)
 
 type Stat struct {
 	Label string
@@ -16,7 +19,7 @@ type Stat struct {
 	Delta string // e.g. +12% vs last 7d
 }
 
-func Dashboard(stats []Stat) templ.Component {
+func Dashboard() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -49,7 +52,55 @@ func Dashboard(stats []Stat) templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"prose max-w-none\"><h1 class=\"text-2xl font-bold mb-4\">Dashboard Overview</h1><p>Welcome back! Here's a quick look at your business.</p><div class=\"grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mt-6\"><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">Revenue (30d)</h2><p class=\"text-3xl font-bold\">$12,450</p><p class=\"text-success\">+12% from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">New Orders (30d)</h2><p class=\"text-3xl font-bold\">82</p><p class=\"text-success\">+5 from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">Avg. Order Value</h2><p class=\"text-3xl font-bold\">$151.83</p><p class=\"text-error\">-3% from last month</p></div></div><div class=\"card bg-base-100 shadow-lg\"><div class=\"card-body\"><h2 class=\"card-title\">New Customers</h2><p class=\"text-3xl font-bold\">35</p><p class=\"text-success\">+20% from last month</p></div></div></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"space-y-8\"><h1 class=\"text-3xl font-bold\">Business Overview</h1><div class=\"grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4\">")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.StatCard(
+				"Revenue",
+				"$587.54",
+				"10.8%",
+				"increase",
+				"vs. $494.16 last period",
+				"trending-up",
+			).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.StatCard(
+				"Sales",
+				"4500",
+				"21.2%",
+				"increase",
+				"vs. 3845 last period",
+				"package",
+			).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.StatCard(
+				"Customers",
+				"2242",
+				"-6.8%",
+				"decrease",
+				"vs. 2448 last period",
+				"users",
+			).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = components.StatCard(
+				"Spending",
+				"$112.54",
+				"8.5%",
+				"increase",
+				"vs. $98.14 last period",
+				"credit-card",
+			).Render(ctx, templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "</div><div class=\"grid grid-cols-1 gap-6 lg:grid-cols-5\"><div class=\"card col-span-1 bg-base-100 shadow lg:col-span-3\"><div class=\"card-body\"><h2 class=\"card-title\">Revenue Statistics</h2><p class=\"text-base-content/60\">Total income this year: <span class=\"font-bold text-lg text-base-content\">$184.78K</span></p><div class=\"flex h-64 items-center justify-center bg-base-200 rounded-box mt-4\"><p class=\"text-base-content/50\">Chart Area</p></div></div></div><div class=\"card col-span-1 bg-base-100 shadow lg:col-span-2\"><div class=\"card-body\"><h2 class=\"card-title\">Customer Acquisition</h2><p class=\"text-base-content/60\">New customers vs. ad spend</p><div class=\"flex h-64 items-center justify-center bg-base-200 rounded-box mt-4\"><p class=\"text-base-content/50\">Chart Area</p></div></div></div></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

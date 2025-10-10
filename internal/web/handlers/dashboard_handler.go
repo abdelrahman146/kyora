@@ -20,24 +20,18 @@ func (h *DashboardHandler) RegisterRoutes(r gin.IRoutes) {
 
 func (h *DashboardHandler) Index(c *gin.Context) {
 	info := webcontext.PageInfo{
+		Locale:      "en",
+		Dir:         "ltr",
 		Title:       "Dashboard",
 		Description: "Dashboard page",
 		Keywords:    "dashboard, Kyora",
 		Path:        "/",
 		Breadcrumbs: []webcontext.Breadcrumb{
-			{Title: "Home", Link: "/"},
-			{Title: "Dashboard", Link: ""},
+			{Href: "Home", Label: "/"},
+			{Href: "Dashboard", Label: ""},
 		},
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	stats := []pages.Stat{
-		{Label: "Revenue (7d)", Value: "$2,430", Delta: "+8%"},
-		{Label: "Gross Profit (7d)", Value: "$1,120", Delta: "+5%"},
-		{Label: "Orders", Value: "34", Delta: "+2"},
-		{Label: "AOV", Value: "$71.47", Delta: "+3%"},
-		{Label: "New Customers", Value: "12", Delta: "+4"},
-		{Label: "Unpaid Invoices", Value: "3", Delta: ""},
-	}
-	webutils.Render(c, 200, pages.Dashboard(stats))
+	webutils.Render(c, 200, pages.Dashboard())
 }

@@ -1,0 +1,78 @@
+// file: web/template/pages/settings_business.templ
+package pages
+
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+// Mock data for the business settings form.
+type BusinessSettings struct {
+	Name           string
+	Locale         string
+	Currency       string
+	DefaultTaxRate string
+}
+
+templ SettingsBusinessQuickActions() {
+	<button type="submit" class="btn btn-primary">Save Changes</button>
+}
+
+func getSettingsMock() BusinessSettings {
+	return BusinessSettings{
+		Name:           "My Home Crafts",
+		Locale:         "en-US",
+		Currency:       "USD",
+		DefaultTaxRate: "10",
+	}
+}
+
+templ SettingsBusiness() {
+	@layouts.AppLayout() {
+		<form class="space-y-6">
+			// Fetch mock settings data
+			{{ settings := getSettingsMock() }}
+			// Page Header & Actions
+			@components.PageHeader(SettingsBusinessQuickActions())
+			// Form Layout
+			<div class="max-w-4xl mx-auto space-y-6">
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">Business Profile</h2>
+						<p class="text-sm text-base-content/60">Update your business's name, logo, and default settings. [cite: 24]</p>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Business Name </span></div>
+							<input type="text" placeholder="Your Business Name" class="input input-bordered w-full" value={ settings.Name }/>
+						</label>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Logo </span></div>
+							<input type="file" class="file-input file-input-bordered w-full"/>
+						</label>
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Locale </span></div>
+								<select class="select select-bordered">
+									<option selected?={ settings.Locale == "en-US" }>en-US (English, US)</option>
+									<option selected?={ settings.Locale == "en-GB" }>en-GB (English, UK)</option>
+								</select>
+							</label>
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Currency </span></div>
+								<select class="select select-bordered">
+									<option selected?={ settings.Currency == "USD" }>USD ($)</option>
+									<option selected?={ settings.Currency == "EUR" }>EUR (€)</option>
+									<option selected?={ settings.Currency == "GBP" }>GBP (£)</option>
+								</select>
+							</label>
+						</div>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Default Tax Rate </span></div>
+							<div class="join">
+								<input type="number" placeholder="10" class="join-item input input-bordered w-full" value={ settings.DefaultTaxRate }/>
+								<span class="btn join-item no-animation btn-disabled bg-base-200">%</span>
+							</div>
+						</label>
+					</div>
+				</div>
+			</div>
+		</form>
+	}
+}

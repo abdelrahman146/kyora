@@ -1,0 +1,86 @@
+// file: web/template/pages/reports/sales.templ
+package pages
+
+import (
+	"github.com/abdelrahman146/kyora/internal/web/views/components"
+	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
+)
+
+templ SalesQuickActions() {
+	// <button class="btn btn-primary">Export Report</button>
+	<template></template>
+}
+
+script DrawNetRevenueChart() {
+      document.addEventListener('DOMContentLoaded', () => {
+		const colors = window.kyora.colors();
+            // Net Revenue Chart
+		window.kyora.renderChart('netRevenueChart', {
+			type: 'line',
+			data: {
+				labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+				datasets: [{
+					label: 'Net Revenue',
+					data: [1500, 2200, 1800, 2500, 3200, 2800, 4100],
+					borderColor: colors.primary,
+					backgroundColor: `rgba(${colors.primary.slice(4,-1)}, 0.1)`,
+					fill: true,
+					tension: 0.3
+				}]
+			}
+		});
+      });
+}
+
+templ SalesReport() {
+	@layouts.AppLayout() {
+		<div class="space-y-6">
+			// Page Header & Filters
+			@components.PageHeader(SalesQuickActions())
+			// KPI Cards
+			<div class="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+				@components.StatCard("Total Revenue", "$1,882", "15.2%", "increase", "This period", "dollar-sign")
+				@components.StatCard("Net Revenue", "$12,450", "15.2%", "increase", "This Period", "dollar-sign")
+				@components.StatCard("Total Orders", "21", "5.0%", "increase", "This period", "shopping-cart")
+				@components.StatCard("Avg. Order Value", "$89.62", "-2.1%", "decrease", "This period", "file-text")
+				@components.StatCard("Items Sold", "632", "11.0%", "increase", "This Period", "package")
+				@components.StatCard("Gross Profit", "$950.40", "12.8%", "increase", "This period", "trending-up")
+			</div>
+			// Charts Grid
+			<div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+				// Revenue Over Time Chart
+				// Net Revenue Over Time
+				<div class="card bg-base-100 shadow lg:col-span-3">
+					<div class="card-body">
+						<h2 class="card-title">Net Revenue Over Time</h2>
+						<p class="text-sm text-base-content/60">This chart shows the total revenue earned after discounts and returns. Use it to track your sales momentum and identify trends over time.</p>
+						<div class="h-96 mt-4">
+							<canvas id="netRevenueChart"></canvas>
+						</div>
+					</div>
+				</div>
+				// Top Selling Products Chart
+				<div class="card bg-base-100 shadow lg:col-span-2">
+					<div class="card-body">
+						<h2 class="card-title">Top Selling Products</h2>
+						<p class="text-sm text-base-content/60">A list of your best-performing products by revenue. Focus your marketing efforts on these proven winners.</p>
+						<div class="overflow-x-auto mt-4">
+							<table class="table">
+								<thead>
+									<tr><th>Product</th><th>SKU</th><th>Units Sold</th><th>Revenue</th></tr>
+								</thead>
+								<tbody>
+									<tr><td>Men's tracking shoes</td><td>#SHOES</td><td>85</td><td>$2,465</td></tr>
+									<tr><td>Cocooil body oil</td><td>#COCOOIL</td><td>150</td><td>$2,400</td></tr>
+									<tr><td>Gamepad</td><td>#GAMEPAD</td><td>35</td><td>$2,065</td></tr>
+								</tbody>
+							</table>
+						</div>
+					</div>
+				</div>
+			</div>
+		</div>
+		// Scripts for charts and date picker
+		@DrawNetRevenueChart()
+	}
+}

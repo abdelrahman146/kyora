@@ -11,6 +11,8 @@ var (
 )
 
 type PageInfo struct {
+	Locale      string
+	Dir         string
 	Title       string
 	Description string
 	Keywords    string
@@ -19,8 +21,8 @@ type PageInfo struct {
 }
 
 type Breadcrumb struct {
-	Title string
-	Link  string
+	Href  string
+	Label string
 }
 
 func SetupPageInfo(ctx context.Context, info PageInfo) context.Context {
@@ -50,6 +52,22 @@ func GetPageBreadcrumbs(ctx context.Context) []Breadcrumb {
 func GetActivePath(ctx context.Context) string {
 	info := GetVal[PageInfo](ctx, PageInfoKey)
 	return info.Path
+}
+
+func GetPageLocale(ctx context.Context) string {
+	info := GetVal[PageInfo](ctx, PageInfoKey)
+	if info.Locale == "" {
+		return "en"
+	}
+	return info.Locale
+}
+
+func GetPageDir(ctx context.Context) string {
+	info := GetVal[PageInfo](ctx, PageInfoKey)
+	if info.Dir == "" {
+		return "ltr"
+	}
+	return info.Dir
 }
 
 func ComposeFullTitle(pageTitle string) string {

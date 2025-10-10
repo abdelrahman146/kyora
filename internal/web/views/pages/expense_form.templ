@@ -1,0 +1,112 @@
+package pages
+
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+// Expense holds the data for pre-filling the edit form.
+type Expense struct {
+	Date     string
+	Vendor   string
+	Category string
+	Amount   string
+	Tax      string
+	IsCOGS   bool
+	Notes    string
+}
+
+type ExpenseFormProps struct {
+	IsEdit  bool
+	Expense *Expense
+}
+
+templ ExpenseFormQuickActions(props ExpenseFormProps) {
+	<a href="/expenses" class="btn">Cancel</a>
+	if props.IsEdit {
+		<button type="submit" class="btn btn-primary">Update Expense</button>
+	} else {
+		<button type="submit" class="btn btn-primary">Save Expense</button>
+	}
+}
+
+templ ExpenseForm(props ExpenseFormProps) {
+	@layouts.AppLayout() {
+		<form class="space-y-6">
+			// Page Header & Actions
+			@components.PageHeader(ExpenseFormQuickActions(props))
+			// Form Layout (using a simpler single-column layout with cards)
+			<div class="max-w-4xl mx-auto space-y-6">
+				// Expense Details
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">Expense Details</h2>
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Date</span></div>
+								<input type="date" class="input input-bordered w-full" value={ props.Expense.Date }/>
+							</label>
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Vendor</span></div>
+								<input type="text" placeholder="e.g., Fabric Supplier Co." class="input input-bordered w-full" value={ props.Expense.Vendor }/>
+							</label>
+						</div>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Category (e.g., COGS > Materials)</span></div>
+							<input type="text" placeholder="Category path" class="input input-bordered w-full" value={ props.Expense.Category }/>
+						</label>
+						<div class="form-control">
+							<label class="label cursor-pointer justify-start gap-4">
+								<input type="checkbox" class="toggle toggle-primary" checked?={ props.Expense.IsCOGS }/>
+								<span class="label-text">Is this a Cost of Goods Sold (COGS)?</span>
+							</label>
+						</div>
+					</div>
+				</div>
+				// Financials
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">Financials</h2>
+						<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Amount</span></div>
+								<div class="join">
+									<span class="btn join-item no-animation btn-disabled bg-base-200">$</span>
+									<input type="text" placeholder="0.00" class="join-item input input-bordered w-full" value={ props.Expense.Amount }/>
+								</div>
+							</label>
+							<label class="form-control w-full">
+								<div class="label"><span class="label-text">Tax</span></div>
+								<div class="join">
+									<span class="btn join-item no-animation btn-disabled bg-base-200">$</span>
+									<input type="text" placeholder="0.00" class="join-item input input-bordered w-full" value={ props.Expense.Tax }/>
+								</div>
+							</label>
+						</div>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Payment Method</span></div>
+							<select class="select select-bordered">
+								<option>Credit Card</option>
+								<option>Bank Transfer</option>
+								<option>Cash</option>
+								<option>Other</option>
+							</select>
+						</label>
+					</div>
+				</div>
+				// Attachments & Notes
+				<div class="card bg-base-100 shadow">
+					<div class="card-body">
+						<h2 class="card-title">Receipt & Notes</h2>
+						<div class="form-control w-full">
+							<div class="label"><span class="label-text">Attachment</span></div>
+							<input type="file" class="file-input file-input-bordered w-full"/>
+						</div>
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Notes</span></div>
+							<textarea class="textarea textarea-bordered h-24" placeholder="Add any relevant notes here">{ props.Expense.Notes }</textarea>
+						</label>
+					</div>
+				</div>
+			</div>
+		</form>
+	}
+}

@@ -1,0 +1,23 @@
+package layouts
+
+templ AuthLayout() {
+	@Root() {
+		<div class="flex min-h-screen flex-col items-center justify-center bg-base-200 p-4">
+			// Header with Logo and Theme Toggle
+			<header class="absolute top-0 left-0 right-0 p-4">
+				<div class="container mx-auto flex items-center justify-between">
+					<a href="/" class="text-2xl font-bold text-primary">Kyora</a>
+					<label class="swap swap-rotate btn btn-ghost btn-circle">
+						<input type="checkbox" class="theme-controller" value="dark"/>
+						<i data-feather="sun" class="swap-off h-5 w-5"></i>
+						<i data-feather="moon" class="swap-on h-5 w-5"></i>
+					</label>
+				</div>
+			</header>
+			// Main content area for the auth card
+			<main class="w-full max-w-md">
+				{ children... }
+			</main>
+		</div>
+	}
+}

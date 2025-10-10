@@ -12,9 +12,124 @@ script HtmxHandle400Swap() {
 	});
 }
 
+script InitChartJs() {
+	// --- NEW: Kyora Chart Theming Helper ---
+	// This helper makes Chart.js seamlessly integrate with DaisyUI themes.
+	(() => {
+		// All charts initialized on the page are stored here
+		const charts = {};
+
+		// Function to get DaisyUI theme colors as RGB for Chart.js
+		const getThemeColors = () => {
+			// Converts HSL string "h s% l%" to Chart.js compatible "rgb(r, g, b)"
+			const hslToRgb = (hslStr) => {
+				const [h, s, l] = hslStr.split(" ").map(parseFloat);
+				const sNorm = s / 100;
+				const lNorm = l / 100;
+				const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
+				const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
+				const m = lNorm - c / 2;
+				let r = 0, g = 0, b = 0;
+				if (h >= 0 && h < 60) { [r,g,b] = [c,x,0]; }
+				else if (h >= 60 && h < 120) { [r,g,b] = [x,c,0]; }
+				else if (h >= 120 && h < 180) { [r,g,b] = [0,c,x]; }
+				else if (h >= 180 && h < 240) { [r,g,b] = [0,x,c]; }
+				else if (h >= 240 && h < 300) { [r,g,b] = [x,0,c]; }
+				else if (h >= 300 && h < 360) { [r,g,b] = [c,0,x]; }
+				return `rgb(${Math.round((r+m)*255)}, ${Math.round((g+m)*255)}, ${Math.round((b+m)*255)})`;
+			};
+			
+			const style = getComputedStyle(document.documentElement);
+			return {
+				primary: hslToRgb(style.getPropertyValue("--p").trim()),
+				secondary: hslToRgb(style.getPropertyValue("--s").trim()),
+				accent: hslToRgb(style.getPropertyValue("--a").trim()),
+				neutral: hslToRgb(style.getPropertyValue("--n").trim()),
+				baseContent: hslToRgb(style.getPropertyValue("--bc").trim()),
+				base100: hslToRgb(style.getPropertyValue("--b1").trim()),
+			};
+		};
+
+		// Function to update all chart colors
+		const updateChartThemes = () => {
+			const colors = getThemeColors();
+			for (const chartId in charts) {
+				const chart = charts[chartId];
+				// Update grid lines and labels
+				chart.options.scales.x.grid.color = `rgba(${colors.baseContent.slice(4,-1)}, 0.1)`;
+				chart.options.scales.y.grid.color = `rgba(${colors.baseContent.slice(4,-1)}, 0.1)`;
+				chart.options.scales.x.ticks.color = colors.baseContent;
+				chart.options.scales.y.ticks.color = colors.baseContent;
+				chart.options.plugins.legend.labels.color = colors.baseContent;
+				chart.update();
+			}
+		};
+
+		// Listen for theme changes on the <html> element
+		const observer = new MutationObserver((mutations) => {
+			mutations.forEach(mutation => {
+				if (mutation.attributeName === "data-theme") {
+					updateChartThemes();
+				}
+			});
+		});
+		observer.observe(document.documentElement, { attributes: true });
+
+		// Expose a global function to render charts
+		window.kyora = {
+			charts,
+			renderChart: (canvasId, config) => {
+				const ctx = document.getElementById(canvasId).getContext('2d');
+				const colors = getThemeColors();
+				
+				// Inject theme colors into the chart config
+				const themedConfig = {
+					...config,
+					options: {
+						...config.options,
+						responsive: true,
+						maintainAspectRatio: false,
+						plugins: {
+							legend: { labels: { color: colors.baseContent } },
+							...config.options?.plugins,
+						},
+						scales: {
+							x: {
+								grid: { color: `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` },
+								ticks: { color: colors.baseContent },
+							},
+							y: {
+								grid: { color: `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` },
+								ticks: { color: colors.baseContent },
+							},
+							...config.options?.scales
+						}
+					}
+				};
+				
+				if (charts[canvasId]) {
+					charts[canvasId].destroy();
+				}
+				charts[canvasId] = new Chart(ctx, themedConfig);
+			},
+			colors: getThemeColors
+		};
+
+	})();
+}
+
 templ Root() {
 	<!DOCTYPE html>
-	<html lang="en" x-data="app()" x-bind:data-theme="theme" class="h-full">
+	<html
+		lang="en"
+		x-data="appState()"
+		x-bind:data-theme="theme"
+		x-bind:dir="dir"
+		hx-boost="true"
+		lang={ webcontext.GetPageLocale(ctx) }
+		dir={ webcontext.GetPageDir(ctx) }
+		class="scroll-smooth"
+	>
 		<head>
 			<meta charset="utf-8"/>
 			<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
@@ -32,14 +147,8 @@ templ Root() {
 			<link rel="stylesheet" href="/static/css/style.css"/>
 			<!-- Inter Font (Google Fonts) -->
 			<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap"/>
-			<!-- Font Awesome -->
-			<link rel="stylesheet" href="/static/fonts/fontawesome.css"/>
-			<!-- feather -->
-			<link rel="stylesheet" href="/static/fonts/feather.css"/>
-			<!-- Material Icons -->
-			<link rel="stylesheet" href="/static/fonts/material.css"/>
-			<!-- tabler-icons -->
-			<link rel="stylesheet" href="/static/fonts/tabler-icons.min.css"/>
+			<!-- Feather Icons -->
+			<script src="https://unpkg.com/feather-icons"></script>
 			<!-- Alpine.js -->
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 			<!-- HTMX -->
@@ -47,11 +156,15 @@ templ Root() {
 			<!-- App init -->
 			<script defer src="/static/js/app-init.js"></script>
 			<meta name="theme-color" content="#111827"/>
+			<!-- Optional: Chart.js, Moment.js, Litepicker for analytics and date pickers -->
+			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 		</head>
 		<body class="bg-base-200" x-data>
 			{ children... }
+			@templ.JSFuncCall("feather.replace")
 			@HtmxHandle400Swap()
 			@components.FlashToasts()
+			@InitChartJs()
 		</body>
 	</html>
 }

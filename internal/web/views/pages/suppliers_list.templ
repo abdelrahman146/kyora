@@ -1,0 +1,80 @@
+// file: web/template/pages/suppliers_list.templ
+package pages
+
+import "fmt"
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+// Mock data for the suppliers list, based on the Kyora spec
+type SupplierRow struct {
+	ID       string
+	Name     string
+	Contact  string
+	Email    string
+	Phone    string
+	Products int
+}
+
+func getMockSuppliers() []SupplierRow {
+	return []SupplierRow{
+		{"1", "Fabric Supplier Co.", "John Fabrics", "sales@fabricco.com", "555-0101", 12},
+		{"2", "Packaging Pros", "Jane Boxes", "contact@packpros.com", "555-0102", 5},
+		{"3", "Office Supplies Mart", "Sam Paper", "info@officesmart.com", "555-0103", 35},
+		{"4", "Creative Components", "Emily Craft", "emily@creative.comp", "555-0104", 8},
+	}
+}
+
+templ SuppliersListQuickActions() {
+	<a href="/suppliers/new" class="btn btn-primary">
+		<i data-feather="plus" class="h-4 w-4"></i>
+		New Supplier
+	</a>
+}
+
+templ SuppliersList() {
+	@layouts.AppLayout() {
+		<div class="space-y-6">
+			// Page Header
+			@components.PageHeader(SuppliersListQuickActions())
+			// Suppliers Table
+			<div class="card bg-base-100 shadow">
+				<div class="overflow-x-auto">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Name</th>
+								<th>Contact</th>
+								<th>Phone/Email</th>
+								<th class="text-center">Products</th>
+								<th>Action</th>
+							</tr>
+						</thead>
+						<tbody>
+							for _, supplier := range getMockSuppliers() {
+								<tr>
+									<td class="font-semibold">{ supplier.Name }</td>
+									<td>{ supplier.Contact }</td>
+									<td>
+										<div>{ supplier.Phone }</div>
+										<div class="text-sm opacity-60">{ supplier.Email }</div>
+									</td>
+									<td class="text-center">{ fmt.Sprintf("%d", supplier.Products) }</td>
+									<td>
+										<div class="flex gap-1">
+											<a href={ templ.URL("/suppliers/" + supplier.ID + "/edit") } class="btn btn-ghost btn-xs btn-circle">
+												<i data-feather="edit" class="h-4 w-4"></i>
+											</a>
+											<button class="btn btn-ghost btn-xs btn-circle text-error">
+												<i data-feather="archive" class="h-4 w-4"></i>
+											</button>
+										</div>
+									</td>
+								</tr>
+							}
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</div>
+	}
+}
