@@ -14,6 +14,7 @@ type PageInfo struct {
 	Title       string
 	Description string
 	Keywords    string
+	Path        string
 	Breadcrumbs []Breadcrumb
 }
 
@@ -44,6 +45,11 @@ func GetPageKeywords(ctx context.Context) string {
 func GetPageBreadcrumbs(ctx context.Context) []Breadcrumb {
 	info := GetVal[PageInfo](ctx, PageInfoKey)
 	return info.Breadcrumbs
+}
+
+func GetActivePath(ctx context.Context) string {
+	info := GetVal[PageInfo](ctx, PageInfoKey)
+	return info.Path
 }
 
 func ComposeFullTitle(pageTitle string) string {

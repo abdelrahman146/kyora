@@ -1,0 +1,39 @@
+package components
+
+import "context"
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
+
+func IsActive(ctx context.Context, path string) string {
+	if path == webcontext.GetActivePath(ctx) {
+		return "active"
+	}
+	return ""
+}
+
+templ SideNav() {
+	<ul class="menu px-4 py-2 text-base">
+		<li class="menu-title">Overview</li>
+		<li><a href="/" class={ IsActive(ctx, "/") }><span>Dashboard</span></a></li>
+		<li class="menu-title">Sales</li>
+		<li><a href="/orders" class={ IsActive(ctx, "/orders") }>Orders</a></li>
+		<li><a href="/invoices" class={ IsActive(ctx, "/invoices") }>Invoices & Payments</a></li>
+		<li class="menu-title">Catalog</li>
+		<li><a href="/products" class={ IsActive(ctx, "/products") }>Products</a></li>
+		<li><a href="/suppliers" class={ IsActive(ctx, "/suppliers") }>Suppliers</a></li>
+		<li class="menu-title">People</li>
+		<li><a href="/customers" class={ IsActive(ctx, "/customers") }>Customers</a></li>
+		<li class="menu-title">Finance</li>
+		<li><a href="/expenses" class={ IsActive(ctx, "/expenses") }>Expenses</a></li>
+		<li class="menu-title">Growth</li>
+		<li><a href="/growth/social" class={ IsActive(ctx, "/growth/social") }>Social</a></li>
+		<li><a href="/growth/website" class={ IsActive(ctx, "/growth/website") }>Website</a></li>
+		<li><a href="/growth/funnels" class={ IsActive(ctx, "/growth/funnels") }>Funnels</a></li>
+		<li class="menu-title">Reports</li>
+		<li><a href="/reports/sales" class={ IsActive(ctx, "/reports/sales") }>Sales</a></li>
+		<li><a href="/reports/pnl" class={ IsActive(ctx, "/reports/pnl") }>P&L</a></li>
+		<li><a href="/reports/inventory" class={ IsActive(ctx, "/reports/inventory") }>Inventory</a></li>
+		<li><a href="/reports/growth" class={ IsActive(ctx, "/reports/growth") }>Growth</a></li>
+		<li class="menu-title">Settings</li>
+		<li><a href="/settings" class={ IsActive(ctx, "/settings") }>Settings</a></li>
+	</ul>
+}

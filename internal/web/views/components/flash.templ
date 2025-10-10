@@ -1,0 +1,12 @@
+package components
+
+templ FlashToasts() {
+	<div class="toast toast-end" x-data x-init="$watch('Alpine.store(\'flash\').messages', () => {})" x-effect="messages = Alpine.store('flash').messages">
+		<template x-for="(msg, idx) in Alpine.store('flash').messages" :key="idx">
+			<div class="alert" x-bind:class="{ 'alert-success': msg.type==='success', 'alert-error': msg.type==='error', 'alert-info': msg.type==='info' }">
+				<span x-text="msg.text"></span>
+				<button class="btn btn-ghost btn-xs" x-on:click="Alpine.store('flash').dismiss(idx)">Dismiss</button>
+			</div>
+		</template>
+	</div>
+}

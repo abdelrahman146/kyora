@@ -1,0 +1,17 @@
+package components
+
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
+
+templ Breadcrumbs() {
+	<div class="breadcrumbs text-sm">
+		<ul>
+			for _, c := range webcontext.GetPageBreadcrumbs(ctx) {
+				if c.Link != "" {
+					<li><a href={ c.Link }>{ c.Title }</a></li>
+				} else {
+					<li class="font-medium">{ c.Title }</li>
+				}
+			}
+		</ul>
+	</div>
+}

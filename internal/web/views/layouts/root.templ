@@ -1,0 +1,45 @@
+package layouts
+
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+script HtmxHandle400Swap() {
+	document.addEventListener('htmx:beforeSwap', function(evt) {
+		const xhr = evt.detail.xhr;
+		if (xhr.status < 500 && xhr.status >= 400) {
+			evt.detail.shouldSwap = true; 
+		}
+	});
+}
+
+templ Root() {
+	<!DOCTYPE html>
+	<html lang="en" x-data="app()" x-bind:data-theme="theme" class="h-full">
+		<head>
+			<meta charset="utf-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
+			<title>{ webcontext.ComposeFullTitle(webcontext.GetPageTitle(ctx)) }</title>
+			<meta name="description" content={ webcontext.GetPageDescription(ctx) }/>
+			<meta name="keywords" content={ webcontext.GetPageKeywords(ctx) }/>
+			<!-- [Favicon] icon -->
+			<link rel="icon" href="/static/images/favicon.svg" type="image/x-icon"/>
+			<!-- Tailwind v4 -->
+			<script src="https://cdn.tailwindcss.com"></script>
+			<script>window.tailwind = { darkMode: ["class", "[data-theme=dark]"] };</script>
+			<!-- DaisyUI v5 -->
+			<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/daisyui@4/dist/full.min.css"/>
+			<!-- Alpine.js -->
+			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+			<!-- HTMX -->
+			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"></script>
+			<!-- App init -->
+			<script defer src="/js/app-init.js"></script>
+			<meta name="theme-color" content="#111827"/>
+		</head>
+		<body class="min-h-dvh bg-base-200 text-base-content antialiased">
+			{ children... }
+			@HtmxHandle400Swap()
+			@components.FlashToasts()
+		</body>
+	</html>
+}

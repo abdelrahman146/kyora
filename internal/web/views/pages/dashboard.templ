@@ -1,0 +1,90 @@
+package pages
+
+type Stat struct {
+	Label string
+	Value string
+	Delta string // e.g. +12% vs last 7d
+}
+
+templ Dashboard(stats []Stat) {
+	<div class="p-4 lg:p-8 space-y-6">
+		<!-- KPI cards -->
+		<section class="grid gap-4 sm:grid-cols-2 xl:grid-cols-4">
+			<div class="stat bg-base-100 rounded-box">
+				<div class="stat-title">Revenue</div>
+				<div class="stat-value">$24.7k</div>
+				<div class="stat-desc">+8% vs last month</div>
+			</div>
+			<div class="stat bg-base-100 rounded-box">
+				<div class="stat-title">New Users</div>
+				<div class="stat-value">1,203</div>
+				<div class="stat-desc">+3.1% today</div>
+			</div>
+			<div class="stat bg-base-100 rounded-box">
+				<div class="stat-title">Orders</div>
+				<div class="stat-value">312</div>
+				<div class="stat-desc">-1.2% week</div>
+			</div>
+			<div class="stat bg-base-100 rounded-box">
+				<div class="stat-title">Uptime</div>
+				<div class="stat-value">99.98%</div>
+				<div class="stat-desc text-success">All systems go</div>
+			</div>
+		</section>
+		<!-- Actions -->
+		<section class="flex flex-wrap gap-2">
+			<button class="btn btn-primary">New Report</button>
+			<button class="btn">Export CSV</button>
+			<button class="btn btn-outline">Invite</button>
+		</section>
+		<!-- Table -->
+		<section class="card bg-base-100">
+			<div class="card-body">
+				<div class="flex items-center justify-between">
+					<h2 class="card-title">Recent Activity</h2>
+					<input type="text" class="input input-bordered w-48" placeholder="Search…"/>
+				</div>
+				<div class="overflow-x-auto">
+					<table class="table">
+						<thead>
+							<tr>
+								<th>Project</th>
+								<th>Status</th>
+								<th>Owner</th>
+								<th>Date</th>
+								<th></th>
+							</tr>
+						</thead>
+						<tbody>
+							<tr>
+								<td>Alpha</td>
+								<td><span class="badge badge-success">Live</span></td>
+								<td>Ada</td>
+								<td>2025-10-01</td>
+								<td><button class="btn btn-xs">Open</button></td>
+							</tr>
+							<tr>
+								<td>Beta</td>
+								<td><span class="badge badge-warning">Review</span></td>
+								<td>Lin</td>
+								<td>2025-10-06</td>
+								<td><button class="btn btn-xs btn-outline">Open</button></td>
+							</tr>
+							<tr>
+								<td>Gamma</td>
+								<td><span class="badge">Queued</span></td>
+								<td>Max</td>
+								<td>2025-10-08</td>
+								<td><button class="btn btn-xs">Open</button></td>
+							</tr>
+						</tbody>
+					</table>
+				</div>
+			</div>
+		</section>
+		<!-- Footer -->
+		<footer class="py-8 text-center opacity-70 text-sm">
+			Built with Tailwind v4, daisyUI v5, and Alpine v3.
+		</footer>
+	</div>
+}

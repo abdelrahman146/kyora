@@ -9,9 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/utils"
-	dashboardPage "github.com/abdelrahman146/kyora/internal/web/pages/dashboard"
-	loginPage "github.com/abdelrahman146/kyora/internal/web/pages/login"
-	onboardingPage "github.com/abdelrahman146/kyora/internal/web/pages/onboarding"
+	"github.com/abdelrahman146/kyora/internal/web/controllers"
 	"github.com/abdelrahman146/kyora/internal/web/webrouter"
 
 	"github.com/spf13/cobra"
@@ -69,18 +67,14 @@ func runWeb(cmd *cobra.Command, args []string) {
 	organizationRepo := account.NewOrganizationRepository(postgres)
 	userRepo := account.NewUserRepository(postgres)
 
-	authService := account.NewAuthenticationService(userRepo)
-	onboardingService := account.NewOnboardingService(userRepo, organizationRepo, atomicProcess)
+	_ = account.NewAuthenticationService(userRepo)
+	_ = account.NewOnboardingService(userRepo, organizationRepo, atomicProcess)
 	_ = account.NewOrganizationService(organizationRepo)
 	_ = account.NewUserService(userRepo)
 
 	router := webrouter.NewRouter()
-	dashboardHandler := dashboardPage.NewDashboardHandler(authService)
-	dashboardHandler.RegisterRoutes(router)
-	loginHandler := loginPage.NewLoginHandler(authService)
-	loginHandler.RegisterRoutes(router)
-	onboardingHandler := onboardingPage.NewOnboardHandler(onboardingService)
-	onboardingHandler.RegisterRoutes(router)
+	dashboardController := controllers.NewDashboardController()
+	dashboardController.RegisterRoutes(router)
 
 	err = router.Run(viper.GetString("server.port"))
 	if err != nil {
