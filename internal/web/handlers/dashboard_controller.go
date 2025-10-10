@@ -1,4 +1,4 @@
-package controllers
+package handlers
 
 import (
 	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
@@ -8,18 +8,18 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type DashboardController struct {
+type DashboardHandler struct {
 }
 
-func NewDashboardController() *DashboardController {
-	return &DashboardController{}
+func NewDashboardHandler() *DashboardHandler {
+	return &DashboardHandler{}
 }
 
-func (h *DashboardController) RegisterRoutes(r gin.IRoutes) {
+func (h *DashboardHandler) RegisterRoutes(r gin.IRoutes) {
 	r.GET("/", h.Index)
 }
 
-func (h *DashboardController) Index(c *gin.Context) {
+func (h *DashboardHandler) Index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Title:       "Dashboard",
 		Description: "Dashboard page",

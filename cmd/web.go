@@ -9,7 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/utils"
-	"github.com/abdelrahman146/kyora/internal/web/controllers"
+	"github.com/abdelrahman146/kyora/internal/web/handlers"
 	"github.com/abdelrahman146/kyora/internal/web/webrouter"
 
 	"github.com/spf13/cobra"
@@ -73,8 +73,8 @@ func runWeb(cmd *cobra.Command, args []string) {
 	_ = account.NewUserService(userRepo)
 
 	router := webrouter.NewRouter()
-	dashboardController := controllers.NewDashboardController()
-	dashboardController.RegisterRoutes(router)
+	dashboardHandler := handlers.NewDashboardHandler()
+	dashboardHandler.RegisterRoutes(router)
 
 	err = router.Run(viper.GetString("server.port"))
 	if err != nil {

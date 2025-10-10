@@ -1,0 +1,6 @@
+/* Tailwind CSS Input Styles
+DO NOT USE THIS FILE DIRECTLY
+instead, use ./public/css/base.css
+*/
+@import "tailwindcss";
+@plugin "daisyui";
