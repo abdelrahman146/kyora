@@ -61,6 +61,12 @@ func (r *StoreRepository) ScopeOrganizationID(organizationID string) func(db *go
 	}
 }
 
+func (r *StoreRepository) ScopeCode(code string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("code = ?", code)
+	}
+}
+
 func (r *StoreRepository) CreateOne(ctx context.Context, store *Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(store).Error
 }

@@ -76,8 +76,8 @@ func runWeb(cmd *cobra.Command, args []string) {
 	_ = account.NewOnboardingService(userRepo, organizationRepo, atomicProcess)
 	_ = account.NewOrganizationService(organizationRepo)
 	_ = account.NewUserService(userRepo)
-	_ = store.NewStoreService(storeRepo)
-	_ = inventory.NewInventoryService(productRepo, variantRepo, atomicProcess)
+	storeService := store.NewStoreService(storeRepo)
+	_ = inventory.NewInventoryService(productRepo, variantRepo, storeService, atomicProcess)
 
 	router := webrouter.NewRouter()
 	dashboardHandler := handlers.NewDashboardHandler()

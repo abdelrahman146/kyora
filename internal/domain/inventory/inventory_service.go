@@ -7,19 +7,21 @@ import (
 	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/db"
-	"github.com/abdelrahman146/kyora/internal/utils"
+	"github.com/abdelrahman146/kyora/internal/domain/store"
 )
 
 type InventoryService struct {
 	products      *ProductRepository
 	variants      *VariantRepository
+	store         *store.StoreService
 	atomicProcess *db.AtomicProcess
 }
 
-func NewInventoryService(products *ProductRepository, variants *VariantRepository, atomicProcess *db.AtomicProcess) *InventoryService {
+func NewInventoryService(products *ProductRepository, variants *VariantRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *InventoryService {
 	return &InventoryService{
 		products:      products,
 		variants:      variants,
+		store:         store,
 		atomicProcess: atomicProcess,
 	}
 }
@@ -27,6 +29,11 @@ func NewInventoryService(products *ProductRepository, variants *VariantRepositor
 func (s *InventoryService) CreateProduct(ctx context.Context, storeID string, productReq *CreateProductRequest, variantsReq []*CreateVariantRequest) (*Product, error) {
 	var product *Product
 	err := s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
+		// Load store to access standardized store Code for SKU generation
+		st, err := s.store.GetStoreByID(ctx, storeID)
+		if err != nil {
+			return db.HandleDBError(err)
+		}
 		product = &Product{
 			StoreID:     storeID,
 			Name:        productReq.Name,
@@ -36,9 +43,9 @@ func (s *InventoryService) CreateProduct(ctx context.Context, storeID string, pr
 		if err := s.products.CreateOne(ctx, product); err != nil {
 			return db.HandleDBError(err)
 		}
-		variants := s.toVariants(storeID, product.ID, productReq.Name, variantsReq)
+		variants := s.toVariants(storeID, st.Code, product.ID, productReq.Name, variantsReq)
 		if len(variants) > 0 {
-			if err := s.createVariantsWithRetry(ctx, storeID, productReq.Name, variants); err != nil {
+			if err := s.createVariantsWithRetry(ctx, st.Code, productReq.Name, variants); err != nil {
 				return err
 			}
 		}
@@ -56,8 +63,12 @@ func (s *InventoryService) AddVariantToProduct(ctx context.Context, productID st
 		if err != nil {
 			return db.HandleDBError(err)
 		}
-		variant = s.toVariant(prod.StoreID, productID, prod.Name, variantReq)
-		if err := s.createVariantWithRetry(ctx, prod.StoreID, prod.Name, variant); err != nil {
+		st, err := s.store.GetStoreByID(ctx, prod.StoreID)
+		if err != nil {
+			return db.HandleDBError(err)
+		}
+		variant = s.toVariant(prod.StoreID, st.Code, productID, prod.Name, variantReq)
+		if err := s.createVariantWithRetry(ctx, st.Code, prod.Name, variant); err != nil {
 			return err
 		}
 		return nil
@@ -65,49 +76,20 @@ func (s *InventoryService) AddVariantToProduct(ctx context.Context, productID st
 	return variant, err
 }
 
-// isUniqueViolation returns true if the error is a unique constraint violation
-// from Postgres via gorm/driver. We use error string contains as a fallback
-// since gorm wraps driver errors; this remains safe and non-panicking.
-func isUniqueViolation(err error) bool {
-	if err == nil {
-		return false
-	}
-	// Check for common substrings
-	msg := err.Error()
-	if strings.Contains(strings.ToLower(msg), "unique constraint") ||
-		strings.Contains(strings.ToLower(msg), "duplicate key") ||
-		strings.Contains(strings.ToLower(msg), "unique violation") {
-		return true
-	}
-	// Unwrap and check chain
-	for {
-		unwrapped := errors.Unwrap(err)
-		if unwrapped == nil || unwrapped == err {
-			break
-		}
-		err = unwrapped
-		m := strings.ToLower(err.Error())
-		if strings.Contains(m, "duplicate key") || strings.Contains(m, "unique") {
-			return true
-		}
-	}
-	return false
-}
-
 // toVariants converts create requests to Variant models, generating SKUs when missing.
-func (s *InventoryService) toVariants(storeID, productID, productName string, reqs []*CreateVariantRequest) []*Variant {
+func (s *InventoryService) toVariants(storeID, storeCode, productID, productName string, reqs []*CreateVariantRequest) []*Variant {
 	variants := make([]*Variant, 0, len(reqs))
 	for _, v := range reqs {
-		variant := s.toVariant(storeID, productID, productName, v)
+		variant := s.toVariant(storeID, storeCode, productID, productName, v)
 		variants = append(variants, variant)
 	}
 	return variants
 }
 
-func (s *InventoryService) toVariant(storeID, productID, productName string, v *CreateVariantRequest) *Variant {
+func (s *InventoryService) toVariant(storeID, storeCode, productID, productName string, v *CreateVariantRequest) *Variant {
 	sku := strings.TrimSpace(v.SKU)
 	if sku == "" {
-		sku = utils.SKU.Generate(storeID, productName, v.Code)
+		sku = GenerateSku(storeCode, productName, v.Code)
 	}
 	return &Variant{
 		Name:          fmt.Sprintf("%s - %s", productName, v.Code),
@@ -123,13 +105,13 @@ func (s *InventoryService) toVariant(storeID, productID, productName string, v *
 }
 
 // createVariantsWithRetry inserts variants and retries on unique SKU conflicts by regenerating SKUs.
-func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeID, productName string, variants []*Variant) error {
+func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeCode, productName string, variants []*Variant) error {
 	const maxAttempts = 5
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if err := s.variants.CreateManyStrict(ctx, variants); err != nil {
-			if isUniqueViolation(err) {
+			if db.IsUniqueViolation(err) {
 				for _, variant := range variants {
-					variant.SKU = utils.SKU.Generate(storeID, productName, variant.Name)
+					variant.SKU = GenerateSku(storeCode, productName, variant.Name)
 				}
 				if attempt == maxAttempts {
 					return db.HandleDBError(err)
@@ -144,12 +126,12 @@ func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeID,
 }
 
 // createVariantWithRetry inserts a single variant and retries on unique SKU conflicts by regenerating SKU.
-func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeID, productName string, variant *Variant) error {
+func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode, productName string, variant *Variant) error {
 	const maxAttempts = 5
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
 		if err := s.variants.CreateOne(ctx, variant); err != nil {
-			if isUniqueViolation(err) {
-				variant.SKU = utils.SKU.Generate(storeID, productName, variant.Name)
+			if db.IsUniqueViolation(err) {
+				variant.SKU = GenerateSku(storeCode, productName, variant.Name)
 				if attempt == maxAttempts {
 					return db.HandleDBError(err)
 				}

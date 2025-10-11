@@ -18,6 +18,7 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 	store := &Store{
 		OrganizationID: organizationID,
 		Name:           storeReq.Name,
+		Code:           storeReq.Code,
 		Locale:         storeReq.Locale,
 		Currency:       storeReq.Currency,
 		Timezone:       storeReq.Timezone,
@@ -27,6 +28,14 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 		return nil, db.HandleDBError(err)
 	}
 	return store, nil
+}
+
+func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID, code string) (bool, error) {
+	existingStore, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeOrganizationID(organizationID), s.storeRepo.ScopeCode(code))
+	if err != nil {
+		return false, db.HandleDBError(err)
+	}
+	return existingStore == nil, nil
 }
 
 func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq *UpdateStoreRequest) (*Store, error) {
