@@ -91,22 +91,35 @@ func getNavGroups() []NavGroup {
 		{
 			Title: "Business",
 			Links: []NavLink{
-				{Href: "/orders", Icon: "shopping-cart", Label: "Orders"},
 				{Href: "/products", Icon: "package", Label: "Products & Inventory"},
+				{Href: "/orders", Icon: "shopping-cart", Label: "Orders"},
 				{Href: "/customers", Icon: "users", Label: "Customers"},
-				{Href: "/invoices", Icon: "file-text", Label: "Payments & Invoices"},
-				{Href: "/expenses", Icon: "dollar-sign", Label: "Expenses"},
 				{Href: "/suppliers", Icon: "package", Label: "Suppliers"},
 			},
 		},
 		{
-			Title: "Reports & Analytics",
+			Title: "Finance",
 			Links: []NavLink{
-				// {Href: "/growth/marketing", Icon: "bar-chart-2", Label: "Marketing & Funnels"},
-				{Href: "/analytics/sales", Icon: "", Label: "Sales Report"},
-				{Href: "/analytics/pnl", Icon: "", Label: "Profit and Loss Report"},
-				{Href: "/analytics/customers", Icon: "", Label: "Customers Report"},
-				{Href: "/analytics/expenses", Icon: "", Label: "Expenses Report"},
+				{Href: "/assets", Icon: "briefcase", Label: "Capital & Assets"},
+				{Href: "/expenses", Icon: "dollar-sign", Label: "Expenses"},
+				{Href: "/invoices", Icon: "file-text", Label: "Payments & Invoices"},
+			},
+		},
+		{
+			Title: "Growth & Analytics",
+			Links: []NavLink{
+				{Href: "/analytics/sales", Icon: "trending-up", Label: "Sales Trends"},
+				{Href: "/analytics/customers", Icon: "users", Label: "Customer Insights"},
+				{Href: "/analytics/operation", Icon: "activity", Label: "Operation Metrics"},
+				{Href: "/analytics/cost", Icon: "bar-chart-2", Label: "Cost Analysis"},
+			},
+		},
+		{
+			Title: "Financial Reports",
+			Links: []NavLink{
+				{Href: "/reports/balance", Icon: "layers", Label: "Financial Position"},
+				{Href: "/reports/income", Icon: "pie-chart", Label: "Profit & Loss"},
+				{Href: "/reports/cashflow", Icon: "repeat", Label: "Cash Flow"},
 			},
 		},
 		{
