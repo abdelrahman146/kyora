@@ -8,6 +8,8 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/abdelrahman146/kyora/internal/web/handlers"
 	"github.com/abdelrahman146/kyora/internal/web/webrouter"
@@ -66,11 +68,16 @@ func runWeb(cmd *cobra.Command, args []string) {
 
 	organizationRepo := account.NewOrganizationRepository(postgres)
 	userRepo := account.NewUserRepository(postgres)
+	storeRepo := store.NewStoreRepository(postgres)
+	productRepo := inventory.NewProductRepository(postgres)
+	variantRepo := inventory.NewVariantRepository(postgres)
 
 	_ = account.NewAuthenticationService(userRepo)
 	_ = account.NewOnboardingService(userRepo, organizationRepo, atomicProcess)
 	_ = account.NewOrganizationService(organizationRepo)
 	_ = account.NewUserService(userRepo)
+	_ = store.NewStoreService(storeRepo)
+	_ = inventory.NewInventoryService(productRepo, variantRepo, atomicProcess)
 
 	router := webrouter.NewRouter()
 	dashboardHandler := handlers.NewDashboardHandler()

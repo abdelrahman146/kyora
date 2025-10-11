@@ -3,6 +3,7 @@ package inventory
 import (
 	"time"
 
+	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/govalues/decimal"
 	"gorm.io/gorm"
@@ -17,10 +18,13 @@ const (
 type Variant struct {
 	gorm.Model
 	ID            string          `gorm:"column:id;primaryKey;type:text" json:"id"`
+	StoreID       string          `gorm:"column:store_id;type:text;not null;index;uniqueIndex:sku_store_idx" json:"storeId"`
+	Store         *store.Store    `gorm:"foreignKey:StoreID;references:ID" json:"store,omitempty"`
 	Name          string          `gorm:"column:name;type:text;not null;index:variant_trgm_idx,type:gin,option:gin_trgm_ops" json:"name"`
-	ProductID     string          `gorm:"column:product_id;type:text;not null;index" json:"productId"`
+	Code          string          `gorm:"column:code;type:text;not null;uniqueIndex:code_product_idx" json:"code"`
+	ProductID     string          `gorm:"column:product_id;type:text;not null;index;uniqueIndex:code_product_idx" json:"productId"`
 	Product       *Product        `gorm:"foreignKey:ProductID;references:ID" json:"product,omitempty"`
-	SKU           string          `gorm:"column:sku;type:text;not null;unique" json:"sku"`
+	SKU           string          `gorm:"column:sku;type:text;not null;uniqueIndex:sku_store_idx" json:"sku"`
 	CostPrice     decimal.Decimal `gorm:"column:cost_price;type:numeric;not null;default:0" json:"costPrice"`
 	SalePrice     decimal.Decimal `gorm:"column:sale_price;type:numeric;not null;default:0" json:"salePrice"`
 	Currency      string          `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
@@ -36,8 +40,8 @@ func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateVariantRequest struct {
-	Name          string          `json:"name" binding:"required"`
-	SKU           string          `json:"sku" binding:"required"`
+	Code          string          `json:"code" binding:"required"`
+	SKU           string          `json:"sku" binding:"omitempty"`
 	CostPrice     decimal.Decimal `json:"costPrice" binding:"required,gte=0"`
 	SalePrice     decimal.Decimal `json:"salePrice" binding:"required,gte=0"`
 	StockQuantity int             `json:"stockQuantity" binding:"required,gte=0"`
@@ -45,7 +49,7 @@ type CreateVariantRequest struct {
 }
 
 type UpdateVariantRequest struct {
-	Name          string          `json:"name" binding:"omitempty"`
+	Code          string          `json:"code" binding:"omitempty"`
 	SKU           string          `json:"sku" binding:"omitempty"`
 	CostPrice     decimal.Decimal `json:"costPrice" binding:"omitempty,gte=0"`
 	SalePrice     decimal.Decimal `json:"salePrice" binding:"omitempty,gte=0"`

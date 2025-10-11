@@ -115,6 +115,12 @@ func (r *VariantRepository) CreateMany(ctx context.Context, variants []*Variant,
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&variants).Error
 }
 
+// CreateManyStrict inserts all variants and returns an error on any conflict/violation.
+// Useful when caller wants to handle unique conflicts explicitly.
+func (r *VariantRepository) CreateManyStrict(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Create(&variants).Error
+}
+
 func (r *VariantRepository) UpsertMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},

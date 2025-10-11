@@ -85,6 +85,12 @@ func (r *ProductRepository) ScopeFilter(filter *ProductFilter) func(db *gorm.DB)
 	}
 }
 
+func (r *ProductRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("store_id = ?", storeID)
+	}
+}
+
 func (r *ProductRepository) CreateOne(ctx context.Context, product *Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(product).Error
 }
