@@ -46,9 +46,9 @@ type UpdateProductRequest struct {
 }
 
 type ProductFilter struct {
-	IDs         []string  `json:"ids" binding:"omitempty,dive,required"`
-	Tags        []string  `json:"tags" binding:"omitempty,dive,required"`
-	SearchQuery string    `json:"searchQuery" binding:"omitempty"`
-	From        time.Time `json:"from" binding:"omitempty"`
-	To          time.Time `json:"to" binding:"omitempty"`
+	IDs         []string  `form:"ids" json:"ids" binding:"omitempty,dive,required"`
+	Tags        []string  `form:"tags" json:"tags" binding:"omitempty,dive,required"`
+	SearchQuery string    `form:"searchQuery" json:"searchQuery" binding:"omitempty"`
+	From        time.Time `form:"from" json:"from" binding:"omitempty"`
+	To          time.Time `form:"to" json:"to" binding:"omitempty"`
 }

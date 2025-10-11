@@ -3,6 +3,7 @@ package store
 import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/utils"
+	"github.com/govalues/decimal"
 	"gorm.io/gorm"
 )
 
@@ -22,7 +23,7 @@ type Store struct {
 	Locale         string                `gorm:"column:locale;type:text;not null;default:'en'" json:"locale"`
 	Currency       string                `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
 	Timezone       string                `gorm:"column:timezone;type:text;not null;default:'UTC'" json:"timezone"`
-	VATRate        int                   `gorm:"column:vat_rate;type:int;not null;default:0" json:"vatRate"`
+	VATRate        decimal.Decimal       `gorm:"column:vat_rate;type:numeric;not null;default:0" json:"vatRate"`
 }
 
 func (m *Store) BeforeCreate(tx *gorm.DB) (err error) {
@@ -33,18 +34,18 @@ func (m *Store) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateStoreRequest struct {
-	Name     string `json:"name" binding:"required"`
-	Code     string `json:"code" binding:"required,alphanum"`
-	Locale   string `json:"locale" binding:"omitempty"`
-	Currency string `json:"currency" binding:"omitempty,len=3"`
-	Timezone string `json:"timezone" binding:"omitempty"`
-	VATRate  int    `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	Name     string          `json:"name" binding:"required"`
+	Code     string          `json:"code" binding:"required,alphanum"`
+	Locale   string          `json:"locale" binding:"omitempty"`
+	Currency string          `json:"currency" binding:"omitempty,len=3"`
+	Timezone string          `json:"timezone" binding:"omitempty"`
+	VATRate  decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
 }
 
 type UpdateStoreRequest struct {
-	Name     string `json:"name" binding:"omitempty"`
-	Locale   string `json:"locale" binding:"omitempty"`
-	Currency string `json:"currency" binding:"omitempty,len=3"`
-	Timezone string `json:"timezone" binding:"omitempty"`
-	VATRate  int    `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	Name     string          `json:"name" binding:"omitempty"`
+	Locale   string          `json:"locale" binding:"omitempty"`
+	Currency string          `json:"currency" binding:"omitempty,len=3"`
+	Timezone string          `json:"timezone" binding:"omitempty"`
+	VATRate  decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
 }

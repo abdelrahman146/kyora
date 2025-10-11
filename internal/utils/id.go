@@ -30,6 +30,10 @@ func (idHelper) NewBase62(size int) string {
 	return ulid.MustNew(ulid.Now(), ulid.DefaultEntropy()).String()[0:size]
 }
 
+func (h idHelper) NewBase62WithPrefix(prefix string, size int) string {
+	return prefix + h.NewBase62(size)
+}
+
 func (idHelper) RandomNumber(length int) (string, error) {
 	const table = "1234567890"
 	b := make([]byte, length)

@@ -40,30 +40,30 @@ func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateVariantRequest struct {
-	Code          string          `json:"code" binding:"required"`
-	SKU           string          `json:"sku" binding:"omitempty"`
-	CostPrice     decimal.Decimal `json:"costPrice" binding:"required,gte=0"`
-	SalePrice     decimal.Decimal `json:"salePrice" binding:"required,gte=0"`
-	StockQuantity int             `json:"stockQuantity" binding:"required,gte=0"`
-	StockAlert    int             `json:"stockAlert" binding:"required,gte=0"`
+	Code          string          `form:"code" json:"code" binding:"required"`
+	SKU           string          `form:"sku" json:"sku" binding:"omitempty"`
+	CostPrice     decimal.Decimal `form:"costPrice" json:"costPrice" binding:"required,gte=0"`
+	SalePrice     decimal.Decimal `form:"salePrice" json:"salePrice" binding:"required,gte=0"`
+	StockQuantity int             `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
+	StockAlert    int             `form:"stockAlert" json:"stockAlert" binding:"required,gte=0"`
 }
 
 type UpdateVariantRequest struct {
-	Code          string          `json:"code" binding:"omitempty"`
-	SKU           string          `json:"sku" binding:"omitempty"`
-	CostPrice     decimal.Decimal `json:"costPrice" binding:"omitempty,gte=0"`
-	SalePrice     decimal.Decimal `json:"salePrice" binding:"omitempty,gte=0"`
-	Currency      string          `json:"currency" binding:"omitempty,len=3"`
-	StockQuantity int             `json:"stockQuantity" binding:"omitempty,gte=0"`
-	StockAlert    int             `json:"stockAlert" binding:"omitempty,gte=0"`
+	Code          string          `form:"code" json:"code" binding:"omitempty"`
+	SKU           string          `form:"sku" json:"sku" binding:"omitempty"`
+	CostPrice     decimal.Decimal `form:"costPrice" json:"costPrice" binding:"omitempty,gte=0"`
+	SalePrice     decimal.Decimal `form:"salePrice" json:"salePrice" binding:"omitempty,gte=0"`
+	Currency      string          `form:"currency" json:"currency" binding:"omitempty,len=3"`
+	StockQuantity int             `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
+	StockAlert    int             `form:"stockAlert" json:"stockAlert" binding:"omitempty,gte=0"`
 }
 
 type VariantFilter struct {
-	IDs         []string  `json:"ids" binding:"omitempty,dive,required"`
-	SKUs        []string  `json:"skus" binding:"omitempty,dive,required"`
-	ProductIDs  []string  `json:"productIds" binding:"omitempty,dive,required"`
-	ProductTags []string  `json:"productTags" binding:"omitempty,dive,required"`
-	SearchQuery string    `json:"searchQuery" binding:"omitempty"`
-	From        time.Time `json:"from" binding:"omitempty"`
-	To          time.Time `json:"to" binding:"omitempty"`
+	IDs         []string  `form:"ids" json:"ids" binding:"omitempty,dive,required"`
+	SKUs        []string  `form:"skus" json:"skus" binding:"omitempty,dive,required"`
+	ProductIDs  []string  `form:"productIds" json:"productIds" binding:"omitempty,dive,required"`
+	ProductTags []string  `form:"productTags" json:"productTags" binding:"omitempty,dive,required"`
+	SearchQuery string    `form:"searchQuery" json:"searchQuery" binding:"omitempty"`
+	From        time.Time `form:"from" json:"from" binding:"omitempty"`
+	To          time.Time `form:"to" json:"to" binding:"omitempty"`
 }
