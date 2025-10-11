@@ -59,6 +59,10 @@ func (sm *OrderStateMachine) TransitionPaymentStatusTo(newStatus OrderPaymentSta
 	if !sm.CanTransitionPaymentStatusTo(newStatus) {
 		return utils.Problem.UnprocessableEntity(fmt.Sprintf("cannot transition payment status from %s to %s", sm.order.PaymentStatus, newStatus)).With("currentState", sm.order.PaymentStatus)
 	}
+	allowedOrderStatuses := []OrderStatus{OrderStatusPlaced, OrderStatusShipped, OrderStatusFulfilled}
+	if !slices.Contains(allowedOrderStatuses, sm.order.Status) {
+		return utils.Problem.UnprocessableEntity(fmt.Sprintf("cannot set payment status to %s when order status is %s", newStatus, sm.order.Status)).With("orderStatus", sm.order.Status)
+	}
 	sm.order.PaymentStatus = newStatus
 	newStatus.UpdateTimestampField(sm.order)
 	return nil

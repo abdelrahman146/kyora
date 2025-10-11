@@ -196,13 +196,30 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, storeID, orderID s
 	return order, nil
 }
 
-func (s *OrderService) UpdateOrderPaymentStatus(ctx context.Context, storeID, orderID string, newStatus OrderPaymentStatus) (*Order, error) {
+func (s *OrderService) PayOrder(ctx context.Context, storeID, orderID string, paymentDetails *AddOrderPaymentDetailsRequest) (*Order, error) {
 	order, err := s.GetOrderByID(ctx, storeID, orderID)
 	if err != nil {
 		return nil, err
 	}
 	sm := NewOrderStateMachine(order)
-	if err := sm.TransitionPaymentStatusTo(newStatus); err != nil {
+	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusPaid); err != nil {
+		return nil, err
+	}
+	order.PaymentMethod = paymentDetails.PaymentMethod
+	order.PaymentReference = paymentDetails.PaymentReference
+	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
+		return nil, err
+	}
+	return order, nil
+}
+
+func (s *OrderService) RefundOrder(ctx context.Context, storeID, orderID string) (*Order, error) {
+	order, err := s.GetOrderByID(ctx, storeID, orderID)
+	if err != nil {
+		return nil, err
+	}
+	sm := NewOrderStateMachine(order)
+	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusRefunded); err != nil {
 		return nil, err
 	}
 	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {

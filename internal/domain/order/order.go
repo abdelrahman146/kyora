@@ -92,8 +92,8 @@ type Order struct {
 	Currency           string             `gorm:"column:currency;type:text;not null" json:"currency"`
 	Status             OrderStatus        `gorm:"column:status;type:text;not null;default:'pending'" json:"status"`
 	PaymentStatus      OrderPaymentStatus `gorm:"column:payment_status;type:text;not null;default:'pending'" json:"paymentStatus"`
-	PaymentMethod      OrderPaymentMethod `gorm:"column:payment_method;type:text;not null;default:'credit_card'" json:"paymentMethod"`
-	PaymentReference   string             `gorm:"column:payment_reference;type:text" json:"paymentReference,omitempty"`
+	PaymentMethod      OrderPaymentMethod `gorm:"column:payment_method;type:text;not null;default:'bank_transfer'" json:"paymentMethod"`
+	PaymentReference   sql.NullString     `gorm:"column:payment_reference;type:text" json:"paymentReference,omitempty"`
 	PlacedAt           sql.NullTime       `gorm:"column:placed_at" json:"placedAt"`
 	ReadyForShipmentAt sql.NullTime       `gorm:"column:ready_for_shipment_at" json:"readyForShipmentAt"`
 	ShippedAt          sql.NullTime       `gorm:"column:shipped_at" json:"shippedAt"`
@@ -120,27 +120,19 @@ type CreateOrderRequest struct {
 	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
 	Discount          decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
 	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
-	PaymentReference  string                    `json:"paymentReference" binding:"omitempty"`
+	PaymentReference  sql.NullString            `json:"paymentReference" binding:"omitempty"`
 	Items             []*CreateOrderItemRequest `json:"items" binding:"required,dive,required"`
 }
 
 type UpdateOrderRequest struct {
-	Status             OrderStatus               `json:"status" binding:"omitempty,oneof=pending placed ready_for_shipment shipped fulfilled cancelled returned"`
-	PaymentStatus      OrderPaymentStatus        `json:"paymentStatus" binding:"omitempty,oneof=pending paid failed refunded"`
-	PaymentMethod      OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
-	PaymentReference   string                    `json:"paymentReference" binding:"omitempty,required_with=PaymentMethod"`
-	ShippingFee        decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
-	Discount           decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
-	PlacedAt           sql.NullTime              `json:"placedAt" binding:"omitempty,required_with=Status eq placed"`
-	ReadyForShipmentAt sql.NullTime              `json:"readyForShipmentAt" binding:"omitempty,required_with=Status eq ready_for_shipment"`
-	ShippedAt          sql.NullTime              `json:"shippedAt" binding:"omitempty,required_with=Status eq shipped"`
-	FulfilledAt        sql.NullTime              `json:"fulfilledAt" binding:"omitempty,required_with=Status eq fulfilled"`
-	CancelledAt        sql.NullTime              `json:"cancelledAt" binding:"omitempty,required_with=Status eq cancelled"`
-	ReturnedAt         sql.NullTime              `json:"returnedAt" binding:"omitempty,required_with=Status eq returned"`
-	PaidAt             sql.NullTime              `json:"paidAt" binding:"omitempty,required_with=PaymentStatus eq paid"`
-	FailedAt           sql.NullTime              `json:"failedAt" binding:"omitempty,required_with=PaymentStatus eq failed"`
-	RefundedAt         sql.NullTime              `json:"refundedAt" binding:"omitempty,required_with=PaymentStatus eq refunded"`
-	Items              []*UpdateOrderItemRequest `json:"items" binding:"omitempty,dive,required"`
+	ShippingFee decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
+	Discount    decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
+	Items       []*UpdateOrderItemRequest `json:"items" binding:"omitempty,dive,required"`
+}
+
+type AddOrderPaymentDetailsRequest struct {
+	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery"`
+	PaymentReference sql.NullString     `json:"paymentReference" binding:"omitempty"`
 }
 
 type OrderFilter struct {
