@@ -8,6 +8,8 @@ require (
 	github.com/gin-gonic/gin v1.11.0
 	github.com/go-errors/errors v1.5.1
 	github.com/golang-jwt/jwt/v5 v5.3.0
+	github.com/govalues/decimal v0.1.36
+	github.com/lib/pq v1.10.9
 	github.com/oklog/ulid/v2 v2.1.1
 	github.com/pquerna/otp v1.5.0
 	github.com/segmentio/ksuid v1.0.4
