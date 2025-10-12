@@ -2,6 +2,7 @@ package expense
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
@@ -54,6 +55,8 @@ type Expense struct {
 	RecurringExpenseID sql.NullString    `gorm:"column:recurring_expense_id;type:text;index" json:"recurringExpenseId"`
 	RecurringExpense   *RecurringExpense `gorm:"foreignKey:RecurringExpenseID;references:ID" json:"recurringExpense,omitempty"`
 	Amount             decimal.Decimal   `gorm:"column:amount;type:numeric;not null" json:"amount"`
+	Currency           string            `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
+	OccurredOn         time.Time         `gorm:"column:occurred_on;type:date;not null" json:"occurredOn"`
 	Category           ExpenseCategory   `gorm:"column:category;type:text;not null;index" json:"category"`
 	Type               ExpenseType       `gorm:"column:type;type:text;not null;index" json:"type"`
 	Note               string            `gorm:"column:note;type:text" json:"note"`
@@ -72,6 +75,7 @@ type CreateExpenseRequest struct {
 	Type               ExpenseType     `form:"type" json:"type" binding:"required"`
 	RecurringExpenseID sql.NullString  `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
 	Note               string          `form:"note" json:"note" binding:"omitempty"`
+	OccurredOn         *time.Time      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
 }
 
 type UpdateExpenseRequest struct {
@@ -80,6 +84,7 @@ type UpdateExpenseRequest struct {
 	Type               ExpenseType     `form:"type" json:"type" binding:"omitempty"`
 	RecurringExpenseID sql.NullString  `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
 	Note               string          `form:"note" json:"note" binding:"omitempty"`
+	OccurredOn         *time.Time      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
 }
 
 type ExpenseFilter struct {

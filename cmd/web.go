@@ -8,6 +8,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/expense"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
@@ -59,7 +60,7 @@ func runWeb(cmd *cobra.Command, args []string) {
 	postgres, err := db.NewPostgres(viper.GetString("db.dsn"), &gorm.Config{
 		Logger: db.NewSlogGormLogger(gormlogger.Warn),
 	})
-	postgres.AutoMigrate(account.User{}, account.Organization{})
+	postgres.AutoMigrate(account.User{}, account.Organization{}, expense.Expense{}, expense.RecurringExpense{})
 	if err != nil {
 		log.Fatal("failed to connect to database", utils.Log.Err(err))
 	}

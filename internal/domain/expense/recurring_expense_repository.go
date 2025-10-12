@@ -2,6 +2,7 @@ package expense
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 
@@ -74,6 +75,20 @@ func (r *RecurringExpenseRepository) ScopeFilter(filter *RecurringExpenseFilter)
 			db = db.Where("frequency IN ?", filter.Frequencies)
 		}
 		return db
+	}
+}
+
+func (r *RecurringExpenseRepository) ScopeStatus(status RecurringExpenseStatus) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB { return db.Where("status = ?", status) }
+}
+
+func (r *RecurringExpenseRepository) ScopeStartDateLte(t time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB { return db.Where("recurring_start_date <= ?", t) }
+}
+
+func (r *RecurringExpenseRepository) ScopeEndDateGteOrNull(t time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("recurring_end_date IS NULL OR recurring_end_date >= ?", t)
 	}
 }
 

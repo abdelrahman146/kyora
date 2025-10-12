@@ -42,7 +42,9 @@ type RecurringExpense struct {
 	Frequency          RecurringExpenseFrequency `gorm:"column:frequency;type:text;not null" json:"frequency"`
 	RecurringEndDate   sql.NullTime              `gorm:"column:recurring_end_date;type:timestamp" json:"recurringEndDate"`
 	RecurringStartDate time.Time                 `gorm:"column:recurring_start_date;type:timestamp;not null" json:"recurringStartDate"`
+	NextRecurringDate  time.Time                 `gorm:"column:next_recurring_date;type:date;index" json:"nextRecurringDate"`
 	Amount             decimal.Decimal           `gorm:"column:amount;type:numeric;not null" json:"amount"`
+	Currency           string                    `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
 	Category           ExpenseCategory           `gorm:"column:category;type:text;not null" json:"category"`
 	Status             RecurringExpenseStatus    `gorm:"column:status;type:text;not null;default:'active'" json:"status"`
 	Note               string                    `gorm:"column:note;type:text" json:"note"`

@@ -2,6 +2,8 @@ package expense
 
 import (
 	"context"
+	"database/sql"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
@@ -59,12 +61,22 @@ func (s *ExpenseService) CreateExpense(ctx context.Context, storeID string, req 
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
+	st, err := s.storeService.GetStoreByID(ctx, storeID)
+	if err != nil {
+		return nil, err
+	}
 	expense := &Expense{
 		StoreID:  storeID,
 		Amount:   req.Amount,
+		Currency: st.Currency,
 		Category: req.Category,
 		Type:     req.Type,
 		Note:     req.Note,
+	}
+	if req.OccurredOn != nil && !req.OccurredOn.IsZero() {
+		expense.OccurredOn = startOfDay((*req.OccurredOn).In(time.UTC))
+	} else {
+		expense.OccurredOn = startOfDay(time.Now().In(time.UTC))
 	}
 	if err := s.expenseRepo.CreateOne(ctx, expense); err != nil {
 		return nil, err
@@ -160,16 +172,29 @@ func (s *ExpenseService) CreateRecurringExpense(ctx context.Context, storeID str
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
+	st, err := s.storeService.GetStoreByID(ctx, storeID)
+	if err != nil {
+		return nil, err
+	}
 	expense := &RecurringExpense{
 		StoreID:            storeID,
 		Frequency:          req.Frequency,
 		RecurringEndDate:   req.RecurringEndDate,
 		RecurringStartDate: req.RecurringStartDate,
 		Amount:             req.Amount,
+		Currency:           st.Currency,
 		Category:           req.Category,
 		Note:               req.Note,
 	}
-	if err := s.recurringRepo.CreateOne(ctx, expense); err != nil {
+	today := startOfDay(time.Now().In(time.UTC))
+	start := startOfDay(req.RecurringStartDate.In(time.UTC))
+	expense.NextRecurringDate = s.initNextRecurringDateForCreate(start, req.Frequency, today)
+	if err := s.atomicProcess.Exec(ctx, func(txCtx context.Context) error {
+		if err := s.recurringRepo.CreateOne(txCtx, expense); err != nil {
+			return err
+		}
+		return s.backfillPastOccurrencesForCreate(txCtx, st, expense, start, today)
+	}); err != nil {
 		return nil, err
 	}
 	return expense, nil
@@ -316,4 +341,212 @@ func (s *ExpenseService) EndRecurringExpense(ctx context.Context, storeID, recur
 		return nil, err
 	}
 	return expense, nil
+}
+
+// backfillPastOccurrences creates Expense rows for each past occurrence from RecurringStartDate
+// up to but not including the first future occurrence relative to now, honoring RecurringEndDate.
+// backfillPastOccurrences removed due to new NextRecurringDate approach
+
+// ProcessRecurringExpensesDaily checks all active recurring expenses and creates an expense
+// when an occurrence is due today (including first-time when start date passes).
+func (s *ExpenseService) ProcessRecurringExpensesDaily(ctx context.Context) error {
+	today := startOfDay(time.Now().In(time.UTC))
+	end := today.Add(24 * time.Hour)
+	return s.atomicProcess.Exec(ctx, func(txCtx context.Context) error {
+		recurs, err := s.fetchActiveRecurringForWindow(txCtx, today)
+		if err != nil || len(recurs) == 0 {
+			return err
+		}
+		storeCache := map[string]*store.Store{}
+		toCreate := make([]*Expense, 0)
+		for _, re := range recurs {
+			created, err := s.processOneRecurringForDay(txCtx, storeCache, re, today, end)
+			if err != nil {
+				return err
+			}
+			if created != nil {
+				toCreate = append(toCreate, created)
+			}
+		}
+		if len(toCreate) == 0 {
+			return nil
+		}
+		return s.expenseRepo.CreateMany(txCtx, toCreate)
+	})
+}
+
+func (s *ExpenseService) fetchActiveRecurringForWindow(ctx context.Context, today time.Time) ([]*RecurringExpense, error) {
+	return s.recurringRepo.List(ctx,
+		s.recurringRepo.ScopeStatus(RecurringExpenseStatusActive),
+		s.recurringRepo.ScopeStartDateLte(today),
+		s.recurringRepo.ScopeEndDateGteOrNull(today),
+	)
+}
+
+func (s *ExpenseService) processOneRecurringForDay(ctx context.Context, storeCache map[string]*store.Store, re *RecurringExpense, today, end time.Time) (*Expense, error) {
+	if err := s.ensureNextRecurringInitialized(ctx, re, today); err != nil {
+		return nil, err
+	}
+	if !re.NextRecurringDate.Before(end) {
+		return nil, nil
+	}
+	exp, err := s.buildExpenseIfNotExists(ctx, storeCache, re, re.NextRecurringDate)
+	if err != nil {
+		return nil, err
+	}
+	if err := s.advanceOrEndRecurring(ctx, re); err != nil {
+		return nil, err
+	}
+	return exp, nil
+}
+
+func (s *ExpenseService) ensureNextRecurringInitialized(ctx context.Context, re *RecurringExpense, today time.Time) error {
+	if !re.NextRecurringDate.IsZero() {
+		return nil
+	}
+	start := startOfDay(re.RecurringStartDate.In(time.UTC))
+	if !start.After(today) {
+		re.NextRecurringDate = nextOccurrenceOnOrAfter(start, re.Frequency, today)
+	} else {
+		re.NextRecurringDate = start
+	}
+	return s.recurringRepo.UpdateOne(ctx, re)
+}
+
+func (s *ExpenseService) buildExpenseIfNotExists(ctx context.Context, storeCache map[string]*store.Store, re *RecurringExpense, forDate time.Time) (*Expense, error) {
+	exists, err := s.hasExpenseForRecurringOnDate(ctx, re, forDate)
+	if err != nil || exists {
+		if err != nil {
+			return nil, err
+		}
+		return nil, nil
+	}
+	st, ok := storeCache[re.StoreID]
+	if !ok {
+		st, err = s.storeService.GetStoreByID(ctx, re.StoreID)
+		if err != nil {
+			return nil, err
+		}
+		storeCache[re.StoreID] = st
+	}
+	return &Expense{
+		StoreID:            re.StoreID,
+		RecurringExpenseID: sql.NullString{String: re.ID, Valid: true},
+		Amount:             re.Amount,
+		Currency:           st.Currency,
+		Category:           re.Category,
+		Type:               ExpenseTypeRecurring,
+		Note:               re.Note,
+		OccurredOn:         startOfDay(forDate),
+	}, nil
+}
+
+func (s *ExpenseService) advanceOrEndRecurring(ctx context.Context, re *RecurringExpense) error {
+	next := addFrequency(startOfDay(re.NextRecurringDate), re.Frequency)
+	if re.RecurringEndDate.Valid && next.After(re.RecurringEndDate.Time) {
+		sm := NewRecurringExpenseStateMachine(re)
+		if sm.CanTransitionTo(RecurringExpenseStatusEnded) {
+			_ = sm.TransitionTo(RecurringExpenseStatusEnded)
+		}
+	} else {
+		re.NextRecurringDate = next
+	}
+	return s.recurringRepo.UpdateOne(ctx, re)
+}
+
+// fetchActiveRecurringForDate and buildPendingExpensesForDate removed; replaced by NextRecurringDate-based processing
+
+// Helpers for frequency calculations
+func addFrequency(t time.Time, freq RecurringExpenseFrequency) time.Time {
+	switch freq.String {
+	case "daily":
+		return t.AddDate(0, 0, 1)
+	case "weekly":
+		return t.AddDate(0, 0, 7)
+	case "monthly":
+		return t.AddDate(0, 1, 0)
+	case "yearly":
+		return t.AddDate(1, 0, 0)
+	default:
+		return t
+	}
+}
+
+// nextOccurrenceOnOrAfter returns the first occurrence that is on or after 'after'.
+func nextOccurrenceOnOrAfter(start time.Time, freq RecurringExpenseFrequency, after time.Time) time.Time {
+	d := start
+	for d.Before(after) {
+		d = addFrequency(d, freq)
+	}
+	return d
+}
+
+// isOccurrenceDueToday returns true if there's an occurrence that should be recorded today.
+// We treat the recurrence to fire when the occurrence date's date equals today's date in UTC.
+// isOccurrenceOnDate no longer needed with NextRecurringDate
+
+func sameDay(a, b time.Time) bool {
+	ay, am, ad := a.Date()
+	by, bm, bd := b.Date()
+	return ay == by && am == bm && ad == bd
+}
+
+func startOfDay(t time.Time) time.Time {
+	y, m, d := t.Date()
+	return time.Date(y, m, d, 0, 0, 0, 0, t.Location())
+}
+
+func (s *ExpenseService) hasExpenseForRecurringOnDate(ctx context.Context, re *RecurringExpense, day time.Time) (bool, error) {
+	day = startOfDay(day)
+	count, err := s.expenseRepo.Count(ctx,
+		s.expenseRepo.ScopeStoreID(re.StoreID),
+		s.expenseRepo.ScopeRecurringExpenseID(re.ID),
+		s.expenseRepo.ScopeOccurredOn(day),
+	)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}
+
+// initNextRecurringDateForCreate decides initial NextRecurringDate for a newly created recurring expense
+func (s *ExpenseService) initNextRecurringDateForCreate(start time.Time, freq RecurringExpenseFrequency, today time.Time) time.Time {
+	if start.After(today) {
+		return start
+	}
+	return nextOccurrenceOnOrAfter(start, freq, today)
+}
+
+// backfillPastOccurrencesForCreate creates expenses for each due date prior to today during creation
+func (s *ExpenseService) backfillPastOccurrencesForCreate(ctx context.Context, st *store.Store, re *RecurringExpense, start, today time.Time) error {
+	if !start.Before(today) {
+		return nil
+	}
+	var toCreate []*Expense
+	for d := start; d.Before(today); d = addFrequency(d, re.Frequency) {
+		if re.RecurringEndDate.Valid && d.After(re.RecurringEndDate.Time) {
+			break
+		}
+		exist, err := s.hasExpenseForRecurringOnDate(ctx, re, d)
+		if err != nil {
+			return err
+		}
+		if exist {
+			continue
+		}
+		toCreate = append(toCreate, &Expense{
+			StoreID:            re.StoreID,
+			RecurringExpenseID: sql.NullString{String: re.ID, Valid: true},
+			Amount:             re.Amount,
+			Currency:           st.Currency,
+			Category:           re.Category,
+			Type:               ExpenseTypeRecurring,
+			Note:               re.Note,
+			OccurredOn:         d,
+		})
+	}
+	if len(toCreate) == 0 {
+		return nil
+	}
+	return s.expenseRepo.CreateMany(ctx, toCreate)
 }

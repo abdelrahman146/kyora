@@ -2,6 +2,7 @@ package expense
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 
@@ -56,6 +57,19 @@ func (r *ExpenseRepository) ScopeType(expenseType ExpenseType) func(db *gorm.DB)
 func (r *ExpenseRepository) ScopeRecurringExpenseID(recurringExpenseID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("recurring_expense_id = ?", recurringExpenseID)
+	}
+}
+
+func (r *ExpenseRepository) ScopeCreatedAtBetween(start, end time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("created_at >= ? AND created_at < ?", start, end)
+	}
+}
+
+func (r *ExpenseRepository) ScopeOccurredOn(day time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		// Ensure we only match by date portion in case the DB stores timezone
+		return db.Where("occurred_on = ?", day)
 	}
 }
 
