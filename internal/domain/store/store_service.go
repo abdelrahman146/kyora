@@ -22,7 +22,7 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 		Locale:         storeReq.Locale,
 		Currency:       storeReq.Currency,
 		Timezone:       storeReq.Timezone,
-		VATRate:        storeReq.VATRate,
+		VatRate:        storeReq.VatRate,
 	}
 	if err := s.storeRepo.CreateOne(ctx, store); err != nil {
 		return nil, db.HandleDBError(err)
@@ -38,16 +38,25 @@ func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID,
 	return existingStore == nil, nil
 }
 
+func (s *StoreService) ValidateStoreID(ctx context.Context, storeID string) error {
+	_, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeID(storeID))
+	if err != nil {
+		return err
+	}
+	return nil
+}
+
 func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq *UpdateStoreRequest) (*Store, error) {
 	if _, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeID(storeID)); err != nil {
 		return nil, db.HandleDBError(err)
 	}
 	store := &Store{
-		Name:     storeReq.Name,
-		Locale:   storeReq.Locale,
-		Currency: storeReq.Currency,
-		Timezone: storeReq.Timezone,
-		VATRate:  storeReq.VATRate,
+		Name:         storeReq.Name,
+		Locale:       storeReq.Locale,
+		Currency:     storeReq.Currency,
+		Timezone:     storeReq.Timezone,
+		VatRate:      storeReq.VatRate,
+		SafetyBuffer: storeReq.SafetyBuffer,
 	}
 	if err := s.storeRepo.PatchOne(ctx, store, s.storeRepo.ScopeID(storeID), db.WithReturning(&store)); err != nil {
 		return nil, db.HandleDBError(err)

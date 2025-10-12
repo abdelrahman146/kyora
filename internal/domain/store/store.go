@@ -23,7 +23,8 @@ type Store struct {
 	Locale         string                `gorm:"column:locale;type:text;not null;default:'en'" json:"locale"`
 	Currency       string                `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
 	Timezone       string                `gorm:"column:timezone;type:text;not null;default:'UTC'" json:"timezone"`
-	VATRate        decimal.Decimal       `gorm:"column:vat_rate;type:numeric;not null;default:0" json:"vatRate"`
+	VatRate        decimal.Decimal       `gorm:"column:vat_rate;type:numeric;not null;default:0" json:"vatRate"`
+	SafetyBuffer   decimal.Decimal       `gorm:"column:safety_buffer;type:numeric;default:0" json:"safetyBuffer"`
 }
 
 func (m *Store) BeforeCreate(tx *gorm.DB) (err error) {
@@ -34,18 +35,20 @@ func (m *Store) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateStoreRequest struct {
-	Name     string          `json:"name" binding:"required"`
-	Code     string          `json:"code" binding:"required,alphanum"`
-	Locale   string          `json:"locale" binding:"omitempty"`
-	Currency string          `json:"currency" binding:"omitempty,len=3"`
-	Timezone string          `json:"timezone" binding:"omitempty"`
-	VATRate  decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	Name         string          `json:"name" binding:"required"`
+	Code         string          `json:"code" binding:"required,alphanum"`
+	Locale       string          `json:"locale" binding:"omitempty"`
+	Currency     string          `json:"currency" binding:"omitempty,len=3"`
+	Timezone     string          `json:"timezone" binding:"omitempty"`
+	VatRate      decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	SafetyBuffer decimal.Decimal `json:"safetyBuffer" binding:"omitempty,gte=0,lte=100"`
 }
 
 type UpdateStoreRequest struct {
-	Name     string          `json:"name" binding:"omitempty"`
-	Locale   string          `json:"locale" binding:"omitempty"`
-	Currency string          `json:"currency" binding:"omitempty,len=3"`
-	Timezone string          `json:"timezone" binding:"omitempty"`
-	VATRate  decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	Name         string          `json:"name" binding:"omitempty"`
+	Locale       string          `json:"locale" binding:"omitempty"`
+	Currency     string          `json:"currency" binding:"omitempty,len=3"`
+	Timezone     string          `json:"timezone" binding:"omitempty"`
+	VatRate      decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
+	SafetyBuffer decimal.Decimal `json:"safetyBuffer" binding:"omitempty,gte=0,lte=100"`
 }

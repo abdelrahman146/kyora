@@ -104,7 +104,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 		return nil, err
 	}
 	subtotal := s.calculateSubtotal(ctx, order.Items)
-	vat := s.calculateVat(ctx, subtotal, store.VATRate)
+	vat := s.calculateVat(ctx, subtotal, store.VatRate)
 	total := s.calculateTotal(ctx, subtotal, vat, order.ShippingFee, order.Discount)
 	orderNumber := s.generateOrderNumber()
 	newOrder := &Order{
@@ -117,7 +117,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 		Currency:          store.Currency,
 		Subtotal:          subtotal,
 		VAT:               vat,
-		VATRate:           store.VATRate,
+		VATRate:           store.VatRate,
 		ShippingFee:       order.ShippingFee,
 		Discount:          order.Discount,
 		Total:             total,

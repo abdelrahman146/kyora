@@ -1,0 +1,145 @@
+package expense
+
+import (
+	"context"
+
+	"github.com/abdelrahman146/kyora/internal/db"
+
+	"gorm.io/gorm"
+	"gorm.io/gorm/clause"
+)
+
+type ExpenseRepository struct {
+	db *db.Postgres
+}
+
+func NewExpenseRepository(db *db.Postgres) *ExpenseRepository {
+	return &ExpenseRepository{db: db}
+}
+
+func (r *ExpenseRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("id = ?", id)
+	}
+}
+
+func (r *ExpenseRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("id IN ?", ids)
+	}
+}
+
+func (r *ExpenseRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("store_id = ?", storeID)
+	}
+}
+
+func (r *ExpenseRepository) ScopeCategory(category ExpenseCategory) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("category = ?", category)
+	}
+}
+
+func (r *ExpenseRepository) ScopeCategories(categories []ExpenseCategory) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("category IN ?", categories)
+	}
+}
+
+func (r *ExpenseRepository) ScopeType(expenseType ExpenseType) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("type = ?", expenseType)
+	}
+}
+
+func (r *ExpenseRepository) ScopeRecurringExpenseID(recurringExpenseID string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("recurring_expense_id = ?", recurringExpenseID)
+	}
+}
+
+func (r *ExpenseRepository) ScopeFilter(filter *ExpenseFilter) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if filter == nil {
+			return db
+		}
+		if len(filter.IDs) > 0 {
+			db = db.Where("id IN ?", filter.IDs)
+		}
+		if len(filter.Categories) > 0 {
+			db = db.Where("category IN ?", filter.Categories)
+		}
+		if len(filter.Types) > 0 {
+			db = db.Where("type IN ?", filter.Types)
+		}
+		return db
+	}
+}
+
+func (r *ExpenseRepository) CreateOne(ctx context.Context, expense *Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Create(expense).Error
+}
+
+func (r *ExpenseRepository) CreateMany(ctx context.Context, expenses []*Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&expenses).Error
+}
+
+func (r *ExpenseRepository) UpsertMany(ctx context.Context, expenses []*Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
+		Columns:   []clause.Column{{Name: "id"}},
+		DoUpdates: clause.AssignmentColumns([]string{"name", "amount", "category", "note", "updated_at"}),
+	}).Create(&expenses).Error
+}
+
+func (r *ExpenseRepository) UpdateOne(ctx context.Context, expense *Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Save(expense).Error
+}
+
+func (r *ExpenseRepository) UpdateMany(ctx context.Context, expenses []*Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Save(&expenses).Error
+}
+
+func (r *ExpenseRepository) PatchOne(ctx context.Context, updates *Expense, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Model(&Expense{}).Updates(updates).Error
+}
+
+func (r *ExpenseRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Delete(&Expense{}).Error
+}
+
+func (r *ExpenseRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+	return r.db.Conn(ctx, opts...).Delete(&Expense{}).Error
+}
+
+func (r *ExpenseRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Expense, error) {
+	var expense Expense
+	if err := r.db.Conn(ctx, opts...).First(&expense, "id = ?", id).Error; err != nil {
+		return nil, err
+	}
+	return &expense, nil
+}
+
+func (r *ExpenseRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Expense, error) {
+	var expense Expense
+	if err := r.db.Conn(ctx, opts...).First(&expense).Error; err != nil {
+		return nil, err
+	}
+	return &expense, nil
+}
+
+func (r *ExpenseRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Expense, error) {
+	var expenses []*Expense
+	if err := r.db.Conn(ctx, opts...).Find(&expenses).Error; err != nil {
+		return nil, err
+	}
+	return expenses, nil
+}
+
+func (r *ExpenseRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	var count int64
+	if err := r.db.Conn(ctx, opts...).Model(&Expense{}).Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
