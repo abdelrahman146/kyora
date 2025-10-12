@@ -2,6 +2,21 @@
 
 Concise, codebase-specific guidance for AI agents.
 
+## Overview
+
+Kyora is a lightweight business management web app built with the GOTTH stack — Go, Templ, TailwindCSS, and HTMX and alpinejs. It helps solo entrepreneurs and small teams manage products, inventory, orders, customers, and expenses.
+The target user is a solo entrepreneur or home/social-commerce seller, with priorities of simplicity, speed, and minimal hosting costs.
+
+This document provides guidelines for Copilot to assist with consistent development of Kyora’s codebase, following its architecture and functional design.
+
+## Core Principles
+
+Simplicity first: Minimize dependencies, abstractions, and config.
+Server-side rendering (SSR): All pages use Templ and HTMX for interactivity. Avoid full SPAs.
+Multi-user / multi-tenant by design: All data is scoped by `store_id` (a user’s business). an organization can have multiple stores. and users can belong to one organization.
+Idempotence and correctness over optimization.
+Readable, self-contained Go code (prefer standard library + a few vetted libs).
+
 ## Big picture
 
 - Go monolith with a Cobra CLI and two primary commands:
