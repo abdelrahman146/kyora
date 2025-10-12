@@ -8,8 +8,10 @@ var AlertFragmentKey webcontext.FragmentKey
 // Alert renders a daisyUI alert box with a style and message
 // style: one of success | error | warning | info
 templ Alert(style string, message string) {
-    @templ.Fragment(&AlertFragmentKey) {
-        <div role="alert" class={ "alert mt-4 " + (func() string {
+	@templ.Fragment(&AlertFragmentKey) {
+		<div
+			role="alert"
+			class={ "alert mt-4 " + (func() string {
             switch style {
             case "success":
                 return "alert-success"
@@ -20,8 +22,9 @@ templ Alert(style string, message string) {
             default:
                 return "alert-info"
             }
-        })() }>
-            <span>{ message }</span>
-        </div>
-    }
+        })() }
+		>
+			<span>{ message }</span>
+		</div>
+	}
 }

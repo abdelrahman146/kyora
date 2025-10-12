@@ -5,13 +5,14 @@ import (
 	"encoding/json"
 	"time"
 
+	"io"
+	"net/http"
+
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/spf13/viper"
 	"golang.org/x/oauth2"
 	"golang.org/x/oauth2/google"
-	"io"
-	"net/http"
 )
 
 type AuthenticationService struct {
