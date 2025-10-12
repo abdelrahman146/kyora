@@ -3,4 +3,6 @@ DO NOT USE THIS FILE DIRECTLY
 instead, use ./public/css/base.css
 */
 @import "tailwindcss" source("../../internal/web/views");
-@plugin "daisyui";
+@plugin "daisyui" {
+  themes: emerald --default, dracula --prefersdark;
+}

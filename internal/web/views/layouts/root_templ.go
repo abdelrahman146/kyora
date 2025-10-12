@@ -26,118 +26,6 @@ func HtmxHandle400Swap() templ.ComponentScript {
 	}
 }
 
-func InitChartJs() templ.ComponentScript {
-	return templ.ComponentScript{
-		Name: `__templ_InitChartJs_472f`,
-		Function: `function __templ_InitChartJs_472f(){// --- NEW: Kyora Chart Theming Helper ---
-	// This helper makes Chart.js seamlessly integrate with DaisyUI themes.
-	(() => {
-		// All charts initialized on the page are stored here
-		const charts = {};
-
-		// Function to get DaisyUI theme colors as RGB for Chart.js
-		const getThemeColors = () => {
-			// Converts HSL string "h s% l%" to Chart.js compatible "rgb(r, g, b)"
-			const hslToRgb = (hslStr) => {
-				const [h, s, l] = hslStr.split(" ").map(parseFloat);
-				const sNorm = s / 100;
-				const lNorm = l / 100;
-				const c = (1 - Math.abs(2 * lNorm - 1)) * sNorm;
-				const x = c * (1 - Math.abs(((h / 60) % 2) - 1));
-				const m = lNorm - c / 2;
-				let r = 0, g = 0, b = 0;
-				if (h >= 0 && h < 60) { [r,g,b] = [c,x,0]; }
-				else if (h >= 60 && h < 120) { [r,g,b] = [x,c,0]; }
-				else if (h >= 120 && h < 180) { [r,g,b] = [0,c,x]; }
-				else if (h >= 180 && h < 240) { [r,g,b] = [0,x,c]; }
-				else if (h >= 240 && h < 300) { [r,g,b] = [x,0,c]; }
-				else if (h >= 300 && h < 360) { [r,g,b] = [c,0,x]; }
-				return ` + "`" + `rgb(${Math.round((r+m)*255)}, ${Math.round((g+m)*255)}, ${Math.round((b+m)*255)})` + "`" + `;
-			};
-			
-			const style = getComputedStyle(document.documentElement);
-			return {
-				primary: hslToRgb(style.getPropertyValue("--p").trim()),
-				secondary: hslToRgb(style.getPropertyValue("--s").trim()),
-				accent: hslToRgb(style.getPropertyValue("--a").trim()),
-				neutral: hslToRgb(style.getPropertyValue("--n").trim()),
-				baseContent: hslToRgb(style.getPropertyValue("--bc").trim()),
-				base100: hslToRgb(style.getPropertyValue("--b1").trim()),
-			};
-		};
-
-		// Function to update all chart colors
-		const updateChartThemes = () => {
-			const colors = getThemeColors();
-			for (const chartId in charts) {
-				const chart = charts[chartId];
-				// Update grid lines and labels
-				chart.options.scales.x.grid.color = ` + "`" + `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` + "`" + `;
-				chart.options.scales.y.grid.color = ` + "`" + `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` + "`" + `;
-				chart.options.scales.x.ticks.color = colors.baseContent;
-				chart.options.scales.y.ticks.color = colors.baseContent;
-				chart.options.plugins.legend.labels.color = colors.baseContent;
-				chart.update();
-			}
-		};
-
-		// Listen for theme changes on the <html> element
-		const observer = new MutationObserver((mutations) => {
-			mutations.forEach(mutation => {
-				if (mutation.attributeName === "data-theme") {
-					updateChartThemes();
-				}
-			});
-		});
-		observer.observe(document.documentElement, { attributes: true });
-
-		// Expose a global function to render charts
-		window.kyora = {
-			charts,
-			renderChart: (canvasId, config) => {
-				const ctx = document.getElementById(canvasId).getContext('2d');
-				const colors = getThemeColors();
-				
-				// Inject theme colors into the chart config
-				const themedConfig = {
-					...config,
-					options: {
-						...config.options,
-						responsive: true,
-						maintainAspectRatio: false,
-						plugins: {
-							legend: { labels: { color: colors.baseContent } },
-							...config.options?.plugins,
-						},
-						scales: {
-							x: {
-								grid: { color: ` + "`" + `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` + "`" + ` },
-								ticks: { color: colors.baseContent },
-							},
-							y: {
-								grid: { color: ` + "`" + `rgba(${colors.baseContent.slice(4,-1)}, 0.1)` + "`" + ` },
-								ticks: { color: colors.baseContent },
-							},
-							...config.options?.scales
-						}
-					}
-				};
-				
-				if (charts[canvasId]) {
-					charts[canvasId].destroy();
-				}
-				charts[canvasId] = new Chart(ctx, themedConfig);
-			},
-			colors: getThemeColors
-		};
-
-	})();
-}`,
-		Call:       templ.SafeScript(`__templ_InitChartJs_472f`),
-		CallInline: templ.SafeScriptInline(`__templ_InitChartJs_472f`),
-	}
-}
-
 func Root() templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
@@ -159,14 +47,14 @@ func Root() templ.Component {
 			templ_7745c5c3_Var1 = templ.NopComponent
 		}
 		ctx = templ.ClearChildren(ctx)
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" x-data=\"appState()\" x-bind:data-theme=\"theme\" x-bind:dir=\"dir\" hx-boost=\"true\" lang=\"")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<!doctype html><html lang=\"en\" hx-boost=\"true\" lang=\"")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
 		var templ_7745c5c3_Var2 string
 		templ_7745c5c3_Var2, templ_7745c5c3_Err = templ.JoinStringErrs(webcontext.GetPageLocale(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 129, Col: 38}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 20, Col: 38}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var2))
 		if templ_7745c5c3_Err != nil {
@@ -179,7 +67,7 @@ func Root() templ.Component {
 		var templ_7745c5c3_Var3 string
 		templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(webcontext.GetPageDir(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 130, Col: 34}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 21, Col: 34}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
 		if templ_7745c5c3_Err != nil {
@@ -192,7 +80,7 @@ func Root() templ.Component {
 		var templ_7745c5c3_Var4 string
 		templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(webcontext.ComposeFullTitle(webcontext.GetPageTitle(ctx)))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 136, Col: 69}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 27, Col: 69}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
 		if templ_7745c5c3_Err != nil {
@@ -205,7 +93,7 @@ func Root() templ.Component {
 		var templ_7745c5c3_Var5 string
 		templ_7745c5c3_Var5, templ_7745c5c3_Err = templ.JoinStringErrs(webcontext.GetPageDescription(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 137, Col: 72}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 28, Col: 72}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var5))
 		if templ_7745c5c3_Err != nil {
@@ -218,13 +106,13 @@ func Root() templ.Component {
 		var templ_7745c5c3_Var6 string
 		templ_7745c5c3_Var6, templ_7745c5c3_Err = templ.JoinStringErrs(webcontext.GetPageKeywords(ctx))
 		if templ_7745c5c3_Err != nil {
-			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 138, Col: 66}
+			return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/layouts/root.templ`, Line: 29, Col: 66}
 		}
 		_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var6))
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
-		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"><!-- [Favicon] icon --><link rel=\"icon\" href=\"/static/images/favicon.svg\" type=\"image/x-icon\"><!-- Tailwind v4 --><script src=\"https://cdn.tailwindcss.com\"></script><script>window.tailwind = { darkMode: [\"class\", \"[data-theme=dark]\"] };</script><!-- Base CSS (Tailwind compiled) --><link rel=\"stylesheet\" href=\"/static/css/base.css\"><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/style.css\"><!-- Inter Font (Google Fonts) --><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\"><!-- Feather Icons --><script src=\"https://unpkg.com/feather-icons\"></script><!-- Alpine.js --><script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script><!-- HTMX --><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js\"></script><!-- App init --><script defer src=\"/static/js/app-init.js\"></script><meta name=\"theme-color\" content=\"#111827\"><!-- Optional: Chart.js, Moment.js, Litepicker for analytics and date pickers --><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js\"></script></head><body class=\"bg-base-200\" x-data>")
+		templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 6, "\"><!-- [Favicon] icon --><link rel=\"icon\" href=\"/static/images/favicon.svg\" type=\"image/x-icon\"><!-- Base CSS (Tailwind compiled) --><link rel=\"stylesheet\" href=\"/static/css/base.css\"><!-- Custom CSS --><link rel=\"stylesheet\" href=\"/static/css/style.css\"><!-- Inter Font (Google Fonts) --><link rel=\"stylesheet\" href=\"https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap\"><!-- Feather Icons --><script src=\"https://unpkg.com/feather-icons\"></script><!-- Alpine.js --><script defer src=\"https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js\"></script><!-- HTMX --><script src=\"https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js\"></script><!-- Optional: Chart.js, Moment.js, Litepicker for analytics and date pickers --><script src=\"https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js\"></script></head><body class=\"bg-base-200\" x-data>")
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
@@ -241,10 +129,6 @@ func Root() templ.Component {
 			return templ_7745c5c3_Err
 		}
 		templ_7745c5c3_Err = components.FlashToasts().Render(ctx, templ_7745c5c3_Buffer)
-		if templ_7745c5c3_Err != nil {
-			return templ_7745c5c3_Err
-		}
-		templ_7745c5c3_Err = InitChartJs().Render(ctx, templ_7745c5c3_Buffer)
 		if templ_7745c5c3_Err != nil {
 			return templ_7745c5c3_Err
 		}
