@@ -2035,6 +2035,9 @@
     justify-content: flex-end;
     gap: calc(0.25rem * 2);
   }
+  .mt-1 {
+    margin-top: calc(var(--spacing) * 1);
+  }
   .mt-2 {
     margin-top: calc(var(--spacing) * 2);
   }

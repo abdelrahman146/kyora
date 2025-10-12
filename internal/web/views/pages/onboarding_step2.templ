@@ -1,0 +1,38 @@
+package pages
+
+import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+
+templ OnboardingStep2(first, last, email, password, method string) {
+	@layouts.AuthLayout() {
+		<div class="card w-full bg-base-100 shadow-xl">
+			<div class="card-body">
+				<h1 class="card-title text-2xl justify-center">Your organization</h1>
+				<p class="text-center text-base-content/60">Choose a name and a unique slug</p>
+				<form class="mt-4 space-y-4" hx-post="/onboarding/complete" hx-target="body" hx-swap="none">
+					<input type="hidden" name="first_name" value={ first }/>
+					<input type="hidden" name="last_name" value={ last }/>
+					<input type="hidden" name="email" value={ email }/>
+					<input type="hidden" name="password" value={ password }/>
+					<input type="hidden" name="method" value={ method }/>
+					<label class="form-control w-full">
+						<div class="label"><span class="label-text">Organization Name</span></div>
+						<input name="org_name" type="text" class="input input-bordered w-full" required/>
+					</label>
+					<label class="form-control w-full">
+						<div class="label"><span class="label-text">Organization Slug</span></div>
+						<div class="join">
+							<span class="join-item btn btn-ghost no-animation">kyora.app/</span>
+							<input name="org_slug" type="text" class="join-item input input-bordered w-full" hx-get="/onboarding/slug-availability" hx-trigger="keyup changed delay:400ms" hx-target="#slug-status" hx-include="closest form" hx-params="not org_name,password,first_name,last_name,email"/>
+						</div>
+						<div id="slug-status" class="text-sm mt-1"></div>
+					</label>
+					<div class="form-control mt-2">
+						<button class="btn btn-primary">Create organization</button>
+					</div>
+					<div class="divider">Plan</div>
+					<div class="alert alert-info">Plans coming soon. You'll be on the Free plan for now.</div>
+				</form>
+			</div>
+		</div>
+	}
+}

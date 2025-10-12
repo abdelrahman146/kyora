@@ -18,3 +18,11 @@ log:
 jwt:
   secret: "your_jwt_secret_key"
   expiry: 3600 # in seconds
+password_reset_ttl_seconds: 900 # in seconds
+
+google:
+  client_id: ""
+  client_secret: ""
+  redirect_url: "http://localhost:8080/auth/google/callback"
+
+env: "development"

@@ -15,7 +15,7 @@ func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db
 	postgres.AutoMigrate(&User{}, &Organization{})
 
 	return &AccountDomain{
-		AuthService:       NewAuthenticationService(userRepo),
+		AuthService:       NewAuthenticationService(userRepo, cache),
 		OrgService:        NewOrganizationService(organizationRepo),
 		UserService:       NewUserService(userRepo),
 		OnboardingService: NewOnboardingService(userRepo, organizationRepo, atomicProcess),

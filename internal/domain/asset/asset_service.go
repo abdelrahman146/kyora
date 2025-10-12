@@ -46,7 +46,7 @@ func (s *AssetService) CreateAsset(ctx context.Context, storeID string, req *Cre
 		Note:     req.Note,
 	}
 	if err := s.assetRepo.CreateOne(ctx, asset); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return asset, nil
 }
@@ -75,14 +75,14 @@ func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string,
 		asset.Note = req.Note
 	}
 	if err := s.assetRepo.UpdateOne(ctx, asset); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return asset, nil
 }
 
 func (s *AssetService) DeleteAsset(ctx context.Context, storeID, assetID string) error {
 	if err := s.assetRepo.DeleteOne(ctx, s.assetRepo.ScopeID(assetID), s.assetRepo.ScopeStoreID(storeID)); err != nil {
-		return db.HandleDBError(err)
+		return err
 	}
 	return nil
 }

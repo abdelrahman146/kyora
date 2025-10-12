@@ -21,8 +21,9 @@ func (m *Memcache) Get(key string) ([]byte, error) {
 
 func (m *Memcache) Set(key string, value []byte, expiration int32) error {
 	item := &memcache.Item{
-		Key:   key,
-		Value: value,
+		Key:        key,
+		Value:      value,
+		Expiration: expiration,
 	}
 	return m.mc.Set(item)
 }

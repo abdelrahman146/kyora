@@ -52,7 +52,7 @@ Readable, self-contained Go code (prefer standard library + a few vetted libs).
 ## Errors, logging, IDs
 
 - Structured logging: use `utils.Log.FromContext(ctx)`; `LoggerMiddleware` injects `X-Trace-ID` (configurable via `server.trace_id_header`).
-- DB errors → RFC7807: `db.HandleDBError(err)` returns `utils.ProblemDetails` (NotFound/Conflict/Internal).
+- DB errors → RFC7807: `err` returns `utils.ProblemDetails` (NotFound/Conflict/Internal).
 - IDs: `utils.ID.NewKsuid()` (trace); `utils.ID.NewBase62WithPrefix(prefix, n)` for human-friendly codes (orders).
 
 ## Dev workflows

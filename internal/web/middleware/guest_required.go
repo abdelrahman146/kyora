@@ -8,7 +8,7 @@ import (
 func GuestRequiredMiddleware(c *gin.Context) {
 	jwtToken := utils.JWT.GetJwtFromContext(c)
 	if jwtToken != "" {
-		claims, err := utils.JWT.ParseToken(jwtToken[len("Bearer "):])
+		claims, err := utils.JWT.ParseToken(jwtToken)
 		if err == nil && claims != nil {
 			c.Redirect(302, "/")
 			return

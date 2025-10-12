@@ -191,7 +191,7 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, storeID, orderID s
 		return nil, err
 	}
 	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return order, nil
 }
@@ -223,7 +223,7 @@ func (s *OrderService) RefundOrder(ctx context.Context, storeID, orderID string)
 		return nil, err
 	}
 	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return order, nil
 }
@@ -234,7 +234,7 @@ func (s *OrderService) DeleteOrder(ctx context.Context, storeID, orderID string)
 		return err
 	}
 	if err := s.orders.DeleteOne(ctx, s.orders.ScopeID(order.ID)); err != nil {
-		return db.HandleDBError(err)
+		return err
 	}
 	return nil
 }

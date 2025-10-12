@@ -71,7 +71,7 @@ func runWeb(cmd *cobra.Command, args []string) {
 	cache := db.NewMemcache(viper.GetStringSlice("db.memcache_hosts"))
 	atomicProcess := db.NewAtomicProcess(postgres.DB())
 
-	_ = account.NewDomain(postgres, atomicProcess, cache)
+	accountDomain := account.NewDomain(postgres, atomicProcess, cache)
 	storeDomain := store.NewDomain(postgres, atomicProcess, cache)
 	_ = asset.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
 	_ = customer.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
@@ -88,6 +88,12 @@ func runWeb(cmd *cobra.Command, args []string) {
 	loginHandler.RegisterRoutes(router)
 	registerHandler := handlers.NewRegisterHandler()
 	registerHandler.RegisterRoutes(router)
+	// Auth endpoints (POST login/register, forgot/reset, OAuth)
+	authHandler := handlers.NewAuthHandler(accountDomain.AuthService, accountDomain.OnboardingService)
+	authHandler.RegisterRoutes(router)
+	// Onboarding wizard
+	onboardingHandler := handlers.NewOnboardingHandler(accountDomain.OnboardingService, accountDomain.AuthService)
+	onboardingHandler.RegisterRoutes(router)
 	forgotPasswordHandler := handlers.NewForgotPasswordHandler()
 	forgotPasswordHandler.RegisterRoutes(router)
 	resetPasswordHandler := handlers.NewResetPasswordHandler()

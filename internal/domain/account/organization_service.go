@@ -16,13 +16,13 @@ func NewOrganizationService(orgRepo *OrganizationRepository) *OrganizationServic
 
 func (s *OrganizationService) UpdateOrganization(ctx context.Context, orgID string, orgReq *UpdateOrganizationRequest) (*Organization, error) {
 	if _, err := s.orgRepo.FindOne(ctx, s.orgRepo.ScopeID(orgID)); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	org := &Organization{
 		Name: orgReq.Name,
 	}
 	if err := s.orgRepo.PatchOne(ctx, org, s.orgRepo.ScopeID(orgID), db.WithReturning(&org)); err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return org, nil
 }
@@ -30,7 +30,7 @@ func (s *OrganizationService) UpdateOrganization(ctx context.Context, orgID stri
 func (s *OrganizationService) GetOrganizationByID(ctx context.Context, id string) (*Organization, error) {
 	org, err := s.orgRepo.FindOne(ctx, db.WithScopes(s.orgRepo.ScopeID(id)))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return org, nil
 }

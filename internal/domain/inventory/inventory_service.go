@@ -32,7 +32,7 @@ func (s *InventoryService) CreateProduct(ctx context.Context, storeID string, pr
 		// Load store to access standardized store Code for SKU generation
 		st, err := s.store.GetStoreByID(ctx, storeID)
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		product = &Product{
 			StoreID:     storeID,
@@ -41,7 +41,7 @@ func (s *InventoryService) CreateProduct(ctx context.Context, storeID string, pr
 			Tags:        productReq.Tags,
 		}
 		if err := s.products.CreateOne(ctx, product); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		variants := s.toVariants(storeID, st.Code, product.ID, productReq.Name, variantsReq)
 		if len(variants) > 0 {
@@ -61,11 +61,11 @@ func (s *InventoryService) AddVariantToProduct(ctx context.Context, productID st
 		// Ensure StoreID via product
 		prod, err := s.products.FindByID(ctx, productID)
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		st, err := s.store.GetStoreByID(ctx, prod.StoreID)
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		variant = s.toVariant(prod.StoreID, st.Code, productID, prod.Name, variantReq)
 		if err := s.createVariantWithRetry(ctx, st.Code, prod.Name, variant); err != nil {
@@ -114,11 +114,11 @@ func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeCod
 					variant.SKU = GenerateSku(storeCode, productName, variant.Name)
 				}
 				if attempt == maxAttempts {
-					return db.HandleDBError(err)
+					return err
 				}
 				continue
 			}
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	}
@@ -133,11 +133,11 @@ func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode
 			if db.IsUniqueViolation(err) {
 				variant.SKU = GenerateSku(storeCode, productName, variant.Name)
 				if attempt == maxAttempts {
-					return db.HandleDBError(err)
+					return err
 				}
 				continue
 			}
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	}
@@ -147,7 +147,7 @@ func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode
 func (s *InventoryService) GetProductByID(ctx context.Context, productID string) (*Product, error) {
 	product, err := s.products.FindByID(ctx, productID, db.WithPreload(VariantStruct))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return product, nil
 }
@@ -155,7 +155,7 @@ func (s *InventoryService) GetProductByID(ctx context.Context, productID string)
 func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string) (*Variant, error) {
 	variant, err := s.variants.FindByID(ctx, variantID, db.WithPreload(ProductStruct))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return variant, nil
 }
@@ -163,7 +163,7 @@ func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string)
 func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Variant, error) {
 	variant, err := s.variants.FindOne(ctx, s.variants.ScopeSKU(sku), db.WithPreload(ProductStruct))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return variant, nil
 }
@@ -171,7 +171,7 @@ func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Va
 func (s *InventoryService) ListVariantsByProductID(ctx context.Context, productID string) ([]*Variant, error) {
 	variants, err := s.variants.List(ctx, s.variants.ScopeProductID(productID))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return variants, nil
 }
@@ -179,7 +179,7 @@ func (s *InventoryService) ListVariantsByProductID(ctx context.Context, productI
 func (s *InventoryService) ListVariants(ctx context.Context, filter *VariantFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Variant, error) {
 	variants, err := s.variants.List(ctx, s.variants.ScopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return variants, nil
 }
@@ -187,7 +187,7 @@ func (s *InventoryService) ListVariants(ctx context.Context, filter *VariantFilt
 func (s *InventoryService) CountVariants(ctx context.Context, filter *VariantFilter) (int64, error) {
 	count, err := s.variants.Count(ctx, s.variants.ScopeFilter(filter))
 	if err != nil {
-		return 0, db.HandleDBError(err)
+		return 0, err
 	}
 	return count, nil
 }
@@ -195,7 +195,7 @@ func (s *InventoryService) CountVariants(ctx context.Context, filter *VariantFil
 func (s *InventoryService) ListProducts(ctx context.Context, filter *ProductFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Product, error) {
 	products, err := s.products.List(ctx, s.products.ScopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
 	if err != nil {
-		return nil, db.HandleDBError(err)
+		return nil, err
 	}
 	return products, nil
 }
@@ -203,7 +203,7 @@ func (s *InventoryService) ListProducts(ctx context.Context, filter *ProductFilt
 func (s *InventoryService) CountProducts(ctx context.Context, filter *ProductFilter) (int64, error) {
 	count, err := s.products.Count(ctx, s.products.ScopeFilter(filter))
 	if err != nil {
-		return 0, db.HandleDBError(err)
+		return 0, err
 	}
 	return count, nil
 }
@@ -219,26 +219,26 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 		var err error
 		product, err = s.products.FindByID(ctx, productID)
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		updateProductFields(product, updateReq)
 		if err := s.products.UpdateOne(ctx, product); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		for _, uv := range updateVariantsReq {
 			variant, err := s.variants.FindByID(ctx, uv.ID)
 			if err != nil {
-				return db.HandleDBError(err)
+				return err
 			}
 			updateVariantFields(variant, product.Name, uv.Update)
 			if err := s.variants.UpdateOne(ctx, variant); err != nil {
-				return db.HandleDBError(err)
+				return err
 			}
 		}
 		// Reload product with variants
 		product, err = s.products.FindByID(ctx, productID, db.WithPreload(VariantStruct))
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	})
@@ -263,11 +263,11 @@ func (s *InventoryService) UpdateVariant(ctx context.Context, variantID string, 
 		var err error
 		variant, err = s.variants.FindByID(ctx, variantID, db.WithPreload(ProductStruct))
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		updateVariantFields(variant, variant.Product.Name, updateReq)
 		if err := s.variants.UpdateOne(ctx, variant); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	})
@@ -304,10 +304,10 @@ func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) 
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		variant, err := s.variants.FindByID(ctx, variantID)
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		if err := s.variants.DeleteOne(ctx, s.variants.ScopeID(variant.ID)); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	})
@@ -317,11 +317,11 @@ func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, produc
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		variants, err := s.variants.List(ctx, s.variants.ScopeProductID(productID))
 		if err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		for _, variant := range variants {
 			if err := s.variants.DeleteOne(ctx, s.variants.ScopeID(variant.ID)); err != nil {
-				return db.HandleDBError(err)
+				return err
 			}
 		}
 		return nil
@@ -334,7 +334,7 @@ func (s *InventoryService) DeleteProduct(ctx context.Context, productID string) 
 			return err
 		}
 		if err := s.products.DeleteOne(ctx, s.products.ScopeID(productID)); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	})
@@ -347,7 +347,7 @@ func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []stri
 				return err
 			}
 			if err := s.products.DeleteOne(ctx, s.products.ScopeID(productID)); err != nil {
-				return db.HandleDBError(err)
+				return err
 			}
 		}
 		return nil

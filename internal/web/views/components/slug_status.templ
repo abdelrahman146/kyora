@@ -1,0 +1,9 @@
+package components
+
+templ SlugStatus(available bool) {
+	if available {
+		<div class="text-success text-sm">Slug is available</div>
+	} else {
+		<div class="text-error text-sm">Slug is taken</div>
+	}
+}

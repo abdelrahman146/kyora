@@ -34,7 +34,7 @@ func (s *OnboardingService) OnboardNewOrganization(ctx context.Context, orgReq *
 			Name: orgReq.Name,
 		}
 		if err := s.organizationRepo.CreateOne(ctx, org); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		passwordHash, err := utils.Hash.Make(userReq.Password)
 		if err != nil {
@@ -51,10 +51,10 @@ func (s *OnboardingService) OnboardNewOrganization(ctx context.Context, orgReq *
 			OrganizationID: org.ID,
 		}
 		if err := s.userRepo.CreateOne(ctx, user); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		if createdUser, err = s.userRepo.FindByID(ctx, user.ID, db.WithPreload(OrganizationStruct)); err != nil {
-			return db.HandleDBError(err)
+			return err
 		}
 		return nil
 	})
@@ -69,7 +69,10 @@ func (s *OnboardingService) OnboardNewOrganization(ctx context.Context, orgReq *
 func (s *OnboardingService) IsOrganizationSlugAvailable(ctx context.Context, slug string) (bool, error) {
 	existingOrg, err := s.organizationRepo.FindOne(ctx, s.organizationRepo.ScopeSlug(slug))
 	if err != nil {
-		return false, db.HandleDBError(err)
+		if db.IsRecordNotFound(err) {
+			return true, nil
+		}
+		return false, err
 	}
 	return existingOrg == nil, nil
 }
@@ -77,7 +80,10 @@ func (s *OnboardingService) IsOrganizationSlugAvailable(ctx context.Context, slu
 func (s *OnboardingService) IsEmailAvailable(ctx context.Context, email string) (bool, error) {
 	existingUser, err := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(email))
 	if err != nil {
-		return false, db.HandleDBError(err)
+		if db.IsRecordNotFound(err) {
+			return true, nil
+		}
+		return false, err
 	}
 	return existingUser == nil, nil
 }
