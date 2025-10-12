@@ -8,12 +8,12 @@ import (
 )
 
 type SupplierService struct {
-	storeRepo    *store.StoreRepository
+	storeService *store.StoreService
 	supplierRepo *SupplierRepository
 }
 
-func NewSupplierService(storeRepo *store.StoreRepository, supplierRepo *SupplierRepository) *SupplierService {
-	return &SupplierService{storeRepo: storeRepo, supplierRepo: supplierRepo}
+func NewSupplierService(storeService *store.StoreService, supplierRepo *SupplierRepository) *SupplierService {
+	return &SupplierService{storeService: storeService, supplierRepo: supplierRepo}
 }
 
 func (s *SupplierService) GetSupplierByID(ctx context.Context, storeID, id string, opts ...db.PostgresOptions) (*Supplier, error) {
@@ -29,7 +29,7 @@ func (s *SupplierService) CountSuppliers(ctx context.Context, storeID string) (i
 }
 
 func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, supplier *CreateSupplierRequest) (*Supplier, error) {
-	store, err := s.storeRepo.FindByID(ctx, storeID)
+	store, err := s.storeService.GetStoreByID(ctx, storeID)
 	if err != nil {
 		return nil, err
 	}

@@ -19,7 +19,7 @@ type OrderService struct {
 	atomicProcess *db.AtomicProcess
 }
 
-func NewOrderService(store *store.StoreService, orders *OrderRepository, orderItems *OrderItemRepository, orderNotes *OrderNoteRepository, atomicProcess *db.AtomicProcess) *OrderService {
+func NewOrderService(orders *OrderRepository, orderItems *OrderItemRepository, orderNotes *OrderNoteRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *OrderService {
 	return &OrderService{
 		store:         store,
 		orders:        orders,
