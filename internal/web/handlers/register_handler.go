@@ -29,5 +29,5 @@ func (h *RegisterHandler) Index(c *gin.Context) {
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.Login())
+	webutils.Render(c, 200, pages.Register())
 }
