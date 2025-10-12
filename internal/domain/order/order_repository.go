@@ -7,6 +7,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/govalues/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -206,4 +207,12 @@ func (r *OrderRepository) Count(ctx context.Context, opts ...db.PostgresOptions)
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *OrderRepository) SumTotal(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+	var total decimal.Decimal
+	if err := r.db.Conn(ctx, opts...).Model(&Order{}).Select("COALESCE(SUM(total), 0)").Scan(&total).Error; err != nil {
+		return decimal.Zero, err
+	}
+	return total, nil
 }

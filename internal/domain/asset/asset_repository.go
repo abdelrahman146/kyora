@@ -4,6 +4,7 @@ import (
 	"context"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/govalues/decimal"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -124,4 +125,12 @@ func (r *AssetRepository) Count(ctx context.Context, opts ...db.PostgresOptions)
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *AssetRepository) SumValue(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+	var total decimal.Decimal
+	if err := r.db.Conn(ctx, opts...).Model(&Asset{}).Select("COALESCE(SUM(value), 0)").Scan(&total).Error; err != nil {
+		return decimal.Zero, err
+	}
+	return total, nil
 }

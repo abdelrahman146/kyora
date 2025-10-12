@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/govalues/decimal"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -156,4 +157,12 @@ func (r *ExpenseRepository) Count(ctx context.Context, opts ...db.PostgresOption
 		return 0, err
 	}
 	return count, nil
+}
+
+func (r *ExpenseRepository) SumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+	var total decimal.Decimal
+	if err := r.db.Conn(ctx, opts...).Model(&Expense{}).Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
+		return decimal.Zero, err
+	}
+	return total, nil
 }
