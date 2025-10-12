@@ -54,6 +54,15 @@ Concise, codebase-specific guidance for AI agents.
 - Tailwind CSS v4 + daisyUI v5 (see `package.json`). Prefer daisyUI component classes in Templ views; avoid custom CSS when possible.
 - For daisyUI specifics (components, themes, upgrade notes), see `.github/instructions/daisyui.instructions.md` in this repo.
 
+## Templ specifics (SSR components)
+
+- Views live under `internal/web/views/**` with `.templ` sources; generated `*_templ.go` files are committed. After changing `.templ`, run `make templates` (or `templ generate`).
+- Rendering:
+  - Full page: `webutils.Render(c, status, component)` sets content-type and renders.
+  - Partials/HTMX: `webutils.RenderFragments(c, status, component, keys...)` renders only marked fragments. Define fragment keys in the handler (e.g., `var header webcontext.FragmentKey`) and in the `.templ` wrap the target area with `templ.Fragment(&header)`; then pass `header` to `RenderFragments`.
+- Live reload (optional): Use Templ proxy to rebuild and hot-reload on `.templ` edits while proxying to the Gin server: `templ generate --watch --proxy="http://localhost:{server.port}" --cmd "go run . web"`. Keep CSS watcher (`yarn css:watch`) running in parallel.
+- Testing components: In Go tests, render components into a buffer (`comp.Render(ctx, &buf)`) and assert on the HTML string. Prefer minimal snapshot-style assertions around stable selectors over full-document string equality.
+
 ## Adding features (happy path)
 
 - Repo: add under the relevant domain with `Scope*` and CRUD methods using `db.Postgres`.
