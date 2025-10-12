@@ -1,9 +1,22 @@
 package components
 
+import "github.com/abdelrahman146/kyora/internal/web/webcontext"
+
+var SlugStatusFragmentKey webcontext.FragmentKey
+
+// SlugStatusEmpty clears the slug status area
+templ SlugStatusEmpty() {
+	@templ.Fragment(&SlugStatusFragmentKey) {
+		<span></span>
+	}
+}
+
 templ SlugStatus(available bool) {
-	if available {
-		<div class="text-success text-sm">Slug is available</div>
-	} else {
-		<div class="text-error text-sm">Slug is taken</div>
+	@templ.Fragment(&SlugStatusFragmentKey) {
+		if available {
+			<div class="text-success text-sm">Slug is available</div>
+		} else {
+			<div class="text-error text-sm">Slug is taken</div>
+		}
 	}
 }

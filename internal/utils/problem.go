@@ -15,6 +15,8 @@ type ProblemDetails struct {
 	err        error          `json:"-"`
 }
 
+const aboutBlank = "about:blank"
+
 func (p *ProblemDetails) With(key string, value any) *ProblemDetails {
 	if p.Extensions == nil {
 		p.Extensions = make(map[string]any)
@@ -78,50 +80,50 @@ func (problemdetailsHelper) New(status int, title, detail, typeURL, instance str
 		Instance: instance,
 	}
 	if p.Type == "" {
-		p.Type = "about:blank"
+		p.Type = aboutBlank
 	}
 	return p
 }
 
 func (problemdetailsHelper) InternalError() *ProblemDetails {
 	return &ProblemDetails{
-		Status: 500, Title: "Internal Server Error", Detail: "An internal server error occurred", Type: "about:blank",
+		Status: 500, Title: "Internal Server Error", Detail: "An internal server error occurred", Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) NotFound(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 404, Title: "Not Found", Detail: detail, Type: "about:blank",
+		Status: 404, Title: "Not Found", Detail: detail, Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) BadRequest(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 400, Title: "Bad Request", Detail: detail, Type: "about:blank",
+		Status: 400, Title: "Bad Request", Detail: detail, Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) Unauthorized(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 401, Title: "Unauthorized", Detail: detail, Type: "about:blank",
+		Status: 401, Title: "Unauthorized", Detail: detail, Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) Forbidden(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 403, Title: "Forbidden", Detail: detail, Type: "about:blank",
+		Status: 403, Title: "Forbidden", Detail: detail, Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) UnprocessableEntity(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 422, Title: "Unprocessable Entity", Detail: detail, Type: "about:blank",
+		Status: 422, Title: "Unprocessable Entity", Detail: detail, Type: aboutBlank,
 	}
 }
 
 func (problemdetailsHelper) Conflict(detail string) *ProblemDetails {
 	return &ProblemDetails{
-		Status: 409, Title: "Conflict", Detail: detail, Type: "about:blank",
+		Status: 409, Title: "Conflict", Detail: detail, Type: aboutBlank,
 	}
 }
 

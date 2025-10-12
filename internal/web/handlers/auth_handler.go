@@ -1,20 +1,18 @@
 package handlers
 
 import (
-	"encoding/json"
 	"fmt"
-	"io"
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/utils"
+	"github.com/abdelrahman146/kyora/internal/web/views/components"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
-	"golang.org/x/oauth2"
-	"golang.org/x/oauth2/google"
 )
 
 type AuthHandler struct {
@@ -31,7 +29,6 @@ func (h *AuthHandler) RegisterRoutes(r gin.IRoutes) {
 	r.POST("/register", h.Register)
 	r.POST("/forgot-password", h.ForgotPassword)
 	r.POST("/reset-password", h.ResetPassword)
-	// Google OAuth (scaffold)
 	r.GET("/auth/google", h.GoogleAuth)
 	r.GET("/auth/google/callback", h.GoogleCallback)
 }
@@ -41,12 +38,11 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	password := c.PostForm("password")
 	_, token, err := h.auth.Authenticate(c.Request.Context(), email, password)
 	if err != nil {
-		// return problem json
 		if pd, ok := err.(*utils.ProblemDetails); ok {
-			c.JSON(pd.Status, pd)
+			webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 			return
 		}
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "invalid credentials"})
+		webutils.RenderFragments(c, http.StatusUnauthorized, components.Alert("error", "invalid credentials"), components.AlertFragmentKey)
 		return
 	}
 	utils.JWT.SetJwtCookie(c, token)
@@ -58,7 +54,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	last := c.PostForm("last_name")
 	email := c.PostForm("email")
 	password := c.PostForm("password")
-	// If org fields provided, complete immediately, else redirect to onboarding
+	// Optional immediate org creation if provided
 	orgName := c.PostForm("org_name")
 	slug := c.PostForm("org_slug")
 	if orgName != "" && slug != "" {
@@ -67,10 +63,10 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		user, err := h.onboard.OnboardNewOrganization(c.Request.Context(), orgReq, userReq)
 		if err != nil {
 			if pd, ok := err.(*utils.ProblemDetails); ok {
-				c.JSON(pd.Status, pd)
+				webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 				return
 			}
-			c.JSON(http.StatusBadRequest, gin.H{"error": "registration failed"})
+			webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "registration failed"), components.AlertFragmentKey)
 			return
 		}
 		token, _ := utils.JWT.GenerateToken(user.ID, user.OrganizationID)
@@ -78,8 +74,12 @@ func (h *AuthHandler) Register(c *gin.Context) {
 		webutils.Redirect(c, "/")
 		return
 	}
-	// No org provided: continue with onboarding wizard
-	webutils.Redirect(c, "/onboarding")
+	// Otherwise, continue onboarding wizard with provided user fields
+	q := url.Values{}
+	q.Set("first", first)
+	q.Set("last", last)
+	q.Set("email", email)
+	webutils.Redirect(c, "/onboarding?"+q.Encode())
 }
 
 func (h *AuthHandler) ForgotPassword(c *gin.Context) {
@@ -87,98 +87,71 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	token, err := h.auth.CreateResetToken(c.Request.Context(), email)
 	if err != nil {
 		if pd, ok := err.(*utils.ProblemDetails); ok {
-			c.JSON(pd.Status, pd)
+			webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": "could not initiate reset"})
+		webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "could not initiate reset"), components.AlertFragmentKey)
 		return
 	}
-	// Render a small success alert. In development, show the token to ease testing.
-	dev := viper.GetString("env") != "production"
-	msg := "If an account exists for that email, a reset link has been sent."
-	if dev {
+	msg := "If the email exists, a reset token has been generated."
+	if viper.GetString("env") != "production" {
 		msg = fmt.Sprintf("%s Dev token: %s", msg, token)
 	}
-	c.String(http.StatusOK, "<div class=\"alert alert-success mt-4\">%s</div>", msg)
+	webutils.RenderFragments(c, http.StatusOK, components.Alert("success", msg), components.AlertFragmentKey)
 }
 
 func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	token := c.PostForm("token")
-	newPassword := c.PostForm("password")
+	pwd := c.PostForm("password")
 	confirm := c.PostForm("password_confirm")
-	if newPassword == "" || newPassword != confirm {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "passwords do not match"})
+	if pwd == "" || confirm == "" || pwd != confirm {
+		webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "passwords do not match"), components.AlertFragmentKey)
 		return
 	}
-	if err := h.auth.ConsumeResetToken(c.Request.Context(), token, newPassword); err != nil {
+	if err := h.auth.ConsumeResetToken(c.Request.Context(), token, pwd); err != nil {
 		if pd, ok := err.(*utils.ProblemDetails); ok {
-			c.JSON(pd.Status, pd)
+			webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 			return
 		}
-		c.JSON(http.StatusBadRequest, gin.H{"error": "reset failed"})
+		webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "reset failed"), components.AlertFragmentKey)
 		return
 	}
-	c.JSON(http.StatusOK, gin.H{"message": "password updated"})
+	// small delay to mitigate token brute force timing
+	time.Sleep(150 * time.Millisecond)
+	webutils.RenderFragments(c, http.StatusOK, components.Alert("success", "password updated"), components.AlertFragmentKey)
 }
 
 func (h *AuthHandler) GoogleAuth(c *gin.Context) {
-	cfg := h.googleConfig()
-	if cfg == nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"message": "Google OAuth not configured"})
+	state, _ := utils.ID.RandomString(24)
+	// Store state in a short-lived cookie
+	http.SetCookie(c.Writer, &http.Cookie{Name: "oauth_state", Value: state, Path: "/", HttpOnly: true, MaxAge: 300, SameSite: http.SameSiteLaxMode})
+	authURL, pd := h.auth.GoogleGetAuthURL(c.Request.Context(), state)
+	if pd != nil {
+		webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 		return
 	}
-	state := randomState()
-	// store in cookie short-lived
-	http.SetCookie(c.Writer, &http.Cookie{Name: "oauth_state", Value: state, Path: "/", HttpOnly: true, MaxAge: 300})
-	authURL := cfg.AuthCodeURL(state, oauth2.AccessTypeOnline)
 	c.Redirect(http.StatusFound, authURL)
 }
 
 func (h *AuthHandler) GoogleCallback(c *gin.Context) {
-	cfg := h.googleConfig()
-	if cfg == nil {
-		c.JSON(http.StatusNotImplemented, gin.H{"message": "Google OAuth not configured"})
-		return
-	}
-	// validate state
 	state := c.Query("state")
-	stateCookie, _ := c.Request.Cookie("oauth_state")
-	if stateCookie == nil || stateCookie.Value == "" || stateCookie.Value != state {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "invalid state"})
-		return
-	}
 	code := c.Query("code")
-	if code == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "missing code"})
+	if code == "" || state == "" {
+		webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "missing code or state"), components.AlertFragmentKey)
 		return
 	}
-	token, err := cfg.Exchange(c, code)
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "code exchange failed"})
+	// verify state
+	if cookie, _ := c.Request.Cookie("oauth_state"); cookie == nil || cookie.Value != state {
+		webutils.RenderFragments(c, http.StatusBadRequest, components.Alert("error", "invalid state"), components.AlertFragmentKey)
 		return
 	}
-	client := cfg.Client(c, token)
-	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
-	if err != nil || resp.StatusCode != 200 {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "failed to fetch userinfo"})
+	info, pd := h.auth.GoogleExchangeAndFetchUser(c.Request.Context(), code)
+	if pd != nil {
+		webutils.RenderFragments(c, pd.Status, components.Alert("error", pd.Detail), components.AlertFragmentKey)
 		return
 	}
-	defer resp.Body.Close()
-	body, _ := io.ReadAll(resp.Body)
-	var info struct {
-		Email      string `json:"email"`
-		GivenName  string `json:"given_name"`
-		FamilyName string `json:"family_name"`
-		Name       string `json:"name"`
-		Verified   bool   `json:"verified_email"`
-	}
-	_ = json.Unmarshal(body, &info)
-	if info.Email == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "email not available"})
-		return
-	}
-	// Try to find existing user
-	user, err := h.auth.GetUserByEmail(c, info.Email)
+	// Try to log in if user exists and has org
+	user, err := h.auth.GetUserByEmail(c.Request.Context(), info.Email)
 	if err == nil && user != nil && user.OrganizationID != "" {
 		jwt, _ := utils.JWT.GenerateToken(user.ID, user.OrganizationID)
 		utils.JWT.SetJwtCookie(c, jwt)
@@ -200,25 +173,4 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 	q.Set("last", last)
 	q.Set("method", "google")
 	c.Redirect(http.StatusFound, "/onboarding?"+q.Encode())
-}
-
-func (h *AuthHandler) googleConfig() *oauth2.Config {
-	clientID := viper.GetString("google.client_id")
-	secret := viper.GetString("google.client_secret")
-	redirect := viper.GetString("google.redirect_url")
-	if clientID == "" || secret == "" || redirect == "" {
-		return nil
-	}
-	return &oauth2.Config{
-		ClientID:     clientID,
-		ClientSecret: secret,
-		RedirectURL:  redirect,
-		Scopes:       []string{"openid", "email", "profile"},
-		Endpoint:     google.Endpoint,
-	}
-}
-
-func randomState() string {
-	s, _ := utils.ID.RandomString(24)
-	return s
 }

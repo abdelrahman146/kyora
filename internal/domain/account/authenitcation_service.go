@@ -8,6 +8,10 @@ import (
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/spf13/viper"
+	"golang.org/x/oauth2"
+	"golang.org/x/oauth2/google"
+	"io"
+	"net/http"
 )
 
 type AuthenticationService struct {
@@ -48,6 +52,68 @@ func (s *AuthenticationService) GetUserByEmail(ctx context.Context, email string
 		return nil, err
 	}
 	return user, nil
+}
+
+// Google OAuth
+type GoogleUserInfo struct {
+	Email      string `json:"email"`
+	GivenName  string `json:"given_name"`
+	FamilyName string `json:"family_name"`
+	Name       string `json:"name"`
+	Verified   bool   `json:"verified_email"`
+}
+
+func (s *AuthenticationService) googleConfig() *oauth2.Config {
+	clientID := viper.GetString("google.client_id")
+	secret := viper.GetString("google.client_secret")
+	redirect := viper.GetString("google.redirect_url")
+	if clientID == "" || secret == "" || redirect == "" {
+		return nil
+	}
+	return &oauth2.Config{
+		ClientID:     clientID,
+		ClientSecret: secret,
+		RedirectURL:  redirect,
+		Scopes:       []string{"openid", "email", "profile"},
+		Endpoint:     google.Endpoint,
+	}
+}
+
+func (s *AuthenticationService) GoogleGetAuthURL(ctx context.Context, state string) (string, *utils.ProblemDetails) {
+	cfg := s.googleConfig()
+	if cfg == nil {
+		return "", utils.Problem.BadRequest("Google OAuth not configured")
+	}
+	return cfg.AuthCodeURL(state, oauth2.AccessTypeOnline), nil
+}
+
+func (s *AuthenticationService) GoogleExchangeAndFetchUser(ctx context.Context, code string) (*GoogleUserInfo, *utils.ProblemDetails) {
+	cfg := s.googleConfig()
+	if cfg == nil {
+		return nil, utils.Problem.BadRequest("Google OAuth not configured")
+	}
+	tok, err := cfg.Exchange(ctx, code)
+	if err != nil {
+		return nil, utils.Problem.BadRequest("code exchange failed").WithError(err)
+	}
+	client := cfg.Client(ctx, tok)
+	resp, err := client.Get("https://www.googleapis.com/oauth2/v2/userinfo")
+	if err != nil {
+		return nil, utils.Problem.BadRequest("failed to fetch userinfo").WithError(err)
+	}
+	defer resp.Body.Close()
+	if resp.StatusCode != http.StatusOK {
+		b, _ := io.ReadAll(resp.Body)
+		return nil, utils.Problem.BadRequest("userinfo error").With("status", resp.StatusCode).With("body", string(b))
+	}
+	var info GoogleUserInfo
+	if err := json.NewDecoder(resp.Body).Decode(&info); err != nil {
+		return nil, utils.Problem.InternalError().WithError(err)
+	}
+	if info.Email == "" {
+		return nil, utils.Problem.BadRequest("email not available from provider")
+	}
+	return &info, nil
 }
 
 type resetPayload struct {

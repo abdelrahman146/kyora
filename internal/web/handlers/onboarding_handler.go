@@ -5,6 +5,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/utils"
+	"github.com/abdelrahman146/kyora/internal/web/views/components"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
@@ -99,16 +100,12 @@ func (h *OnboardingHandler) Complete(c *gin.Context) {
 func (h *OnboardingHandler) SlugAvailability(c *gin.Context) {
 	slug := c.Query("slug")
 	if slug == "" {
-		c.String(http.StatusOK, "")
+		webutils.RenderFragments(c, http.StatusOK, components.SlugStatusEmpty(), components.SlugStatusFragmentKey)
 		return
 	}
 	ok, err := h.onboarding.IsOrganizationSlugAvailable(c.Request.Context(), slug)
 	if err != nil {
 		ok = false
 	}
-	if ok {
-		c.String(http.StatusOK, "<div class=\"text-success text-sm\">Slug is available</div>")
-	} else {
-		c.String(http.StatusOK, "<div class=\"text-error text-sm\">Slug is taken</div>")
-	}
+	webutils.RenderFragments(c, http.StatusOK, components.SlugStatus(ok), components.SlugStatusFragmentKey)
 }
