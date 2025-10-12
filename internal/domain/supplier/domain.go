@@ -9,7 +9,7 @@ type SupplierDomain struct {
 	SupplierService *SupplierService
 }
 
-func SetupSupplierDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, storeService *store.StoreService) *SupplierDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *SupplierDomain {
 	supplierRepo := NewSupplierRepository(postgres)
 	postgres.AutoMigrate(&Supplier{})
 	return &SupplierDomain{

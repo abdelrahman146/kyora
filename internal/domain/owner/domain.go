@@ -11,7 +11,7 @@ type OwnerDomain struct {
 	OwnerDrawService  *OwnerDrawService
 }
 
-func SetupOwnerDomain(postgres *db.Postgres, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *OwnerDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *OwnerDomain {
 	ownerRepo := NewOwnerRepository(postgres)
 	investmentRepo := NewInvestmentRepository(postgres)
 	ownerDrawRepo := NewOwnerDrawRepository(postgres)

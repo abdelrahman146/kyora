@@ -8,9 +8,14 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/asset"
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/expense"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/domain/owner"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/domain/supplier"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/abdelrahman146/kyora/internal/web/handlers"
 	"github.com/abdelrahman146/kyora/internal/web/webrouter"
@@ -60,25 +65,21 @@ func runWeb(cmd *cobra.Command, args []string) {
 	postgres, err := db.NewPostgres(viper.GetString("db.dsn"), &gorm.Config{
 		Logger: db.NewSlogGormLogger(gormlogger.Warn),
 	})
-	postgres.AutoMigrate(account.User{}, account.Organization{}, expense.Expense{}, expense.RecurringExpense{})
 	if err != nil {
 		log.Fatal("failed to connect to database", utils.Log.Err(err))
 	}
-	_ = db.NewMemcache(viper.GetStringSlice("db.memcache_hosts"))
+	cache := db.NewMemcache(viper.GetStringSlice("db.memcache_hosts"))
 	atomicProcess := db.NewAtomicProcess(postgres.DB())
 
-	organizationRepo := account.NewOrganizationRepository(postgres)
-	userRepo := account.NewUserRepository(postgres)
-	storeRepo := store.NewStoreRepository(postgres)
-	productRepo := inventory.NewProductRepository(postgres)
-	variantRepo := inventory.NewVariantRepository(postgres)
-
-	_ = account.NewAuthenticationService(userRepo)
-	_ = account.NewOnboardingService(userRepo, organizationRepo, atomicProcess)
-	_ = account.NewOrganizationService(organizationRepo)
-	_ = account.NewUserService(userRepo)
-	storeService := store.NewStoreService(storeRepo)
-	_ = inventory.NewInventoryService(productRepo, variantRepo, storeService, atomicProcess)
+	_ = account.NewDomain(postgres, atomicProcess, cache)
+	storeDomain := store.NewDomain(postgres, atomicProcess, cache)
+	_ = asset.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = customer.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = expense.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = inventory.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = order.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = owner.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	_ = supplier.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
 
 	router := webrouter.NewRouter()
 	dashboardHandler := handlers.NewDashboardHandler()

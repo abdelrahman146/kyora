@@ -9,7 +9,7 @@ type OrderDomain struct {
 	OrderService *OrderService
 }
 
-func SetupOrderDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, storeService *store.StoreService) *OrderDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *OrderDomain {
 	orderItemRepo := NewOrderItemRepository(postgres)
 	orderRepo := NewOrderRepository(postgres)
 	OrderNoteRepo := NewOrderNoteRepository(postgres)

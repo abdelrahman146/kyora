@@ -9,7 +9,7 @@ type AccountDomain struct {
 	OnboardingService *OnboardingService
 }
 
-func SetupAccountDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess) *AccountDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache) *AccountDomain {
 	userRepo := NewUserRepository(postgres)
 	organizationRepo := NewOrganizationRepository(postgres)
 	postgres.AutoMigrate(&User{}, &Organization{})

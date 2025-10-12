@@ -9,7 +9,7 @@ type AssetDomain struct {
 	AssetService *AssetService
 }
 
-func SetupAssetDomain(postgres *db.Postgres, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *AssetDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *AssetDomain {
 	assetRepo := NewAssetRepository(postgres)
 	postgres.AutoMigrate(&Asset{})
 

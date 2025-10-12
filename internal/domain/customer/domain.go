@@ -9,7 +9,7 @@ type CustomerDomain struct {
 	CustomerService *CustomerService
 }
 
-func SetupCustomerDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, storeService *store.StoreService) *CustomerDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *CustomerDomain {
 	addressRepo := NewAddressRepository(postgres)
 	customerRepo := NewCustomerRepository(postgres)
 	customerNotesRepo := NewCustomerNoteRepository(postgres)

@@ -6,7 +6,7 @@ type StoreDomain struct {
 	StoreService *StoreService
 }
 
-func SetupStoreDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess) *StoreDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache) *StoreDomain {
 	storeRepo := NewStoreRepository(postgres)
 	postgres.AutoMigrate(&Store{})
 	return &StoreDomain{
