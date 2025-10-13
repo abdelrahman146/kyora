@@ -11,13 +11,13 @@ import (
 )
 
 type InventoryService struct {
-	products      *ProductRepository
-	variants      *VariantRepository
+	products      *productRepository
+	variants      *variantRepository
 	store         *store.StoreService
 	atomicProcess *db.AtomicProcess
 }
 
-func NewInventoryService(products *ProductRepository, variants *VariantRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *InventoryService {
+func NewInventoryService(products *productRepository, variants *variantRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *InventoryService {
 	return &InventoryService{
 		products:      products,
 		variants:      variants,

@@ -10,7 +10,7 @@ type SupplierDomain struct {
 }
 
 func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *SupplierDomain {
-	supplierRepo := NewSupplierRepository(postgres)
+	supplierRepo := newSupplierRepository(postgres)
 	postgres.AutoMigrate(&Supplier{})
 	return &SupplierDomain{
 		SupplierService: NewSupplierService(storeDomain.StoreService, supplierRepo),

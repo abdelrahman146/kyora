@@ -9,10 +9,10 @@ import (
 
 type SupplierService struct {
 	storeService *store.StoreService
-	supplierRepo *SupplierRepository
+	supplierRepo *supplierRepository
 }
 
-func NewSupplierService(storeService *store.StoreService, supplierRepo *SupplierRepository) *SupplierService {
+func NewSupplierService(storeService *store.StoreService, supplierRepo *supplierRepository) *SupplierService {
 	return &SupplierService{storeService: storeService, supplierRepo: supplierRepo}
 }
 

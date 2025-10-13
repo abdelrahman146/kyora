@@ -7,33 +7,33 @@ import (
 	"gorm.io/gorm"
 )
 
-type OrderItemRepository struct {
+type orderItemRepository struct {
 	db *db.Postgres
 }
 
-func NewOrderItemRepository(db *db.Postgres) *OrderItemRepository {
-	return &OrderItemRepository{db: db}
+func newOrderItemRepository(db *db.Postgres) *orderItemRepository {
+	return &orderItemRepository{db: db}
 }
 
-func (r *OrderItemRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *orderItemRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *OrderItemRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *orderItemRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}
 }
 
-func (r *OrderItemRepository) scopeOrderID(orderID string) func(db *gorm.DB) *gorm.DB {
+func (r *orderItemRepository) scopeOrderID(orderID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("order_id = ?", orderID)
 	}
 }
 
-func (r *OrderItemRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OrderItem, error) {
+func (r *orderItemRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OrderItem, error) {
 	var orderItem OrderItem
 	if err := r.db.Conn(ctx, opts...).First(&orderItem, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (r *OrderItemRepository) findByID(ctx context.Context, id string, opts ...d
 	return &orderItem, nil
 }
 
-func (r *OrderItemRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OrderItem, error) {
+func (r *orderItemRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OrderItem, error) {
 	var orderItem OrderItem
 	if err := r.db.Conn(ctx, opts...).First(&orderItem).Error; err != nil {
 		return nil, err
@@ -49,31 +49,31 @@ func (r *OrderItemRepository) findOne(ctx context.Context, opts ...db.PostgresOp
 	return &orderItem, nil
 }
 
-func (r *OrderItemRepository) createOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) createOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(orderItem).Error
 }
 
-func (r *OrderItemRepository) createMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) createMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(&orderItems).Error
 }
 
-func (r *OrderItemRepository) updateOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) updateOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(orderItem).Error
 }
 
-func (r *OrderItemRepository) updateMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) updateMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&orderItems).Error
 }
 
-func (r *OrderItemRepository) deleteOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) deleteOne(ctx context.Context, orderItem *OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(orderItem).Error
 }
 
-func (r *OrderItemRepository) deleteMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
+func (r *orderItemRepository) deleteMany(ctx context.Context, orderItems []*OrderItem, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&orderItems).Error
 }
 
-func (r *OrderItemRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderItem, error) {
+func (r *orderItemRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderItem, error) {
 	var orderItems []*OrderItem
 	if err := r.db.Conn(ctx, opts...).Find(&orderItems).Error; err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (r *OrderItemRepository) list(ctx context.Context, opts ...db.PostgresOptio
 	return orderItems, nil
 }
 
-func (r *OrderItemRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *orderItemRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&OrderItem{}).Count(&count).Error; err != nil {
 		return 0, err

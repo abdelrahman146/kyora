@@ -10,74 +10,74 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type OwnerDrawRepository struct {
+type ownerDrawRepository struct {
 	db *db.Postgres
 }
 
-func NewOwnerDrawRepository(db *db.Postgres) *OwnerDrawRepository {
-	return &OwnerDrawRepository{db: db}
+func newOwnerDrawRepository(db *db.Postgres) *ownerDrawRepository {
+	return &ownerDrawRepository{db: db}
 }
 
-func (r *OwnerDrawRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *ownerDrawRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *OwnerDrawRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *ownerDrawRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}
 }
 
-func (r *OwnerDrawRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *ownerDrawRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *OwnerDrawRepository) scopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
+func (r *ownerDrawRepository) scopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("owner_id = ?", ownerID)
 	}
 }
 
-func (r *OwnerDrawRepository) createOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) createOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(draw).Error
 }
 
-func (r *OwnerDrawRepository) createMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) createMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&draws).Error
 }
 
-func (r *OwnerDrawRepository) upsertMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) upsertMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"first_name", "last_name", "updated_at"}),
 	}).Create(&draws).Error
 }
 
-func (r *OwnerDrawRepository) updateOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) updateOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(draw).Error
 }
 
-func (r *OwnerDrawRepository) updateMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) updateMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&draws).Error
 }
 
-func (r *OwnerDrawRepository) patchOne(ctx context.Context, updates *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) patchOne(ctx context.Context, updates *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Updates(updates).Error
 }
 
-func (r *OwnerDrawRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&OwnerDraw{}).Error
 }
 
-func (r *OwnerDrawRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *ownerDrawRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&OwnerDraw{}).Error
 }
 
-func (r *OwnerDrawRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OwnerDraw, error) {
+func (r *ownerDrawRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OwnerDraw, error) {
 	var draw OwnerDraw
 	if err := r.db.Conn(ctx, opts...).First(&draw, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (r *OwnerDrawRepository) findByID(ctx context.Context, id string, opts ...d
 	return &draw, nil
 }
 
-func (r *OwnerDrawRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OwnerDraw, error) {
+func (r *ownerDrawRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OwnerDraw, error) {
 	var draw OwnerDraw
 	if err := r.db.Conn(ctx, opts...).First(&draw).Error; err != nil {
 		return nil, err
@@ -93,7 +93,7 @@ func (r *OwnerDrawRepository) findOne(ctx context.Context, opts ...db.PostgresOp
 	return &draw, nil
 }
 
-func (r *OwnerDrawRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OwnerDraw, error) {
+func (r *ownerDrawRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OwnerDraw, error) {
 	var draws []*OwnerDraw
 	if err := r.db.Conn(ctx, opts...).Find(&draws).Error; err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (r *OwnerDrawRepository) list(ctx context.Context, opts ...db.PostgresOptio
 	return draws, nil
 }
 
-func (r *OwnerDrawRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *ownerDrawRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -109,7 +109,7 @@ func (r *OwnerDrawRepository) count(ctx context.Context, opts ...db.PostgresOpti
 	return count, nil
 }
 
-func (r *OwnerDrawRepository) sumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *ownerDrawRepository) sumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

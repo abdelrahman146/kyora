@@ -11,7 +11,7 @@ type ExpenseDomain struct {
 
 func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *ExpenseDomain {
 	expenseRepo := NewExpenseRepository(postgres)
-	recurringExpenseRepo := NewRecurringExpenseRepository(postgres)
+	recurringExpenseRepo := newRecurringExpenseRepository(postgres)
 	postgres.AutoMigrate(&Expense{}, &RecurringExpense{})
 	return &ExpenseDomain{
 		ExpenseService: NewExpenseService(expenseRepo, recurringExpenseRepo, storeDomain.StoreService, atomicProcess),

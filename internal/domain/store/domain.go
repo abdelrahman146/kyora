@@ -7,7 +7,7 @@ type StoreDomain struct {
 }
 
 func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache) *StoreDomain {
-	storeRepo := NewStoreRepository(postgres)
+	storeRepo := newStoreRepository(postgres)
 	postgres.AutoMigrate(&Store{})
 	return &StoreDomain{
 		StoreService: NewStoreService(storeRepo),

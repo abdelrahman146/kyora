@@ -13,13 +13,13 @@ import (
 
 type OrderService struct {
 	store         *store.StoreService
-	orders        *OrderRepository
-	orderItems    *OrderItemRepository
-	orderNotes    *OrderNoteRepository
+	orders        *orderRepository
+	orderItems    *orderItemRepository
+	orderNotes    *orderNoteRepository
 	atomicProcess *db.AtomicProcess
 }
 
-func NewOrderService(orders *OrderRepository, orderItems *OrderItemRepository, orderNotes *OrderNoteRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *OrderService {
+func NewOrderService(orders *orderRepository, orderItems *orderItemRepository, orderNotes *orderNoteRepository, store *store.StoreService, atomicProcess *db.AtomicProcess) *OrderService {
 	return &OrderService{
 		store:         store,
 		orders:        orders,

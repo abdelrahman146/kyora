@@ -10,8 +10,8 @@ type InventoryDomain struct {
 }
 
 func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *InventoryDomain {
-	productRepo := NewProductRepository(postgres)
-	variantRepo := NewVariantRepository(postgres)
+	productRepo := newProductRepository(postgres)
+	variantRepo := newVariantRepository(postgres)
 	postgres.AutoMigrate(&Product{}, &Variant{})
 	return &InventoryDomain{
 		InventoryService: NewInventoryService(productRepo, variantRepo, storeDomain.StoreService, atomicProcess),

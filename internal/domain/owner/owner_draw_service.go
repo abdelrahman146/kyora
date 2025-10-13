@@ -9,11 +9,11 @@ import (
 )
 
 type OwnerDrawService struct {
-	ownerDrawRepo *OwnerDrawRepository
+	ownerDrawRepo *ownerDrawRepository
 	storeService  *store.StoreService
 }
 
-func NewOwnerDrawService(ownerDrawRepo *OwnerDrawRepository, storeService *store.StoreService) *OwnerDrawService {
+func NewOwnerDrawService(ownerDrawRepo *ownerDrawRepository, storeService *store.StoreService) *OwnerDrawService {
 	return &OwnerDrawService{
 		ownerDrawRepo: ownerDrawRepo,
 		storeService:  storeService,

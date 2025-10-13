@@ -11,12 +11,12 @@ import (
 
 type ExpenseService struct {
 	expenseRepo   *expenseRepository
-	recurringRepo *RecurringExpenseRepository
+	recurringRepo *recurringExpenseRepository
 	storeService  *store.StoreService
 	atomicProcess *db.AtomicProcess
 }
 
-func NewExpenseService(expenseRepo *expenseRepository, recurringRepo *RecurringExpenseRepository, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *ExpenseService {
+func NewExpenseService(expenseRepo *expenseRepository, recurringRepo *recurringExpenseRepository, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *ExpenseService {
 	return &ExpenseService{
 		expenseRepo:   expenseRepo,
 		recurringRepo: recurringRepo,

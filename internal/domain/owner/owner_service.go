@@ -7,11 +7,11 @@ import (
 )
 
 type OwnerService struct {
-	ownerRepo    *OwnerRepository
+	ownerRepo    *ownerRepository
 	storeService *store.StoreService
 }
 
-func NewOwnerService(ownerRepo *OwnerRepository, storeService *store.StoreService) *OwnerService {
+func NewOwnerService(ownerRepo *ownerRepository, storeService *store.StoreService) *OwnerService {
 	return &OwnerService{
 		ownerRepo:    ownerRepo,
 		storeService: storeService,

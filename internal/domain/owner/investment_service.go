@@ -9,11 +9,11 @@ import (
 )
 
 type InvestmentService struct {
-	investmentRepo *InvestmentRepository
+	investmentRepo *investmentRepository
 	storeService   *store.StoreService
 }
 
-func NewInvestmentService(investmentRepo *InvestmentRepository, storeService *store.StoreService) *InvestmentService {
+func NewInvestmentService(investmentRepo *investmentRepository, storeService *store.StoreService) *InvestmentService {
 	return &InvestmentService{
 		investmentRepo: investmentRepo,
 		storeService:   storeService,
