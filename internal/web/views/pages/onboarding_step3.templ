@@ -1,0 +1,57 @@
+package pages
+
+import "github.com/abdelrahman146/kyora/internal/utils"
+
+templ OnboardingStep3(first, last, email, password, method, orgName, slug, storeName, storeCountryCode string) {
+	<div class="card w-full bg-base-100" id="onboarding-card">
+		<div class="card-body gap-6">
+			<div class="flex flex-col gap-3 text-center">
+				<div class="steps steps-horizontal w-full justify-center text-xs sm:text-sm">
+					<span class="step step-primary">Account</span>
+					<span class="step step-primary">Organization</span>
+					<span class="step step-primary">Store</span>
+				</div>
+				<div class="flex flex-col gap-1">
+					<h1 class="card-title text-2xl justify-center">Create your first store</h1>
+					<p class="text-base-content/70 text-sm sm:text-base">Stores are where you keep products, inventory, and orders. Let's create your first one.</p>
+				</div>
+			</div>
+			<form class="flex flex-col gap-2" hx-post="/onboarding/complete" hx-target="#onboarding-card" hx-swap="outerHTML">
+				<input type="hidden" name="first_name" value={ first }/>
+				<input type="hidden" name="last_name" value={ last }/>
+				<input type="hidden" name="email" value={ email }/>
+				<input type="hidden" name="password" value={ password }/>
+				<input type="hidden" name="method" value={ method }/>
+				<input type="hidden" name="org_name" value={ orgName }/>
+				<label class="form-control w-full">
+					<div class="label"><span class="label-text">Store name</span></div>
+					<input name="store_name" type="text" class="input input-bordered w-full" placeholder="Downtown Boutique" value={ storeName } required/>
+				</label>
+				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
+					<label class="form-control w-full">
+						<div class="label"><span class="label-text">Country</span></div>
+						<select name="store_country_code" class="select select-bordered w-full" required>
+							for i, country := range utils.Country.Countries() {
+								if i == 0 {
+									<option value={ country.IsoCode } selected={ storeCountryCode == country.IsoCode || storeCountryCode == "" }>{ country.Name }</option>
+								} else {
+									<option value={ country.IsoCode } selected={ storeCountryCode == country.IsoCode }>{ country.Name }</option>
+								}
+							}
+						</select>
+						<span class="label-text-alt text-xs text-base-content/40"></span>
+					</label>
+				</div>
+				<ul class="list text-left text-sm bg-base-200/40 rounded-box p-4">
+					<li class="list-row gap-2"><span class="font-semibold">Account</span><span class="list-col-grow text-base-content/70">{ first } { last }</span></li>
+					<li class="list-row gap-2"><span class="font-semibold">Organization</span><span class="list-col-grow text-base-content/70">{ orgName }</span></li>
+					<li class="list-row gap-2"><span class="font-semibold">Plan</span><span class="list-col-grow text-base-content/70">Free Plan</span></li>
+				</ul>
+				<div class="flex flex-col-reverse gap-3 sm:flex-row sm:justify-between sm:items-center">
+					<button type="button" class="btn btn-ghost" hx-post="/onboarding/step2" hx-target="#onboarding-card" hx-swap="outerHTML" hx-include="closest form">Back</button>
+					<button type="submit" class="btn btn-primary">Launch Kyora</button>
+				</div>
+			</form>
+		</div>
+	</div>
+}

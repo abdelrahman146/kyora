@@ -15,7 +15,6 @@ const (
 type Organization struct {
 	gorm.Model
 	ID   string `gorm:"column:id;primaryKey;type:text" json:"id"`
-	Slug string `gorm:"column:slug;type:text;not null;unique" json:"slug"`
 	Name string `gorm:"column:name;type:text;not null" json:"name"`
 }
 
@@ -27,7 +26,6 @@ func (m *Organization) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateOrganizationRequest struct {
-	Slug string `json:"slug" binding:"required,alphanum"`
 	Name string `json:"name" binding:"required"`
 }
 

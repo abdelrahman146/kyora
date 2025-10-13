@@ -76,11 +76,17 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	password := c.PostForm("password")
 	// Optional immediate org creation if provided
 	orgName := c.PostForm("org_name")
-	slug := c.PostForm("org_slug")
-	if orgName != "" && slug != "" {
+	storeCountryCode := c.PostForm("store_country_code")
+	country := utils.Country.GetCountryByIsoCode(storeCountryCode)
+	if orgName != "" {
 		userReq := &account.CreateUserRequest{FirstName: first, LastName: last, Email: email, Password: password}
-		orgReq := &account.CreateOrganizationRequest{Name: orgName, Slug: slug}
-		user, err := h.onboard.OnboardNewOrganization(c.Request.Context(), orgReq, userReq)
+		orgReq := &account.CreateOrganizationRequest{Name: orgName}
+		storeReq := &account.CreateInitialStoreRequest{
+			Name:        fmt.Sprintf("%s Store", orgName),
+			Currency:    country.CurrencyCode,
+			CountryCode: storeCountryCode,
+		}
+		user, err := h.onboard.OnboardNewOrganization(c.Request.Context(), orgReq, userReq, storeReq)
 		if err != nil {
 			if pd, ok := err.(*utils.ProblemDetails); ok {
 				webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))

@@ -12,57 +12,88 @@ type OnboardingService struct {
 	userRepo         *UserRepository
 	organizationRepo *OrganizationRepository
 	atomicProcess    *db.AtomicProcess
+	storeProvisioner StoreProvisioner
 }
 
-func NewOnboardingService(userRepo *UserRepository, organizationRepo *OrganizationRepository, atomicProcess *db.AtomicProcess) *OnboardingService {
+type StoreProvisioner interface {
+	ProvisionInitialStore(ctx context.Context, organizationID string, req *CreateInitialStoreRequest) error
+}
+
+type CreateInitialStoreRequest struct {
+	Name        string
+	CountryCode string
+	Currency    string
+}
+
+func NewOnboardingService(userRepo *UserRepository, organizationRepo *OrganizationRepository, atomicProcess *db.AtomicProcess, storeProvisioner StoreProvisioner) *OnboardingService {
 	return &OnboardingService{
 		userRepo:         userRepo,
 		organizationRepo: organizationRepo,
 		atomicProcess:    atomicProcess,
+		storeProvisioner: storeProvisioner,
 	}
 }
 
-func (s *OnboardingService) OnboardNewOrganization(ctx context.Context, orgReq *CreateOrganizationRequest, userReq *CreateUserRequest) (*User, error) {
-	var createdUser *User
+func (s *OnboardingService) OnboardNewOrganization(ctx context.Context, orgReq *CreateOrganizationRequest, userReq *CreateUserRequest, storeReq *CreateInitialStoreRequest) (*User, error) {
+	if s.storeProvisioner == nil {
+		return nil, utils.Problem.InternalError().WithError(fmt.Errorf("store provisioner is not configured"))
+	}
+	if storeReq == nil {
+		return nil, utils.Problem.BadRequest("missing store information")
+	}
 
-	err := s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		if existingOrg, _ := s.organizationRepo.FindOne(ctx, s.organizationRepo.ScopeSlug(orgReq.Slug)); existingOrg != nil {
-			return utils.Problem.Conflict("Organization with the given slug already exists").WithError(fmt.Errorf("organization with slug %q already exists", orgReq.Slug)).With("slug", orgReq.Slug)
-		}
-		org := &Organization{
-			Slug: orgReq.Slug,
-			Name: orgReq.Name,
-		}
-		if err := s.organizationRepo.CreateOne(ctx, org); err != nil {
-			return err
-		}
-		passwordHash, err := utils.Hash.Make(userReq.Password)
+	var createdUser *User
+	err := s.atomicProcess.Exec(ctx, func(txCtx context.Context) error {
+		org, err := s.createOrganization(txCtx, orgReq)
 		if err != nil {
-			return utils.Problem.InternalError().WithError(err)
-		}
-		if existingUser, _ := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(userReq.Email)); existingUser != nil {
-			return utils.Problem.Conflict("User with the given email already exists").With("email", userReq.Email)
-		}
-		user := &User{
-			FirstName:      userReq.FirstName,
-			LastName:       userReq.LastName,
-			Email:          userReq.Email,
-			PasswordHash:   passwordHash,
-			OrganizationID: org.ID,
-		}
-		if err := s.userRepo.CreateOne(ctx, user); err != nil {
 			return err
 		}
-		if createdUser, err = s.userRepo.FindByID(ctx, user.ID, db.WithPreload(OrganizationStruct)); err != nil {
+		createdUser, err = s.createUser(txCtx, org.ID, userReq)
+		if err != nil {
 			return err
 		}
-		return nil
+		return s.storeProvisioner.ProvisionInitialStore(txCtx, org.ID, storeReq)
 	})
 
 	if err != nil {
 		return nil, err
 	}
 
+	return createdUser, nil
+}
+
+func (s *OnboardingService) createOrganization(ctx context.Context, orgReq *CreateOrganizationRequest) (*Organization, error) {
+	org := &Organization{
+		Name: orgReq.Name,
+	}
+	if err := s.organizationRepo.CreateOne(ctx, org); err != nil {
+		return nil, err
+	}
+	return org, nil
+}
+
+func (s *OnboardingService) createUser(ctx context.Context, organizationID string, userReq *CreateUserRequest) (*User, error) {
+	passwordHash, err := utils.Hash.Make(userReq.Password)
+	if err != nil {
+		return nil, utils.Problem.InternalError().WithError(err)
+	}
+	if existingUser, _ := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(userReq.Email)); existingUser != nil {
+		return nil, utils.Problem.Conflict("User with the given email already exists").With("email", userReq.Email)
+	}
+	user := &User{
+		FirstName:      userReq.FirstName,
+		LastName:       userReq.LastName,
+		Email:          userReq.Email,
+		PasswordHash:   passwordHash,
+		OrganizationID: organizationID,
+	}
+	if err := s.userRepo.CreateOne(ctx, user); err != nil {
+		return nil, err
+	}
+	createdUser, err := s.userRepo.FindByID(ctx, user.ID, db.WithPreload(OrganizationStruct))
+	if err != nil {
+		return nil, err
+	}
 	return createdUser, nil
 }
 

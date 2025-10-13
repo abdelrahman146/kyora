@@ -71,8 +71,9 @@ func runWeb(cmd *cobra.Command, args []string) {
 	cache := db.NewMemcache(viper.GetStringSlice("db.memcache_hosts"))
 	atomicProcess := db.NewAtomicProcess(postgres.DB())
 
-	accountDomain := account.NewDomain(postgres, atomicProcess, cache)
 	storeDomain := store.NewDomain(postgres, atomicProcess, cache)
+	storeProvisioner := store.NewOnboardingStoreProvisioner(storeDomain.StoreService)
+	accountDomain := account.NewDomain(postgres, atomicProcess, cache, storeProvisioner)
 	_ = asset.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
 	_ = customer.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
 	_ = expense.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)

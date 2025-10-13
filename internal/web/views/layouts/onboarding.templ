@@ -1,0 +1,17 @@
+package layouts
+
+import "github.com/abdelrahman146/kyora/internal/web/views/components"
+
+templ OnboardingLayout() {
+	@Root() {
+		<div class="flex min-h-screen flex-col items-center justify-center bg-base-200 p-4">
+			// Main content area for the onboarding card
+			<main class="w-full max-w-2xl">
+				<div class="mb-2">
+					@components.Logo()
+				</div>
+				{ children... }
+			</main>
+		</div>
+	}
+}

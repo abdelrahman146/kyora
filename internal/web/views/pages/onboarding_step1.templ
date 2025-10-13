@@ -3,37 +3,62 @@ package pages
 import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
 
 templ OnboardingStep1(email, first, last, method string) {
-	@layouts.AuthLayout() {
-		<div class="card w-full bg-base-100 shadow-xl">
-			<div class="card-body">
-				<h1 class="card-title text-2xl justify-center">Create your account</h1>
-				<p class="text-center text-base-content/60">Let's start with your details</p>
-				<form class="mt-4 space-y-4" hx-post="/onboarding/step2" hx-target="closest .card" hx-swap="outerHTML">
+	@layouts.OnboardingLayout() {
+		<div class="card w-full bg-base-100" id="onboarding-card">
+			<div class="card-body gap-6">
+				<div class="flex flex-col gap-3 text-center">
+					<div class="steps steps-horizontal w-full justify-center text-xs sm:text-sm">
+						<span class="step step-primary">Account</span>
+						<span class="step">Organization</span>
+						<span class="step">Store</span>
+					</div>
+					<div class="flex flex-col gap-1">
+						<h1 class="card-title text-2xl justify-center">Create your account</h1>
+						<p class="text-base-content/70 text-sm sm:text-base">Tell us who you are so we can tailor Kyora to you.</p>
+					</div>
+				</div>
+				<form class="flex flex-col gap-2" hx-post="/onboarding/step2" hx-target="#onboarding-card" hx-swap="outerHTML">
 					<input type="hidden" name="method" value={ method }/>
-					<div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+					<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 						<label class="form-control w-full">
-							<div class="label"><span class="label-text">First Name</span></div>
-							<input name="first_name" type="text" class="input input-bordered w-full" value={ first } required/>
+							<div class="label"><span class="label-text">First name</span></div>
+							<input name="first_name" type="text" class="input input-bordered w-full" placeholder="First name" value={ first } required/>
 						</label>
 						<label class="form-control w-full">
-							<div class="label"><span class="label-text">Last Name</span></div>
-							<input name="last_name" type="text" class="input input-bordered w-full" value={ last } required/>
+							<div class="label"><span class="label-text">Last name</span></div>
+							<input name="last_name" type="text" class="input input-bordered w-full" placeholder="Last name" value={ last }/>
 						</label>
 					</div>
 					<label class="form-control w-full">
-						<div class="label"><span class="label-text">Email Address</span></div>
-						<input name="email" type="email" class="input input-bordered w-full" value={ email } required/>
+						<div class="label"><span class="label-text">Email address</span></div>
+						<input name="email" type="email" class="input input-bordered w-full" placeholder="you@business.com" value={ email } required/>
 					</label>
-					<label class="form-control w-full">
-						<div class="label"><span class="label-text">Password</span></div>
-						<input name="password" type="password" class="input input-bordered w-full" minlength="8" required/>
-					</label>
-					<div class="form-control mt-2">
-						<button class="btn btn-primary">Continue</button>
+					if method != "google" {
+						<label class="form-control w-full">
+							<div class="label"><span class="label-text">Password</span><span class="label-text-alt text-xs text-base-content/40">Use at least 8 characters</span></div>
+							<input name="password" type="password" class="input input-bordered w-full" placeholder="Create a strong password" minlength="8" required/>
+						</label>
+					} else {
+						<input type="hidden" name="password" value=""/>
+						<div class="alert alert-info text-left">
+							You're signing in with Google. We'll securely create a Kyora password for you.
+						</div>
+					}
+					<div class="form-control self-center mt-2">
+						<button type="submit" class="btn btn-primary">Continue to organization</button>
 					</div>
-					<div class="divider">OR</div>
-					<a href="/auth/google" class="btn btn-outline">Continue with Google</a>
+					if method != "google" {
+						<div class="divider">OR</div>
+						<a href="/auth/google" hx-boost="false" class="btn btn-outline">
+							<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 48 48"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"></path><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"></path><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"></path><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C44.434 36.338 48 30.651 48 24c0-1.341-.138-2.65-.389-3.917z"></path></svg>
+							Continue with Google
+						</a>
+					}
 				</form>
+				<p class="text-center text-sm text-base-content/70">
+					Already have an account?
+					<a href="/login" hx-boost="false" class="link link-primary">Log in</a>
+				</p>
 			</div>
 		</div>
 	}

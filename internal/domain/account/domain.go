@@ -9,7 +9,7 @@ type AccountDomain struct {
 	OnboardingService *OnboardingService
 }
 
-func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache) *AccountDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeProvisioner StoreProvisioner) *AccountDomain {
 	userRepo := NewUserRepository(postgres)
 	organizationRepo := NewOrganizationRepository(postgres)
 	postgres.AutoMigrate(&User{}, &Organization{})
@@ -18,6 +18,6 @@ func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db
 		AuthService:       NewAuthenticationService(userRepo, cache),
 		OrgService:        NewOrganizationService(organizationRepo),
 		UserService:       NewUserService(userRepo),
-		OnboardingService: NewOnboardingService(userRepo, organizationRepo, atomicProcess),
+		OnboardingService: NewOnboardingService(userRepo, organizationRepo, atomicProcess, storeProvisioner),
 	}
 }

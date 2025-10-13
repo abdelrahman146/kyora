@@ -2,8 +2,10 @@ package store
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/utils"
 )
 
 type StoreService struct {
@@ -18,11 +20,22 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 	store := &Store{
 		OrganizationID: organizationID,
 		Name:           storeReq.Name,
-		Code:           storeReq.Code,
-		Locale:         storeReq.Locale,
 		Currency:       storeReq.Currency,
-		Timezone:       storeReq.Timezone,
 		VatRate:        storeReq.VatRate,
+	}
+	maxAttempts := 5
+	for i := range maxAttempts {
+		store.Code = utils.ID.NewBase62(6)
+		available, err := s.IsStoreCodeAvailable(ctx, organizationID, store.Code)
+		if err != nil {
+			return nil, err
+		}
+		if available {
+			break
+		}
+		if i == maxAttempts-1 {
+			return nil, utils.Problem.InternalError().WithError(fmt.Errorf("max attempts reached for generating unique store code"))
+		}
 	}
 	if err := s.storeRepo.CreateOne(ctx, store); err != nil {
 		return nil, err
@@ -52,9 +65,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq
 	}
 	store := &Store{
 		Name:         storeReq.Name,
-		Locale:       storeReq.Locale,
 		Currency:     storeReq.Currency,
-		Timezone:     storeReq.Timezone,
 		VatRate:      storeReq.VatRate,
 		SafetyBuffer: storeReq.SafetyBuffer,
 	}
