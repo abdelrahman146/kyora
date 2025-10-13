@@ -70,7 +70,7 @@ func (r *OwnerRepository) deleteMany(ctx context.Context, opts ...db.PostgresOpt
 	return r.db.Conn(ctx, opts...).Delete(&Owner{}).Error
 }
 
-func (r *OwnerRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Owner, error) {
+func (r *OwnerRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Owner, error) {
 	var owner Owner
 	if err := r.db.Conn(ctx, opts...).First(&owner, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (r *OwnerRepository) FindByID(ctx context.Context, id string, opts ...db.Po
 	return &owner, nil
 }
 
-func (r *OwnerRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Owner, error) {
+func (r *OwnerRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Owner, error) {
 	var owner Owner
 	if err := r.db.Conn(ctx, opts...).First(&owner).Error; err != nil {
 		return nil, err

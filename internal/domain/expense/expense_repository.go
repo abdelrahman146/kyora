@@ -127,7 +127,7 @@ func (r *ExpenseRepository) deleteMany(ctx context.Context, opts ...db.PostgresO
 	return r.db.Conn(ctx, opts...).Delete(&Expense{}).Error
 }
 
-func (r *ExpenseRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Expense, error) {
+func (r *ExpenseRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Expense, error) {
 	var expense Expense
 	if err := r.db.Conn(ctx, opts...).First(&expense, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -135,7 +135,7 @@ func (r *ExpenseRepository) FindByID(ctx context.Context, id string, opts ...db.
 	return &expense, nil
 }
 
-func (r *ExpenseRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Expense, error) {
+func (r *ExpenseRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Expense, error) {
 	var expense Expense
 	if err := r.db.Conn(ctx, opts...).First(&expense).Error; err != nil {
 		return nil, err

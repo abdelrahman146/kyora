@@ -77,7 +77,7 @@ func (r *InvestmentRepository) deleteMany(ctx context.Context, opts ...db.Postgr
 	return r.db.Conn(ctx, opts...).Delete(&Investment{}).Error
 }
 
-func (r *InvestmentRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Investment, error) {
+func (r *InvestmentRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Investment, error) {
 	var investment Investment
 	if err := r.db.Conn(ctx, opts...).First(&investment, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (r *InvestmentRepository) FindByID(ctx context.Context, id string, opts ...
 	return &investment, nil
 }
 
-func (r *InvestmentRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Investment, error) {
+func (r *InvestmentRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Investment, error) {
 	var investment Investment
 	if err := r.db.Conn(ctx, opts...).First(&investment).Error; err != nil {
 		return nil, err

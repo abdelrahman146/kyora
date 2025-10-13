@@ -33,7 +33,7 @@ func (r *OrderItemRepository) scopeOrderID(orderID string) func(db *gorm.DB) *go
 	}
 }
 
-func (r *OrderItemRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OrderItem, error) {
+func (r *OrderItemRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OrderItem, error) {
 	var orderItem OrderItem
 	if err := r.db.Conn(ctx, opts...).First(&orderItem, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -41,7 +41,7 @@ func (r *OrderItemRepository) FindByID(ctx context.Context, id string, opts ...d
 	return &orderItem, nil
 }
 
-func (r *OrderItemRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*OrderItem, error) {
+func (r *OrderItemRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OrderItem, error) {
 	var orderItem OrderItem
 	if err := r.db.Conn(ctx, opts...).First(&orderItem).Error; err != nil {
 		return nil, err

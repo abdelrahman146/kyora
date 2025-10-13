@@ -77,7 +77,7 @@ func (r *OwnerDrawRepository) deleteMany(ctx context.Context, opts ...db.Postgre
 	return r.db.Conn(ctx, opts...).Delete(&OwnerDraw{}).Error
 }
 
-func (r *OwnerDrawRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OwnerDraw, error) {
+func (r *OwnerDrawRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*OwnerDraw, error) {
 	var draw OwnerDraw
 	if err := r.db.Conn(ctx, opts...).First(&draw, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -85,7 +85,7 @@ func (r *OwnerDrawRepository) FindByID(ctx context.Context, id string, opts ...d
 	return &draw, nil
 }
 
-func (r *OwnerDrawRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*OwnerDraw, error) {
+func (r *OwnerDrawRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*OwnerDraw, error) {
 	var draw OwnerDraw
 	if err := r.db.Conn(ctx, opts...).First(&draw).Error; err != nil {
 		return nil, err

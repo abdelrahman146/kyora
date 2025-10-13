@@ -70,7 +70,7 @@ func (r *CustomerNoteRepository) deleteMany(ctx context.Context, opts ...db.Post
 	return r.db.Conn(ctx, opts...).Delete(&CustomerNote{}).Error
 }
 
-func (r *CustomerNoteRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*CustomerNote, error) {
+func (r *CustomerNoteRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*CustomerNote, error) {
 	var customerNote CustomerNote
 	if err := r.db.Conn(ctx, opts...).First(&customerNote, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (r *CustomerNoteRepository) FindByID(ctx context.Context, id string, opts .
 	return &customerNote, nil
 }
 
-func (r *CustomerNoteRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*CustomerNote, error) {
+func (r *CustomerNoteRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*CustomerNote, error) {
 	var customerNote CustomerNote
 	if err := r.db.Conn(ctx, opts...).First(&customerNote).Error; err != nil {
 		return nil, err

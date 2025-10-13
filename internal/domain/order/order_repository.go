@@ -142,7 +142,7 @@ func (r *OrderRepository) scopeOrderFilter(filter *OrderFilter) func(db *gorm.DB
 	}
 }
 
-func (r *OrderRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Order, error) {
+func (r *OrderRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Order, error) {
 	var order Order
 	if err := r.db.Conn(ctx, opts...).First(&order, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (r *OrderRepository) FindByID(ctx context.Context, id string, opts ...db.Po
 	return &order, nil
 }
 
-func (r *OrderRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Order, error) {
+func (r *OrderRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Order, error) {
 	var order Order
 	if err := r.db.Conn(ctx, opts...).First(&order).Error; err != nil {
 		return nil, err

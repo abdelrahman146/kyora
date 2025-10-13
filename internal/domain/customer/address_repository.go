@@ -70,7 +70,7 @@ func (r *AddressRepository) deleteMany(ctx context.Context, opts ...db.PostgresO
 	return r.db.Conn(ctx, opts...).Delete(&Address{}).Error
 }
 
-func (r *AddressRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Address, error) {
+func (r *AddressRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Address, error) {
 	var address Address
 	if err := r.db.Conn(ctx, opts...).First(&address, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (r *AddressRepository) FindByID(ctx context.Context, id string, opts ...db.
 	return &address, nil
 }
 
-func (r *AddressRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Address, error) {
+func (r *AddressRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Address, error) {
 	var address Address
 	if err := r.db.Conn(ctx, opts...).First(&address).Error; err != nil {
 		return nil, err

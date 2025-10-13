@@ -128,7 +128,7 @@ func (r *RecurringExpenseRepository) deleteMany(ctx context.Context, opts ...db.
 	return r.db.Conn(ctx, opts...).Delete(&RecurringExpense{}).Error
 }
 
-func (r *RecurringExpenseRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*RecurringExpense, error) {
+func (r *RecurringExpenseRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*RecurringExpense, error) {
 	var expense RecurringExpense
 	if err := r.db.Conn(ctx, opts...).First(&expense, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -136,7 +136,7 @@ func (r *RecurringExpenseRepository) FindByID(ctx context.Context, id string, op
 	return &expense, nil
 }
 
-func (r *RecurringExpenseRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*RecurringExpense, error) {
+func (r *RecurringExpenseRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*RecurringExpense, error) {
 	var expense RecurringExpense
 	if err := r.db.Conn(ctx, opts...).First(&expense).Error; err != nil {
 		return nil, err

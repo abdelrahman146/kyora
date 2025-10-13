@@ -103,7 +103,7 @@ func (r *UserRepository) deleteMany(ctx context.Context, opts ...db.PostgresOpti
 	return r.db.Conn(ctx, opts...).Delete(&User{}).Error
 }
 
-func (r *UserRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*User, error) {
+func (r *UserRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*User, error) {
 	var user User
 	if err := r.db.Conn(ctx, opts...).First(&user, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -111,7 +111,7 @@ func (r *UserRepository) FindByID(ctx context.Context, id string, opts ...db.Pos
 	return &user, nil
 }
 
-func (r *UserRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*User, error) {
+func (r *UserRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*User, error) {
 	var user User
 	if err := r.db.Conn(ctx, opts...).First(&user).Error; err != nil {
 		return nil, err

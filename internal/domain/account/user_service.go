@@ -15,7 +15,7 @@ func NewUserService(userRepo *UserRepository) *UserService {
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, userID string, userReq *UpdateUserRequest) (*User, error) {
-	if _, err := s.userRepo.FindOne(ctx, s.userRepo.scopeID(userID)); err != nil {
+	if _, err := s.userRepo.findOne(ctx, s.userRepo.scopeID(userID)); err != nil {
 		return nil, err
 	}
 	user := &User{}

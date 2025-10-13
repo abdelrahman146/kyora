@@ -59,7 +59,7 @@ func (s *InventoryService) AddVariantToProduct(ctx context.Context, productID st
 	var variant *Variant
 	err := s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		// Ensure StoreID via product
-		prod, err := s.products.FindByID(ctx, productID)
+		prod, err := s.products.findByID(ctx, productID)
 		if err != nil {
 			return err
 		}
@@ -145,7 +145,7 @@ func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode
 }
 
 func (s *InventoryService) GetProductByID(ctx context.Context, productID string) (*Product, error) {
-	product, err := s.products.FindByID(ctx, productID, db.WithPreload(VariantStruct))
+	product, err := s.products.findByID(ctx, productID, db.WithPreload(VariantStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -153,7 +153,7 @@ func (s *InventoryService) GetProductByID(ctx context.Context, productID string)
 }
 
 func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string) (*Variant, error) {
-	variant, err := s.variants.FindByID(ctx, variantID, db.WithPreload(ProductStruct))
+	variant, err := s.variants.findByID(ctx, variantID, db.WithPreload(ProductStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -161,7 +161,7 @@ func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string)
 }
 
 func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Variant, error) {
-	variant, err := s.variants.FindOne(ctx, s.variants.scopeSKU(sku), db.WithPreload(ProductStruct))
+	variant, err := s.variants.findOne(ctx, s.variants.scopeSKU(sku), db.WithPreload(ProductStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -217,7 +217,7 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 	var product *Product
 	err := s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		var err error
-		product, err = s.products.FindByID(ctx, productID)
+		product, err = s.products.findByID(ctx, productID)
 		if err != nil {
 			return err
 		}
@@ -226,7 +226,7 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 			return err
 		}
 		for _, uv := range updateVariantsReq {
-			variant, err := s.variants.FindByID(ctx, uv.ID)
+			variant, err := s.variants.findByID(ctx, uv.ID)
 			if err != nil {
 				return err
 			}
@@ -236,7 +236,7 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 			}
 		}
 		// Reload product with variants
-		product, err = s.products.FindByID(ctx, productID, db.WithPreload(VariantStruct))
+		product, err = s.products.findByID(ctx, productID, db.WithPreload(VariantStruct))
 		if err != nil {
 			return err
 		}
@@ -261,7 +261,7 @@ func (s *InventoryService) UpdateVariant(ctx context.Context, variantID string, 
 	var variant *Variant
 	err := s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		var err error
-		variant, err = s.variants.FindByID(ctx, variantID, db.WithPreload(ProductStruct))
+		variant, err = s.variants.findByID(ctx, variantID, db.WithPreload(ProductStruct))
 		if err != nil {
 			return err
 		}
@@ -302,7 +302,7 @@ func updateVariantFields(variant *Variant, productName string, updateReq *Update
 
 func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		variant, err := s.variants.FindByID(ctx, variantID)
+		variant, err := s.variants.findByID(ctx, variantID)
 		if err != nil {
 			return err
 		}

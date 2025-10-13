@@ -17,7 +17,7 @@ func NewAssetService(assetRepo *AssetRepository, storeService *store.StoreServic
 }
 
 func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
+	asset, err := s.assetRepo.findOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *AssetService) CreateAsset(ctx context.Context, storeID string, req *Cre
 }
 
 func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string, req *UpdateAssetRequest) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
+	asset, err := s.assetRepo.findOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}

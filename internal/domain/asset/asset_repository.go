@@ -95,7 +95,7 @@ func (r *AssetRepository) deleteMany(ctx context.Context, opts ...db.PostgresOpt
 	return r.db.Conn(ctx, opts...).Delete(&Asset{}).Error
 }
 
-func (r *AssetRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Asset, error) {
+func (r *AssetRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Asset, error) {
 	var asset Asset
 	if err := r.db.Conn(ctx, opts...).First(&asset, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -103,7 +103,7 @@ func (r *AssetRepository) FindByID(ctx context.Context, id string, opts ...db.Po
 	return &asset, nil
 }
 
-func (r *AssetRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Asset, error) {
+func (r *AssetRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Asset, error) {
 	var asset Asset
 	if err := r.db.Conn(ctx, opts...).First(&asset).Error; err != nil {
 		return nil, err

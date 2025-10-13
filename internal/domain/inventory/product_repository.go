@@ -126,7 +126,7 @@ func (r *ProductRepository) deleteMany(ctx context.Context, opts ...db.PostgresO
 	return r.db.Conn(ctx, opts...).Delete(&Product{}).Error
 }
 
-func (r *ProductRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Product, error) {
+func (r *ProductRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Product, error) {
 	var product Product
 	if err := r.db.Conn(ctx, opts...).First(&product, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -134,7 +134,7 @@ func (r *ProductRepository) FindByID(ctx context.Context, id string, opts ...db.
 	return &product, nil
 }
 
-func (r *ProductRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Product, error) {
+func (r *ProductRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Product, error) {
 	var product Product
 	if err := r.db.Conn(ctx, opts...).First(&product).Error; err != nil {
 		return nil, err

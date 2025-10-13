@@ -45,7 +45,7 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 }
 
 func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID, code string) (bool, error) {
-	existingStore, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeOrganizationID(organizationID), s.storeRepo.scopeCode(code))
+	existingStore, err := s.storeRepo.findOne(ctx, s.storeRepo.scopeOrganizationID(organizationID), s.storeRepo.scopeCode(code))
 	if err != nil {
 		return false, err
 	}
@@ -53,7 +53,7 @@ func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID,
 }
 
 func (s *StoreService) ValidateStoreID(ctx context.Context, storeID string) error {
-	_, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeID(storeID))
+	_, err := s.storeRepo.findOne(ctx, s.storeRepo.scopeID(storeID))
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (s *StoreService) ValidateStoreID(ctx context.Context, storeID string) erro
 }
 
 func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq *UpdateStoreRequest) (*Store, error) {
-	if _, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
+	if _, err := s.storeRepo.findOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
 		return nil, err
 	}
 	store := &Store{
@@ -78,7 +78,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq
 }
 
 func (s *StoreService) GetStoreByID(ctx context.Context, id string) (*Store, error) {
-	store, err := s.storeRepo.FindOne(ctx, db.WithScopes(s.storeRepo.scopeID(id)))
+	store, err := s.storeRepo.findOne(ctx, db.WithScopes(s.storeRepo.scopeID(id)))
 	if err != nil {
 		return nil, err
 	}

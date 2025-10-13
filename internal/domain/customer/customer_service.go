@@ -46,7 +46,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, storeID string, cu
 }
 
 func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*Customer, error) {
-	return s.customers.FindByID(ctx, id, db.WithPreload(AddressStruct), db.WithPreload(CustomerNoteStruct))
+	return s.customers.findByID(ctx, id, db.WithPreload(AddressStruct), db.WithPreload(CustomerNoteStruct))
 }
 
 func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Customer, error) {
@@ -87,7 +87,7 @@ func (s *CustomerService) AddNoteToCustomer(ctx context.Context, customerID stri
 }
 
 func (s *CustomerService) UpdateCustomer(ctx context.Context, customerID string, updates *UpdateCustomerRequest) (*Customer, error) {
-	existingCustomer, err := s.customers.FindByID(ctx, customerID)
+	existingCustomer, err := s.customers.findByID(ctx, customerID)
 	if err != nil {
 		return nil, err
 	}
@@ -156,11 +156,11 @@ func (s *CustomerService) ListNotesOfCustomer(ctx context.Context, customerID st
 }
 
 func (s *CustomerService) GetAddressByID(ctx context.Context, addressID string) (*Address, error) {
-	return s.addresses.FindByID(ctx, addressID)
+	return s.addresses.findByID(ctx, addressID)
 }
 
 func (s *CustomerService) GetNoteByID(ctx context.Context, noteID string) (*CustomerNote, error) {
-	return s.notes.FindByID(ctx, noteID)
+	return s.notes.findByID(ctx, noteID)
 }
 func (s *CustomerService) DeleteAddress(ctx context.Context, addressID string) error {
 	return s.addresses.deleteOne(ctx, s.addresses.scopeID(addressID))
@@ -178,7 +178,7 @@ func (s *CustomerService) DeleteAllNotesOfCustomer(ctx context.Context, customer
 }
 
 func (s *CustomerService) UpdateAddress(ctx context.Context, addressID string, updates *UpdateAddressRequest) (*Address, error) {
-	existingAddress, err := s.addresses.FindByID(ctx, addressID)
+	existingAddress, err := s.addresses.findByID(ctx, addressID)
 	if err != nil {
 		return nil, err
 	}
@@ -209,7 +209,7 @@ func (s *CustomerService) UpdateAddress(ctx context.Context, addressID string, u
 }
 
 func (s *CustomerService) UpdateNote(ctx context.Context, noteID string, updates *UpdateCustomerNoteRequest) (*CustomerNote, error) {
-	existingNote, err := s.notes.FindByID(ctx, noteID)
+	existingNote, err := s.notes.findByID(ctx, noteID)
 	if err != nil {
 		return nil, err
 	}

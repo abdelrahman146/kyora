@@ -102,7 +102,7 @@ func (r *StoreRepository) deleteMany(ctx context.Context, opts ...db.PostgresOpt
 	return r.db.Conn(ctx, opts...).Delete(&Store{}).Error
 }
 
-func (r *StoreRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Store, error) {
+func (r *StoreRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Store, error) {
 	var store Store
 	if err := r.db.Conn(ctx, opts...).First(&store, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -110,7 +110,7 @@ func (r *StoreRepository) FindByID(ctx context.Context, id string, opts ...db.Po
 	return &store, nil
 }
 
-func (r *StoreRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Store, error) {
+func (r *StoreRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Store, error) {
 	var store Store
 	if err := r.db.Conn(ctx, opts...).First(&store).Error; err != nil {
 		return nil, err

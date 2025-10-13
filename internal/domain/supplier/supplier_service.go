@@ -17,7 +17,7 @@ func NewSupplierService(storeService *store.StoreService, supplierRepo *Supplier
 }
 
 func (s *SupplierService) GetSupplierByID(ctx context.Context, storeID, id string, opts ...db.PostgresOptions) (*Supplier, error) {
-	return s.supplierRepo.FindByID(ctx, id, opts...)
+	return s.supplierRepo.findByID(ctx, id, opts...)
 }
 
 func (s *SupplierService) ListSuppliers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Supplier, error) {
@@ -51,7 +51,7 @@ func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, su
 }
 
 func (s *SupplierService) UpdateSupplier(ctx context.Context, storeID, id string, supplier *UpdateSupplierRequest) (*Supplier, error) {
-	existingSupplier, err := s.supplierRepo.FindByID(ctx, id)
+	existingSupplier, err := s.supplierRepo.findByID(ctx, id)
 	if err != nil {
 		return nil, err
 	}
@@ -83,7 +83,7 @@ func (s *SupplierService) UpdateSupplier(ctx context.Context, storeID, id string
 }
 
 func (s *SupplierService) DeleteSupplier(ctx context.Context, storeID, id string) error {
-	_, err := s.supplierRepo.FindByID(ctx, id)
+	_, err := s.supplierRepo.findByID(ctx, id)
 	if err != nil {
 		return err
 	}

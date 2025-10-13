@@ -26,7 +26,7 @@ func NewExpenseService(expenseRepo *ExpenseRepository, recurringRepo *RecurringE
 }
 
 func (s *ExpenseService) GetExpenseByID(ctx context.Context, storeID, id string) (*Expense, error) {
-	exp, err := s.expenseRepo.FindOne(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeID(id))
+	exp, err := s.expenseRepo.findOne(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -88,7 +88,7 @@ func (s *ExpenseService) UpdateExpense(ctx context.Context, storeID, expenseID s
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.expenseRepo.FindOne(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeID(expenseID))
+	expense, err := s.expenseRepo.findOne(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeID(expenseID))
 	if err != nil {
 		return nil, err
 	}
@@ -137,7 +137,7 @@ func (s *ExpenseService) DeleteExpenses(ctx context.Context, storeID string, fil
 }
 
 func (s *ExpenseService) GetRecurringExpenseByID(ctx context.Context, storeID, id string) (*RecurringExpense, error) {
-	exp, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(id))
+	exp, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(id))
 	if err != nil {
 		return nil, err
 	}
@@ -204,7 +204,7 @@ func (s *ExpenseService) UpdateRecurringExpense(ctx context.Context, storeID, ex
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(expenseID))
+	expense, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(expenseID))
 	if err != nil {
 		return nil, err
 	}
@@ -263,7 +263,7 @@ func (s *ExpenseService) PauseRecurringExpense(ctx context.Context, storeID, rec
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
+	expense, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
 	if err != nil {
 		return nil, err
 	}
@@ -284,7 +284,7 @@ func (s *ExpenseService) ResumeRecurringExpense(ctx context.Context, storeID, re
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
+	expense, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
 	if err != nil {
 		return nil, err
 	}
@@ -305,7 +305,7 @@ func (s *ExpenseService) CancelRecurringExpense(ctx context.Context, storeID, re
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
+	expense, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
 	if err != nil {
 		return nil, err
 	}
@@ -326,7 +326,7 @@ func (s *ExpenseService) EndRecurringExpense(ctx context.Context, storeID, recur
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	expense, err := s.recurringRepo.FindOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
+	expense, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(recurringExpenseID))
 	if err != nil {
 		return nil, err
 	}

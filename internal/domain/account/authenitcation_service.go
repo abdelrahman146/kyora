@@ -25,7 +25,7 @@ func NewAuthenticationService(userRepo *UserRepository, cache *db.Memcache) *Aut
 }
 
 func (s *AuthenticationService) Authenticate(ctx context.Context, email, password string) (*User, string, error) {
-	user, err := s.userRepo.FindOne(ctx, s.userRepo.scopeEmail(email), db.WithPreload(OrganizationStruct))
+	user, err := s.userRepo.findOne(ctx, s.userRepo.scopeEmail(email), db.WithPreload(OrganizationStruct))
 	if err != nil {
 		return nil, "", err
 	}
@@ -40,7 +40,7 @@ func (s *AuthenticationService) Authenticate(ctx context.Context, email, passwor
 }
 
 func (s *AuthenticationService) GetUserByID(ctx context.Context, id string) (*User, error) {
-	user, err := s.userRepo.FindByID(ctx, id, db.WithPreload(OrganizationStruct))
+	user, err := s.userRepo.findByID(ctx, id, db.WithPreload(OrganizationStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -48,7 +48,7 @@ func (s *AuthenticationService) GetUserByID(ctx context.Context, id string) (*Us
 }
 
 func (s *AuthenticationService) GetUserByEmail(ctx context.Context, email string) (*User, error) {
-	user, err := s.userRepo.FindOne(ctx, s.userRepo.scopeEmail(email), db.WithPreload(OrganizationStruct))
+	user, err := s.userRepo.findOne(ctx, s.userRepo.scopeEmail(email), db.WithPreload(OrganizationStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -127,7 +127,7 @@ type resetPayload struct {
 const resetPrefix = "pwreset:"
 
 func (s *AuthenticationService) CreateResetToken(ctx context.Context, email string) string {
-	user, err := s.userRepo.FindOne(ctx, s.userRepo.scopeEmail(email))
+	user, err := s.userRepo.findOne(ctx, s.userRepo.scopeEmail(email))
 	if err != nil {
 		return ""
 	}
@@ -162,7 +162,7 @@ func (s *AuthenticationService) ValidateResetToken(ctx context.Context, token st
 		_ = s.cache.Delete(resetPrefix + token)
 		return nil, utils.Problem.NotFound("Token expired")
 	}
-	user, err := s.userRepo.FindByID(ctx, p.UserID)
+	user, err := s.userRepo.findByID(ctx, p.UserID)
 	if err != nil {
 		return nil, err
 	}

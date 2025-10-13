@@ -30,11 +30,11 @@ func NewOrderService(orders *OrderRepository, orderItems *OrderItemRepository, o
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, storeID string, id string) (*Order, error) {
-	return s.orders.FindByID(ctx, id, s.orders.scopeStoreID(storeID), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
+	return s.orders.findByID(ctx, id, s.orders.scopeStoreID(storeID), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
 }
 
 func (s *OrderService) GetOrderByOrderNumber(ctx context.Context, storeID string, orderNumber string) (*Order, error) {
-	return s.orders.FindOne(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderNumber(orderNumber), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
+	return s.orders.findOne(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderNumber(orderNumber), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
 }
 
 func (s *OrderService) ListOrders(ctx context.Context, storeID string, filter *OrderFilter, page, pageSize int, orderBy string, ascending bool) ([]*Order, error) {

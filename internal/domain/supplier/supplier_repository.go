@@ -76,7 +76,7 @@ func (r *SupplierRepository) deleteMany(ctx context.Context, opts ...db.Postgres
 	return r.db.Conn(ctx, opts...).Delete(&Supplier{}).Error
 }
 
-func (r *SupplierRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Supplier, error) {
+func (r *SupplierRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Supplier, error) {
 	var supplier Supplier
 	if err := r.db.Conn(ctx, opts...).First(&supplier, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -84,7 +84,7 @@ func (r *SupplierRepository) FindByID(ctx context.Context, id string, opts ...db
 	return &supplier, nil
 }
 
-func (r *SupplierRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Supplier, error) {
+func (r *SupplierRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Supplier, error) {
 	var supplier Supplier
 	if err := r.db.Conn(ctx, opts...).First(&supplier).Error; err != nil {
 		return nil, err

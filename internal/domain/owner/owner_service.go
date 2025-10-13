@@ -38,7 +38,7 @@ func (s *OwnerService) CreateOwner(ctx context.Context, storeID string, req *Cre
 }
 
 func (s *OwnerService) UpdateOwner(ctx context.Context, storeID string, ownerID string, req *UpdateOwnerRequest) (*Owner, error) {
-	owner, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
+	owner, err := s.ownerRepo.findOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -58,7 +58,7 @@ func (s *OwnerService) UpdateOwner(ctx context.Context, storeID string, ownerID 
 }
 
 func (s *OwnerService) GetOwnerByID(ctx context.Context, storeID string, ownerID string) (*Owner, error) {
-	return s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
+	return s.ownerRepo.findOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerService) ListOwners(ctx context.Context, storeID string) ([]*Owner, error) {
@@ -66,7 +66,7 @@ func (s *OwnerService) ListOwners(ctx context.Context, storeID string) ([]*Owner
 }
 
 func (s *OwnerService) DeleteOwner(ctx context.Context, storeID string, ownerID string) error {
-	_, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
+	_, err := s.ownerRepo.findOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 	if err != nil {
 		return err
 	}

@@ -149,7 +149,7 @@ func (r *VariantRepository) deleteMany(ctx context.Context, opts ...db.PostgresO
 	return r.db.Conn(ctx, opts...).Delete(&Variant{}).Error
 }
 
-func (r *VariantRepository) FindByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Variant, error) {
+func (r *VariantRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Variant, error) {
 	var variant Variant
 	if err := r.db.Conn(ctx, opts...).First(&variant, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -157,7 +157,7 @@ func (r *VariantRepository) FindByID(ctx context.Context, id string, opts ...db.
 	return &variant, nil
 }
 
-func (r *VariantRepository) FindOne(ctx context.Context, opts ...db.PostgresOptions) (*Variant, error) {
+func (r *VariantRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Variant, error) {
 	var variant Variant
 	if err := r.db.Conn(ctx, opts...).First(&variant).Error; err != nil {
 		return nil, err
