@@ -77,7 +77,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	// Optional immediate org creation if provided
 	orgName := c.PostForm("org_name")
 	storeCountryCode := c.PostForm("store_country_code")
-	country := utils.Country.GetCountryByIsoCode(storeCountryCode)
+	country := utils.Country.GetCountryByCode(storeCountryCode)
 	if orgName != "" {
 		userReq := &account.CreateUserRequest{FirstName: first, LastName: last, Email: email, Password: password}
 		orgReq := &account.CreateOrganizationRequest{Name: orgName}

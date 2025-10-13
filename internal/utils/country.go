@@ -22,23 +22,23 @@ var countries = []CountryInfo{
 	{Name: "India", Code: "IN", IsoCode: "IND", Flag: "🇮🇳", PhonePrefix: "+91", CurrencyCode: "INR", CurrencyLabel: "INR — ₹", CurrencySymbol: "₹"},
 	{Name: "United Arab Emirates", Code: "AE", IsoCode: "ARE", Flag: "🇦🇪", PhonePrefix: "+971", CurrencyCode: "AED", CurrencyLabel: "AED — د.إ", CurrencySymbol: "د.إ"},
 	{Name: "Saudi Arabia", Code: "SA", IsoCode: "SAU", Flag: "🇸🇦", PhonePrefix: "+966", CurrencyCode: "SAR", CurrencyLabel: "SAR — ر.س", CurrencySymbol: "ر.س"},
-	{Name: "Egypt", Code: "EG", IsoCode: "EGY", Flag: "🇪🇬", PhonePrefix: "+20", CurrencyCode: "EGP", CurrencyLabel: "EGP — £", CurrencySymbol: "£"},
+	{Name: "Egypt", Code: "EG", IsoCode: "EGY", Flag: "🇪🇬", PhonePrefix: "+20", CurrencyCode: "EGP", CurrencyLabel: "EGP — E£", CurrencySymbol: "E£"},
 	{Name: "Kuwait", Code: "KW", IsoCode: "KWT", Flag: "🇰🇼", PhonePrefix: "+965", CurrencyCode: "KWD", CurrencyLabel: "KWD — د.ك", CurrencySymbol: "د.ك"},
 	{Name: "Qatar", Code: "QA", IsoCode: "QAT", Flag: "🇶🇦", PhonePrefix: "+974", CurrencyCode: "QAR", CurrencyLabel: "QAR — ر.ق", CurrencySymbol: "ر.ق"},
 	{Name: "Oman", Code: "OM", IsoCode: "OMN", Flag: "🇴🇲", PhonePrefix: "+968", CurrencyCode: "OMR", CurrencyLabel: "OMR — ر.ع.", CurrencySymbol: "ر.ع."},
-	{Name: "Algeria", Code: "DZ", IsoCode: "DZA", Flag: "🇩🇿", PhonePrefix: "+213", CurrencyCode: "DZD", CurrencyLabel: "DZD — دج", CurrencySymbol: "دج"},
+	{Name: "Algeria", Code: "DZ", IsoCode: "DZA", Flag: "🇩🇿", PhonePrefix: "+213", CurrencyCode: "DZD", CurrencyLabel: "DZD — د.ج", CurrencySymbol: "د.ج"},
 	{Name: "Morocco", Code: "MA", IsoCode: "MAR", Flag: "🇲🇦", PhonePrefix: "+212", CurrencyCode: "MAD", CurrencyLabel: "MAD — د.م.", CurrencySymbol: "د.م."},
 	{Name: "Tunisia", Code: "TN", IsoCode: "TUN", Flag: "🇹🇳", PhonePrefix: "+216", CurrencyCode: "TND", CurrencyLabel: "TND — د.ت.", CurrencySymbol: "د.ت."},
 	{Name: "Jordan", Code: "JO", IsoCode: "JOR", Flag: "🇯🇴", PhonePrefix: "+962", CurrencyCode: "JOD", CurrencyLabel: "JOD — د.ا", CurrencySymbol: "د.ا"},
-	{Name: "Bahrain", Code: "BH", IsoCode: "BHR", Flag: "🇧🇭", PhonePrefix: "+973", CurrencyCode: "BHD", CurrencyLabel: "BHD — .د.ب", CurrencySymbol: ".د.ب"},
+	{Name: "Bahrain", Code: "BH", IsoCode: "BHR", Flag: "🇧🇭", PhonePrefix: "+973", CurrencyCode: "BHD", CurrencyLabel: "BHD — د.ب", CurrencySymbol: "د.ب"},
 	{Name: "Libya", Code: "LY", IsoCode: "LBY", Flag: "🇱🇾", PhonePrefix: "+218", CurrencyCode: "LYD", CurrencyLabel: "LYD — ل.د", CurrencySymbol: "ل.د"},
 	{Name: "Sudan", Code: "SD", IsoCode: "SDN", Flag: "🇸🇩", PhonePrefix: "+249", CurrencyCode: "SDG", CurrencyLabel: "SDG — ج.س.", CurrencySymbol: "ج.س."},
 	{Name: "Yemen", Code: "YE", IsoCode: "YEM", Flag: "🇾🇪", PhonePrefix: "+967", CurrencyCode: "YER", CurrencyLabel: "YER — ﷼", CurrencySymbol: "﷼"},
-	{Name: "Syria", Code: "SY", IsoCode: "SYR", Flag: "🇸🇾", PhonePrefix: "+963", CurrencyCode: "SYP", CurrencyLabel: "SYP — £", CurrencySymbol: "£"},
+	{Name: "Syria", Code: "SY", IsoCode: "SYR", Flag: "🇸🇾", PhonePrefix: "+963", CurrencyCode: "SYP", CurrencyLabel: "SYP — £S", CurrencySymbol: "£S"},
 	{Name: "Iraq", Code: "IQ", IsoCode: "IRQ", Flag: "🇮🇶", PhonePrefix: "+964", CurrencyCode: "IQD", CurrencyLabel: "IQD — ع.د", CurrencySymbol: "ع.د"},
 	{Name: "Palestine", Code: "PS", IsoCode: "PSE", Flag: "🇵🇸", PhonePrefix: "+970", CurrencyCode: "ILS", CurrencyLabel: "ILS — ₪", CurrencySymbol: "₪"},
 	{Name: "Lebanon", Code: "LB", IsoCode: "LBN", Flag: "🇱🇧", PhonePrefix: "+961", CurrencyCode: "LBP", CurrencyLabel: "LBP — ل.ل", CurrencySymbol: "ل.ل"},
-	{Name: "Mauritania", Code: "MR", IsoCode: "MRT", Flag: "🇲🇷", PhonePrefix: "+222", CurrencyCode: "MRU", CurrencyLabel: "MRU — أ.م", CurrencySymbol: "أ.م"},
+	{Name: "Mauritania", Code: "MR", IsoCode: "MRT", Flag: "🇲🇷", PhonePrefix: "+222", CurrencyCode: "MRU", CurrencyLabel: "MRU — UM", CurrencySymbol: "UM"},
 	{Name: "Turkey", Code: "TR", IsoCode: "TUR", Flag: "🇹🇷", PhonePrefix: "+90", CurrencyCode: "TRY", CurrencyLabel: "TRY — ₺", CurrencySymbol: "₺"},
 	{Name: "Iran", Code: "IR", IsoCode: "IRN", Flag: "🇮🇷", PhonePrefix: "+98", CurrencyCode: "IRR", CurrencyLabel: "IRR — ﷼", CurrencySymbol: "﷼"},
 	{Name: "South Korea", Code: "KR", IsoCode: "KOR", Flag: "🇰🇷", PhonePrefix: "+82", CurrencyCode: "KRW", CurrencyLabel: "KRW — ₩", CurrencySymbol: "₩"},
@@ -52,13 +52,13 @@ var countries = []CountryInfo{
 	{Name: "Pakistan", Code: "PK", IsoCode: "PAK", Flag: "🇵🇰", PhonePrefix: "+92", CurrencyCode: "PKR", CurrencyLabel: "PKR — ₨", CurrencySymbol: "₨"},
 	{Name: "Bangladesh", Code: "BD", IsoCode: "BGD", Flag: "🇧🇩", PhonePrefix: "+880", CurrencyCode: "BDT", CurrencyLabel: "BDT — ৳", CurrencySymbol: "৳"},
 	{Name: "Sri Lanka", Code: "LK", IsoCode: "LKA", Flag: "🇱🇰", PhonePrefix: "+94", CurrencyCode: "LKR", CurrencyLabel: "LKR — Rs", CurrencySymbol: "Rs"},
-	{Name: "Myanmar", Code: "MM", IsoCode: "MMR", Flag: "🇲🇲", PhonePrefix: "+95", CurrencyCode: "MMK", CurrencyLabel: "MMK — K", CurrencySymbol: "K"},
+	{Name: "Myanmar", Code: "MM", IsoCode: "MMR", Flag: "🇲🇲", PhonePrefix: "+95", CurrencyCode: "MMK", CurrencyLabel: "MMK — Ks", CurrencySymbol: "Ks"},
 	{Name: "Cambodia", Code: "KH", IsoCode: "KHM", Flag: "🇰🇭", PhonePrefix: "+855", CurrencyCode: "KHR", CurrencyLabel: "KHR — ៛", CurrencySymbol: "៛"},
 	{Name: "Laos", Code: "LA", IsoCode: "LAO", Flag: "🇱🇦", PhonePrefix: "+856", CurrencyCode: "LAK", CurrencyLabel: "LAK — ₭", CurrencySymbol: "₭"},
 	{Name: "Mongolia", Code: "MN", IsoCode: "MNG", Flag: "🇲🇳", PhonePrefix: "+976", CurrencyCode: "MNT", CurrencyLabel: "MNT — ₮", CurrencySymbol: "₮"},
 	{Name: "Kazakhstan", Code: "KZ", IsoCode: "KAZ", Flag: "🇰🇿", PhonePrefix: "+7", CurrencyCode: "KZT", CurrencyLabel: "KZT — ₸", CurrencySymbol: "₸"},
 	{Name: "Uzbekistan", Code: "UZ", IsoCode: "UZB", Flag: "🇺🇿", PhonePrefix: "+998", CurrencyCode: "UZS", CurrencyLabel: "UZS — so'm", CurrencySymbol: "so'm"},
-	{Name: "Tajikistan", Code: "TJ", IsoCode: "TJK", Flag: "🇹🇯", PhonePrefix: "+992", CurrencyCode: "TJS", CurrencyLabel: "TJS — ЅМ", CurrencySymbol: "ЅМ"},
+	{Name: "Tajikistan", Code: "TJ", IsoCode: "TJK", Flag: "🇹🇯", PhonePrefix: "+992", CurrencyCode: "TJS", CurrencyLabel: "TJS — SM", CurrencySymbol: "SM"},
 	{Name: "Kyrgyzstan", Code: "KG", IsoCode: "KGZ", Flag: "🇰🇬", PhonePrefix: "+996", CurrencyCode: "KGS", CurrencyLabel: "KGS — сом", CurrencySymbol: "сом"},
 	{Name: "Afghanistan", Code: "AF", IsoCode: "AFG", Flag: "🇦🇫", PhonePrefix: "+93", CurrencyCode: "AFN", CurrencyLabel: "AFN — ؋", CurrencySymbol: "؋"},
 	{Name: "Nepal", Code: "NP", IsoCode: "NPL", Flag: "🇳🇵", PhonePrefix: "+977", CurrencyCode: "NPR", CurrencyLabel: "NPR — ₨", CurrencySymbol: "₨"},
@@ -94,49 +94,52 @@ var countries = []CountryInfo{
 	{Name: "Cyprus", Code: "CY", IsoCode: "CYP", Flag: "🇨🇾", PhonePrefix: "+357", CurrencyCode: "EUR", CurrencyLabel: "EUR — €", CurrencySymbol: "€"},
 }
 
-var CountryByCodeMap map[string]CountryInfo
-var CountryByPhonePrefixMap map[string]CountryInfo
-var CountryByIsoCodeMap map[string]CountryInfo
-var SortedCountries []CountryInfo
+var countryByCodeMap map[string]CountryInfo
+var countryByPhonePrefixMap map[string]CountryInfo
+var countryByIsoCodeMap map[string]CountryInfo
+var sortedCountries []CountryInfo
 
 func init() {
-	CountryByCodeMap = make(map[string]CountryInfo)
+	countryByCodeMap = make(map[string]CountryInfo)
+	countryByPhonePrefixMap = make(map[string]CountryInfo)
+	countryByIsoCodeMap = make(map[string]CountryInfo)
+	sortedCountries = make([]CountryInfo, 0, len(countries))
 	for _, country := range countries {
-		CountryByCodeMap[country.Code] = country
-		CountryByPhonePrefixMap[country.PhonePrefix] = country
-		CountryByIsoCodeMap[country.IsoCode] = country
+		countryByCodeMap[country.Code] = country
+		countryByPhonePrefixMap[country.PhonePrefix] = country
+		countryByIsoCodeMap[country.IsoCode] = country
 	}
 	sort.Slice(countries, func(i, j int) bool {
-		return countries[i].Name < countries[j].Name
+		return countries[i].Name > countries[j].Name
 	})
-	SortedCountries = countries
+	sortedCountries = countries
 }
 
 type countryHelper struct{}
 
 func (countryHelper) GetCountryByCode(code string) CountryInfo {
-	if country, ok := CountryByCodeMap[code]; ok {
+	if country, ok := countryByCodeMap[code]; ok {
 		return country
 	}
 	return CountryInfo{}
 }
 
 func (countryHelper) GetCountryByPhonePrefix(prefix string) CountryInfo {
-	if country, ok := CountryByPhonePrefixMap[prefix]; ok {
+	if country, ok := countryByPhonePrefixMap[prefix]; ok {
 		return country
 	}
 	return CountryInfo{}
 }
 
 func (countryHelper) GetCountryByIsoCode(isoCode string) CountryInfo {
-	if country, ok := CountryByIsoCodeMap[isoCode]; ok {
+	if country, ok := countryByIsoCodeMap[isoCode]; ok {
 		return country
 	}
 	return CountryInfo{}
 }
 
 func (countryHelper) Countries() []CountryInfo {
-	return SortedCountries
+	return sortedCountries
 }
 
 var Country = countryHelper{}

@@ -36,7 +36,7 @@ func (m *Store) BeforeCreate(tx *gorm.DB) (err error) {
 type CreateStoreRequest struct {
 	Name         string          `json:"name" binding:"required"`
 	Currency     string          `json:"currency" binding:"omitempty,len=3"`
-	CountryCode  string          `json:"countryCode" binding:"omitempty,len=3"`
+	CountryCode  string          `json:"countryCode" binding:"omitempty,len=2"`
 	VatRate      decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
 	SafetyBuffer decimal.Decimal `json:"safetyBuffer" binding:"omitempty,gte=0,lte=100"`
 }
@@ -44,7 +44,7 @@ type CreateStoreRequest struct {
 type UpdateStoreRequest struct {
 	Name         string          `json:"name" binding:"omitempty"`
 	Currency     string          `json:"currency" binding:"omitempty,len=3"`
-	CountryCode  string          `json:"countryCode" binding:"omitempty,len=3"`
+	CountryCode  string          `json:"countryCode" binding:"omitempty,len=2"`
 	VatRate      decimal.Decimal `json:"vatRate" binding:"omitempty,gte=0,lte=100"`
 	SafetyBuffer decimal.Decimal `json:"safetyBuffer" binding:"omitempty,gte=0,lte=100"`
 }

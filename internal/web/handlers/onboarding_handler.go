@@ -126,13 +126,15 @@ func (h *OnboardingHandler) Step3(c *gin.Context) {
 	password := c.PostForm("password")
 	method := c.PostForm("method")
 	orgName := c.PostForm("org_name")
-	slug := c.PostForm("org_slug")
 	storeName := c.PostForm("store_name")
 	storeCountryCode := c.PostForm("store_country_code")
+	if storeCountryCode == "" {
+		storeCountryCode = "AE"
+	}
 	info := webcontext.PageInfo{Locale: "en", Dir: "ltr", Title: "Create your first store", Path: onboardingPath}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, http.StatusOK, pages.OnboardingStep3(first, last, email, password, method, orgName, slug, storeName, storeCountryCode))
+	webutils.Render(c, http.StatusOK, pages.OnboardingStep3(first, last, email, password, method, orgName, storeName, storeCountryCode))
 }
 
 func (h *OnboardingHandler) Complete(c *gin.Context) {

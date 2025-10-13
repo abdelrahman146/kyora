@@ -21,6 +21,7 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 		OrganizationID: organizationID,
 		Name:           storeReq.Name,
 		Currency:       storeReq.Currency,
+		CountryCode:    storeReq.CountryCode,
 		VatRate:        storeReq.VatRate,
 	}
 	maxAttempts := 5
@@ -67,6 +68,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq
 		Name:         storeReq.Name,
 		Currency:     storeReq.Currency,
 		VatRate:      storeReq.VatRate,
+		CountryCode:  storeReq.CountryCode,
 		SafetyBuffer: storeReq.SafetyBuffer,
 	}
 	if err := s.storeRepo.PatchOne(ctx, store, s.storeRepo.ScopeID(storeID), db.WithReturning(&store)); err != nil {

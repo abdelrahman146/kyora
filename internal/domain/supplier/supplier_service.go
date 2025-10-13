@@ -35,12 +35,13 @@ func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, su
 	}
 
 	newSupplier := &Supplier{
-		StoreID: store.ID,
-		Name:    supplier.Name,
-		Contact: supplier.Contact,
-		Email:   supplier.Email,
-		Phone:   supplier.Phone,
-		Website: supplier.Website,
+		StoreID:     store.ID,
+		Name:        supplier.Name,
+		Contact:     supplier.Contact,
+		Email:       supplier.Email,
+		Phone:       supplier.Phone,
+		CountryCode: supplier.CountryCode,
+		Website:     supplier.Website,
 	}
 
 	if err := s.supplierRepo.CreateOne(ctx, newSupplier); err != nil {
@@ -69,6 +70,10 @@ func (s *SupplierService) UpdateSupplier(ctx context.Context, storeID, id string
 	}
 	if supplier.Website != "" {
 		existingSupplier.Website = supplier.Website
+	}
+
+	if supplier.CountryCode != "" {
+		existingSupplier.CountryCode = supplier.CountryCode
 	}
 
 	if err := s.supplierRepo.UpdateOne(ctx, existingSupplier); err != nil {

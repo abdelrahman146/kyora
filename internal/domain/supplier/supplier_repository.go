@@ -35,6 +35,12 @@ func (r *SupplierRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gor
 	}
 }
 
+func (r *SupplierRepository) ScopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("country_code = ?", countryCode)
+	}
+}
+
 func (r *SupplierRepository) CreateOne(ctx context.Context, supplier *Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(supplier).Error
 }

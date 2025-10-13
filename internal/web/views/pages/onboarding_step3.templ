@@ -2,7 +2,7 @@ package pages
 
 import "github.com/abdelrahman146/kyora/internal/utils"
 
-templ OnboardingStep3(first, last, email, password, method, orgName, slug, storeName, storeCountryCode string) {
+templ OnboardingStep3(first, last, email, password, method, orgName, storeName, storeCountryCode string) {
 	<div class="card w-full bg-base-100" id="onboarding-card">
 		<div class="card-body gap-6">
 			<div class="flex flex-col gap-3 text-center">
@@ -30,13 +30,11 @@ templ OnboardingStep3(first, last, email, password, method, orgName, slug, store
 				<div class="grid grid-cols-1 gap-4 sm:grid-cols-2">
 					<label class="form-control w-full">
 						<div class="label"><span class="label-text">Country</span></div>
-						<select name="store_country_code" class="select select-bordered w-full" required>
-							for i, country := range utils.Country.Countries() {
-								if i == 0 {
-									<option value={ country.IsoCode } selected={ storeCountryCode == country.IsoCode || storeCountryCode == "" }>{ country.Name }</option>
-								} else {
-									<option value={ country.IsoCode } selected={ storeCountryCode == country.IsoCode }>{ country.Name }</option>
-								}
+						<select name="store_country_code" class="select select-bordered w-full" defaultValue={ storeCountryCode } required>
+							for _, country := range utils.Country.Countries() {
+								<option value={ country.Code } selected={ storeCountryCode == country.Code }>
+									{ country.Name } { country.Flag }
+								</option>
 							}
 						</select>
 						<span class="label-text-alt text-xs text-base-content/40"></span>

@@ -13,13 +13,14 @@ const (
 
 type Supplier struct {
 	gorm.Model
-	ID      string `gorm:"column:id;primaryKey;type:text" json:"id"`
-	StoreID string `gorm:"column:store_id;type:text;not null;index" json:"storeId"`
-	Name    string `gorm:"column:name;type:text;not null" json:"name"`
-	Contact string `gorm:"column:contact;type:text" json:"contact,omitempty"`
-	Email   string `gorm:"column:email;type:text" json:"email,omitempty"`
-	Phone   string `gorm:"column:phone;type:text" json:"phone,omitempty"`
-	Website string `gorm:"column:website;type:text" json:"website,omitempty"`
+	ID          string `gorm:"column:id;primaryKey;type:text" json:"id"`
+	StoreID     string `gorm:"column:store_id;type:text;not null;index" json:"storeId"`
+	Name        string `gorm:"column:name;type:text;not null" json:"name"`
+	Contact     string `gorm:"column:contact;type:text" json:"contact,omitempty"`
+	Email       string `gorm:"column:email;type:text" json:"email,omitempty"`
+	Phone       string `gorm:"column:phone;type:text" json:"phone,omitempty"`
+	CountryCode string `gorm:"column:country_code;type:text" json:"countryCode,omitempty"`
+	Website     string `gorm:"column:website;type:text" json:"website,omitempty"`
 }
 
 func (m *Supplier) BeforeCreate(tx *gorm.DB) (err error) {
@@ -30,17 +31,19 @@ func (m *Supplier) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateSupplierRequest struct {
-	Name    string `form:"name" json:"name" binding:"required"`
-	Contact string `form:"contact" json:"contact" binding:"omitempty"`
-	Email   string `form:"email" json:"email" binding:"omitempty,email"`
-	Phone   string `form:"phone" json:"phone" binding:"omitempty"`
-	Website string `form:"website" json:"website" binding:"omitempty,url"`
+	Name        string `form:"name" json:"name" binding:"required"`
+	Contact     string `form:"contact" json:"contact" binding:"omitempty"`
+	Email       string `form:"email" json:"email" binding:"omitempty,email"`
+	Phone       string `form:"phone" json:"phone" binding:"omitempty"`
+	CountryCode string `form:"countryCode" json:"countryCode" binding:"omitempty"`
+	Website     string `form:"website" json:"website" binding:"omitempty,url"`
 }
 
 type UpdateSupplierRequest struct {
-	Name    string `form:"name" json:"name" binding:"omitempty"`
-	Contact string `form:"contact" json:"contact" binding:"omitempty"`
-	Email   string `form:"email" json:"email" binding:"omitempty,email"`
-	Phone   string `form:"phone" json:"phone" binding:"omitempty"`
-	Website string `form:"website" json:"website" binding:"omitempty,url"`
+	Name        string `form:"name" json:"name" binding:"omitempty"`
+	Contact     string `form:"contact" json:"contact" binding:"omitempty"`
+	Email       string `form:"email" json:"email" binding:"omitempty,email"`
+	Phone       string `form:"phone" json:"phone" binding:"omitempty"`
+	CountryCode string `form:"countryCode" json:"countryCode" binding:"omitempty"`
+	Website     string `form:"website" json:"website" binding:"omitempty,url"`
 }
