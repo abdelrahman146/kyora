@@ -25,14 +25,14 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, userReq *Up
 	if userReq.LastName != "" {
 		user.LastName = userReq.LastName
 	}
-	if err := s.userRepo.PatchOne(ctx, user, s.userRepo.scopeID(userID), db.WithReturning(&user)); err != nil {
+	if err := s.userRepo.patchOne(ctx, user, s.userRepo.scopeID(userID), db.WithReturning(&user)); err != nil {
 		return nil, err
 	}
 	return user, nil
 }
 
 func (s *UserService) GetOrganizationUsers(ctx context.Context, orgID string) ([]*User, error) {
-	users, err := s.userRepo.List(ctx, s.userRepo.ScopeOrganizationID(orgID))
+	users, err := s.userRepo.List(ctx, s.userRepo.scopeOrganizationID(orgID))
 	if err != nil {
 		return nil, err
 	}

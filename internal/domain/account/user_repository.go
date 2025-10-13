@@ -24,7 +24,7 @@ func (r *UserRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *UserRepository) ScopeEmail(email string) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeEmail(email string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("email = ?", email)
 	}
@@ -36,13 +36,13 @@ func (r *UserRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *UserRepository) ScopeOrganizationID(orgID string) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeOrganizationID(orgID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("organization_id = ?", orgID)
 	}
 }
 
-func (r *UserRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -54,7 +54,7 @@ func (r *UserRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *g
 		return db
 	}
 }
-func (r *UserRepository) ScopeUpdatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeUpdatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("updated_at BETWEEN ? AND ?", from, to)
@@ -67,39 +67,39 @@ func (r *UserRepository) ScopeUpdatedAt(from, to time.Time) func(db *gorm.DB) *g
 	}
 }
 
-func (r *UserRepository) CreateOne(ctx context.Context, user *User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) createOne(ctx context.Context, user *User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(user).Error
 }
 
-func (r *UserRepository) CreateMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) createMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		DoNothing: true,
 	}).Create(&users).Error
 }
 
-func (r *UserRepository) UpsertMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) upsertMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		UpdateAll: true,
 	}).Create(&users).Error
 }
 
-func (r *UserRepository) UpdateOne(ctx context.Context, user *User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) updateOne(ctx context.Context, user *User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(user).Error
 }
 
-func (r *UserRepository) UpdateMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) updateMany(ctx context.Context, users []*User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&users).Error
 }
 
-func (r *UserRepository) PatchOne(ctx context.Context, updates *User, opts ...db.PostgresOptions) error {
+func (r *UserRepository) patchOne(ctx context.Context, updates *User, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&User{}).Updates(updates).Error
 }
 
-func (r *UserRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *UserRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&User{}).Error
 }
 
-func (r *UserRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *UserRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&User{}).Error
 }
 

@@ -27,7 +27,7 @@ func (r *OrderNoteRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB 
 	}
 }
 
-func (r *OrderNoteRepository) ScopeOrderID(orderID string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderNoteRepository) scopeOrderID(orderID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("order_id = ?", orderID)
 	}
@@ -49,27 +49,27 @@ func (r *OrderNoteRepository) FindOne(ctx context.Context, opts ...db.PostgresOp
 	return &orderNote, nil
 }
 
-func (r *OrderNoteRepository) CreateOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) createOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(orderNote).Error
 }
 
-func (r *OrderNoteRepository) CreateMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) createMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(&orderNotes).Error
 }
 
-func (r *OrderNoteRepository) UpdateOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) updateOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(orderNote).Error
 }
 
-func (r *OrderNoteRepository) UpdateMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) updateMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&orderNotes).Error
 }
 
-func (r *OrderNoteRepository) DeleteOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) deleteOne(ctx context.Context, orderNote *OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(orderNote).Error
 }
 
-func (r *OrderNoteRepository) DeleteMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
+func (r *OrderNoteRepository) deleteMany(ctx context.Context, orderNotes []*OrderNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&orderNotes).Error
 }
 

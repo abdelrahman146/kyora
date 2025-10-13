@@ -22,7 +22,7 @@ func (r *ProductRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
-func (r *ProductRepository) ScopeSearchQuery(query string) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeSearchQuery(query string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if query == "" {
 			return db
@@ -42,7 +42,7 @@ func (r *ProductRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *ProductRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -55,7 +55,7 @@ func (r *ProductRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB)
 	}
 }
 
-func (r *ProductRepository) ScopeTags(tags []string) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeTags(tags []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if len(tags) > 0 {
 			return db.Where("tags && ?", tags)
@@ -64,7 +64,7 @@ func (r *ProductRepository) ScopeTags(tags []string) func(db *gorm.DB) *gorm.DB 
 	}
 }
 
-func (r *ProductRepository) ScopeFilter(filter *ProductFilter) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeFilter(filter *ProductFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {
 			return db
@@ -73,56 +73,56 @@ func (r *ProductRepository) ScopeFilter(filter *ProductFilter) func(db *gorm.DB)
 			db = db.Scopes(r.scopeIDs(filter.IDs))
 		}
 		if len(filter.Tags) > 0 {
-			db = db.Scopes(r.ScopeTags(filter.Tags))
+			db = db.Scopes(r.scopeTags(filter.Tags))
 		}
 		if filter.From.IsZero() && filter.To.IsZero() {
-			db = db.Scopes(r.ScopeCreatedAt(filter.From, filter.To))
+			db = db.Scopes(r.scopeCreatedAt(filter.From, filter.To))
 		}
 		if filter.SearchQuery != "" {
-			db = db.Scopes(r.ScopeSearchQuery(filter.SearchQuery))
+			db = db.Scopes(r.scopeSearchQuery(filter.SearchQuery))
 		}
 		return db
 	}
 }
 
-func (r *ProductRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *ProductRepository) CreateOne(ctx context.Context, product *Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) createOne(ctx context.Context, product *Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(product).Error
 }
 
-func (r *ProductRepository) CreateMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) createMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&products).Error
 }
 
-func (r *ProductRepository) UpsertMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) upsertMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "description", "tags", "updated_at"}),
 	}).Create(&products).Error
 }
 
-func (r *ProductRepository) UpdateOne(ctx context.Context, product *Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) updateOne(ctx context.Context, product *Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(product).Error
 }
 
-func (r *ProductRepository) UpdateMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) updateMany(ctx context.Context, products []*Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&products).Error
 }
 
-func (r *ProductRepository) PatchOne(ctx context.Context, updates *Product, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) patchOne(ctx context.Context, updates *Product, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Product{}).Updates(updates).Error
 }
 
-func (r *ProductRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Product{}).Error
 }
 
-func (r *ProductRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *ProductRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Product{}).Error
 }
 

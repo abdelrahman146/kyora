@@ -24,7 +24,7 @@ func (r *VariantRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *VariantRepository) ScopeSKU(sku string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeSKU(sku string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("sku = ?", sku)
 	}
@@ -36,25 +36,25 @@ func (r *VariantRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *VariantRepository) ScopeSKUs(skus []string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeSKUs(skus []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("sku IN ?", skus)
 	}
 }
 
-func (r *VariantRepository) ScopeProductID(productID string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeProductID(productID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("product_id = ?", productID)
 	}
 }
 
-func (r *VariantRepository) ScopeProductIDs(productIDs []string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeProductIDs(productIDs []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("product_id IN ?", productIDs)
 	}
 }
 
-func (r *VariantRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -67,7 +67,7 @@ func (r *VariantRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB)
 	}
 }
 
-func (r *VariantRepository) ScopeSearchQuery(query string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeSearchQuery(query string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if query == "" {
 			return db
@@ -81,7 +81,7 @@ func (r *VariantRepository) ScopeSearchQuery(query string) func(db *gorm.DB) *go
 	}
 }
 
-func (r *VariantRepository) ScopeFilter(filter *VariantFilter) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeFilter(filter *VariantFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {
 			return db
@@ -96,23 +96,23 @@ func (r *VariantRepository) ScopeFilter(filter *VariantFilter) func(db *gorm.DB)
 			db = db.Where("product_id IN ?", filter.ProductIDs)
 		}
 		if !filter.From.IsZero() || !filter.To.IsZero() {
-			db = r.ScopeCreatedAt(filter.From, filter.To)(db)
+			db = r.scopeCreatedAt(filter.From, filter.To)(db)
 		}
 		if len(filter.ProductTags) > 0 {
 			db = db.Joins("JOIN products ON products.id = variants.product_id").Where("products.tags && ?", filter.ProductTags)
 		}
 		if filter.SearchQuery != "" {
-			db = r.ScopeSearchQuery(filter.SearchQuery)(db)
+			db = r.scopeSearchQuery(filter.SearchQuery)(db)
 		}
 		return db
 	}
 }
 
-func (r *VariantRepository) CreateOne(ctx context.Context, variant *Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) createOne(ctx context.Context, variant *Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(variant).Error
 }
 
-func (r *VariantRepository) CreateMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) createMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&variants).Error
 }
 
@@ -122,30 +122,30 @@ func (r *VariantRepository) CreateManyStrict(ctx context.Context, variants []*Va
 	return r.db.Conn(ctx, opts...).Create(&variants).Error
 }
 
-func (r *VariantRepository) UpsertMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) upsertMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "sku", "cost_price", "sale_price", "currency", "stock_quantity", "stock_alert", "updated_at"}),
 	}).Create(&variants).Error
 }
 
-func (r *VariantRepository) UpdateOne(ctx context.Context, variant *Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) updateOne(ctx context.Context, variant *Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(variant).Error
 }
 
-func (r *VariantRepository) UpdateMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) updateMany(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&variants).Error
 }
 
-func (r *VariantRepository) PatchOne(ctx context.Context, updates *Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) patchOne(ctx context.Context, updates *Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Variant{}).Updates(updates).Error
 }
 
-func (r *VariantRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Variant{}).Error
 }
 
-func (r *VariantRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Variant{}).Error
 }
 

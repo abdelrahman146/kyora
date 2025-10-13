@@ -30,19 +30,19 @@ func NewOrderService(orders *OrderRepository, orderItems *OrderItemRepository, o
 }
 
 func (s *OrderService) GetOrderByID(ctx context.Context, storeID string, id string) (*Order, error) {
-	return s.orders.FindByID(ctx, id, s.orders.ScopeStoreID(storeID), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
+	return s.orders.FindByID(ctx, id, s.orders.scopeStoreID(storeID), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
 }
 
 func (s *OrderService) GetOrderByOrderNumber(ctx context.Context, storeID string, orderNumber string) (*Order, error) {
-	return s.orders.FindOne(ctx, s.orders.ScopeStoreID(storeID), s.orders.ScopeOrderNumber(orderNumber), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
+	return s.orders.FindOne(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderNumber(orderNumber), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
 }
 
 func (s *OrderService) ListOrders(ctx context.Context, storeID string, filter *OrderFilter, page, pageSize int, orderBy string, ascending bool) ([]*Order, error) {
-	return s.orders.List(ctx, s.orders.ScopeStoreID(storeID), s.orders.ScopeOrderFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.orders.List(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *OrderService) CountOrders(ctx context.Context, storeID string, filter *OrderFilter) (int64, error) {
-	return s.orders.Count(ctx, s.orders.ScopeStoreID(storeID), s.orders.ScopeOrderFilter(filter))
+	return s.orders.Count(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter))
 }
 
 func (s *OrderService) calculateSubtotal(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {
@@ -125,7 +125,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 	}
 
 	err = s.atomicProcess.Exec(ctx, func(txCtx context.Context) error {
-		if err := s.orders.CreateOne(txCtx, newOrder); err != nil {
+		if err := s.orders.createOne(txCtx, newOrder); err != nil {
 			return err
 		}
 
@@ -149,7 +149,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 			}
 		}
 
-		if err := s.orderItems.CreateMany(txCtx, orderItems); err != nil {
+		if err := s.orderItems.createMany(txCtx, orderItems); err != nil {
 			return err
 		}
 
@@ -159,7 +159,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 	if err != nil {
 		return nil, err
 	}
-	newOrder.Items, err = s.orderItems.List(ctx, s.orderItems.ScopeOrderID(newOrder.ID))
+	newOrder.Items, err = s.orderItems.List(ctx, s.orderItems.scopeOrderID(newOrder.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -175,7 +175,7 @@ func (s *OrderService) AddOrderNote(ctx context.Context, storeID, orderID string
 		OrderID: order.ID,
 		Note:    content,
 	}
-	if err := s.orderNotes.CreateOne(ctx, note); err != nil {
+	if err := s.orderNotes.createOne(ctx, note); err != nil {
 		return nil, err
 	}
 	return note, nil
@@ -190,7 +190,7 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, storeID, orderID s
 	if err := sm.TransitionStateTo(newStatus); err != nil {
 		return nil, err
 	}
-	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
+	if err := s.orders.updateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -207,7 +207,7 @@ func (s *OrderService) PayOrder(ctx context.Context, storeID, orderID string, pa
 	}
 	order.PaymentMethod = paymentDetails.PaymentMethod
 	order.PaymentReference = paymentDetails.PaymentReference
-	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
+	if err := s.orders.updateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -222,7 +222,7 @@ func (s *OrderService) RefundOrder(ctx context.Context, storeID, orderID string)
 	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusRefunded); err != nil {
 		return nil, err
 	}
-	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
+	if err := s.orders.updateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -233,7 +233,7 @@ func (s *OrderService) DeleteOrder(ctx context.Context, storeID, orderID string)
 	if err != nil {
 		return err
 	}
-	if err := s.orders.DeleteOne(ctx, s.orders.scopeID(order.ID)); err != nil {
+	if err := s.orders.deleteOne(ctx, s.orders.scopeID(order.ID)); err != nil {
 		return err
 	}
 	return nil

@@ -30,50 +30,50 @@ func (r *InvestmentRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB
 	}
 }
 
-func (r *InvestmentRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *InvestmentRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *InvestmentRepository) ScopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
+func (r *InvestmentRepository) scopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("owner_id = ?", ownerID)
 	}
 }
 
-func (r *InvestmentRepository) CreateOne(ctx context.Context, investment *Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) createOne(ctx context.Context, investment *Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(investment).Error
 }
 
-func (r *InvestmentRepository) CreateMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) createMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&investments).Error
 }
 
-func (r *InvestmentRepository) UpsertMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) upsertMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "amount", "currency", "note", "updated_at"}),
 	}).Create(&investments).Error
 }
 
-func (r *InvestmentRepository) UpdateOne(ctx context.Context, investment *Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) updateOne(ctx context.Context, investment *Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(investment).Error
 }
 
-func (r *InvestmentRepository) UpdateMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) updateMany(ctx context.Context, investments []*Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&investments).Error
 }
 
-func (r *InvestmentRepository) PatchOne(ctx context.Context, updates *Investment, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) patchOne(ctx context.Context, updates *Investment, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Investment{}).Updates(updates).Error
 }
 
-func (r *InvestmentRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Investment{}).Error
 }
 
-func (r *InvestmentRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *InvestmentRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Investment{}).Error
 }
 

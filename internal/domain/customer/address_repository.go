@@ -29,44 +29,44 @@ func (r *AddressRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *AddressRepository) ScopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
+func (r *AddressRepository) scopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("customer_id = ?", customerID)
 	}
 }
 
-func (r *AddressRepository) CreateOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) createOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(address).Error
 }
 
-func (r *AddressRepository) CreateMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) createMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&addresses).Error
 }
 
-func (r *AddressRepository) UpsertMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) upsertMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"street", "city", "state", "country_code", "phone", "zip_code", "updated_at"}),
 	}).Create(&addresses).Error
 }
 
-func (r *AddressRepository) UpdateOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) updateOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(address).Error
 }
 
-func (r *AddressRepository) UpdateMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) updateMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&addresses).Error
 }
 
-func (r *AddressRepository) PatchOne(ctx context.Context, updates *Address, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) patchOne(ctx context.Context, updates *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Address{}).Updates(updates).Error
 }
 
-func (r *AddressRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Address{}).Error
 }
 
-func (r *AddressRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *AddressRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Address{}).Error
 }
 

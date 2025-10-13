@@ -17,7 +17,7 @@ func NewAssetService(assetRepo *AssetRepository, storeService *store.StoreServic
 }
 
 func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
+	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -25,7 +25,7 @@ func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string
 }
 
 func (s *AssetService) ListAssets(ctx context.Context, storeID string, filter *AssetFilter, page, pageSize int, orderBy string, ascending bool) ([]*Asset, error) {
-	assets, err := s.assetRepo.List(ctx, s.assetRepo.ScopeStoreID(storeID), s.assetRepo.ScopeFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	assets, err := s.assetRepo.List(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 	if err != nil {
 		return nil, err
 	}
@@ -45,14 +45,14 @@ func (s *AssetService) CreateAsset(ctx context.Context, storeID string, req *Cre
 		Value:    req.Value,
 		Note:     req.Note,
 	}
-	if err := s.assetRepo.CreateOne(ctx, asset); err != nil {
+	if err := s.assetRepo.createOne(ctx, asset); err != nil {
 		return nil, err
 	}
 	return asset, nil
 }
 
 func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string, req *UpdateAssetRequest) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
+	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -74,14 +74,14 @@ func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string,
 	if req.Note != "" {
 		asset.Note = req.Note
 	}
-	if err := s.assetRepo.UpdateOne(ctx, asset); err != nil {
+	if err := s.assetRepo.updateOne(ctx, asset); err != nil {
 		return nil, err
 	}
 	return asset, nil
 }
 
 func (s *AssetService) DeleteAsset(ctx context.Context, storeID, assetID string) error {
-	if err := s.assetRepo.DeleteOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID)); err != nil {
+	if err := s.assetRepo.deleteOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.scopeStoreID(storeID)); err != nil {
 		return err
 	}
 	return nil

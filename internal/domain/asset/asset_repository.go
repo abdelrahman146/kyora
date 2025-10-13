@@ -30,25 +30,25 @@ func (r *AssetRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *AssetRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *AssetRepository) ScopeType(assetType AssetType) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeType(assetType AssetType) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("type = ?", assetType)
 	}
 }
 
-func (r *AssetRepository) ScopeTypes(assetTypes []AssetType) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeTypes(assetTypes []AssetType) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("type IN ?", assetTypes)
 	}
 }
 
-func (r *AssetRepository) ScopeFilter(filter *AssetFilter) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeFilter(filter *AssetFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {
 			return db
@@ -60,38 +60,38 @@ func (r *AssetRepository) ScopeFilter(filter *AssetFilter) func(db *gorm.DB) *go
 	}
 }
 
-func (r *AssetRepository) CreateOne(ctx context.Context, asset *Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) createOne(ctx context.Context, asset *Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(asset).Error
 }
 
-func (r *AssetRepository) CreateMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) createMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&assets).Error
 }
 
-func (r *AssetRepository) UpsertMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) upsertMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "type", "amount", "currency", "purchased_at", "note", "updated_at"}),
 	}).Create(&assets).Error
 }
 
-func (r *AssetRepository) UpdateOne(ctx context.Context, asset *Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) updateOne(ctx context.Context, asset *Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(asset).Error
 }
 
-func (r *AssetRepository) UpdateMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) updateMany(ctx context.Context, assets []*Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&assets).Error
 }
 
-func (r *AssetRepository) PatchOne(ctx context.Context, updates *Asset, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) patchOne(ctx context.Context, updates *Asset, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Asset{}).Updates(updates).Error
 }
 
-func (r *AssetRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Asset{}).Error
 }
 
-func (r *AssetRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *AssetRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Asset{}).Error
 }
 

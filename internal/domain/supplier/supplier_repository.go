@@ -29,50 +29,50 @@ func (r *SupplierRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *SupplierRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *SupplierRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *SupplierRepository) ScopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
+func (r *SupplierRepository) scopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("country_code = ?", countryCode)
 	}
 }
 
-func (r *SupplierRepository) CreateOne(ctx context.Context, supplier *Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) createOne(ctx context.Context, supplier *Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(supplier).Error
 }
 
-func (r *SupplierRepository) CreateMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) createMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&suppliers).Error
 }
 
-func (r *SupplierRepository) UpsertMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) upsertMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "contact", "email", "phone", "website", "updated_at"}),
 	}).Create(&suppliers).Error
 }
 
-func (r *SupplierRepository) UpdateOne(ctx context.Context, supplier *Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) updateOne(ctx context.Context, supplier *Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(supplier).Error
 }
 
-func (r *SupplierRepository) UpdateMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) updateMany(ctx context.Context, suppliers []*Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&suppliers).Error
 }
 
-func (r *SupplierRepository) PatchOne(ctx context.Context, updates *Supplier, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) patchOne(ctx context.Context, updates *Supplier, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Supplier{}).Updates(updates).Error
 }
 
-func (r *SupplierRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Supplier{}).Error
 }
 
-func (r *SupplierRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *SupplierRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Supplier{}).Error
 }
 

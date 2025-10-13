@@ -21,11 +21,11 @@ func (s *SupplierService) GetSupplierByID(ctx context.Context, storeID, id strin
 }
 
 func (s *SupplierService) ListSuppliers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Supplier, error) {
-	return s.supplierRepo.List(ctx, s.supplierRepo.ScopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.supplierRepo.List(ctx, s.supplierRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *SupplierService) CountSuppliers(ctx context.Context, storeID string) (int64, error) {
-	return s.supplierRepo.Count(ctx, s.supplierRepo.ScopeStoreID(storeID))
+	return s.supplierRepo.Count(ctx, s.supplierRepo.scopeStoreID(storeID))
 }
 
 func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, supplier *CreateSupplierRequest) (*Supplier, error) {
@@ -44,7 +44,7 @@ func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, su
 		Website:     supplier.Website,
 	}
 
-	if err := s.supplierRepo.CreateOne(ctx, newSupplier); err != nil {
+	if err := s.supplierRepo.createOne(ctx, newSupplier); err != nil {
 		return nil, err
 	}
 	return newSupplier, nil
@@ -76,7 +76,7 @@ func (s *SupplierService) UpdateSupplier(ctx context.Context, storeID, id string
 		existingSupplier.CountryCode = supplier.CountryCode
 	}
 
-	if err := s.supplierRepo.UpdateOne(ctx, existingSupplier); err != nil {
+	if err := s.supplierRepo.updateOne(ctx, existingSupplier); err != nil {
 		return nil, err
 	}
 	return existingSupplier, nil
@@ -88,5 +88,5 @@ func (s *SupplierService) DeleteSupplier(ctx context.Context, storeID, id string
 		return err
 	}
 
-	return s.supplierRepo.DeleteOne(ctx, s.supplierRepo.scopeID(id), s.supplierRepo.ScopeStoreID(storeID))
+	return s.supplierRepo.deleteOne(ctx, s.supplierRepo.scopeID(id), s.supplierRepo.scopeStoreID(storeID))
 }

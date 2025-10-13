@@ -24,13 +24,13 @@ func (r *StoreRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *StoreRepository) ScopeName(name string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeName(name string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("name = ?", name)
 	}
 }
 
-func (r *StoreRepository) ScopeSlug(slug string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeSlug(slug string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("slug = ?", slug)
 	}
@@ -42,7 +42,7 @@ func (r *StoreRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *StoreRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -55,50 +55,50 @@ func (r *StoreRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *
 	}
 }
 
-func (r *StoreRepository) ScopeOrganizationID(organizationID string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeOrganizationID(organizationID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("organization_id = ?", organizationID)
 	}
 }
 
-func (r *StoreRepository) ScopeCode(code string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeCode(code string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("code = ?", code)
 	}
 }
 
-func (r *StoreRepository) CreateOne(ctx context.Context, store *Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) createOne(ctx context.Context, store *Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(store).Error
 }
 
-func (r *StoreRepository) CreateMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) createMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&stores).Error
 }
 
-func (r *StoreRepository) UpsertMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) upsertMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"name", "slug", "updated_at"}),
 	}).Create(&stores).Error
 }
 
-func (r *StoreRepository) UpdateOne(ctx context.Context, store *Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) updateOne(ctx context.Context, store *Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(store).Error
 }
 
-func (r *StoreRepository) UpdateMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) updateMany(ctx context.Context, stores []*Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&stores).Error
 }
 
-func (r *StoreRepository) PatchOne(ctx context.Context, updates *Store, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) patchOne(ctx context.Context, updates *Store, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Store{}).Updates(updates).Error
 }
 
-func (r *StoreRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Store{}).Error
 }
 
-func (r *StoreRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *StoreRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Store{}).Error
 }
 

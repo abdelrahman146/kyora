@@ -38,14 +38,14 @@ func (s *StoreService) CreateStore(ctx context.Context, organizationID string, s
 			return nil, utils.Problem.InternalError().WithError(fmt.Errorf("max attempts reached for generating unique store code"))
 		}
 	}
-	if err := s.storeRepo.CreateOne(ctx, store); err != nil {
+	if err := s.storeRepo.createOne(ctx, store); err != nil {
 		return nil, err
 	}
 	return store, nil
 }
 
 func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID, code string) (bool, error) {
-	existingStore, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeOrganizationID(organizationID), s.storeRepo.ScopeCode(code))
+	existingStore, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeOrganizationID(organizationID), s.storeRepo.scopeCode(code))
 	if err != nil {
 		return false, err
 	}
@@ -71,7 +71,7 @@ func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq
 		CountryCode:  storeReq.CountryCode,
 		SafetyBuffer: storeReq.SafetyBuffer,
 	}
-	if err := s.storeRepo.PatchOne(ctx, store, s.storeRepo.scopeID(storeID), db.WithReturning(&store)); err != nil {
+	if err := s.storeRepo.patchOne(ctx, store, s.storeRepo.scopeID(storeID), db.WithReturning(&store)); err != nil {
 		return nil, err
 	}
 	return store, nil
@@ -86,7 +86,7 @@ func (s *StoreService) GetStoreByID(ctx context.Context, id string) (*Store, err
 }
 
 func (s *StoreService) ListOrganizationStores(ctx context.Context, orgID string) ([]*Store, error) {
-	stores, err := s.storeRepo.List(ctx, s.storeRepo.ScopeOrganizationID(orgID))
+	stores, err := s.storeRepo.List(ctx, s.storeRepo.scopeOrganizationID(orgID))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (s *StoreService) ListOrganizationStores(ctx context.Context, orgID string)
 }
 
 func (s *StoreService) DeleteStore(ctx context.Context, storeID string) error {
-	if err := s.storeRepo.DeleteOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
+	if err := s.storeRepo.deleteOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
 		return err
 	}
 	return nil

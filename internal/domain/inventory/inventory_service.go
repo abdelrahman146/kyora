@@ -40,7 +40,7 @@ func (s *InventoryService) CreateProduct(ctx context.Context, storeID string, pr
 			Description: productReq.Description,
 			Tags:        productReq.Tags,
 		}
-		if err := s.products.CreateOne(ctx, product); err != nil {
+		if err := s.products.createOne(ctx, product); err != nil {
 			return err
 		}
 		variants := s.toVariants(storeID, st.Code, product.ID, productReq.Name, variantsReq)
@@ -129,7 +129,7 @@ func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeCod
 func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode, productName string, variant *Variant) error {
 	const maxAttempts = 5
 	for attempt := 1; attempt <= maxAttempts; attempt++ {
-		if err := s.variants.CreateOne(ctx, variant); err != nil {
+		if err := s.variants.createOne(ctx, variant); err != nil {
 			if db.IsUniqueViolation(err) {
 				variant.SKU = GenerateSku(storeCode, productName, variant.Name)
 				if attempt == maxAttempts {
@@ -161,7 +161,7 @@ func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string)
 }
 
 func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Variant, error) {
-	variant, err := s.variants.FindOne(ctx, s.variants.ScopeSKU(sku), db.WithPreload(ProductStruct))
+	variant, err := s.variants.FindOne(ctx, s.variants.scopeSKU(sku), db.WithPreload(ProductStruct))
 	if err != nil {
 		return nil, err
 	}
@@ -169,7 +169,7 @@ func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Va
 }
 
 func (s *InventoryService) ListVariantsByProductID(ctx context.Context, productID string) ([]*Variant, error) {
-	variants, err := s.variants.List(ctx, s.variants.ScopeProductID(productID))
+	variants, err := s.variants.List(ctx, s.variants.scopeProductID(productID))
 	if err != nil {
 		return nil, err
 	}
@@ -177,7 +177,7 @@ func (s *InventoryService) ListVariantsByProductID(ctx context.Context, productI
 }
 
 func (s *InventoryService) ListVariants(ctx context.Context, filter *VariantFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Variant, error) {
-	variants, err := s.variants.List(ctx, s.variants.ScopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending))
+	variants, err := s.variants.List(ctx, s.variants.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending))
 	if err != nil {
 		return nil, err
 	}
@@ -185,7 +185,7 @@ func (s *InventoryService) ListVariants(ctx context.Context, filter *VariantFilt
 }
 
 func (s *InventoryService) CountVariants(ctx context.Context, filter *VariantFilter) (int64, error) {
-	count, err := s.variants.Count(ctx, s.variants.ScopeFilter(filter))
+	count, err := s.variants.Count(ctx, s.variants.scopeFilter(filter))
 	if err != nil {
 		return 0, err
 	}
@@ -193,7 +193,7 @@ func (s *InventoryService) CountVariants(ctx context.Context, filter *VariantFil
 }
 
 func (s *InventoryService) ListProducts(ctx context.Context, filter *ProductFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Product, error) {
-	products, err := s.products.List(ctx, s.products.ScopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
+	products, err := s.products.List(ctx, s.products.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
 	if err != nil {
 		return nil, err
 	}
@@ -201,7 +201,7 @@ func (s *InventoryService) ListProducts(ctx context.Context, filter *ProductFilt
 }
 
 func (s *InventoryService) CountProducts(ctx context.Context, filter *ProductFilter) (int64, error) {
-	count, err := s.products.Count(ctx, s.products.ScopeFilter(filter))
+	count, err := s.products.Count(ctx, s.products.scopeFilter(filter))
 	if err != nil {
 		return 0, err
 	}
@@ -222,7 +222,7 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 			return err
 		}
 		updateProductFields(product, updateReq)
-		if err := s.products.UpdateOne(ctx, product); err != nil {
+		if err := s.products.updateOne(ctx, product); err != nil {
 			return err
 		}
 		for _, uv := range updateVariantsReq {
@@ -231,7 +231,7 @@ func (s *InventoryService) UpdateProduct(ctx context.Context, productID string, 
 				return err
 			}
 			updateVariantFields(variant, product.Name, uv.Update)
-			if err := s.variants.UpdateOne(ctx, variant); err != nil {
+			if err := s.variants.updateOne(ctx, variant); err != nil {
 				return err
 			}
 		}
@@ -266,7 +266,7 @@ func (s *InventoryService) UpdateVariant(ctx context.Context, variantID string, 
 			return err
 		}
 		updateVariantFields(variant, variant.Product.Name, updateReq)
-		if err := s.variants.UpdateOne(ctx, variant); err != nil {
+		if err := s.variants.updateOne(ctx, variant); err != nil {
 			return err
 		}
 		return nil
@@ -306,7 +306,7 @@ func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) 
 		if err != nil {
 			return err
 		}
-		if err := s.variants.DeleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
+		if err := s.variants.deleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
 			return err
 		}
 		return nil
@@ -315,12 +315,12 @@ func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) 
 
 func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, productID string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		variants, err := s.variants.List(ctx, s.variants.ScopeProductID(productID))
+		variants, err := s.variants.List(ctx, s.variants.scopeProductID(productID))
 		if err != nil {
 			return err
 		}
 		for _, variant := range variants {
-			if err := s.variants.DeleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
+			if err := s.variants.deleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
 				return err
 			}
 		}
@@ -333,7 +333,7 @@ func (s *InventoryService) DeleteProduct(ctx context.Context, productID string) 
 		if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
 			return err
 		}
-		if err := s.products.DeleteOne(ctx, s.products.scopeID(productID)); err != nil {
+		if err := s.products.deleteOne(ctx, s.products.scopeID(productID)); err != nil {
 			return err
 		}
 		return nil
@@ -346,7 +346,7 @@ func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []stri
 			if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
 				return err
 			}
-			if err := s.products.DeleteOne(ctx, s.products.scopeID(productID)); err != nil {
+			if err := s.products.deleteOne(ctx, s.products.scopeID(productID)); err != nil {
 				return err
 			}
 		}

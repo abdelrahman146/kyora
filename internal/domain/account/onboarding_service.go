@@ -77,7 +77,7 @@ func (s *OnboardingService) createUser(ctx context.Context, organizationID strin
 	if err != nil {
 		return nil, utils.Problem.InternalError().WithError(err)
 	}
-	if existingUser, _ := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(userReq.Email)); existingUser != nil {
+	if existingUser, _ := s.userRepo.FindOne(ctx, s.userRepo.scopeEmail(userReq.Email)); existingUser != nil {
 		return nil, utils.Problem.Conflict("User with the given email already exists").With("email", userReq.Email)
 	}
 	user := &User{
@@ -87,7 +87,7 @@ func (s *OnboardingService) createUser(ctx context.Context, organizationID strin
 		PasswordHash:   passwordHash,
 		OrganizationID: organizationID,
 	}
-	if err := s.userRepo.CreateOne(ctx, user); err != nil {
+	if err := s.userRepo.createOne(ctx, user); err != nil {
 		return nil, err
 	}
 	createdUser, err := s.userRepo.FindByID(ctx, user.ID, db.WithPreload(OrganizationStruct))
@@ -109,7 +109,7 @@ func (s *OnboardingService) IsOrganizationSlugAvailable(ctx context.Context, slu
 }
 
 func (s *OnboardingService) IsEmailAvailable(ctx context.Context, email string) (bool, error) {
-	existingUser, err := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(email))
+	existingUser, err := s.userRepo.FindOne(ctx, s.userRepo.scopeEmail(email))
 	if err != nil {
 		if db.IsRecordNotFound(err) {
 			return true, nil

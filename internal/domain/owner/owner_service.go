@@ -30,7 +30,7 @@ func (s *OwnerService) CreateOwner(ctx context.Context, storeID string, req *Cre
 		StoreID:   store.ID,
 	}
 
-	if err := s.ownerRepo.CreateOne(ctx, owner); err != nil {
+	if err := s.ownerRepo.createOne(ctx, owner); err != nil {
 		return nil, err
 	}
 
@@ -38,7 +38,7 @@ func (s *OwnerService) CreateOwner(ctx context.Context, storeID string, req *Cre
 }
 
 func (s *OwnerService) UpdateOwner(ctx context.Context, storeID string, ownerID string, req *UpdateOwnerRequest) (*Owner, error) {
-	owner, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.ScopeStoreID(storeID))
+	owner, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -50,7 +50,7 @@ func (s *OwnerService) UpdateOwner(ctx context.Context, storeID string, ownerID 
 		owner.LastName = req.LastName
 	}
 
-	if err := s.ownerRepo.UpdateOne(ctx, owner); err != nil {
+	if err := s.ownerRepo.updateOne(ctx, owner); err != nil {
 		return nil, err
 	}
 
@@ -58,18 +58,18 @@ func (s *OwnerService) UpdateOwner(ctx context.Context, storeID string, ownerID 
 }
 
 func (s *OwnerService) GetOwnerByID(ctx context.Context, storeID string, ownerID string) (*Owner, error) {
-	return s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.ScopeStoreID(storeID))
+	return s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerService) ListOwners(ctx context.Context, storeID string) ([]*Owner, error) {
-	return s.ownerRepo.List(ctx, s.ownerRepo.ScopeStoreID(storeID))
+	return s.ownerRepo.List(ctx, s.ownerRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerService) DeleteOwner(ctx context.Context, storeID string, ownerID string) error {
-	_, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.ScopeStoreID(storeID))
+	_, err := s.ownerRepo.FindOne(ctx, s.ownerRepo.scopeID(ownerID), s.ownerRepo.scopeStoreID(storeID))
 	if err != nil {
 		return err
 	}
 
-	return s.ownerRepo.DeleteOne(ctx, s.ownerRepo.scopeID(ownerID))
+	return s.ownerRepo.deleteOne(ctx, s.ownerRepo.scopeID(ownerID))
 }

@@ -31,67 +31,67 @@ func (r *OrderRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *OrderRepository) ScopeOrderNumber(orderNumber string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeOrderNumber(orderNumber string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("order_number = ?", orderNumber)
 	}
 }
 
-func (r *OrderRepository) ScopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("customer_id = ?", customerID)
 	}
 }
 
-func (r *OrderRepository) ScopeCustomerIDs(customerIDs []string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeCustomerIDs(customerIDs []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("customer_id IN ?", customerIDs)
 	}
 }
 
-func (r *OrderRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *OrderRepository) ScopeOrderStatus(status OrderStatus) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeOrderStatus(status OrderStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("status = ?", status)
 	}
 }
 
-func (r *OrderRepository) ScopeOrderStatuses(statuses []OrderStatus) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeOrderStatuses(statuses []OrderStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("status IN ?", statuses)
 	}
 }
 
-func (r *OrderRepository) ScopePaymentStatus(status OrderPaymentStatus) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopePaymentStatus(status OrderPaymentStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("payment_status = ?", status)
 	}
 }
 
-func (r *OrderRepository) ScopePaymentStatuses(statuses []OrderPaymentStatus) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopePaymentStatuses(statuses []OrderPaymentStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("payment_status IN ?", statuses)
 	}
 }
 
-func (r *OrderRepository) ScopePaymentMethod(method OrderPaymentMethod) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopePaymentMethod(method OrderPaymentMethod) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("payment_method = ?", method)
 	}
 }
 
-func (r *OrderRepository) ScopePaymentMethods(methods []OrderPaymentMethod) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopePaymentMethods(methods []OrderPaymentMethod) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("payment_method IN ?", methods)
 	}
 }
 
-func (r *OrderRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -104,39 +104,39 @@ func (r *OrderRepository) ScopeCreatedAt(from, to time.Time) func(db *gorm.DB) *
 	}
 }
 
-func (r *OrderRepository) ScopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Joins(fmt.Sprintf("JOIN %s on %s.id = %s.shipping_address_id", customer.AddressTable, customer.AddressTable, OrderTable)).
 			Where(fmt.Sprintf("%s.country_code = ?", customer.AddressTable), countryCode)
 	}
 }
 
-func (r *OrderRepository) ScopeCountryCodes(countryCodes []string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeCountryCodes(countryCodes []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Joins(fmt.Sprintf("JOIN %s on %s.id = %s.shipping_address_id", customer.AddressTable, customer.AddressTable, OrderTable)).
 			Where(fmt.Sprintf("%s.country_code IN ?", customer.AddressTable), countryCodes)
 	}
 }
 
-func (r *OrderRepository) ScopeOrderFilter(filter *OrderFilter) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeOrderFilter(filter *OrderFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {
 			return db
 		}
 		if len(filter.CustomerIDs) > 0 {
-			db = db.Scopes(r.ScopeCustomerIDs(filter.CustomerIDs))
+			db = db.Scopes(r.scopeCustomerIDs(filter.CustomerIDs))
 		}
 		if len(filter.Statuses) > 0 {
-			db = db.Scopes(r.ScopeOrderStatuses(filter.Statuses))
+			db = db.Scopes(r.scopeOrderStatuses(filter.Statuses))
 		}
 		if len(filter.PaymentStatuses) > 0 {
-			db = db.Scopes(r.ScopePaymentStatuses(filter.PaymentStatuses))
+			db = db.Scopes(r.scopePaymentStatuses(filter.PaymentStatuses))
 		}
 		if len(filter.PaymentMethods) > 0 {
-			db = db.Scopes(r.ScopePaymentMethods(filter.PaymentMethods))
+			db = db.Scopes(r.scopePaymentMethods(filter.PaymentMethods))
 		}
 		if len(filter.CountryCodes) > 0 {
-			db = db.Scopes(r.ScopeCountryCodes(filter.CountryCodes))
+			db = db.Scopes(r.scopeCountryCodes(filter.CountryCodes))
 		}
 		return db
 	}
@@ -158,38 +158,38 @@ func (r *OrderRepository) FindOne(ctx context.Context, opts ...db.PostgresOption
 	return &order, nil
 }
 
-func (r *OrderRepository) CreateOne(ctx context.Context, order *Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) createOne(ctx context.Context, order *Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(order).Error
 }
 
-func (r *OrderRepository) CreateMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) createMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&orders).Error
 }
 
-func (r *OrderRepository) UpsertMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) upsertMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"order_number", "status", "payment_status", "payment_method", "total", "currency", "updated_at"}),
 	}).Create(&orders).Error
 }
 
-func (r *OrderRepository) UpdateOne(ctx context.Context, order *Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) updateOne(ctx context.Context, order *Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(order).Error
 }
 
-func (r *OrderRepository) UpdateMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) updateMany(ctx context.Context, orders []*Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&orders).Error
 }
 
-func (r *OrderRepository) PatchOne(ctx context.Context, updates *Order, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) patchOne(ctx context.Context, updates *Order, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Order{}).Updates(updates).Error
 }
 
-func (r *OrderRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Order{}).Error
 }
 
-func (r *OrderRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *OrderRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Order{}).Error
 }
 

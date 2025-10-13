@@ -30,50 +30,50 @@ func (r *OwnerDrawRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB 
 	}
 }
 
-func (r *OwnerDrawRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *OwnerDrawRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *OwnerDrawRepository) ScopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
+func (r *OwnerDrawRepository) scopeOwnerID(ownerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("owner_id = ?", ownerID)
 	}
 }
 
-func (r *OwnerDrawRepository) CreateOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) createOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(draw).Error
 }
 
-func (r *OwnerDrawRepository) CreateMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) createMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&draws).Error
 }
 
-func (r *OwnerDrawRepository) UpsertMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) upsertMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"first_name", "last_name", "updated_at"}),
 	}).Create(&draws).Error
 }
 
-func (r *OwnerDrawRepository) UpdateOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) updateOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(draw).Error
 }
 
-func (r *OwnerDrawRepository) UpdateMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) updateMany(ctx context.Context, draws []*OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&draws).Error
 }
 
-func (r *OwnerDrawRepository) PatchOne(ctx context.Context, updates *OwnerDraw, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) patchOne(ctx context.Context, updates *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Updates(updates).Error
 }
 
-func (r *OwnerDrawRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&OwnerDraw{}).Error
 }
 
-func (r *OwnerDrawRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *OwnerDrawRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&OwnerDraw{}).Error
 }
 

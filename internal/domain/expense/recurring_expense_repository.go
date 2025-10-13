@@ -31,37 +31,37 @@ func (r *RecurringExpenseRepository) scopeIDs(ids []string) func(db *gorm.DB) *g
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeCategory(category ExpenseCategory) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeCategory(category ExpenseCategory) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("category = ?", category)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeCategories(categories []ExpenseCategory) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeCategories(categories []ExpenseCategory) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("category IN ?", categories)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeFrequency(frequency RecurringExpenseFrequency) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeFrequency(frequency RecurringExpenseFrequency) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("frequency = ?", frequency)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeFrequencies(frequencies []RecurringExpenseFrequency) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeFrequencies(frequencies []RecurringExpenseFrequency) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("frequency IN ?", frequencies)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeFilter(filter *RecurringExpenseFilter) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeFilter(filter *RecurringExpenseFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {
 			return db
@@ -79,52 +79,52 @@ func (r *RecurringExpenseRepository) ScopeFilter(filter *RecurringExpenseFilter)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeStatus(status RecurringExpenseStatus) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeStatus(status RecurringExpenseStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB { return db.Where("status = ?", status) }
 }
 
-func (r *RecurringExpenseRepository) ScopeStartDateLte(t time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeStartDateLte(t time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB { return db.Where("recurring_start_date <= ?", t) }
 }
 
-func (r *RecurringExpenseRepository) ScopeEndDateGteOrNull(t time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeEndDateGteOrNull(t time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("recurring_end_date IS NULL OR recurring_end_date >= ?", t)
 	}
 }
 
-func (r *RecurringExpenseRepository) CreateOne(ctx context.Context, expense *RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) createOne(ctx context.Context, expense *RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(expense).Error
 }
 
-func (r *RecurringExpenseRepository) CreateMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) createMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&expenses).Error
 }
 
-func (r *RecurringExpenseRepository) UpsertMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) upsertMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"frequency", "recurring_start_date", "recurring_end_date", "amount", "category", "type", "note", "updated_at"}),
 	}).Create(&expenses).Error
 }
 
-func (r *RecurringExpenseRepository) UpdateOne(ctx context.Context, expense *RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) updateOne(ctx context.Context, expense *RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(expense).Error
 }
 
-func (r *RecurringExpenseRepository) UpdateMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) updateMany(ctx context.Context, expenses []*RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&expenses).Error
 }
 
-func (r *RecurringExpenseRepository) PatchOne(ctx context.Context, updates *RecurringExpense, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) patchOne(ctx context.Context, updates *RecurringExpense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&RecurringExpense{}).Updates(updates).Error
 }
 
-func (r *RecurringExpenseRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&RecurringExpense{}).Error
 }
 
-func (r *RecurringExpenseRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *RecurringExpenseRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&RecurringExpense{}).Error
 }
 

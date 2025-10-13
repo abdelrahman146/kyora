@@ -29,44 +29,44 @@ func (r *CustomerNoteRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.
 	}
 }
 
-func (r *CustomerNoteRepository) ScopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
+func (r *CustomerNoteRepository) scopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("customer_id = ?", customerID)
 	}
 }
 
-func (r *CustomerNoteRepository) CreateOne(ctx context.Context, customerNote *CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) createOne(ctx context.Context, customerNote *CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(customerNote).Error
 }
 
-func (r *CustomerNoteRepository) CreateMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) createMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&customerNotes).Error
 }
 
-func (r *CustomerNoteRepository) UpsertMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) upsertMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"note", "updated_at"}),
 	}).Create(&customerNotes).Error
 }
 
-func (r *CustomerNoteRepository) UpdateOne(ctx context.Context, customerNote *CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) updateOne(ctx context.Context, customerNote *CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(customerNote).Error
 }
 
-func (r *CustomerNoteRepository) UpdateMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) updateMany(ctx context.Context, customerNotes []*CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&customerNotes).Error
 }
 
-func (r *CustomerNoteRepository) PatchOne(ctx context.Context, updates *CustomerNote, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) patchOne(ctx context.Context, updates *CustomerNote, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&CustomerNote{}).Updates(updates).Error
 }
 
-func (r *CustomerNoteRepository) DeleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&CustomerNote{}).Error
 }
 
-func (r *CustomerNoteRepository) DeleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *CustomerNoteRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&CustomerNote{}).Error
 }
 

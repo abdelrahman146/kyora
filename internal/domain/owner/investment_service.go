@@ -34,7 +34,7 @@ func (s *InvestmentService) CreateInvestment(ctx context.Context, storeID string
 		StoreID:  store.ID,
 	}
 
-	if err := s.investmentRepo.CreateOne(ctx, investment); err != nil {
+	if err := s.investmentRepo.createOne(ctx, investment); err != nil {
 		return nil, err
 	}
 
@@ -42,7 +42,7 @@ func (s *InvestmentService) CreateInvestment(ctx context.Context, storeID string
 }
 
 func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, investmentID string, req *UpdateInvestmentRequest) (*Investment, error) {
-	investment, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	investment, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -57,7 +57,7 @@ func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, inves
 		investment.Note = req.Note
 	}
 
-	if err := s.investmentRepo.UpdateOne(ctx, investment); err != nil {
+	if err := s.investmentRepo.updateOne(ctx, investment); err != nil {
 		return nil, err
 	}
 
@@ -65,32 +65,32 @@ func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, inves
 }
 
 func (s *InvestmentService) DeleteInvestment(ctx context.Context, storeID, investmentID string) error {
-	_, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	_, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.scopeStoreID(storeID))
 	if err != nil {
 		return err
 	}
 
-	return s.investmentRepo.DeleteOne(ctx, s.investmentRepo.scopeID(investmentID))
+	return s.investmentRepo.deleteOne(ctx, s.investmentRepo.scopeID(investmentID))
 }
 
 func (s *InvestmentService) GetInvestmentByID(ctx context.Context, storeID string, investmentID string) (*Investment, error) {
-	return s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	return s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.scopeStoreID(storeID))
 }
 
 func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Investment, error) {
 	return s.investmentRepo.List(ctx,
-		s.investmentRepo.ScopeStoreID(storeID),
+		s.investmentRepo.scopeStoreID(storeID),
 		db.WithPagination(page, pageSize),
 		db.WithSorting(orderBy, ascending),
 	)
 }
 
 func (s *InvestmentService) CountInvestments(ctx context.Context, storeID string) (int64, error) {
-	return s.investmentRepo.Count(ctx, s.investmentRepo.ScopeStoreID(storeID))
+	return s.investmentRepo.Count(ctx, s.investmentRepo.scopeStoreID(storeID))
 }
 
 func (s *InvestmentService) CalculateTotalInvestedAmount(ctx context.Context, storeID string) (decimal.Decimal, error) {
-	total, err := s.investmentRepo.SumAmount(ctx, s.investmentRepo.ScopeStoreID(storeID))
+	total, err := s.investmentRepo.SumAmount(ctx, s.investmentRepo.scopeStoreID(storeID))
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -99,8 +99,8 @@ func (s *InvestmentService) CalculateTotalInvestedAmount(ctx context.Context, st
 
 func (s *InvestmentService) CalculateTotalInvestedAmountByOwner(ctx context.Context, storeID, ownerID string) (decimal.Decimal, error) {
 	total, err := s.investmentRepo.SumAmount(ctx,
-		s.investmentRepo.ScopeStoreID(storeID),
-		s.investmentRepo.ScopeOwnerID(ownerID),
+		s.investmentRepo.scopeStoreID(storeID),
+		s.investmentRepo.scopeOwnerID(ownerID),
 	)
 	if err != nil {
 		return decimal.Zero, err

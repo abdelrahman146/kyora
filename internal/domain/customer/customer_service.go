@@ -39,7 +39,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, storeID string, cu
 		WhatsappNumber:    customer.WhatsappNumber,
 	}
 
-	if err := s.customers.CreateOne(ctx, newCustomer); err != nil {
+	if err := s.customers.createOne(ctx, newCustomer); err != nil {
 		return nil, err
 	}
 	return newCustomer, nil
@@ -50,11 +50,11 @@ func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*Cust
 }
 
 func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Customer, error) {
-	return s.customers.List(ctx, s.customers.ScopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.customers.List(ctx, s.customers.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *CustomerService) CountCustomers(ctx context.Context, storeID string) (int64, error) {
-	return s.customers.Count(ctx, s.customers.ScopeStoreID(storeID))
+	return s.customers.Count(ctx, s.customers.scopeStoreID(storeID))
 }
 
 func (s *CustomerService) AddAddressToCustomer(ctx context.Context, customerID string, address *CreateAddressRequest) (*Address, error) {
@@ -68,7 +68,7 @@ func (s *CustomerService) AddAddressToCustomer(ctx context.Context, customerID s
 		ZipCode:     address.ZipCode,
 	}
 
-	if err := s.addresses.CreateOne(ctx, newAddress); err != nil {
+	if err := s.addresses.createOne(ctx, newAddress); err != nil {
 		return nil, err
 	}
 	return newAddress, nil
@@ -80,7 +80,7 @@ func (s *CustomerService) AddNoteToCustomer(ctx context.Context, customerID stri
 		Note:       note.Note,
 	}
 
-	if err := s.notes.CreateOne(ctx, newNote); err != nil {
+	if err := s.notes.createOne(ctx, newNote); err != nil {
 		return nil, err
 	}
 	return newNote, nil
@@ -129,30 +129,30 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, customerID string,
 		existingCustomer.WhatsappNumber = updates.WhatsappNumber
 	}
 
-	if err := s.customers.UpdateOne(ctx, existingCustomer); err != nil {
+	if err := s.customers.updateOne(ctx, existingCustomer); err != nil {
 		return nil, err
 	}
 	return existingCustomer, nil
 }
 
 func (s *CustomerService) DeleteCustomer(ctx context.Context, customerID string) error {
-	return s.customers.DeleteOne(ctx, s.customers.scopeID(customerID))
+	return s.customers.deleteOne(ctx, s.customers.scopeID(customerID))
 }
 
 func (s *CustomerService) DeleteCustomers(ctx context.Context, customerIDs []string) error {
-	return s.customers.DeleteMany(ctx, s.customers.scopeIDs(customerIDs))
+	return s.customers.deleteMany(ctx, s.customers.scopeIDs(customerIDs))
 }
 
 func (s *CustomerService) DeleteAllCustomersInStore(ctx context.Context, storeID string) error {
-	return s.customers.DeleteMany(ctx, s.customers.ScopeStoreID(storeID))
+	return s.customers.deleteMany(ctx, s.customers.scopeStoreID(storeID))
 }
 
 func (s *CustomerService) ListAddressesOfCustomer(ctx context.Context, customerID string) ([]*Address, error) {
-	return s.addresses.List(ctx, s.addresses.ScopeCustomerID(customerID))
+	return s.addresses.List(ctx, s.addresses.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) ListNotesOfCustomer(ctx context.Context, customerID string) ([]*CustomerNote, error) {
-	return s.notes.List(ctx, s.notes.ScopeCustomerID(customerID))
+	return s.notes.List(ctx, s.notes.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) GetAddressByID(ctx context.Context, addressID string) (*Address, error) {
@@ -163,18 +163,18 @@ func (s *CustomerService) GetNoteByID(ctx context.Context, noteID string) (*Cust
 	return s.notes.FindByID(ctx, noteID)
 }
 func (s *CustomerService) DeleteAddress(ctx context.Context, addressID string) error {
-	return s.addresses.DeleteOne(ctx, s.addresses.scopeID(addressID))
+	return s.addresses.deleteOne(ctx, s.addresses.scopeID(addressID))
 }
 
 func (s *CustomerService) DeleteNote(ctx context.Context, noteID string) error {
-	return s.notes.DeleteOne(ctx, s.notes.scopeID(noteID))
+	return s.notes.deleteOne(ctx, s.notes.scopeID(noteID))
 }
 func (s *CustomerService) DeleteAllAddressesOfCustomer(ctx context.Context, customerID string) error {
-	return s.addresses.DeleteMany(ctx, s.addresses.ScopeCustomerID(customerID))
+	return s.addresses.deleteMany(ctx, s.addresses.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) DeleteAllNotesOfCustomer(ctx context.Context, customerID string) error {
-	return s.notes.DeleteMany(ctx, s.notes.ScopeCustomerID(customerID))
+	return s.notes.deleteMany(ctx, s.notes.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) UpdateAddress(ctx context.Context, addressID string, updates *UpdateAddressRequest) (*Address, error) {
@@ -202,7 +202,7 @@ func (s *CustomerService) UpdateAddress(ctx context.Context, addressID string, u
 		existingAddress.ZipCode = updates.ZipCode
 	}
 
-	if err := s.addresses.UpdateOne(ctx, existingAddress); err != nil {
+	if err := s.addresses.updateOne(ctx, existingAddress); err != nil {
 		return nil, err
 	}
 	return existingAddress, nil
@@ -218,7 +218,7 @@ func (s *CustomerService) UpdateNote(ctx context.Context, noteID string, updates
 		existingNote.Note = updates.Note
 	}
 
-	if err := s.notes.UpdateOne(ctx, existingNote); err != nil {
+	if err := s.notes.updateOne(ctx, existingNote); err != nil {
 		return nil, err
 	}
 	return existingNote, nil
