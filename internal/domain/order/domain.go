@@ -9,12 +9,12 @@ type OrderDomain struct {
 	OrderService *OrderService
 }
 
-func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *OrderDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *OrderDomain {
 	orderItemRepo := NewOrderItemRepository(postgres)
 	orderRepo := NewOrderRepository(postgres)
 	OrderNoteRepo := NewOrderNoteRepository(postgres)
 	postgres.AutoMigrate(&Order{}, &OrderItem{}, &OrderNote{})
 	return &OrderDomain{
-		OrderService: NewOrderService(orderRepo, orderItemRepo, OrderNoteRepo, storeService, atomicProcess),
+		OrderService: NewOrderService(orderRepo, orderItemRepo, OrderNoteRepo, storeDomain.StoreService, atomicProcess),
 	}
 }

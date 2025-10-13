@@ -93,7 +93,7 @@ func (r *InvestmentRepository) findOne(ctx context.Context, opts ...db.PostgresO
 	return &investment, nil
 }
 
-func (r *InvestmentRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Investment, error) {
+func (r *InvestmentRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Investment, error) {
 	var investments []*Investment
 	if err := r.db.Conn(ctx, opts...).Find(&investments).Error; err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (r *InvestmentRepository) List(ctx context.Context, opts ...db.PostgresOpti
 	return investments, nil
 }
 
-func (r *InvestmentRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *InvestmentRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Investment{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -109,7 +109,7 @@ func (r *InvestmentRepository) Count(ctx context.Context, opts ...db.PostgresOpt
 	return count, nil
 }
 
-func (r *InvestmentRepository) SumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *InvestmentRepository) sumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&Investment{}).Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

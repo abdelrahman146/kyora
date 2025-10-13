@@ -144,7 +144,7 @@ func (r *RecurringExpenseRepository) findOne(ctx context.Context, opts ...db.Pos
 	return &expense, nil
 }
 
-func (r *RecurringExpenseRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*RecurringExpense, error) {
+func (r *RecurringExpenseRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*RecurringExpense, error) {
 	var expenses []*RecurringExpense
 	if err := r.db.Conn(ctx, opts...).Find(&expenses).Error; err != nil {
 		return nil, err
@@ -152,7 +152,7 @@ func (r *RecurringExpenseRepository) List(ctx context.Context, opts ...db.Postgr
 	return expenses, nil
 }
 
-func (r *RecurringExpenseRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *RecurringExpenseRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&RecurringExpense{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -160,7 +160,7 @@ func (r *RecurringExpenseRepository) Count(ctx context.Context, opts ...db.Postg
 	return count, nil
 }
 
-func (r *RecurringExpenseRepository) SumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *RecurringExpenseRepository) sumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&RecurringExpense{}).Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

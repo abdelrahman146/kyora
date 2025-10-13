@@ -45,13 +45,10 @@ func runRecurring(cmd *cobra.Command, args []string) {
 	}
 	atomicProcess := db.NewAtomicProcess(postgres.DB())
 
-	storeRepo := store.NewStoreRepository(postgres)
-	storeService := store.NewStoreService(storeRepo)
-	expenseRepo := expense.NewExpenseRepository(postgres)
-	recurringRepo := expense.NewRecurringExpenseRepository(postgres)
-	expService := expense.NewExpenseService(expenseRepo, recurringRepo, storeService, atomicProcess)
+	storeDomain := store.NewDomain(postgres, atomicProcess, nil)
+	expenseDomain := expense.NewDomain(postgres, atomicProcess, nil, storeDomain)
 
-	if err := expService.ProcessRecurringExpensesDaily(cmd.Context()); err != nil {
+	if err := expenseDomain.ExpenseService.ProcessRecurringExpensesDaily(cmd.Context()); err != nil {
 		log.Fatal("recurring job failed", utils.Log.Err(err))
 	}
 }

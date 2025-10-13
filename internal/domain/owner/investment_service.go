@@ -78,7 +78,7 @@ func (s *InvestmentService) GetInvestmentByID(ctx context.Context, storeID strin
 }
 
 func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Investment, error) {
-	return s.investmentRepo.List(ctx,
+	return s.investmentRepo.list(ctx,
 		s.investmentRepo.scopeStoreID(storeID),
 		db.WithPagination(page, pageSize),
 		db.WithSorting(orderBy, ascending),
@@ -86,11 +86,11 @@ func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string,
 }
 
 func (s *InvestmentService) CountInvestments(ctx context.Context, storeID string) (int64, error) {
-	return s.investmentRepo.Count(ctx, s.investmentRepo.scopeStoreID(storeID))
+	return s.investmentRepo.count(ctx, s.investmentRepo.scopeStoreID(storeID))
 }
 
 func (s *InvestmentService) CalculateTotalInvestedAmount(ctx context.Context, storeID string) (decimal.Decimal, error) {
-	total, err := s.investmentRepo.SumAmount(ctx, s.investmentRepo.scopeStoreID(storeID))
+	total, err := s.investmentRepo.sumAmount(ctx, s.investmentRepo.scopeStoreID(storeID))
 	if err != nil {
 		return decimal.Zero, err
 	}
@@ -98,7 +98,7 @@ func (s *InvestmentService) CalculateTotalInvestedAmount(ctx context.Context, st
 }
 
 func (s *InvestmentService) CalculateTotalInvestedAmountByOwner(ctx context.Context, storeID, ownerID string) (decimal.Decimal, error) {
-	total, err := s.investmentRepo.SumAmount(ctx,
+	total, err := s.investmentRepo.sumAmount(ctx,
 		s.investmentRepo.scopeStoreID(storeID),
 		s.investmentRepo.scopeOwnerID(ownerID),
 	)

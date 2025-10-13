@@ -127,7 +127,7 @@ func (r *organizationRepository) list(ctx context.Context, opts ...db.PostgresOp
 	return orgs, nil
 }
 
-func (r *organizationRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *organizationRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Organization{}).Count(&count).Error; err != nil {
 		return 0, err

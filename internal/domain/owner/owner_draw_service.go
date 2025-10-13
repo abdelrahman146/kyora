@@ -68,11 +68,11 @@ func (s *OwnerDrawService) GetOwnerDrawByID(ctx context.Context, storeID, ownerD
 }
 
 func (s *OwnerDrawService) ListOwnerDraws(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*OwnerDraw, error) {
-	return s.ownerDrawRepo.List(ctx, s.ownerDrawRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.ownerDrawRepo.list(ctx, s.ownerDrawRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *OwnerDrawService) CountOwnerDraws(ctx context.Context, storeID string) (int64, error) {
-	return s.ownerDrawRepo.Count(ctx, s.ownerDrawRepo.scopeStoreID(storeID))
+	return s.ownerDrawRepo.count(ctx, s.ownerDrawRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerDrawService) DeleteOwnerDraw(ctx context.Context, storeID, ownerDrawID string) error {
@@ -85,9 +85,9 @@ func (s *OwnerDrawService) DeleteOwnerDraw(ctx context.Context, storeID, ownerDr
 }
 
 func (s *OwnerDrawService) SumTotalOwnerDraws(ctx context.Context, storeID string) (decimal.Decimal, error) {
-	return s.ownerDrawRepo.SumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID))
+	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerDrawService) SumTotalOwnerDrawsByOwner(ctx context.Context, storeID, ownerID string) (decimal.Decimal, error) {
-	return s.ownerDrawRepo.SumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeOwnerID(ownerID))
+	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeOwnerID(ownerID))
 }

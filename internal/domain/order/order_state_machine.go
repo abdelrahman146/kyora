@@ -7,15 +7,15 @@ import (
 	"github.com/abdelrahman146/kyora/internal/utils"
 )
 
-type OrderStateMachine struct {
+type orderStateMachine struct {
 	order *Order
 }
 
-func NewOrderStateMachine(order *Order) *OrderStateMachine {
-	return &OrderStateMachine{order: order}
+func newOrderStateMachine(order *Order) *orderStateMachine {
+	return &orderStateMachine{order: order}
 }
 
-func (sm *OrderStateMachine) CanTransitionStateTo(newState OrderStatus) bool {
+func (sm *orderStateMachine) canTransitionStateTo(newState OrderStatus) bool {
 	allowedTransitions := map[OrderStatus][]OrderStatus{
 		OrderStatusPending:   {OrderStatusPlaced, OrderStatusCancelled},
 		OrderStatusPlaced:    {OrderStatusShipped, OrderStatusCancelled},
@@ -31,8 +31,8 @@ func (sm *OrderStateMachine) CanTransitionStateTo(newState OrderStatus) bool {
 	return false
 }
 
-func (sm *OrderStateMachine) TransitionStateTo(newState OrderStatus) error {
-	if !sm.CanTransitionStateTo(newState) {
+func (sm *orderStateMachine) transitionStateTo(newState OrderStatus) error {
+	if !sm.canTransitionStateTo(newState) {
 		return utils.Problem.UnprocessableEntity(fmt.Sprintf("cannot transition order status from %s to %s", sm.order.Status, newState)).With("currentState", sm.order.Status)
 	}
 	sm.order.Status = newState
@@ -40,7 +40,7 @@ func (sm *OrderStateMachine) TransitionStateTo(newState OrderStatus) error {
 	return nil
 }
 
-func (sm *OrderStateMachine) CanTransitionPaymentStatusTo(newStatus OrderPaymentStatus) bool {
+func (sm *orderStateMachine) canTransitionPaymentStatusTo(newStatus OrderPaymentStatus) bool {
 	allowedTransitions := map[OrderPaymentStatus][]OrderPaymentStatus{
 		OrderPaymentStatusPending:  {OrderPaymentStatusPaid, OrderPaymentStatusFailed},
 		OrderPaymentStatusPaid:     {OrderPaymentStatusRefunded},
@@ -55,8 +55,8 @@ func (sm *OrderStateMachine) CanTransitionPaymentStatusTo(newStatus OrderPayment
 	return false
 }
 
-func (sm *OrderStateMachine) TransitionPaymentStatusTo(newStatus OrderPaymentStatus) error {
-	if !sm.CanTransitionPaymentStatusTo(newStatus) {
+func (sm *orderStateMachine) transitionPaymentStatusTo(newStatus OrderPaymentStatus) error {
+	if !sm.canTransitionPaymentStatusTo(newStatus) {
 		return utils.Problem.UnprocessableEntity(fmt.Sprintf("cannot transition payment status from %s to %s", sm.order.PaymentStatus, newStatus)).With("currentState", sm.order.PaymentStatus)
 	}
 	allowedOrderStatuses := []OrderStatus{OrderStatusPlaced, OrderStatusShipped, OrderStatusFulfilled}

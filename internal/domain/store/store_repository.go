@@ -118,7 +118,7 @@ func (r *StoreRepository) findOne(ctx context.Context, opts ...db.PostgresOption
 	return &store, nil
 }
 
-func (r *StoreRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Store, error) {
+func (r *StoreRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Store, error) {
 	var stores []*Store
 	if err := r.db.Conn(ctx, opts...).Find(&stores).Error; err != nil {
 		return nil, err
@@ -126,7 +126,7 @@ func (r *StoreRepository) List(ctx context.Context, opts ...db.PostgresOptions) 
 	return stores, nil
 }
 
-func (r *StoreRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *StoreRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Store{}).Count(&count).Error; err != nil {
 		return 0, err

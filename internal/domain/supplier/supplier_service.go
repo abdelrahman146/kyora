@@ -21,11 +21,11 @@ func (s *SupplierService) GetSupplierByID(ctx context.Context, storeID, id strin
 }
 
 func (s *SupplierService) ListSuppliers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Supplier, error) {
-	return s.supplierRepo.List(ctx, s.supplierRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.supplierRepo.list(ctx, s.supplierRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *SupplierService) CountSuppliers(ctx context.Context, storeID string) (int64, error) {
-	return s.supplierRepo.Count(ctx, s.supplierRepo.scopeStoreID(storeID))
+	return s.supplierRepo.count(ctx, s.supplierRepo.scopeStoreID(storeID))
 }
 
 func (s *SupplierService) CreateSupplier(ctx context.Context, storeID string, supplier *CreateSupplierRequest) (*Supplier, error) {

@@ -9,68 +9,68 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type AddressRepository struct {
+type addressRepository struct {
 	db *db.Postgres
 }
 
-func NewAddressRepository(db *db.Postgres) *AddressRepository {
-	return &AddressRepository{db: db}
+func newAddressRepository(db *db.Postgres) *addressRepository {
+	return &addressRepository{db: db}
 }
 
-func (r *AddressRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *addressRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *AddressRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *addressRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}
 }
 
-func (r *AddressRepository) scopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
+func (r *addressRepository) scopeCustomerID(customerID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("customer_id = ?", customerID)
 	}
 }
 
-func (r *AddressRepository) createOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) createOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(address).Error
 }
 
-func (r *AddressRepository) createMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) createMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&addresses).Error
 }
 
-func (r *AddressRepository) upsertMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) upsertMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"street", "city", "state", "country_code", "phone", "zip_code", "updated_at"}),
 	}).Create(&addresses).Error
 }
 
-func (r *AddressRepository) updateOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) updateOne(ctx context.Context, address *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(address).Error
 }
 
-func (r *AddressRepository) updateMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) updateMany(ctx context.Context, addresses []*Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&addresses).Error
 }
 
-func (r *AddressRepository) patchOne(ctx context.Context, updates *Address, opts ...db.PostgresOptions) error {
+func (r *addressRepository) patchOne(ctx context.Context, updates *Address, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Address{}).Updates(updates).Error
 }
 
-func (r *AddressRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *addressRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Address{}).Error
 }
 
-func (r *AddressRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *addressRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Address{}).Error
 }
 
-func (r *AddressRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Address, error) {
+func (r *addressRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Address, error) {
 	var address Address
 	if err := r.db.Conn(ctx, opts...).First(&address, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -78,7 +78,7 @@ func (r *AddressRepository) findByID(ctx context.Context, id string, opts ...db.
 	return &address, nil
 }
 
-func (r *AddressRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Address, error) {
+func (r *addressRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Address, error) {
 	var address Address
 	if err := r.db.Conn(ctx, opts...).First(&address).Error; err != nil {
 		return nil, err
@@ -86,7 +86,7 @@ func (r *AddressRepository) findOne(ctx context.Context, opts ...db.PostgresOpti
 	return &address, nil
 }
 
-func (r *AddressRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Address, error) {
+func (r *addressRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Address, error) {
 	var addresses []*Address
 	if err := r.db.Conn(ctx, opts...).Find(&addresses).Error; err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *AddressRepository) List(ctx context.Context, opts ...db.PostgresOptions
 	return addresses, nil
 }
 
-func (r *AddressRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *addressRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Address{}).Count(&count).Error; err != nil {
 		return 0, err

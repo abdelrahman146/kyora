@@ -9,7 +9,7 @@ import (
 )
 
 type OnboardingService struct {
-	userRepo         *UserRepository
+	userRepo         *userRepository
 	organizationRepo *organizationRepository
 	atomicProcess    *db.AtomicProcess
 	storeProvisioner StoreProvisioner
@@ -25,7 +25,7 @@ type CreateInitialStoreRequest struct {
 	Currency    string
 }
 
-func NewOnboardingService(userRepo *UserRepository, organizationRepo *organizationRepository, atomicProcess *db.AtomicProcess, storeProvisioner StoreProvisioner) *OnboardingService {
+func NewOnboardingService(userRepo *userRepository, organizationRepo *organizationRepository, atomicProcess *db.AtomicProcess, storeProvisioner StoreProvisioner) *OnboardingService {
 	return &OnboardingService{
 		userRepo:         userRepo,
 		organizationRepo: organizationRepo,

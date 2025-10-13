@@ -10,13 +10,13 @@ import (
 )
 
 type ExpenseService struct {
-	expenseRepo   *ExpenseRepository
+	expenseRepo   *expenseRepository
 	recurringRepo *RecurringExpenseRepository
 	storeService  *store.StoreService
 	atomicProcess *db.AtomicProcess
 }
 
-func NewExpenseService(expenseRepo *ExpenseRepository, recurringRepo *RecurringExpenseRepository, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *ExpenseService {
+func NewExpenseService(expenseRepo *expenseRepository, recurringRepo *RecurringExpenseRepository, storeService *store.StoreService, atomicProcess *db.AtomicProcess) *ExpenseService {
 	return &ExpenseService{
 		expenseRepo:   expenseRepo,
 		recurringRepo: recurringRepo,
@@ -34,7 +34,7 @@ func (s *ExpenseService) GetExpenseByID(ctx context.Context, storeID, id string)
 }
 
 func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, filter *ExpenseFilter, page, pageSize int, orderBy string, ascending bool) ([]*Expense, error) {
-	exps, err := s.expenseRepo.List(ctx,
+	exps, err := s.expenseRepo.list(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
 		s.expenseRepo.scopeFilter(filter),
 		db.WithPagination(page, pageSize),
@@ -47,7 +47,7 @@ func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, filte
 }
 
 func (s *ExpenseService) CountExpenses(ctx context.Context, storeID string, filter *ExpenseFilter) (int64, error) {
-	count, err := s.expenseRepo.Count(ctx,
+	count, err := s.expenseRepo.count(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
 		s.expenseRepo.scopeFilter(filter),
 	)
@@ -145,7 +145,7 @@ func (s *ExpenseService) GetRecurringExpenseByID(ctx context.Context, storeID, i
 }
 
 func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID string, filter *RecurringExpenseFilter, page, pageSize int, orderBy string, ascending bool) ([]*RecurringExpense, error) {
-	exps, err := s.recurringRepo.List(ctx,
+	exps, err := s.recurringRepo.list(ctx,
 		s.recurringRepo.scopeStoreID(storeID),
 		s.recurringRepo.scopeFilter(filter),
 		db.WithPagination(page, pageSize),
@@ -158,7 +158,7 @@ func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID stri
 }
 
 func (s *ExpenseService) CountRecurringExpenses(ctx context.Context, storeID string, filter *RecurringExpenseFilter) (int64, error) {
-	count, err := s.recurringRepo.Count(ctx,
+	count, err := s.recurringRepo.count(ctx,
 		s.recurringRepo.scopeStoreID(storeID),
 		s.recurringRepo.scopeFilter(filter),
 	)
@@ -249,7 +249,7 @@ func (s *ExpenseService) GetRecurringExpenseHistory(ctx context.Context, storeID
 	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
 		return nil, err
 	}
-	history, err := s.expenseRepo.List(ctx,
+	history, err := s.expenseRepo.list(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
 		s.expenseRepo.scopeRecurringExpenseID(recurringExpenseID),
 	)
@@ -376,7 +376,7 @@ func (s *ExpenseService) ProcessRecurringExpensesDaily(ctx context.Context) erro
 }
 
 func (s *ExpenseService) fetchActiveRecurringForWindow(ctx context.Context, today time.Time) ([]*RecurringExpense, error) {
-	return s.recurringRepo.List(ctx,
+	return s.recurringRepo.list(ctx,
 		s.recurringRepo.scopeStatus(RecurringExpenseStatusActive),
 		s.recurringRepo.scopeStartDateLte(today),
 		s.recurringRepo.scopeEndDateGteOrNull(today),
@@ -498,7 +498,7 @@ func startOfDay(t time.Time) time.Time {
 
 func (s *ExpenseService) hasExpenseForRecurringOnDate(ctx context.Context, re *RecurringExpense, day time.Time) (bool, error) {
 	day = startOfDay(day)
-	count, err := s.expenseRepo.Count(ctx,
+	count, err := s.expenseRepo.count(ctx,
 		s.expenseRepo.scopeStoreID(re.StoreID),
 		s.expenseRepo.scopeRecurringExpenseID(re.ID),
 		s.expenseRepo.scopeOccurredOn(day),

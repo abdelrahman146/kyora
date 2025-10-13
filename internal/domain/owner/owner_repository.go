@@ -86,7 +86,7 @@ func (r *OwnerRepository) findOne(ctx context.Context, opts ...db.PostgresOption
 	return &owner, nil
 }
 
-func (r *OwnerRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Owner, error) {
+func (r *OwnerRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Owner, error) {
 	var owners []*Owner
 	if err := r.db.Conn(ctx, opts...).Find(&owners).Error; err != nil {
 		return nil, err
@@ -94,7 +94,7 @@ func (r *OwnerRepository) List(ctx context.Context, opts ...db.PostgresOptions) 
 	return owners, nil
 }
 
-func (r *OwnerRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *OwnerRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Owner{}).Count(&count).Error; err != nil {
 		return 0, err

@@ -9,11 +9,11 @@ type InventoryDomain struct {
 	InventoryService *InventoryService
 }
 
-func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *InventoryDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *InventoryDomain {
 	productRepo := NewProductRepository(postgres)
 	variantRepo := NewVariantRepository(postgres)
 	postgres.AutoMigrate(&Product{}, &Variant{})
 	return &InventoryDomain{
-		InventoryService: NewInventoryService(productRepo, variantRepo, storeService, atomicProcess),
+		InventoryService: NewInventoryService(productRepo, variantRepo, storeDomain.StoreService, atomicProcess),
 	}
 }

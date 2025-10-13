@@ -86,7 +86,7 @@ func (s *StoreService) GetStoreByID(ctx context.Context, id string) (*Store, err
 }
 
 func (s *StoreService) ListOrganizationStores(ctx context.Context, orgID string) ([]*Store, error) {
-	stores, err := s.storeRepo.List(ctx, s.storeRepo.scopeOrganizationID(orgID))
+	stores, err := s.storeRepo.list(ctx, s.storeRepo.scopeOrganizationID(orgID))
 	if err != nil {
 		return nil, err
 	}

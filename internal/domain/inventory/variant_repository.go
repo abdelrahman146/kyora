@@ -118,7 +118,7 @@ func (r *VariantRepository) createMany(ctx context.Context, variants []*Variant,
 
 // CreateManyStrict inserts all variants and returns an error on any conflict/violation.
 // Useful when caller wants to handle unique conflicts explicitly.
-func (r *VariantRepository) CreateManyStrict(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
+func (r *VariantRepository) createManyStrict(ctx context.Context, variants []*Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(&variants).Error
 }
 
@@ -165,7 +165,7 @@ func (r *VariantRepository) findOne(ctx context.Context, opts ...db.PostgresOpti
 	return &variant, nil
 }
 
-func (r *VariantRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Variant, error) {
+func (r *VariantRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Variant, error) {
 	var variants []*Variant
 	if err := r.db.Conn(ctx, opts...).Find(&variants).Error; err != nil {
 		return nil, err
@@ -173,7 +173,7 @@ func (r *VariantRepository) List(ctx context.Context, opts ...db.PostgresOptions
 	return variants, nil
 }
 
-func (r *VariantRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *VariantRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -181,7 +181,7 @@ func (r *VariantRepository) Count(ctx context.Context, opts ...db.PostgresOption
 	return count, nil
 }
 
-func (r *VariantRepository) SumCostPrice(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *VariantRepository) sumCostPrice(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Select("COALESCE(SUM(cost_price), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err
@@ -189,7 +189,7 @@ func (r *VariantRepository) SumCostPrice(ctx context.Context, opts ...db.Postgre
 	return total, nil
 }
 
-func (r *VariantRepository) SumSalePrice(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *VariantRepository) sumSalePrice(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Select("COALESCE(SUM(sale_price), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

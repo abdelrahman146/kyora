@@ -8,11 +8,11 @@ import (
 )
 
 type AssetService struct {
-	assetRepo    *AssetRepository
+	assetRepo    *assetRepository
 	storeService *store.StoreService
 }
 
-func NewAssetService(assetRepo *AssetRepository, storeService *store.StoreService) *AssetService {
+func NewAssetService(assetRepo *assetRepository, storeService *store.StoreService) *AssetService {
 	return &AssetService{assetRepo: assetRepo, storeService: storeService}
 }
 
@@ -25,7 +25,7 @@ func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string
 }
 
 func (s *AssetService) ListAssets(ctx context.Context, storeID string, filter *AssetFilter, page, pageSize int, orderBy string, ascending bool) ([]*Asset, error) {
-	assets, err := s.assetRepo.List(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	assets, err := s.assetRepo.list(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 	if err != nil {
 		return nil, err
 	}

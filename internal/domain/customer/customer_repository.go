@@ -10,27 +10,27 @@ import (
 	"gorm.io/gorm/clause"
 )
 
-type CustomerRepository struct {
+type customerRepository struct {
 	db *db.Postgres
 }
 
-func NewCustomerRepository(db *db.Postgres) *CustomerRepository {
-	return &CustomerRepository{db: db}
+func newCustomerRepository(db *db.Postgres) *customerRepository {
+	return &customerRepository{db: db}
 }
 
-func (r *CustomerRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *customerRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *CustomerRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *customerRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}
 }
 
-func (r *CustomerRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *customerRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
 			return db.Where("created_at BETWEEN ? AND ?", from, to)
@@ -43,48 +43,48 @@ func (r *CustomerRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB
 	}
 }
 
-func (r *CustomerRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+func (r *customerRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
 	}
 }
 
-func (r *CustomerRepository) createOne(ctx context.Context, customer *Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) createOne(ctx context.Context, customer *Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(customer).Error
 }
 
-func (r *CustomerRepository) createMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) createMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{DoNothing: true}).Create(&customers).Error
 }
 
-func (r *CustomerRepository) upsertMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) upsertMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Clauses(clause.OnConflict{
 		Columns:   []clause.Column{{Name: "id"}},
 		DoUpdates: clause.AssignmentColumns([]string{"first_name", "last_name", "gender", "email", "phone", "tiktok_username", "instagram_username", "facebook_username", "x_username", "snapchat_username", "whatsapp_number", "updated_at"}),
 	}).Create(&customers).Error
 }
 
-func (r *CustomerRepository) updateOne(ctx context.Context, customer *Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) updateOne(ctx context.Context, customer *Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(customer).Error
 }
 
-func (r *CustomerRepository) updateMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) updateMany(ctx context.Context, customers []*Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Save(&customers).Error
 }
 
-func (r *CustomerRepository) patchOne(ctx context.Context, updates *Customer, opts ...db.PostgresOptions) error {
+func (r *customerRepository) patchOne(ctx context.Context, updates *Customer, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Model(&Customer{}).Updates(updates).Error
 }
 
-func (r *CustomerRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *customerRepository) deleteOne(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Customer{}).Error
 }
 
-func (r *CustomerRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
+func (r *customerRepository) deleteMany(ctx context.Context, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Delete(&Customer{}).Error
 }
 
-func (r *CustomerRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Customer, error) {
+func (r *customerRepository) findByID(ctx context.Context, id string, opts ...db.PostgresOptions) (*Customer, error) {
 	var customer Customer
 	if err := r.db.Conn(ctx, opts...).First(&customer, "id = ?", id).Error; err != nil {
 		return nil, err
@@ -92,7 +92,7 @@ func (r *CustomerRepository) findByID(ctx context.Context, id string, opts ...db
 	return &customer, nil
 }
 
-func (r *CustomerRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Customer, error) {
+func (r *customerRepository) findOne(ctx context.Context, opts ...db.PostgresOptions) (*Customer, error) {
 	var customer Customer
 	if err := r.db.Conn(ctx, opts...).First(&customer).Error; err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (r *CustomerRepository) findOne(ctx context.Context, opts ...db.PostgresOpt
 	return &customer, nil
 }
 
-func (r *CustomerRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Customer, error) {
+func (r *customerRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Customer, error) {
 	var customers []*Customer
 	if err := r.db.Conn(ctx, opts...).Find(&customers).Error; err != nil {
 		return nil, err
@@ -108,7 +108,7 @@ func (r *CustomerRepository) List(ctx context.Context, opts ...db.PostgresOption
 	return customers, nil
 }
 
-func (r *CustomerRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *customerRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Customer{}).Count(&count).Error; err != nil {
 		return 0, err

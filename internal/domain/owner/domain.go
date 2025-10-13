@@ -11,15 +11,15 @@ type OwnerDomain struct {
 	OwnerDrawService  *OwnerDrawService
 }
 
-func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *OwnerDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *OwnerDomain {
 	ownerRepo := NewOwnerRepository(postgres)
 	investmentRepo := NewInvestmentRepository(postgres)
 	ownerDrawRepo := NewOwnerDrawRepository(postgres)
 	postgres.AutoMigrate(&Owner{}, &Investment{}, &OwnerDraw{})
 
 	return &OwnerDomain{
-		OwnerService:      NewOwnerService(ownerRepo, storeService),
-		InvestmentService: NewInvestmentService(investmentRepo, storeService),
-		OwnerDrawService:  NewOwnerDrawService(ownerDrawRepo, storeService),
+		OwnerService:      NewOwnerService(ownerRepo, storeDomain.StoreService),
+		InvestmentService: NewInvestmentService(investmentRepo, storeDomain.StoreService),
+		OwnerDrawService:  NewOwnerDrawService(ownerDrawRepo, storeDomain.StoreService),
 	}
 }

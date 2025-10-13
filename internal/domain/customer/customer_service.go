@@ -7,13 +7,13 @@ import (
 )
 
 type CustomerService struct {
-	customers     *CustomerRepository
-	addresses     *AddressRepository
-	notes         *CustomerNoteRepository
+	customers     *customerRepository
+	addresses     *addressRepository
+	notes         *customerNoteRepository
 	atomicProcess *db.AtomicProcess
 }
 
-func NewCustomerService(customers *CustomerRepository, addresses *AddressRepository, notes *CustomerNoteRepository, atomicProcess *db.AtomicProcess) *CustomerService {
+func NewCustomerService(customers *customerRepository, addresses *addressRepository, notes *customerNoteRepository, atomicProcess *db.AtomicProcess) *CustomerService {
 	return &CustomerService{
 		customers:     customers,
 		addresses:     addresses,
@@ -50,11 +50,11 @@ func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*Cust
 }
 
 func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Customer, error) {
-	return s.customers.List(ctx, s.customers.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.customers.list(ctx, s.customers.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *CustomerService) CountCustomers(ctx context.Context, storeID string) (int64, error) {
-	return s.customers.Count(ctx, s.customers.scopeStoreID(storeID))
+	return s.customers.count(ctx, s.customers.scopeStoreID(storeID))
 }
 
 func (s *CustomerService) AddAddressToCustomer(ctx context.Context, customerID string, address *CreateAddressRequest) (*Address, error) {
@@ -148,11 +148,11 @@ func (s *CustomerService) DeleteAllCustomersInStore(ctx context.Context, storeID
 }
 
 func (s *CustomerService) ListAddressesOfCustomer(ctx context.Context, customerID string) ([]*Address, error) {
-	return s.addresses.List(ctx, s.addresses.scopeCustomerID(customerID))
+	return s.addresses.list(ctx, s.addresses.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) ListNotesOfCustomer(ctx context.Context, customerID string) ([]*CustomerNote, error) {
-	return s.notes.List(ctx, s.notes.scopeCustomerID(customerID))
+	return s.notes.list(ctx, s.notes.scopeCustomerID(customerID))
 }
 
 func (s *CustomerService) GetAddressByID(ctx context.Context, addressID string) (*Address, error) {

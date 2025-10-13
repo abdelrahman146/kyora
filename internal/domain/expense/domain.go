@@ -9,11 +9,11 @@ type ExpenseDomain struct {
 	ExpenseService *ExpenseService
 }
 
-func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeService *store.StoreService) *ExpenseDomain {
+func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeDomain *store.StoreDomain) *ExpenseDomain {
 	expenseRepo := NewExpenseRepository(postgres)
 	recurringExpenseRepo := NewRecurringExpenseRepository(postgres)
 	postgres.AutoMigrate(&Expense{}, &RecurringExpense{})
 	return &ExpenseDomain{
-		ExpenseService: NewExpenseService(expenseRepo, recurringExpenseRepo, storeService, atomicProcess),
+		ExpenseService: NewExpenseService(expenseRepo, recurringExpenseRepo, storeDomain.StoreService, atomicProcess),
 	}
 }

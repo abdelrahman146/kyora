@@ -93,7 +93,7 @@ func (r *OwnerDrawRepository) findOne(ctx context.Context, opts ...db.PostgresOp
 	return &draw, nil
 }
 
-func (r *OwnerDrawRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*OwnerDraw, error) {
+func (r *OwnerDrawRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OwnerDraw, error) {
 	var draws []*OwnerDraw
 	if err := r.db.Conn(ctx, opts...).Find(&draws).Error; err != nil {
 		return nil, err
@@ -101,7 +101,7 @@ func (r *OwnerDrawRepository) List(ctx context.Context, opts ...db.PostgresOptio
 	return draws, nil
 }
 
-func (r *OwnerDrawRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *OwnerDrawRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -109,7 +109,7 @@ func (r *OwnerDrawRepository) Count(ctx context.Context, opts ...db.PostgresOpti
 	return count, nil
 }
 
-func (r *OwnerDrawRepository) SumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *OwnerDrawRepository) sumAmount(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&OwnerDraw{}).Select("COALESCE(SUM(amount), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

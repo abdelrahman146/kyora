@@ -16,11 +16,11 @@ import (
 )
 
 type AuthenticationService struct {
-	userRepo *UserRepository
+	userRepo *userRepository
 	cache    *db.Memcache
 }
 
-func NewAuthenticationService(userRepo *UserRepository, cache *db.Memcache) *AuthenticationService {
+func NewAuthenticationService(userRepo *userRepository, cache *db.Memcache) *AuthenticationService {
 	return &AuthenticationService{userRepo: userRepo, cache: cache}
 }
 

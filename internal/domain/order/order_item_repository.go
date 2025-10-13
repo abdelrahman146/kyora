@@ -73,7 +73,7 @@ func (r *OrderItemRepository) deleteMany(ctx context.Context, orderItems []*Orde
 	return r.db.Conn(ctx, opts...).Delete(&orderItems).Error
 }
 
-func (r *OrderItemRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderItem, error) {
+func (r *OrderItemRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderItem, error) {
 	var orderItems []*OrderItem
 	if err := r.db.Conn(ctx, opts...).Find(&orderItems).Error; err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (r *OrderItemRepository) List(ctx context.Context, opts ...db.PostgresOptio
 	return orderItems, nil
 }
 
-func (r *OrderItemRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *OrderItemRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&OrderItem{}).Count(&count).Error; err != nil {
 		return 0, err

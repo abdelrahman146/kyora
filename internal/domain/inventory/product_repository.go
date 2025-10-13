@@ -142,7 +142,7 @@ func (r *ProductRepository) findOne(ctx context.Context, opts ...db.PostgresOpti
 	return &product, nil
 }
 
-func (r *ProductRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Product, error) {
+func (r *ProductRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Product, error) {
 	var products []*Product
 	if err := r.db.Conn(ctx, opts...).Find(&products).Error; err != nil {
 		return nil, err
@@ -150,7 +150,7 @@ func (r *ProductRepository) List(ctx context.Context, opts ...db.PostgresOptions
 	return products, nil
 }
 
-func (r *ProductRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *ProductRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Product{}).Count(&count).Error; err != nil {
 		return 0, err

@@ -73,7 +73,7 @@ func (r *OrderNoteRepository) deleteMany(ctx context.Context, orderNotes []*Orde
 	return r.db.Conn(ctx, opts...).Delete(&orderNotes).Error
 }
 
-func (r *OrderNoteRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderNote, error) {
+func (r *OrderNoteRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*OrderNote, error) {
 	var orderNotes []*OrderNote
 	if err := r.db.Conn(ctx, opts...).Find(&orderNotes).Error; err != nil {
 		return nil, err
@@ -81,7 +81,7 @@ func (r *OrderNoteRepository) List(ctx context.Context, opts ...db.PostgresOptio
 	return orderNotes, nil
 }
 
-func (r *OrderNoteRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *OrderNoteRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&OrderNote{}).Count(&count).Error; err != nil {
 		return 0, err

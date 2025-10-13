@@ -193,7 +193,7 @@ func (r *OrderRepository) deleteMany(ctx context.Context, opts ...db.PostgresOpt
 	return r.db.Conn(ctx, opts...).Delete(&Order{}).Error
 }
 
-func (r *OrderRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Order, error) {
+func (r *OrderRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Order, error) {
 	var orders []*Order
 	if err := r.db.Conn(ctx, opts...).Find(&orders).Error; err != nil {
 		return nil, err
@@ -201,7 +201,7 @@ func (r *OrderRepository) List(ctx context.Context, opts ...db.PostgresOptions) 
 	return orders, nil
 }
 
-func (r *OrderRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *OrderRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Order{}).Count(&count).Error; err != nil {
 		return 0, err
@@ -209,7 +209,7 @@ func (r *OrderRepository) Count(ctx context.Context, opts ...db.PostgresOptions)
 	return count, nil
 }
 
-func (r *OrderRepository) SumTotal(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+func (r *OrderRepository) sumTotal(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
 	var total decimal.Decimal
 	if err := r.db.Conn(ctx, opts...).Model(&Order{}).Select("COALESCE(SUM(total), 0)").Scan(&total).Error; err != nil {
 		return decimal.Zero, err

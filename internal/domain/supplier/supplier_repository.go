@@ -92,7 +92,7 @@ func (r *SupplierRepository) findOne(ctx context.Context, opts ...db.PostgresOpt
 	return &supplier, nil
 }
 
-func (r *SupplierRepository) List(ctx context.Context, opts ...db.PostgresOptions) ([]*Supplier, error) {
+func (r *SupplierRepository) list(ctx context.Context, opts ...db.PostgresOptions) ([]*Supplier, error) {
 	var suppliers []*Supplier
 	if err := r.db.Conn(ctx, opts...).Find(&suppliers).Error; err != nil {
 		return nil, err
@@ -100,7 +100,7 @@ func (r *SupplierRepository) List(ctx context.Context, opts ...db.PostgresOption
 	return suppliers, nil
 }
 
-func (r *SupplierRepository) Count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+func (r *SupplierRepository) count(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
 	var count int64
 	if err := r.db.Conn(ctx, opts...).Model(&Supplier{}).Count(&count).Error; err != nil {
 		return 0, err

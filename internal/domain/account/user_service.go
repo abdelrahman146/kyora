@@ -7,10 +7,10 @@ import (
 )
 
 type UserService struct {
-	userRepo *UserRepository
+	userRepo *userRepository
 }
 
-func NewUserService(userRepo *UserRepository) *UserService {
+func NewUserService(userRepo *userRepository) *UserService {
 	return &UserService{userRepo: userRepo}
 }
 
@@ -32,7 +32,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, userReq *Up
 }
 
 func (s *UserService) GetOrganizationUsers(ctx context.Context, orgID string) ([]*User, error) {
-	users, err := s.userRepo.List(ctx, s.userRepo.scopeOrganizationID(orgID))
+	users, err := s.userRepo.list(ctx, s.userRepo.scopeOrganizationID(orgID))
 	if err != nil {
 		return nil, err
 	}

@@ -62,7 +62,7 @@ func (s *OwnerService) GetOwnerByID(ctx context.Context, storeID string, ownerID
 }
 
 func (s *OwnerService) ListOwners(ctx context.Context, storeID string) ([]*Owner, error) {
-	return s.ownerRepo.List(ctx, s.ownerRepo.scopeStoreID(storeID))
+	return s.ownerRepo.list(ctx, s.ownerRepo.scopeStoreID(storeID))
 }
 
 func (s *OwnerService) DeleteOwner(ctx context.Context, storeID string, ownerID string) error {

@@ -38,11 +38,11 @@ func (s *OrderService) GetOrderByOrderNumber(ctx context.Context, storeID string
 }
 
 func (s *OrderService) ListOrders(ctx context.Context, storeID string, filter *OrderFilter, page, pageSize int, orderBy string, ascending bool) ([]*Order, error) {
-	return s.orders.List(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+	return s.orders.list(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
 }
 
 func (s *OrderService) CountOrders(ctx context.Context, storeID string, filter *OrderFilter) (int64, error) {
-	return s.orders.Count(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter))
+	return s.orders.count(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter))
 }
 
 func (s *OrderService) calculateSubtotal(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {
@@ -159,7 +159,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 	if err != nil {
 		return nil, err
 	}
-	newOrder.Items, err = s.orderItems.List(ctx, s.orderItems.scopeOrderID(newOrder.ID))
+	newOrder.Items, err = s.orderItems.list(ctx, s.orderItems.scopeOrderID(newOrder.ID))
 	if err != nil {
 		return nil, err
 	}
@@ -186,8 +186,8 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, storeID, orderID s
 	if err != nil {
 		return nil, err
 	}
-	sm := NewOrderStateMachine(order)
-	if err := sm.TransitionStateTo(newStatus); err != nil {
+	sm := newOrderStateMachine(order)
+	if err := sm.transitionStateTo(newStatus); err != nil {
 		return nil, err
 	}
 	if err := s.orders.updateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
@@ -201,8 +201,8 @@ func (s *OrderService) PayOrder(ctx context.Context, storeID, orderID string, pa
 	if err != nil {
 		return nil, err
 	}
-	sm := NewOrderStateMachine(order)
-	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusPaid); err != nil {
+	sm := newOrderStateMachine(order)
+	if err := sm.transitionPaymentStatusTo(OrderPaymentStatusPaid); err != nil {
 		return nil, err
 	}
 	order.PaymentMethod = paymentDetails.PaymentMethod
@@ -218,8 +218,8 @@ func (s *OrderService) RefundOrder(ctx context.Context, storeID, orderID string)
 	if err != nil {
 		return nil, err
 	}
-	sm := NewOrderStateMachine(order)
-	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusRefunded); err != nil {
+	sm := newOrderStateMachine(order)
+	if err := sm.transitionPaymentStatusTo(OrderPaymentStatusRefunded); err != nil {
 		return nil, err
 	}
 	if err := s.orders.updateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
