@@ -42,7 +42,7 @@ func (s *InvestmentService) CreateInvestment(ctx context.Context, storeID string
 }
 
 func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, investmentID string, req *UpdateInvestmentRequest) (*Investment, error) {
-	investment, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.ScopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	investment, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -65,16 +65,16 @@ func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, inves
 }
 
 func (s *InvestmentService) DeleteInvestment(ctx context.Context, storeID, investmentID string) error {
-	_, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.ScopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	_, err := s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
 	if err != nil {
 		return err
 	}
 
-	return s.investmentRepo.DeleteOne(ctx, s.investmentRepo.ScopeID(investmentID))
+	return s.investmentRepo.DeleteOne(ctx, s.investmentRepo.scopeID(investmentID))
 }
 
 func (s *InvestmentService) GetInvestmentByID(ctx context.Context, storeID string, investmentID string) (*Investment, error) {
-	return s.investmentRepo.FindOne(ctx, s.investmentRepo.ScopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
+	return s.investmentRepo.FindOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.ScopeStoreID(storeID))
 }
 
 func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Investment, error) {

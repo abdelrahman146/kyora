@@ -15,7 +15,7 @@ func NewUserService(userRepo *UserRepository) *UserService {
 }
 
 func (s *UserService) UpdateUser(ctx context.Context, userID string, userReq *UpdateUserRequest) (*User, error) {
-	if _, err := s.userRepo.FindOne(ctx, s.userRepo.ScopeID(userID)); err != nil {
+	if _, err := s.userRepo.FindOne(ctx, s.userRepo.scopeID(userID)); err != nil {
 		return nil, err
 	}
 	user := &User{}
@@ -25,7 +25,7 @@ func (s *UserService) UpdateUser(ctx context.Context, userID string, userReq *Up
 	if userReq.LastName != "" {
 		user.LastName = userReq.LastName
 	}
-	if err := s.userRepo.PatchOne(ctx, user, s.userRepo.ScopeID(userID), db.WithReturning(&user)); err != nil {
+	if err := s.userRepo.PatchOne(ctx, user, s.userRepo.scopeID(userID), db.WithReturning(&user)); err != nil {
 		return nil, err
 	}
 	return user, nil

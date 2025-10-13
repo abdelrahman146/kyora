@@ -17,13 +17,13 @@ func NewOwnerRepository(db *db.Postgres) *OwnerRepository {
 	return &OwnerRepository{db: db}
 }
 
-func (r *OwnerRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *OwnerRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *OwnerRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *OwnerRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

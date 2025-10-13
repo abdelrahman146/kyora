@@ -3,26 +3,32 @@ package handlers
 import (
 	"fmt"
 
+	"github.com/abdelrahman146/kyora/internal/domain/expense"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type ExpenseHandler struct {
+type expenseHandler struct {
+	expenseDomain *expense.ExpenseDomain
 }
 
-func NewExpenseHandler() *ExpenseHandler {
-	return &ExpenseHandler{}
+func AddExpenseRoutes(r *gin.Engine, expenseDomain *expense.ExpenseDomain) {
+	h := &expenseHandler{expenseDomain: expenseDomain}
+	h.registerRoutes(r)
 }
 
-func (h *ExpenseHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/expenses", h.Index)
-	r.GET("/expenses/new", h.New)
-	r.GET("/expenses/:id/edit", h.Edit)
+func (h *expenseHandler) registerRoutes(r *gin.Engine) {
+	r.Group("/expenses")
+	{
+		r.GET("/", h.index)
+		r.GET("/new", h.new)
+		r.GET("/:id/edit", h.edit)
+	}
 }
 
-func (h *ExpenseHandler) Index(c *gin.Context) {
+func (h *expenseHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -40,7 +46,7 @@ func (h *ExpenseHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.ExpensesList())
 }
 
-func (h *ExpenseHandler) New(c *gin.Context) {
+func (h *expenseHandler) new(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -59,7 +65,7 @@ func (h *ExpenseHandler) New(c *gin.Context) {
 	webutils.Render(c, 200, pages.ExpenseForm(pages.ExpenseFormProps{IsEdit: false}))
 }
 
-func (h *ExpenseHandler) Edit(c *gin.Context) {
+func (h *expenseHandler) edit(c *gin.Context) {
 	expenseID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",

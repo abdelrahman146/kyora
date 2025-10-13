@@ -37,7 +37,7 @@ Readable, self-contained Go code (prefer standard library + a few vetted libs).
 - Always pass a `context.Context`; use `Postgres.Conn(ctx, opts...)`. It auto-binds to ambient tx in ctx.
 - Transactions: `atomic.Exec(ctx, func(txCtx) error { ... })`; inside use `txCtx` so repos share the tx.
 - Compose queries with repo scopes + Postgres options:
-  - Scopes: repo methods like `ScopeID`, `ScopeStoreID`, `ScopeFilter` etc.
+  - Scopes: repo methods like `scopeID`, `ScopeStoreID`, `ScopeFilter` etc.
   - Options: `db.WithPagination`, `db.WithSorting`, `db.WithPreload`, `db.WithLock`, `db.WithLimit`, `db.WithJoins`.
 - Examples: see `inventory/product_repository.go` (scopes, upsert) and `order/order_service.go` (calc totals, preloads, transactions).
 

@@ -17,7 +17,7 @@ func NewAssetService(assetRepo *AssetRepository, storeService *store.StoreServic
 }
 
 func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.ScopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
+	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -52,7 +52,7 @@ func (s *AssetService) CreateAsset(ctx context.Context, storeID string, req *Cre
 }
 
 func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string, req *UpdateAssetRequest) (*Asset, error) {
-	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.ScopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
+	asset, err := s.assetRepo.FindOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -81,7 +81,7 @@ func (s *AssetService) UpdateAsset(ctx context.Context, storeID, assetID string,
 }
 
 func (s *AssetService) DeleteAsset(ctx context.Context, storeID, assetID string) error {
-	if err := s.assetRepo.DeleteOne(ctx, s.assetRepo.ScopeID(assetID), s.assetRepo.ScopeStoreID(storeID)); err != nil {
+	if err := s.assetRepo.DeleteOne(ctx, s.assetRepo.scopeID(assetID), s.assetRepo.ScopeStoreID(storeID)); err != nil {
 		return err
 	}
 	return nil

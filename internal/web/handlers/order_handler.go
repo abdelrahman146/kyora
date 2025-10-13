@@ -1,27 +1,36 @@
 package handlers
 
 import (
+	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type OrderHandler struct {
+type orderHandler struct {
+	orderDomain *order.OrderDomain
 }
 
-func NewOrderHandler() *OrderHandler {
-	return &OrderHandler{}
+func AddOrderRoutes(r *gin.Engine, orderDomain *order.OrderDomain) {
+	h := &orderHandler{
+		orderDomain: orderDomain,
+	}
+	h.RegisterRoutes(r)
 }
 
-func (h *OrderHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/orders", h.Index)
-	r.GET("/orders/new", h.New)
-	r.GET("/orders/:id", h.Show)
-	r.GET("/orders/:id/edit", h.Edit)
+func (h *orderHandler) RegisterRoutes(r *gin.Engine) {
+	r.GET("/orders")
+	{
+		r.GET("/", h.index)
+		r.GET("/new", h.new)
+		r.GET("/:id", h.show)
+		r.GET("/:id/edit", h.edit)
+	}
+
 }
 
-func (h *OrderHandler) Index(c *gin.Context) {
+func (h *orderHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -39,7 +48,7 @@ func (h *OrderHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.OrdersList())
 }
 
-func (h *OrderHandler) New(c *gin.Context) {
+func (h *orderHandler) new(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -58,7 +67,7 @@ func (h *OrderHandler) New(c *gin.Context) {
 	webutils.Render(c, 200, pages.OrderForm())
 }
 
-func (h *OrderHandler) Show(c *gin.Context) {
+func (h *orderHandler) show(c *gin.Context) {
 	orderID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",
@@ -78,7 +87,7 @@ func (h *OrderHandler) Show(c *gin.Context) {
 	webutils.Render(c, 200, pages.OrderView(orderID))
 }
 
-func (h *OrderHandler) Edit(c *gin.Context) {
+func (h *orderHandler) edit(c *gin.Context) {
 	orderID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",

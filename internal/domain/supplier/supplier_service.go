@@ -88,5 +88,5 @@ func (s *SupplierService) DeleteSupplier(ctx context.Context, storeID, id string
 		return err
 	}
 
-	return s.supplierRepo.DeleteOne(ctx, s.supplierRepo.ScopeID(id), s.supplierRepo.ScopeStoreID(storeID))
+	return s.supplierRepo.DeleteOne(ctx, s.supplierRepo.scopeID(id), s.supplierRepo.ScopeStoreID(storeID))
 }

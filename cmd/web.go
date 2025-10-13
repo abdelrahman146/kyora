@@ -17,7 +17,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/domain/supplier"
 	"github.com/abdelrahman146/kyora/internal/utils"
-	"github.com/abdelrahman146/kyora/internal/web/handlers"
 	"github.com/abdelrahman146/kyora/internal/web/webrouter"
 
 	"github.com/spf13/cobra"
@@ -74,39 +73,26 @@ func runWeb(cmd *cobra.Command, args []string) {
 	storeDomain := store.NewDomain(postgres, atomicProcess, cache)
 	storeProvisioner := store.NewOnboardingStoreProvisioner(storeDomain.StoreService)
 	accountDomain := account.NewDomain(postgres, atomicProcess, cache, storeProvisioner)
-	_ = asset.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = customer.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = expense.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = inventory.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = order.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = owner.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
-	_ = supplier.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	assetDomain := asset.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	customerDomain := customer.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	expenseDomain := expense.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	inventoryDomain := inventory.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	orderDomain := order.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	ownerDomain := owner.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
+	supplierDomain := supplier.NewDomain(postgres, atomicProcess, cache, storeDomain.StoreService)
 
 	router := webrouter.NewRouter()
-	dashboardHandler := handlers.NewDashboardHandler()
-	dashboardHandler.RegisterRoutes(router)
-	// Auth endpoints (POST login/register, forgot/reset, OAuth)
-	authHandler := handlers.NewAuthHandler(accountDomain.AuthService, accountDomain.OnboardingService)
-	authHandler.RegisterRoutes(router)
-	// Onboarding wizard
-	onboardingHandler := handlers.NewOnboardingHandler(accountDomain.OnboardingService, accountDomain.AuthService)
-	onboardingHandler.RegisterRoutes(router)
-	orderHandler := handlers.NewOrderHandler()
-	orderHandler.RegisterRoutes(router)
-	productHandler := handlers.NewProductHandler()
-	productHandler.RegisterRoutes(router)
-	customerHandler := handlers.NewCustomerHandler()
-	customerHandler.RegisterRoutes(router)
-	expenseHandler := handlers.NewExpenseHandler()
-	expenseHandler.RegisterRoutes(router)
-	supplierHandler := handlers.NewSupplierHandler()
-	supplierHandler.RegisterRoutes(router)
-	invoiceHandler := handlers.NewInvoiceHandler()
-	invoiceHandler.RegisterRoutes(router)
-	settingsHandler := handlers.NewSettingsHandler()
-	settingsHandler.RegisterRoutes(router)
-	analyticsHandler := handlers.NewAnalyticsHandler()
-	analyticsHandler.RegisterRoutes(router)
+	webrouter.RegisterRoutes(router,
+		accountDomain,
+		storeDomain,
+		inventoryDomain,
+		orderDomain,
+		customerDomain,
+		ownerDomain,
+		assetDomain,
+		expenseDomain,
+		supplierDomain,
+	)
 
 	err = router.Run(viper.GetString("server.port"))
 	if err != nil {

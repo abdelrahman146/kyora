@@ -1,26 +1,32 @@
 package handlers
 
 import (
+	"github.com/abdelrahman146/kyora/internal/domain/supplier"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type SupplierHandler struct {
+type supplierHandler struct {
+	supplierDomain *supplier.SupplierDomain
 }
 
-func NewSupplierHandler() *SupplierHandler {
-	return &SupplierHandler{}
+func AddSupplierRoutes(r *gin.Engine, supplierDomain *supplier.SupplierDomain) {
+	h := &supplierHandler{supplierDomain: supplierDomain}
+	h.RegisterRoutes(r)
 }
 
-func (h *SupplierHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/suppliers", h.Index)
-	r.GET("/suppliers/new", h.New)
-	r.GET("/suppliers/:id/edit", h.Edit)
+func (h *supplierHandler) RegisterRoutes(r *gin.Engine) {
+	r.Group("/suppliers")
+	{
+		r.GET("/", h.Index)
+		r.GET("/new", h.New)
+		r.GET("/:id/edit", h.Edit)
+	}
 }
 
-func (h *SupplierHandler) Index(c *gin.Context) {
+func (h *supplierHandler) Index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -37,7 +43,7 @@ func (h *SupplierHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.SuppliersList())
 }
 
-func (h *SupplierHandler) New(c *gin.Context) {
+func (h *supplierHandler) New(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -55,7 +61,7 @@ func (h *SupplierHandler) New(c *gin.Context) {
 	webutils.Render(c, 200, pages.SupplierForm(pages.SupplierFormProps{IsEdit: false}))
 }
 
-func (h *SupplierHandler) Edit(c *gin.Context) {
+func (h *supplierHandler) Edit(c *gin.Context) {
 	supplierID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",

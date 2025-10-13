@@ -8,8 +8,7 @@ import (
 func NewRouter() *gin.Engine {
 	r := gin.Default()
 	r.Use(gin.Recovery())
-	r.Use(middleware.LoggerMiddleware())
+	r.Use(middleware.Logger())
 	r.SetTrustedProxies(nil)
-	registerRoutes(r)
 	return r
 }

@@ -11,7 +11,7 @@ type AccountDomain struct {
 
 func NewDomain(postgres *db.Postgres, atomicProcess *db.AtomicProcess, cache *db.Memcache, storeProvisioner StoreProvisioner) *AccountDomain {
 	userRepo := NewUserRepository(postgres)
-	organizationRepo := NewOrganizationRepository(postgres)
+	organizationRepo := newOrganizationRepository(postgres)
 	postgres.AutoMigrate(&User{}, &Organization{})
 
 	return &AccountDomain{

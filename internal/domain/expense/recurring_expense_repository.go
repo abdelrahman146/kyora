@@ -19,13 +19,13 @@ func NewRecurringExpenseRepository(db *db.Postgres) *RecurringExpenseRepository 
 	return &RecurringExpenseRepository{db: db}
 }
 
-func (r *RecurringExpenseRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *RecurringExpenseRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *RecurringExpenseRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

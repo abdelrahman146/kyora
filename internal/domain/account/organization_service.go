@@ -7,28 +7,28 @@ import (
 )
 
 type OrganizationService struct {
-	orgRepo *OrganizationRepository
+	orgRepo *organizationRepository
 }
 
-func NewOrganizationService(orgRepo *OrganizationRepository) *OrganizationService {
+func NewOrganizationService(orgRepo *organizationRepository) *OrganizationService {
 	return &OrganizationService{orgRepo: orgRepo}
 }
 
 func (s *OrganizationService) UpdateOrganization(ctx context.Context, orgID string, orgReq *UpdateOrganizationRequest) (*Organization, error) {
-	if _, err := s.orgRepo.FindOne(ctx, s.orgRepo.ScopeID(orgID)); err != nil {
+	if _, err := s.orgRepo.findOne(ctx, s.orgRepo.scopeID(orgID)); err != nil {
 		return nil, err
 	}
 	org := &Organization{
 		Name: orgReq.Name,
 	}
-	if err := s.orgRepo.PatchOne(ctx, org, s.orgRepo.ScopeID(orgID), db.WithReturning(&org)); err != nil {
+	if err := s.orgRepo.patchOne(ctx, org, s.orgRepo.scopeID(orgID), db.WithReturning(&org)); err != nil {
 		return nil, err
 	}
 	return org, nil
 }
 
 func (s *OrganizationService) GetOrganizationByID(ctx context.Context, id string) (*Organization, error) {
-	org, err := s.orgRepo.FindOne(ctx, db.WithScopes(s.orgRepo.ScopeID(id)))
+	org, err := s.orgRepo.findOne(ctx, db.WithScopes(s.orgRepo.scopeID(id)))
 	if err != nil {
 		return nil, err
 	}

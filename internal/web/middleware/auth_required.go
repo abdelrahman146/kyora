@@ -6,7 +6,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func AuthRequiredMiddleware(c *gin.Context) {
+func AuthRequired(c *gin.Context) {
 	jwtToken := utils.JWT.GetJwtFromContext(c)
 	if jwtToken == "" {
 		c.Redirect(302, loginPath)

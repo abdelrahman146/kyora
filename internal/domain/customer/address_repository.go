@@ -17,13 +17,13 @@ func NewAddressRepository(db *db.Postgres) *AddressRepository {
 	return &AddressRepository{db: db}
 }
 
-func (r *AddressRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *AddressRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *AddressRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *AddressRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

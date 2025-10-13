@@ -1,24 +1,52 @@
 package handlers
 
 import (
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/abdelrahman146/kyora/internal/domain/expense"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/domain/owner"
+	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/domain/supplier"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type DashboardHandler struct {
+type dashboardHandler struct {
+	storeDomain    *store.StoreDomain
+	orderDomain    *order.OrderDomain
+	ownerDomain    *owner.OwnerDomain
+	expenseDomain  *expense.ExpenseDomain
+	customerDomain *customer.CustomerDomain
+	supplierDomain *supplier.SupplierDomain
 }
 
-func NewDashboardHandler() *DashboardHandler {
-	return &DashboardHandler{}
+func AddDashboardRoutes(
+	r *gin.Engine,
+	storeDomain *store.StoreDomain,
+	orderDomain *order.OrderDomain,
+	ownerDomain *owner.OwnerDomain,
+	expenseDomain *expense.ExpenseDomain,
+	customerDomain *customer.CustomerDomain,
+	supplierDomain *supplier.SupplierDomain,
+) {
+	h := &dashboardHandler{
+		storeDomain:    storeDomain,
+		orderDomain:    orderDomain,
+		ownerDomain:    ownerDomain,
+		expenseDomain:  expenseDomain,
+		customerDomain: customerDomain,
+		supplierDomain: supplierDomain,
+	}
+	h.registerRoutes(r)
 }
 
-func (h *DashboardHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/", h.Index)
+func (h *dashboardHandler) registerRoutes(r *gin.Engine) {
+	r.GET("/", h.index)
 }
 
-func (h *DashboardHandler) Index(c *gin.Context) {
+func (h *dashboardHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",

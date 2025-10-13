@@ -136,11 +136,11 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, customerID string,
 }
 
 func (s *CustomerService) DeleteCustomer(ctx context.Context, customerID string) error {
-	return s.customers.DeleteOne(ctx, s.customers.ScopeID(customerID))
+	return s.customers.DeleteOne(ctx, s.customers.scopeID(customerID))
 }
 
 func (s *CustomerService) DeleteCustomers(ctx context.Context, customerIDs []string) error {
-	return s.customers.DeleteMany(ctx, s.customers.ScopeIDs(customerIDs))
+	return s.customers.DeleteMany(ctx, s.customers.scopeIDs(customerIDs))
 }
 
 func (s *CustomerService) DeleteAllCustomersInStore(ctx context.Context, storeID string) error {
@@ -163,11 +163,11 @@ func (s *CustomerService) GetNoteByID(ctx context.Context, noteID string) (*Cust
 	return s.notes.FindByID(ctx, noteID)
 }
 func (s *CustomerService) DeleteAddress(ctx context.Context, addressID string) error {
-	return s.addresses.DeleteOne(ctx, s.addresses.ScopeID(addressID))
+	return s.addresses.DeleteOne(ctx, s.addresses.scopeID(addressID))
 }
 
 func (s *CustomerService) DeleteNote(ctx context.Context, noteID string) error {
-	return s.notes.DeleteOne(ctx, s.notes.ScopeID(noteID))
+	return s.notes.DeleteOne(ctx, s.notes.scopeID(noteID))
 }
 func (s *CustomerService) DeleteAllAddressesOfCustomer(ctx context.Context, customerID string) error {
 	return s.addresses.DeleteMany(ctx, s.addresses.ScopeCustomerID(customerID))

@@ -18,7 +18,7 @@ func NewStoreRepository(db *db.Postgres) *StoreRepository {
 	return &StoreRepository{db: db}
 }
 
-func (r *StoreRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
@@ -36,7 +36,7 @@ func (r *StoreRepository) ScopeSlug(slug string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *StoreRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *StoreRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

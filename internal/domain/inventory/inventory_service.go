@@ -306,7 +306,7 @@ func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) 
 		if err != nil {
 			return err
 		}
-		if err := s.variants.DeleteOne(ctx, s.variants.ScopeID(variant.ID)); err != nil {
+		if err := s.variants.DeleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
 			return err
 		}
 		return nil
@@ -320,7 +320,7 @@ func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, produc
 			return err
 		}
 		for _, variant := range variants {
-			if err := s.variants.DeleteOne(ctx, s.variants.ScopeID(variant.ID)); err != nil {
+			if err := s.variants.DeleteOne(ctx, s.variants.scopeID(variant.ID)); err != nil {
 				return err
 			}
 		}
@@ -333,7 +333,7 @@ func (s *InventoryService) DeleteProduct(ctx context.Context, productID string) 
 		if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
 			return err
 		}
-		if err := s.products.DeleteOne(ctx, s.products.ScopeID(productID)); err != nil {
+		if err := s.products.DeleteOne(ctx, s.products.scopeID(productID)); err != nil {
 			return err
 		}
 		return nil
@@ -346,7 +346,7 @@ func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []stri
 			if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
 				return err
 			}
-			if err := s.products.DeleteOne(ctx, s.products.ScopeID(productID)); err != nil {
+			if err := s.products.DeleteOne(ctx, s.products.scopeID(productID)); err != nil {
 				return err
 			}
 		}

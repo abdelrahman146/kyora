@@ -17,7 +17,7 @@ func NewProductRepository(db *db.Postgres) *ProductRepository {
 	return &ProductRepository{db: db}
 }
 
-func (r *ProductRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
@@ -36,7 +36,7 @@ func (r *ProductRepository) ScopeSearchQuery(query string) func(db *gorm.DB) *go
 	}
 }
 
-func (r *ProductRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *ProductRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}
@@ -70,7 +70,7 @@ func (r *ProductRepository) ScopeFilter(filter *ProductFilter) func(db *gorm.DB)
 			return db
 		}
 		if len(filter.IDs) > 0 {
-			db = db.Scopes(r.ScopeIDs(filter.IDs))
+			db = db.Scopes(r.scopeIDs(filter.IDs))
 		}
 		if len(filter.Tags) > 0 {
 			db = db.Scopes(r.ScopeTags(filter.Tags))

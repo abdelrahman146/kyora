@@ -13,9 +13,8 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-type OnboardingHandler struct {
-	onboarding *account.OnboardingService
-	auth       *account.AuthenticationService
+type onboardingHandler struct {
+	accountDomain *account.AccountDomain
 }
 
 const (
@@ -82,19 +81,24 @@ func (o onboardingSubmission) toRequests() (*account.CreateOrganizationRequest, 
 	return orgReq, userReq, storeReq
 }
 
-func NewOnboardingHandler(onboarding *account.OnboardingService, auth *account.AuthenticationService) *OnboardingHandler {
-	return &OnboardingHandler{onboarding: onboarding, auth: auth}
+func AddOnboardingRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
+	h := &onboardingHandler{accountDomain}
+	h.registerRoutes(r)
 }
 
-func (h *OnboardingHandler) RegisterRoutes(r gin.IRoutes) {
+func (h *onboardingHandler) registerRoutes(r *gin.Engine) {
 	// wizard
-	r.GET(onboardingPath, h.Index)
-	r.POST(onboardingPath+"/step2", h.Step2)
-	r.POST(onboardingPath+"/step3", h.Step3)
-	r.POST(onboardingPath+"/complete", h.Complete)
+	r.Group(onboardingPath)
+	{
+		r.GET("/", h.index)
+		r.POST("/step2", h.step2)
+		r.POST("/step3", h.step3)
+		r.POST("/complete", h.complete)
+	}
+
 }
 
-func (h *OnboardingHandler) Index(c *gin.Context) {
+func (h *onboardingHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{Locale: "en", Dir: "ltr", Title: "Create your account", Path: onboardingPath}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
@@ -105,7 +109,7 @@ func (h *OnboardingHandler) Index(c *gin.Context) {
 	webutils.Render(c, http.StatusOK, pages.OnboardingStep1(email, first, last, method))
 }
 
-func (h *OnboardingHandler) Step2(c *gin.Context) {
+func (h *onboardingHandler) step2(c *gin.Context) {
 	// Receive user fields and render step 2 with hidden inputs
 	first := c.PostForm("first_name")
 	last := c.PostForm("last_name")
@@ -119,7 +123,7 @@ func (h *OnboardingHandler) Step2(c *gin.Context) {
 	webutils.Render(c, http.StatusOK, pages.OnboardingStep2(first, last, email, password, method, orgName))
 }
 
-func (h *OnboardingHandler) Step3(c *gin.Context) {
+func (h *onboardingHandler) step3(c *gin.Context) {
 	first := c.PostForm("first_name")
 	last := c.PostForm("last_name")
 	email := c.PostForm("email")
@@ -137,7 +141,7 @@ func (h *OnboardingHandler) Step3(c *gin.Context) {
 	webutils.Render(c, http.StatusOK, pages.OnboardingStep3(first, last, email, password, method, orgName, storeName, storeCountryCode))
 }
 
-func (h *OnboardingHandler) Complete(c *gin.Context) {
+func (h *onboardingHandler) complete(c *gin.Context) {
 	payload := newOnboardingSubmission(c)
 	payload.normalize()
 	if pd := payload.validate(); pd != nil {
@@ -145,7 +149,7 @@ func (h *OnboardingHandler) Complete(c *gin.Context) {
 		return
 	}
 	orgReq, userReq, storeReq := payload.toRequests()
-	user, err := h.onboarding.OnboardNewOrganization(c.Request.Context(), orgReq, userReq, storeReq)
+	user, err := h.accountDomain.OnboardingService.OnboardNewOrganization(c.Request.Context(), orgReq, userReq, storeReq)
 	if err != nil {
 		if pd, ok := err.(*utils.ProblemDetails); ok {
 			webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))

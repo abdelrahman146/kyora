@@ -15,13 +15,13 @@ func NewOrderItemRepository(db *db.Postgres) *OrderItemRepository {
 	return &OrderItemRepository{db: db}
 }
 
-func (r *OrderItemRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderItemRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *OrderItemRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderItemRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

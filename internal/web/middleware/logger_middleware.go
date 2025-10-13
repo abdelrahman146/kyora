@@ -18,7 +18,7 @@ var (
 	}
 )
 
-func LoggerMiddleware() gin.HandlerFunc {
+func Logger() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		if slices.Contains(whitelistPaths, c.Request.URL.Path) {
 			c.Next()
@@ -43,12 +43,34 @@ func LoggerMiddleware() gin.HandlerFunc {
 		)
 		c.Next()
 		latency := time.Since(start)
-		requestLogger.Info("Request Completed",
-			"method", c.Request.Method,
-			"path", c.Request.URL.Path,
-			"status", c.Writer.Status(),
-			"latency", fmt.Sprintf("%v", latency),
-			"clientIP", c.ClientIP(),
-		)
+		status := c.Writer.Status()
+		switch {
+		case status >= 500:
+			requestLogger.Error("Request Completed With Failure",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"status", c.Writer.Status(),
+				"latency", fmt.Sprintf("%v", latency),
+				"clientIP", c.ClientIP(),
+				"error", c.Errors.ByType(gin.ErrorTypePrivate).String(),
+			)
+		case status >= 400:
+			requestLogger.Warn("Request Completed",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"status", c.Writer.Status(),
+				"latency", fmt.Sprintf("%v", latency),
+				"clientIP", c.ClientIP(),
+				"error", c.Errors.ByType(gin.ErrorTypePrivate).String(),
+			)
+		default:
+			requestLogger.Info("Request Completed",
+				"method", c.Request.Method,
+				"path", c.Request.URL.Path,
+				"status", c.Writer.Status(),
+				"latency", fmt.Sprintf("%v", latency),
+				"clientIP", c.ClientIP(),
+			)
+		}
 	}
 }

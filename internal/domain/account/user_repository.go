@@ -18,7 +18,7 @@ func NewUserRepository(db *db.Postgres) *UserRepository {
 	return &UserRepository{db: db}
 }
 
-func (r *UserRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
@@ -30,7 +30,7 @@ func (r *UserRepository) ScopeEmail(email string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *UserRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *UserRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

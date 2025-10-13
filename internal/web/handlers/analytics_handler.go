@@ -1,27 +1,52 @@
 package handlers
 
 import (
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/abdelrahman146/kyora/internal/domain/expense"
+	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/domain/owner"
+	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/domain/supplier"
+	"github.com/abdelrahman146/kyora/internal/web/middleware"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type AnalyticsHandler struct {
+type analyticsHandler struct {
+	storeDomain     *store.StoreDomain
+	orderDomain     *order.OrderDomain
+	ownerDomain     *owner.OwnerDomain
+	inventoryDomain *inventory.InventoryDomain
+	expenseDomain   *expense.ExpenseDomain
+	customerDomain  *customer.CustomerDomain
+	supplierDomain  *supplier.SupplierDomain
 }
 
-func NewAnalyticsHandler() *AnalyticsHandler {
-	return &AnalyticsHandler{}
+func AddAnalyticsRoutes(r *gin.Engine, storeDomain *store.StoreDomain, orderDomain *order.OrderDomain, ownerDomain *owner.OwnerDomain, inventoryDomain *inventory.InventoryDomain, expenseDomain *expense.ExpenseDomain, customerDomain *customer.CustomerDomain, supplierDomain *supplier.SupplierDomain) {
+	h := &analyticsHandler{
+		storeDomain:     storeDomain,
+		orderDomain:     orderDomain,
+		ownerDomain:     ownerDomain,
+		inventoryDomain: inventoryDomain,
+		expenseDomain:   expenseDomain,
+		customerDomain:  customerDomain,
+		supplierDomain:  supplierDomain,
+	}
+	h.registerRoutes(r)
 }
 
-func (h *AnalyticsHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/analytics/sales", h.GetSalesReport)
-	r.GET("/analytics/pnl", h.GetPnlReport)
-	r.GET("/analytics/customers", h.GetCustomersReport)
-	r.GET("/analytics/expenses", h.GetExpensesReport)
+func (h *analyticsHandler) registerRoutes(r *gin.Engine) {
+	r.Use(middleware.AuthRequired, middleware.UserRequired(nil))
+	r.GET("/analytics/sales", h.getSalesReport)
+	r.GET("/analytics/pnl", h.getPnlReport)
+	r.GET("/analytics/customers", h.getCustomersReport)
+	r.GET("/analytics/expenses", h.getExpensesReport)
 }
 
-func (h *AnalyticsHandler) GetSalesReport(c *gin.Context) {
+func (h *analyticsHandler) getSalesReport(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -40,7 +65,7 @@ func (h *AnalyticsHandler) GetSalesReport(c *gin.Context) {
 	webutils.Render(c, 200, pages.SalesReport())
 }
 
-func (h *AnalyticsHandler) GetPnlReport(c *gin.Context) {
+func (h *analyticsHandler) getPnlReport(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -59,7 +84,7 @@ func (h *AnalyticsHandler) GetPnlReport(c *gin.Context) {
 	webutils.Render(c, 200, pages.ReportPNL())
 }
 
-func (h *AnalyticsHandler) GetCustomersReport(c *gin.Context) {
+func (h *analyticsHandler) getCustomersReport(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -78,7 +103,7 @@ func (h *AnalyticsHandler) GetCustomersReport(c *gin.Context) {
 	webutils.Render(c, 200, pages.CustomersReport())
 }
 
-func (h *AnalyticsHandler) GetExpensesReport(c *gin.Context) {
+func (h *analyticsHandler) getExpensesReport(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",

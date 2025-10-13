@@ -10,7 +10,7 @@ import (
 
 type OnboardingService struct {
 	userRepo         *UserRepository
-	organizationRepo *OrganizationRepository
+	organizationRepo *organizationRepository
 	atomicProcess    *db.AtomicProcess
 	storeProvisioner StoreProvisioner
 }
@@ -25,7 +25,7 @@ type CreateInitialStoreRequest struct {
 	Currency    string
 }
 
-func NewOnboardingService(userRepo *UserRepository, organizationRepo *OrganizationRepository, atomicProcess *db.AtomicProcess, storeProvisioner StoreProvisioner) *OnboardingService {
+func NewOnboardingService(userRepo *UserRepository, organizationRepo *organizationRepository, atomicProcess *db.AtomicProcess, storeProvisioner StoreProvisioner) *OnboardingService {
 	return &OnboardingService{
 		userRepo:         userRepo,
 		organizationRepo: organizationRepo,
@@ -66,7 +66,7 @@ func (s *OnboardingService) createOrganization(ctx context.Context, orgReq *Crea
 	org := &Organization{
 		Name: orgReq.Name,
 	}
-	if err := s.organizationRepo.CreateOne(ctx, org); err != nil {
+	if err := s.organizationRepo.createOne(ctx, org); err != nil {
 		return nil, err
 	}
 	return org, nil
@@ -98,7 +98,7 @@ func (s *OnboardingService) createUser(ctx context.Context, organizationID strin
 }
 
 func (s *OnboardingService) IsOrganizationSlugAvailable(ctx context.Context, slug string) (bool, error) {
-	existingOrg, err := s.organizationRepo.FindOne(ctx, s.organizationRepo.ScopeSlug(slug))
+	existingOrg, err := s.organizationRepo.findOne(ctx, s.organizationRepo.scopeSlug(slug))
 	if err != nil {
 		if db.IsRecordNotFound(err) {
 			return true, nil

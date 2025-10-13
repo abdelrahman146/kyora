@@ -179,7 +179,7 @@ func (s *AuthenticationService) ConsumeResetToken(ctx context.Context, token str
 		return utils.Problem.InternalError().WithError(err)
 	}
 	updates := &User{PasswordHash: hash}
-	if err := s.userRepo.PatchOne(ctx, updates, s.userRepo.ScopeID(user.ID)); err != nil {
+	if err := s.userRepo.PatchOne(ctx, updates, s.userRepo.scopeID(user.ID)); err != nil {
 		return err
 	}
 	_ = s.cache.Delete(resetPrefix + token)

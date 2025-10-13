@@ -3,26 +3,34 @@ package handlers
 import (
 	"fmt"
 
+	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type ProductHandler struct {
+type inventoryHandler struct {
+	inventoryDomain *inventory.InventoryDomain
 }
 
-func NewProductHandler() *ProductHandler {
-	return &ProductHandler{}
+func AddInventoryRoutes(r *gin.Engine, inventoryDomain *inventory.InventoryDomain) {
+	h := &inventoryHandler{
+		inventoryDomain: inventoryDomain,
+	}
+	h.registerRoutes(r)
 }
 
-func (h *ProductHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/products", h.Index)
-	r.GET("/products/new", h.New)
-	r.GET("/products/:id/edit", h.Edit)
+func (h *inventoryHandler) registerRoutes(r *gin.Engine) {
+	r.Group("/inventory")
+	{
+		r.GET("/", h.index)
+		r.GET("/new", h.new)
+		r.GET("/:id/edit", h.edit)
+	}
 }
 
-func (h *ProductHandler) Index(c *gin.Context) {
+func (h *inventoryHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -40,7 +48,7 @@ func (h *ProductHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.ProductsList())
 }
 
-func (h *ProductHandler) New(c *gin.Context) {
+func (h *inventoryHandler) new(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -59,7 +67,7 @@ func (h *ProductHandler) New(c *gin.Context) {
 	webutils.Render(c, 200, pages.ProductForm(pages.ProductFormProps{IsEdit: false}))
 }
 
-func (h *ProductHandler) Edit(c *gin.Context) {
+func (h *inventoryHandler) edit(c *gin.Context) {
 	productID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",

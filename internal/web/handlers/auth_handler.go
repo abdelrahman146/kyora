@@ -17,13 +17,13 @@ import (
 	"github.com/spf13/viper"
 )
 
-type AuthHandler struct {
-	auth    *account.AuthenticationService
-	onboard *account.OnboardingService
+type authHandler struct {
+	accountDomain *account.AccountDomain
 }
 
-func NewAuthHandler(auth *account.AuthenticationService, onboard *account.OnboardingService) *AuthHandler {
-	return &AuthHandler{auth: auth, onboard: onboard}
+func AddAuthRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
+	h := &authHandler{accountDomain}
+	h.registerRoutes(r)
 }
 
 const (
@@ -32,22 +32,22 @@ const (
 	resetPasswordPath  = "/reset-password"
 )
 
-func (h *AuthHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET(loginPath, h.LoginPage)
-	r.POST(loginPath, h.Login)
-	r.GET(forgotPasswordPath, h.ForgotPasswordPage)
-	r.POST(forgotPasswordPath, h.ForgotPassword)
-	r.POST("/register", h.Register)
-	r.GET(resetPasswordPath, h.ResetPasswordPage)
-	r.POST(resetPasswordPath, h.ResetPassword)
-	r.GET("/auth/google", h.GoogleAuth)
-	r.GET("/auth/google/callback", h.GoogleCallback)
+func (h *authHandler) registerRoutes(r *gin.Engine) {
+	r.GET(loginPath, h.loginPage)
+	r.POST(loginPath, h.login)
+	r.GET(forgotPasswordPath, h.forgotPasswordPage)
+	r.POST(forgotPasswordPath, h.forgotPassword)
+	r.POST("/register", h.register)
+	r.GET(resetPasswordPath, h.resetPasswordPage)
+	r.POST(resetPasswordPath, h.resetPassword)
+	r.GET("/auth/google", h.googleAuth)
+	r.GET("/auth/google/callback", h.googleCallback)
 }
 
-func (h *AuthHandler) Login(c *gin.Context) {
+func (h *authHandler) login(c *gin.Context) {
 	email := c.PostForm("email")
 	password := c.PostForm("password")
-	_, token, err := h.auth.Authenticate(c.Request.Context(), email, password)
+	_, token, err := h.accountDomain.AuthService.Authenticate(c.Request.Context(), email, password)
 	if err != nil {
 		webutils.RenderFragments(c, http.StatusUnauthorized, pages.Login(true), pages.LoginErrorFragmentKey)
 		return
@@ -56,7 +56,7 @@ func (h *AuthHandler) Login(c *gin.Context) {
 	webutils.Redirect(c, "/")
 }
 
-func (h *AuthHandler) LoginPage(c *gin.Context) {
+func (h *authHandler) loginPage(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:   "en",
 		Dir:      "ltr",
@@ -69,7 +69,7 @@ func (h *AuthHandler) LoginPage(c *gin.Context) {
 	webutils.Render(c, 200, pages.Login(false))
 }
 
-func (h *AuthHandler) Register(c *gin.Context) {
+func (h *authHandler) register(c *gin.Context) {
 	first := c.PostForm("first_name")
 	last := c.PostForm("last_name")
 	email := c.PostForm("email")
@@ -86,7 +86,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 			Currency:    country.CurrencyCode,
 			CountryCode: storeCountryCode,
 		}
-		user, err := h.onboard.OnboardNewOrganization(c.Request.Context(), orgReq, userReq, storeReq)
+		user, err := h.accountDomain.OnboardingService.OnboardNewOrganization(c.Request.Context(), orgReq, userReq, storeReq)
 		if err != nil {
 			if pd, ok := err.(*utils.ProblemDetails); ok {
 				webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))
@@ -108,7 +108,7 @@ func (h *AuthHandler) Register(c *gin.Context) {
 	webutils.Redirect(c, "/onboarding?"+q.Encode())
 }
 
-func (h *AuthHandler) ForgotPasswordPage(c *gin.Context) {
+func (h *authHandler) forgotPasswordPage(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -121,9 +121,9 @@ func (h *AuthHandler) ForgotPasswordPage(c *gin.Context) {
 	webutils.Render(c, 200, pages.ForgotPassword())
 }
 
-func (h *AuthHandler) ForgotPassword(c *gin.Context) {
+func (h *authHandler) forgotPassword(c *gin.Context) {
 	email := c.PostForm("email")
-	token := h.auth.CreateResetToken(c.Request.Context(), email)
+	token := h.accountDomain.AuthService.CreateResetToken(c.Request.Context(), email)
 	msg := "If the email exists, we have sent password reset instructions to it."
 	if viper.GetString("env") != "production" {
 		msg = fmt.Sprintf("%s Go to %s?token=%s", msg, resetPasswordPath, token)
@@ -131,7 +131,7 @@ func (h *AuthHandler) ForgotPassword(c *gin.Context) {
 	webutils.Render(c, http.StatusOK, components.Alert("success", msg))
 }
 
-func (h *AuthHandler) ResetPasswordPage(c *gin.Context) {
+func (h *authHandler) resetPasswordPage(c *gin.Context) {
 	token := c.Query("token")
 	info := webcontext.PageInfo{
 		Locale:   "en",
@@ -145,7 +145,7 @@ func (h *AuthHandler) ResetPasswordPage(c *gin.Context) {
 	webutils.Render(c, 200, pages.ResetPassword(token))
 }
 
-func (h *AuthHandler) ResetPassword(c *gin.Context) {
+func (h *authHandler) resetPassword(c *gin.Context) {
 	token := c.PostForm("token")
 	pwd := c.PostForm("password")
 	confirm := c.PostForm("password_confirm")
@@ -153,7 +153,7 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 		webutils.Render(c, http.StatusBadRequest, components.Alert("error", "passwords do not match"))
 		return
 	}
-	if err := h.auth.ConsumeResetToken(c.Request.Context(), token, pwd); err != nil {
+	if err := h.accountDomain.AuthService.ConsumeResetToken(c.Request.Context(), token, pwd); err != nil {
 		if pd, ok := err.(*utils.ProblemDetails); ok {
 			webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))
 			return
@@ -166,11 +166,11 @@ func (h *AuthHandler) ResetPassword(c *gin.Context) {
 	webutils.Render(c, http.StatusOK, components.Alert("success", "password updated"))
 }
 
-func (h *AuthHandler) GoogleAuth(c *gin.Context) {
+func (h *authHandler) googleAuth(c *gin.Context) {
 	state, _ := utils.ID.RandomString(24)
 	// Store state in a short-lived cookie
 	http.SetCookie(c.Writer, &http.Cookie{Name: "oauth_state", Value: state, Path: "/", HttpOnly: true, MaxAge: 300, SameSite: http.SameSiteLaxMode})
-	authURL, pd := h.auth.GoogleGetAuthURL(c.Request.Context(), state)
+	authURL, pd := h.accountDomain.AuthService.GoogleGetAuthURL(c.Request.Context(), state)
 	if pd != nil {
 		webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))
 		return
@@ -178,7 +178,7 @@ func (h *AuthHandler) GoogleAuth(c *gin.Context) {
 	c.Redirect(http.StatusFound, authURL)
 }
 
-func (h *AuthHandler) GoogleCallback(c *gin.Context) {
+func (h *authHandler) googleCallback(c *gin.Context) {
 	state := c.Query("state")
 	code := c.Query("code")
 	if code == "" || state == "" {
@@ -190,13 +190,13 @@ func (h *AuthHandler) GoogleCallback(c *gin.Context) {
 		webutils.Render(c, http.StatusBadRequest, components.Alert("error", "invalid state"))
 		return
 	}
-	info, pd := h.auth.GoogleExchangeAndFetchUser(c.Request.Context(), code)
+	info, pd := h.accountDomain.AuthService.GoogleExchangeAndFetchUser(c.Request.Context(), code)
 	if pd != nil {
 		webutils.Render(c, pd.Status, components.Alert("error", pd.Detail))
 		return
 	}
 	// Try to log in if user exists and has org
-	user, err := h.auth.GetUserByEmail(c.Request.Context(), info.Email)
+	user, err := h.accountDomain.AuthService.GetUserByEmail(c.Request.Context(), info.Email)
 	if err == nil && user != nil && user.OrganizationID != "" {
 		jwt, _ := utils.JWT.GenerateToken(user.ID, user.OrganizationID)
 		utils.JWT.SetJwtCookie(c, jwt)

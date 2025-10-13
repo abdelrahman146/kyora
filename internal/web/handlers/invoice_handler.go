@@ -1,25 +1,31 @@
 package handlers
 
 import (
+	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type InvoiceHandler struct {
+type invoiceHandler struct {
+	orderDomain *order.OrderDomain
 }
 
-func NewInvoiceHandler() *InvoiceHandler {
-	return &InvoiceHandler{}
+func AddInvoiceRoutes(r *gin.Engine, orderDomain *order.OrderDomain) {
+	h := &invoiceHandler{orderDomain: orderDomain}
+	h.registerRoutes(r)
 }
 
-func (h *InvoiceHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/invoices", h.Index)
-	r.GET("/invoices/:id", h.Show)
+func (h *invoiceHandler) registerRoutes(r *gin.Engine) {
+	r.Group("/invoices")
+	{
+		r.GET("/", h.index)
+		r.GET("/:id", h.show)
+	}
 }
 
-func (h *InvoiceHandler) Index(c *gin.Context) {
+func (h *invoiceHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -37,7 +43,7 @@ func (h *InvoiceHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.InvoicesList())
 }
 
-func (h *InvoiceHandler) Show(c *gin.Context) {
+func (h *invoiceHandler) show(c *gin.Context) {
 	invoiceID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",

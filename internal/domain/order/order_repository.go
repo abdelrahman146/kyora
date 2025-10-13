@@ -20,12 +20,12 @@ func NewOrderRepository(db *db.Postgres) *OrderRepository {
 	return &OrderRepository{db: db}
 }
 
-func (r *OrderRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
-func (r *OrderRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *OrderRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

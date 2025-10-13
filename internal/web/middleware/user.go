@@ -7,7 +7,7 @@ import (
 	"github.com/gin-gonic/gin"
 )
 
-func UserMiddleware(authService *account.AuthenticationService) gin.HandlerFunc {
+func UserRequired(authService *account.AuthenticationService) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		claimsVal, exists := c.Get(ClaimsKey)
 		if !exists {

@@ -53,7 +53,7 @@ func (s *StoreService) IsStoreCodeAvailable(ctx context.Context, organizationID,
 }
 
 func (s *StoreService) ValidateStoreID(ctx context.Context, storeID string) error {
-	_, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeID(storeID))
+	_, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeID(storeID))
 	if err != nil {
 		return err
 	}
@@ -61,7 +61,7 @@ func (s *StoreService) ValidateStoreID(ctx context.Context, storeID string) erro
 }
 
 func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq *UpdateStoreRequest) (*Store, error) {
-	if _, err := s.storeRepo.FindOne(ctx, s.storeRepo.ScopeID(storeID)); err != nil {
+	if _, err := s.storeRepo.FindOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
 		return nil, err
 	}
 	store := &Store{
@@ -71,14 +71,14 @@ func (s *StoreService) UpdateStore(ctx context.Context, storeID string, storeReq
 		CountryCode:  storeReq.CountryCode,
 		SafetyBuffer: storeReq.SafetyBuffer,
 	}
-	if err := s.storeRepo.PatchOne(ctx, store, s.storeRepo.ScopeID(storeID), db.WithReturning(&store)); err != nil {
+	if err := s.storeRepo.PatchOne(ctx, store, s.storeRepo.scopeID(storeID), db.WithReturning(&store)); err != nil {
 		return nil, err
 	}
 	return store, nil
 }
 
 func (s *StoreService) GetStoreByID(ctx context.Context, id string) (*Store, error) {
-	store, err := s.storeRepo.FindOne(ctx, db.WithScopes(s.storeRepo.ScopeID(id)))
+	store, err := s.storeRepo.FindOne(ctx, db.WithScopes(s.storeRepo.scopeID(id)))
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +94,7 @@ func (s *StoreService) ListOrganizationStores(ctx context.Context, orgID string)
 }
 
 func (s *StoreService) DeleteStore(ctx context.Context, storeID string) error {
-	if err := s.storeRepo.DeleteOne(ctx, s.storeRepo.ScopeID(storeID)); err != nil {
+	if err := s.storeRepo.DeleteOne(ctx, s.storeRepo.scopeID(storeID)); err != nil {
 		return err
 	}
 	return nil

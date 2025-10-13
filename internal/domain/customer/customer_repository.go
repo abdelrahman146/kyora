@@ -18,13 +18,13 @@ func NewCustomerRepository(db *db.Postgres) *CustomerRepository {
 	return &CustomerRepository{db: db}
 }
 
-func (r *CustomerRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *CustomerRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *CustomerRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *CustomerRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

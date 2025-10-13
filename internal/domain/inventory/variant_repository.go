@@ -18,7 +18,7 @@ func NewVariantRepository(db *db.Postgres) *VariantRepository {
 	return &VariantRepository{db: db}
 }
 
-func (r *VariantRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
@@ -30,7 +30,7 @@ func (r *VariantRepository) ScopeSKU(sku string) func(db *gorm.DB) *gorm.DB {
 	}
 }
 
-func (r *VariantRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *VariantRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

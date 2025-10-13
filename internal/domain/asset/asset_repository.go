@@ -18,13 +18,13 @@ func NewAssetRepository(db *db.Postgres) *AssetRepository {
 	return &AssetRepository{db: db}
 }
 
-func (r *AssetRepository) ScopeID(id string) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeID(id string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)
 	}
 }
 
-func (r *AssetRepository) ScopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
+func (r *AssetRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id IN ?", ids)
 	}

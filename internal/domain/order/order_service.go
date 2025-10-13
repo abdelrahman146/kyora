@@ -190,7 +190,7 @@ func (s *OrderService) UpdateOrderStatus(ctx context.Context, storeID, orderID s
 	if err := sm.TransitionStateTo(newStatus); err != nil {
 		return nil, err
 	}
-	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
+	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -207,7 +207,7 @@ func (s *OrderService) PayOrder(ctx context.Context, storeID, orderID string, pa
 	}
 	order.PaymentMethod = paymentDetails.PaymentMethod
 	order.PaymentReference = paymentDetails.PaymentReference
-	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
+	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -222,7 +222,7 @@ func (s *OrderService) RefundOrder(ctx context.Context, storeID, orderID string)
 	if err := sm.TransitionPaymentStatusTo(OrderPaymentStatusRefunded); err != nil {
 		return nil, err
 	}
-	if err := s.orders.UpdateOne(ctx, order, s.orders.ScopeID(order.ID)); err != nil {
+	if err := s.orders.UpdateOne(ctx, order, s.orders.scopeID(order.ID)); err != nil {
 		return nil, err
 	}
 	return order, nil
@@ -233,7 +233,7 @@ func (s *OrderService) DeleteOrder(ctx context.Context, storeID, orderID string)
 	if err != nil {
 		return err
 	}
-	if err := s.orders.DeleteOne(ctx, s.orders.ScopeID(order.ID)); err != nil {
+	if err := s.orders.DeleteOne(ctx, s.orders.scopeID(order.ID)); err != nil {
 		return err
 	}
 	return nil

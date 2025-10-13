@@ -3,26 +3,32 @@ package handlers
 import (
 	"fmt"
 
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
 
-type CustomerHandler struct {
+type customerHandler struct {
+	customerDomain *customer.CustomerDomain
 }
 
-func NewCustomerHandler() *CustomerHandler {
-	return &CustomerHandler{}
+func AddCustomerRoutes(r *gin.Engine, customerDomain *customer.CustomerDomain) {
+	h := &customerHandler{customerDomain: customerDomain}
+	h.registerRoutes(r)
 }
 
-func (h *CustomerHandler) RegisterRoutes(r gin.IRoutes) {
-	r.GET("/customers", h.Index)
-	r.GET("/customers/new", h.New)
-	r.GET("/customers/:id/edit", h.Edit)
+func (h *customerHandler) registerRoutes(r *gin.Engine) {
+	r.Group("/customers")
+	{
+		r.GET("/", h.index)
+		r.GET("/new", h.new)
+		r.GET("/:id/edit", h.edit)
+	}
 }
 
-func (h *CustomerHandler) Index(c *gin.Context) {
+func (h *customerHandler) index(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -40,7 +46,7 @@ func (h *CustomerHandler) Index(c *gin.Context) {
 	webutils.Render(c, 200, pages.CustomersList())
 }
 
-func (h *CustomerHandler) New(c *gin.Context) {
+func (h *customerHandler) new(c *gin.Context) {
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
@@ -59,7 +65,7 @@ func (h *CustomerHandler) New(c *gin.Context) {
 	webutils.Render(c, 200, pages.CustomerForm(pages.CustomerFormProps{IsEdit: false}))
 }
 
-func (h *CustomerHandler) Edit(c *gin.Context) {
+func (h *customerHandler) edit(c *gin.Context) {
 	customerID := c.Param("id")
 	info := webcontext.PageInfo{
 		Locale:      "en",
