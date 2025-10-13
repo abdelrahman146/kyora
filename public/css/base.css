@@ -2354,6 +2354,13 @@
   .min-h-screen {
     min-height: 100vh;
   }
+  .btn-wide {
+    width: 100%;
+    max-width: calc(0.25rem * 64);
+  }
+  .btn-block {
+    width: 100%;
+  }
   .w-3 {
     width: calc(var(--spacing) * 3);
   }
@@ -2455,6 +2462,9 @@
   .items-center {
     align-items: center;
   }
+  .items-end {
+    align-items: flex-end;
+  }
   .items-start {
     align-items: flex-start;
   }
@@ -2464,8 +2474,14 @@
   .justify-center {
     justify-content: center;
   }
+  .justify-end {
+    justify-content: flex-end;
+  }
   .justify-start {
     justify-content: flex-start;
+  }
+  .justify-items-end {
+    justify-items: end;
   }
   .gap-1 {
     gap: calc(var(--spacing) * 1);

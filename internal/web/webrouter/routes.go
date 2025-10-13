@@ -16,6 +16,5 @@ func registerRoutes(r gin.IRoutes) {
 	r.POST("/logout", func(c *gin.Context) {
 		utils.JWT.ClearJwtCookie(c)
 		webutils.Redirect(c, "/login")
-
 	})
 }

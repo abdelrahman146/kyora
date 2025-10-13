@@ -10,9 +10,15 @@ package pages
 import "github.com/a-h/templ"
 import templruntime "github.com/a-h/templ/runtime"
 
-import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
+import (
+	"fmt"
+	"github.com/abdelrahman146/kyora/internal/web/views/layouts"
+	"github.com/abdelrahman146/kyora/internal/web/webcontext"
+)
 
-func Login() templ.Component {
+var LoginErrorFragmentKey = webcontext.FragmentKey{}
+
+func Login(hasError bool) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -45,7 +51,46 @@ func Login() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card w-full bg-base-100 shadow-xl\"><div class=\"card-body\"><h1 class=\"card-title text-2xl justify-center\">Login</h1><p class=\"text-center text-base-content/60\">Seamless Access, Secure Connection.</p><form class=\"mt-4 space-y-4\" hx-post=\"/login\" hx-swap=\"none\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">Email Address</span></div><div class=\"input input-bordered flex items-center gap-2\"><i data-feather=\"mail\" class=\"h-4 w-4\"></i> <input name=\"email\" type=\"email\" class=\"grow\" placeholder=\"Email Address\" required></div></label><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">Password</span></div><div class=\"input input-bordered flex items-center gap-2\"><i data-feather=\"lock\" class=\"h-4 w-4\"></i> <input name=\"password\" :type=\"show ? 'text' : 'password'\" class=\"grow\" placeholder=\"Password\" required> <button type=\"button\" @click=\"show = !show\" class=\"btn btn-ghost btn-xs\"><i x-show=\"!show\" data-feather=\"eye\" class=\"h-4 w-4\"></i> <i x-show=\"show\" data-feather=\"eye-off\" class=\"h-4 w-4\"></i></button></div><div class=\"label\"><span class=\"label-text-alt\"></span> <a href=\"/forgot-password\" class=\"label-text-alt link link-hover\">Forgot Password?</a></div></label><div class=\"form-control mt-6\"><button class=\"btn btn-primary\"><i data-feather=\"log-in\" class=\"h-4 w-4\"></i> Login</button></div><div class=\"divider\">OR</div><div class=\"form-control\"><a href=\"/auth/google\" class=\"btn btn-outline\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 48 48\"><path fill=\"#FFC107\" d=\"M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z\"></path><path fill=\"#FF3D00\" d=\"M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z\"></path><path fill=\"#4CAF50\" d=\"M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z\"></path><path fill=\"#1976D2\" d=\"M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C44.434 36.338 48 30.651 48 24c0-1.341-.138-2.65-.389-3.917z\"></path></svg> Login with Google</a></div></form><p class=\"mt-4 text-center text-sm\">Haven't an account? <a href=\"/register\" class=\"link link-primary\">Create One</a></p></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card w-full bg-base-100\"><div class=\"card-body\"><h1 class=\"card-title text-2xl justify-center\">Login</h1><p class=\"text-center text-base-content/60\">Seamless Access, Secure Connection.</p><form class=\"mt-4 flex flex-col gap-1\" hx-post=\"/login\" hx-swap=\"outerHTML\" hx-target=\"#login-error\"><label class=\"form-control w-full\"><div class=\"label\"><span class=\"label-text\">Email Address</span></div><div class=\"input input-bordered flex items-center gap-2 w-full\"><i data-feather=\"mail\" class=\"h-4 w-4\"></i> <input name=\"email\" type=\"email\" class=\"grow\" placeholder=\"Email Address\" required></div></label><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">Password</span></div><div class=\"input input-bordered flex items-center gap-2 w-full\"><i data-feather=\"lock\" class=\"h-4 w-4\"></i> <input name=\"password\" :type=\"show ? 'text' : 'password'\" class=\"grow\" placeholder=\"Password\" required> <button type=\"button\" @click=\"show = !show\" class=\"btn btn-ghost btn-xs\"><i x-show=\"!show\" data-feather=\"eye\" class=\"h-4 w-4\"></i> <i x-show=\"show\" data-feather=\"eye-off\" class=\"h-4 w-4\"></i></button></div><div class=\"label flex justify-end mt-1\"><span class=\"label-text-alt\"></span> <a href=\"/forgot-password\" hx-boost=\"false\" class=\"label-text-alt link link-hover\">Forgot Password?</a></div></label><div class=\"mt-4\"></div>")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Var3 := templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
+				templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
+				templ_7745c5c3_Buffer, templ_7745c5c3_IsBuffer := templruntime.GetBuffer(templ_7745c5c3_W)
+				if !templ_7745c5c3_IsBuffer {
+					defer func() {
+						templ_7745c5c3_BufErr := templruntime.ReleaseBuffer(templ_7745c5c3_Buffer)
+						if templ_7745c5c3_Err == nil {
+							templ_7745c5c3_Err = templ_7745c5c3_BufErr
+						}
+					}()
+				}
+				ctx = templ.InitializeContext(ctx)
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "<div id=\"login-error\" class=\"text-error text-center text-sm mb-2\" :class=\"")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				var templ_7745c5c3_Var4 string
+				templ_7745c5c3_Var4, templ_7745c5c3_Err = templ.JoinStringErrs(fmt.Sprintf("{'hidden': %v}", !hasError))
+				if templ_7745c5c3_Err != nil {
+					return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/pages/login.templ`, Line: 51, Col: 121}
+				}
+				_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var4))
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 3, "\" x-transition>Invalid Credentials</div>")
+				if templ_7745c5c3_Err != nil {
+					return templ_7745c5c3_Err
+				}
+				return nil
+			})
+			templ_7745c5c3_Err = templ.Fragment(LoginErrorFragmentKey).Render(templ.WithChildren(ctx, templ_7745c5c3_Var3), templ_7745c5c3_Buffer)
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 4, "<div class=\"form-control grid grid-cols-1\"><button type=\"submit\" class=\"btn btn-primary\"><i data-feather=\"log-in\" class=\"h-4 w-4\"></i> Login</button></div><div class=\"divider\">OR</div><div class=\"form-control grid grid-cols-1\"><a href=\"/auth/google\" hx-boost=\"false\" class=\"btn btn-outline\"><svg xmlns=\"http://www.w3.org/2000/svg\" width=\"16\" height=\"16\" viewBox=\"0 0 48 48\"><path fill=\"#FFC107\" d=\"M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z\"></path><path fill=\"#FF3D00\" d=\"M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z\"></path><path fill=\"#4CAF50\" d=\"M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238C29.211 35.091 26.715 36 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z\"></path><path fill=\"#1976D2\" d=\"M43.611 20.083H42V20H24v8h11.303c-.792 2.237-2.231 4.166-4.087 5.571l6.19 5.238C44.434 36.338 48 30.651 48 24c0-1.341-.138-2.65-.389-3.917z\"></path></svg> Login with Google</a></div></form><p class=\"mt-4 text-center text-sm\">Haven't an account? <a href=\"/onboarding\" hx-boost=\"false\" class=\"link link-primary\">Create One</a></p></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}

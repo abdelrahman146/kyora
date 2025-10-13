@@ -1,3 +1,5 @@
+
+env: "development" # or "production"
 app:
   name: kyora
   version: 1.0.0
@@ -24,5 +26,3 @@ google:
   client_id: ""
   client_secret: ""
   redirect_url: "http://localhost:8080/auth/google/callback"
-
-env: "development"

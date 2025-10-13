@@ -126,15 +126,15 @@ type resetPayload struct {
 
 const resetPrefix = "pwreset:"
 
-func (s *AuthenticationService) CreateResetToken(ctx context.Context, email string) (string, error) {
-
+func (s *AuthenticationService) CreateResetToken(ctx context.Context, email string) string {
 	user, err := s.userRepo.FindOne(ctx, s.userRepo.ScopeEmail(email))
 	if err != nil {
-		return "", err
+		return ""
 	}
 	token, err := utils.ID.RandomString(40)
 	if err != nil {
-		return "", err
+		utils.Log.FromContext(ctx).Error("failed to generate reset token", "err", err)
+		return ""
 	}
 	passwordResetTtlSeconds := viper.GetInt64("password_reset_ttl_seconds")
 	ttl := time.Duration(passwordResetTtlSeconds) * time.Second
@@ -145,9 +145,10 @@ func (s *AuthenticationService) CreateResetToken(ctx context.Context, email stri
 		exp = 900 // default 15m
 	}
 	if err := s.cache.Set(resetPrefix+token, b, exp); err != nil {
-		return "", err
+		utils.Log.FromContext(ctx).Error("failed to store reset token", "err", err)
+		return ""
 	}
-	return token, nil
+	return token
 }
 
 func (s *AuthenticationService) ValidateResetToken(ctx context.Context, token string) (*User, error) {

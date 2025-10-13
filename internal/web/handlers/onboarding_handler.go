@@ -100,12 +100,12 @@ func (h *OnboardingHandler) Complete(c *gin.Context) {
 func (h *OnboardingHandler) SlugAvailability(c *gin.Context) {
 	slug := c.Query("slug")
 	if slug == "" {
-		webutils.RenderFragments(c, http.StatusOK, components.SlugStatusEmpty(), components.SlugStatusFragmentKey)
+		webutils.Render(c, http.StatusOK, components.SlugStatusEmpty())
 		return
 	}
 	ok, err := h.onboarding.IsOrganizationSlugAvailable(c.Request.Context(), slug)
 	if err != nil {
 		ok = false
 	}
-	webutils.RenderFragments(c, http.StatusOK, components.SlugStatus(ok), components.SlugStatusFragmentKey)
+	webutils.Render(c, http.StatusOK, components.SlugStatus(ok))
 }

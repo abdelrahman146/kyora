@@ -12,7 +12,7 @@ import templruntime "github.com/a-h/templ/runtime"
 
 import "github.com/abdelrahman146/kyora/internal/web/views/layouts"
 
-func ResetPassword() templ.Component {
+func ResetPassword(token string) templ.Component {
 	return templruntime.GeneratedTemplate(func(templ_7745c5c3_Input templruntime.GeneratedComponentInput) (templ_7745c5c3_Err error) {
 		templ_7745c5c3_W, ctx := templ_7745c5c3_Input.Writer, templ_7745c5c3_Input.Context
 		if templ_7745c5c3_CtxErr := ctx.Err(); templ_7745c5c3_CtxErr != nil {
@@ -45,7 +45,20 @@ func ResetPassword() templ.Component {
 				}()
 			}
 			ctx = templ.InitializeContext(ctx)
-			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card w-full bg-base-100 shadow-xl\"><div class=\"card-body\"><h1 class=\"card-title text-2xl justify-center\">Reset Password</h1><p class=\"text-center text-base-content/60\">Create a new, strong password.</p><form class=\"mt-4 space-y-4\" hx-post=\"/reset-password\" hx-swap=\"none\"><input type=\"hidden\" name=\"token\" value=\"\" x-model=\"$store.resetToken?.token\"><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">New Password</span></div><input name=\"password\" :type=\"show ? 'text' : 'password'\" class=\"input input-bordered w-full\" placeholder=\"New Password\" required></label><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">Confirm Password</span></div><input name=\"password_confirm\" :type=\"show ? 'text' : 'password'\" class=\"input input-bordered w-full\" placeholder=\"Confirm Password\" required></label><div class=\"form-control mt-6\"><button class=\"btn btn-primary\"><i data-feather=\"check-circle\" class=\"h-4 w-4\"></i> Change Password</button></div></form><p class=\"mt-4 text-center text-sm\">Go to <a href=\"/login\" class=\"link link-primary\">Login</a></p></div></div>")
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 1, "<div class=\"card w-full bg-base-100 shadow-xl\"><div class=\"card-body\"><h1 class=\"card-title text-2xl justify-center\">Reset Password</h1><p class=\"text-center text-base-content/60\">Create a new, strong password.</p><form class=\"mt-4 flex flex-col gap-2\" hx-post=\"/reset-password\" hx-swap=\"OuterHTML\"><input type=\"hidden\" name=\"token\" value=\"")
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			var templ_7745c5c3_Var3 string
+			templ_7745c5c3_Var3, templ_7745c5c3_Err = templ.JoinStringErrs(token)
+			if templ_7745c5c3_Err != nil {
+				return templ.Error{Err: templ_7745c5c3_Err, FileName: `internal/web/views/pages/reset-password.templ`, Line: 15, Col: 52}
+			}
+			_, templ_7745c5c3_Err = templ_7745c5c3_Buffer.WriteString(templ.EscapeString(templ_7745c5c3_Var3))
+			if templ_7745c5c3_Err != nil {
+				return templ_7745c5c3_Err
+			}
+			templ_7745c5c3_Err = templruntime.WriteString(templ_7745c5c3_Buffer, 2, "\"><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">New Password</span></div><input name=\"password\" :type=\"show ? 'text' : 'password'\" class=\"input input-bordered w-full\" placeholder=\"New Password\" required></label><label class=\"form-control w-full\" x-data=\"{ show: false }\"><div class=\"label\"><span class=\"label-text\">Confirm Password</span></div><input name=\"password_confirm\" :type=\"show ? 'text' : 'password'\" class=\"input input-bordered w-full\" placeholder=\"Confirm Password\" required></label><div class=\"form-control mt-6\"><button class=\"btn btn-primary btn-block\" type=\"submit\"><i data-feather=\"check-circle\" class=\"h-4 w-4\"></i> Change Password</button></div></form><p class=\"mt-4 text-center text-sm\">Go to <a href=\"/login\" class=\"link link-primary\">Login</a></p></div></div>")
 			if templ_7745c5c3_Err != nil {
 				return templ_7745c5c3_Err
 			}
