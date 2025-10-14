@@ -3,10 +3,12 @@ package order
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/shopspring/decimal"
 )
@@ -220,4 +222,64 @@ func (s *OrderService) DeleteOrder(ctx context.Context, storeID, orderID string)
 		return err
 	}
 	return nil
+}
+
+func (s *OrderService) AggregateSales(ctx context.Context, storeID string, from, to time.Time) (total decimal.Decimal, cogs decimal.Decimal, orderCount int64, err error) {
+	return s.orders.aggregateSales(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}
+
+// ItemsSold returns the sum of quantities across order items of paid, active orders.
+func (s *OrderService) ItemsSold(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
+	return s.orders.sumItemsSold(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}
+
+// TopSellingProducts returns top-N products by quantity for paid, active orders.
+func (s *OrderService) TopSellingProducts(ctx context.Context, storeID string, from, to time.Time, limit int) ([]types.KeyValue, error) {
+	rows, err := s.orders.topSellingProducts(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (s *OrderService) BreakdownByStatus(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
+	rows, err := s.orders.breakdownByStatus(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to))
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (s *OrderService) BreakdownByChannel(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
+	rows, err := s.orders.breakdownByChannel(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (s *OrderService) BreakdownByCountry(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
+	rows, err := s.orders.breakdownByCountry(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// RevenueTimeSeries returns revenue per bucket defined by PostgreSQL date_trunc bucket.
+func (s *OrderService) RevenueTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	rows, err := s.orders.revenueTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// CountTimeSeries returns number of orders per bucket for paid, active orders.
+func (s *OrderService) CountTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	rows, err := s.orders.countTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

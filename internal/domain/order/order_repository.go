@@ -7,6 +7,8 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -67,6 +69,12 @@ func (r *orderRepository) scopeOrderStatuses(statuses []OrderStatus) func(db *go
 	}
 }
 
+func (r *orderRepository) scopeExcludeOrderStatuses(statuses []OrderStatus) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("status NOT IN ?", statuses)
+	}
+}
+
 func (r *orderRepository) scopePaymentStatus(status OrderPaymentStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("payment_status = ?", status)
@@ -94,11 +102,11 @@ func (r *orderRepository) scopePaymentMethods(methods []OrderPaymentMethod) func
 func (r *orderRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if !from.IsZero() && !to.IsZero() {
-			return db.Where("created_at BETWEEN ? AND ?", from, to)
+			return db.Where(OrderTable+".created_at BETWEEN ? AND ?", from, to)
 		} else if !from.IsZero() {
-			return db.Where("created_at >= ?", from)
+			return db.Where(OrderTable+".created_at >= ?", from)
 		} else if !to.IsZero() {
-			return db.Where("created_at <= ?", to)
+			return db.Where(OrderTable+".created_at <= ?", to)
 		}
 		return db
 	}
@@ -115,6 +123,15 @@ func (r *orderRepository) scopeCountryCodes(countryCodes []string) func(db *gorm
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Joins(fmt.Sprintf("JOIN %s on %s.id = %s.shipping_address_id", customer.AddressTable, customer.AddressTable, OrderTable)).
 			Where(fmt.Sprintf("%s.country_code IN ?", customer.AddressTable), countryCodes)
+	}
+}
+
+func (r *orderRepository) scopePaidAndActive() func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		// Paid orders that were not cancelled or returned are considered active sales
+		db = db.Where("payment_status = ?", OrderPaymentStatusPaid)
+		db = db.Scopes(r.scopeExcludeOrderStatuses([]OrderStatus{OrderStatusCancelled, OrderStatusReturned}))
+		return db
 	}
 }
 
@@ -215,4 +232,109 @@ func (r *orderRepository) sumTotal(ctx context.Context, opts ...db.PostgresOptio
 		return decimal.Zero, err
 	}
 	return total, nil
+}
+
+// ---- Analytics-oriented structs and helpers ----
+
+type AggregateRow struct {
+	Total decimal.Decimal `gorm:"column:total"`
+	Cogs  decimal.Decimal `gorm:"column:cogs"`
+	Cnt   int64           `gorm:"column:cnt"`
+}
+
+func (r *orderRepository) aggregateSales(ctx context.Context, opts ...db.PostgresOptions) (total decimal.Decimal, cogs decimal.Decimal, orderCount int64, err error) {
+	var row AggregateRow
+	q := r.db.Conn(ctx, opts...).Model(&Order{})
+	if err = q.Select("COALESCE(SUM(total),0) AS total, COALESCE(SUM(cogs),0) AS cogs, COUNT(*) AS cnt").Scan(&row).Error; err != nil {
+		return decimal.Zero, decimal.Zero, 0, err
+	}
+	return row.Total, row.Cogs, row.Cnt, nil
+}
+
+func (r *orderRepository) sumItemsSold(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	type cntRow struct{ Cnt int64 }
+	var row cntRow
+	// Join orders to order_items and sum quantities for paid, active orders
+	q := r.db.Conn(ctx, opts...).Table(OrderTable + " o").Joins("JOIN " + OrderItemTable + " i ON i.order_id = o.id")
+	if err := q.Select("COALESCE(SUM(i.quantity),0) AS cnt").Scan(&row).Error; err != nil {
+		return 0, err
+	}
+	return row.Cnt, nil
+}
+
+func (r *orderRepository) topSellingProducts(ctx context.Context, limit int, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := make([]types.KeyValue, 0, limit)
+	q := r.db.Conn(ctx, opts...).Table(OrderTable + " o").
+		Joins("JOIN " + OrderItemTable + " i ON i.order_id = o.id").
+		Joins("JOIN " + inventory.ProductTable + " p ON p.id = i.product_id")
+	orderStr := "value DESC"
+	if limit <= 0 {
+		limit = 10
+	}
+	if err := q.Select("p.name AS key, COALESCE(SUM(i.quantity),0)::float AS value").
+		Group("p.id, p.name").
+		Order(orderStr).Limit(limit).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *orderRepository) breakdownByStatus(ctx context.Context, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Model(&Order{})
+	if err := q.Select("status AS key, COUNT(*)::float AS value").Group("status").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *orderRepository) breakdownByChannel(ctx context.Context, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Model(&Order{})
+	if err := q.Select("channel AS key, COALESCE(SUM(total),0)::float AS value").Group("channel").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *orderRepository) breakdownByCountry(ctx context.Context, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Table(OrderTable + " o").
+		Joins(fmt.Sprintf("JOIN %s a ON a.id = o.shipping_address_id", customer.AddressTable))
+	if err := q.Select("a.country_code AS key, COALESCE(SUM(o.total),0)::float AS value").Group("a.country_code").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *orderRepository) revenueTimeSeries(ctx context.Context, bucket string, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+		// ok
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COALESCE(SUM(total),0)::float AS value", bucket)
+	q := r.db.Conn(ctx, opts...).Model(&Order{}).Model(&Order{})
+	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+func (r *orderRepository) countTimeSeries(ctx context.Context, bucket string, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+		// ok
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COUNT(*)::float AS value", bucket)
+	q := r.db.Conn(ctx, opts...).Model(&Order{})
+	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

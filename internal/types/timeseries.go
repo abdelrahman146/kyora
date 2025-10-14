@@ -1,4 +1,4 @@
-package analytics
+package types
 
 import (
 	"context"
@@ -42,12 +42,7 @@ type TimeSeries struct {
 	Values      []float64
 }
 
-type TimeSeriesRow struct {
-	Timestamp time.Time
-	Value     float64
-}
-
-// newTimeSeries creates a time series with a sensible granularity based on the span
+// NewTimeSeries creates a time series with a sensible granularity based on the span
 // between 'from' and 'to'. It aligns the start to a natural boundary and fills in
 // human-friendly tick labels and corresponding values. Missing data points are
 // filled with zero values. It assumes Monday as the start of the week.
@@ -59,7 +54,7 @@ type TimeSeriesRow struct {
 //   - <= 2y:  "Jan 2025", "Feb 2025", ... (Monthly)
 //   - <= 5y:  "Q1 2025", "Q2 2025", ... (Quarterly)
 //   - > 5y:   "2025", "2026", ... (Yearly)
-func newTimeSeries(ctx context.Context, rows []TimeSeriesRow, from, to time.Time) *TimeSeries {
+func NewTimeSeries(ctx context.Context, rows []TimeSeriesRow, from, to time.Time) *TimeSeries {
 	if len(rows) == 0 {
 		return &TimeSeries{
 			Granularity: Daily,
@@ -68,7 +63,7 @@ func newTimeSeries(ctx context.Context, rows []TimeSeriesRow, from, to time.Time
 		}
 	}
 
-	g := chooseGranularity(from, to)
+	g := ChooseGranularity(from, to)
 	labels := make([]string, 0, 64)
 	values := make([]float64, 0, 64)
 
@@ -108,7 +103,7 @@ func newTimeSeries(ctx context.Context, rows []TimeSeriesRow, from, to time.Time
 //   - <= 2y:  "Jan 2025", "Feb 2025", ... (Monthly)
 //   - <= 5y:  "Q1 2025", "Q2 2025", ... (Quarterly)
 //   - > 5y:   "2025", "2026", ... (Yearly)
-func (s *analyticsService) generateTimeSeriesLabels(from, to time.Time) []string {
+func generateTimeSeriesLabels(from, to time.Time) []string {
 	if to.Before(from) {
 		from, to = to, from
 	}
@@ -118,7 +113,7 @@ func (s *analyticsService) generateTimeSeriesLabels(from, to time.Time) []string
 	from = from.In(loc)
 	to = to.In(loc)
 
-	g := chooseGranularity(from, to)
+	g := ChooseGranularity(from, to)
 	start := alignStart(from, g)
 	labels := make([]string, 0, 64)
 
@@ -132,7 +127,7 @@ func (s *analyticsService) generateTimeSeriesLabels(from, to time.Time) []string
 
 // --- helpers ---
 
-func chooseGranularity(from, to time.Time) Granularity {
+func ChooseGranularity(from, to time.Time) Granularity {
 	d := to.Sub(from)
 	switch {
 	case d <= 48*time.Hour:
@@ -265,4 +260,24 @@ func dedupeLeading(labels []string) []string {
 		}
 	}
 	return out
+}
+
+// bucketForRange converts analytics granularity to a PostgreSQL date_trunc bucket.
+func BucketForRange(from, to time.Time) string {
+	switch ChooseGranularity(from, to) {
+	case Hourly:
+		return "hour"
+	case Daily:
+		return "day"
+	case Weekly:
+		return "week"
+	case Monthly:
+		return "month"
+	case Quarterly:
+		return "quarter"
+	case Yearly:
+		return "year"
+	default:
+		return "day"
+	}
 }
