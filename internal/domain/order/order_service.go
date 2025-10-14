@@ -301,3 +301,28 @@ func (s *OrderService) ReturningCustomersCount(ctx context.Context, storeID stri
 func (s *OrderService) ReturningCustomersTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
 	return s.orders.returningCustomersTimeSeries(ctx, bucket, from, to, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
 }
+
+// ---- Dashboard helpers ----
+
+// OpenOrdersCount returns the number of orders which are still in-flight
+// (not fulfilled, not cancelled, not returned) regardless of payment status.
+func (s *OrderService) OpenOrdersCount(ctx context.Context, storeID string) (int64, error) {
+	return s.orders.count(ctx,
+		s.orders.scopeStoreID(storeID),
+		s.orders.scopeExcludeOrderStatuses([]OrderStatus{OrderStatusFulfilled, OrderStatusCancelled, OrderStatusReturned}),
+	)
+}
+
+// OpenOrdersFunnel returns a breakdown of open orders by status for funnel visualization.
+func (s *OrderService) OpenOrdersFunnel(ctx context.Context, storeID string) ([]types.KeyValue, error) {
+	return s.orders.breakdownByStatus(ctx,
+		s.orders.scopeStoreID(storeID),
+		s.orders.scopeExcludeOrderStatuses([]OrderStatus{OrderStatusFulfilled, OrderStatusCancelled, OrderStatusReturned}),
+	)
+}
+
+// AllTimeSalesAggregate returns total revenue, COGS and order count for all time
+// considering paid, active orders only.
+func (s *OrderService) AllTimeSalesAggregate(ctx context.Context, storeID string) (total decimal.Decimal, cogs decimal.Decimal, orderCount int64, err error) {
+	return s.orders.aggregateSales(ctx, s.orders.scopeStoreID(storeID), s.orders.scopePaidAndActive())
+}

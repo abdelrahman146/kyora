@@ -576,3 +576,8 @@ func (s *ExpenseService) ExpenseAmountTimeSeries(ctx context.Context, storeID st
 func (s *ExpenseService) MarketingExpensesInRange(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
 	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeCategory(ExpenseCategoryMarketing), s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
 }
+
+// TotalExpensesAllTime returns the sum of all expenses for the store across all time.
+func (s *ExpenseService) TotalExpensesAllTime(ctx context.Context, storeID string) (decimal.Decimal, error) {
+	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeStoreID(storeID))
+}
