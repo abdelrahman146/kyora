@@ -26,29 +26,6 @@ type analyticsService struct {
 	ownerDomain     *owner.OwnerDomain
 	supplierDomain  *supplier.SupplierDomain
 }
-type analyticsDeps struct {
-	storeDomain     *store.StoreDomain
-	orderDomain     *order.OrderDomain
-	assetDomain     *asset.AssetDomain
-	customerDomain  *customer.CustomerDomain
-	expenseDomain   *expense.ExpenseDomain
-	inventoryDomain *inventory.InventoryDomain
-	ownerDomain     *owner.OwnerDomain
-	supplierDomain  *supplier.SupplierDomain
-}
-
-func newAnalyticsService(d analyticsDeps) *analyticsService {
-	return &analyticsService{
-		storeDomain:     d.storeDomain,
-		orderDomain:     d.orderDomain,
-		assetDomain:     d.assetDomain,
-		customerDomain:  d.customerDomain,
-		expenseDomain:   d.expenseDomain,
-		inventoryDomain: d.inventoryDomain,
-		ownerDomain:     d.ownerDomain,
-		supplierDomain:  d.supplierDomain,
-	}
-}
 
 type SalesAnalytics struct {
 	StoreID               string

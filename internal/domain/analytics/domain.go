@@ -25,7 +25,7 @@ type DomainDeps struct {
 }
 
 func NewDomain(d DomainDeps) *AnalyticsDomain {
-	return &AnalyticsDomain{Service: newAnalyticsService(analyticsDeps{
+	return &AnalyticsDomain{Service: &analyticsService{
 		storeDomain:     d.Store,
 		orderDomain:     d.Order,
 		assetDomain:     d.Asset,
@@ -34,5 +34,5 @@ func NewDomain(d DomainDeps) *AnalyticsDomain {
 		inventoryDomain: d.Inventory,
 		ownerDomain:     d.Owner,
 		supplierDomain:  d.Supplier,
-	})}
+	}}
 }
