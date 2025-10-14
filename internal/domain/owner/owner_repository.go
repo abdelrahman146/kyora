@@ -2,6 +2,7 @@ package owner
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 
@@ -32,6 +33,19 @@ func (r *ownerRepository) scopeIDs(ids []string) func(db *gorm.DB) *gorm.DB {
 func (r *ownerRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)
+	}
+}
+
+func (r *ownerRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("created_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("created_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("created_at <= ?", to)
+		}
+		return db
 	}
 }
 

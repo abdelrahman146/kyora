@@ -82,6 +82,19 @@ func (r *expenseRepository) scopeOccurredOn(day time.Time) func(db *gorm.DB) *go
 	}
 }
 
+func (r *expenseRepository) scopeOccurredOnRange(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("occurred_on BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("occurred_on >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("occurred_on <= ?", to)
+		}
+		return db
+	}
+}
+
 func (r *expenseRepository) scopeFilter(filter *ExpenseFilter) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		if filter == nil {

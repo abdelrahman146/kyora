@@ -90,7 +90,7 @@ func (s *analyticsService) GenerateDashboardAnalytics(ctx context.Context, store
 	if err != nil {
 		return nil, err
 	}
-	allTimeExpenses, err := s.expenseDomain.ExpenseService.TotalExpensesAllTime(ctx, storeID)
+	allTimeExpenses, _, err := s.expenseDomain.ExpenseService.ExpenseTotals(ctx, storeID, time.Time{}, time.Time{})
 	if err != nil {
 		return nil, err
 	}

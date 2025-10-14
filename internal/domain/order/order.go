@@ -98,6 +98,7 @@ type Order struct {
 	PaymentReference   sql.NullString     `gorm:"column:payment_reference;type:text" json:"paymentReference,omitempty"`
 	PlacedAt           sql.NullTime       `gorm:"column:placed_at" json:"placedAt"`
 	ReadyForShipmentAt sql.NullTime       `gorm:"column:ready_for_shipment_at" json:"readyForShipmentAt"`
+	OrderedAt          time.Time          `gorm:"column:ordered_at;type:timestamptz;not null;default:now()" json:"orderedAt"`
 	ShippedAt          sql.NullTime       `gorm:"column:shipped_at" json:"shippedAt"`
 	FulfilledAt        sql.NullTime       `gorm:"column:fulfilled_at" json:"fulfilledAt"`
 	CancelledAt        sql.NullTime       `gorm:"column:cancelled_at" json:"cancelledAt"`
@@ -124,6 +125,7 @@ type CreateOrderRequest struct {
 	Discount          decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
 	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
 	PaymentReference  sql.NullString            `json:"paymentReference" binding:"omitempty"`
+	OrderedAt         time.Time                 `json:"orderedAt" binding:"omitempty"`
 	Items             []*CreateOrderItemRequest `json:"items" binding:"required,dive,required"`
 }
 
@@ -131,6 +133,7 @@ type UpdateOrderRequest struct {
 	ShippingFee decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
 	Channel     string                    `json:"channel" binding:"omitempty"`
 	Discount    decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
+	OrderedAt   time.Time                 `json:"orderedAt" binding:"omitempty"`
 	Items       []*UpdateOrderItemRequest `json:"items" binding:"omitempty,dive,required"`
 }
 

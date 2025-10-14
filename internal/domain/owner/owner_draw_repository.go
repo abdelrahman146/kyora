@@ -56,6 +56,19 @@ func (r *ownerDrawRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.D
 	}
 }
 
+func (r *ownerDrawRepository) scopeWithDrawnAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("withdrawn_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("withdrawn_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("withdrawn_at <= ?", to)
+		}
+		return db
+	}
+}
+
 func (r *ownerDrawRepository) createOne(ctx context.Context, draw *OwnerDraw, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(draw).Error
 }

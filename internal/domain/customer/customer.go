@@ -1,6 +1,8 @@
 package customer
 
 import (
+	"time"
+
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"gorm.io/gorm"
@@ -37,6 +39,7 @@ type Customer struct {
 	XUsername         string          `gorm:"column:x_username;type:text" json:"xUsername,omitempty"`
 	SnapchatUsername  string          `gorm:"column:snapchat_username;type:text" json:"snapchatUsername,omitempty"`
 	WhatsappNumber    string          `gorm:"column:whatsapp_number;type:text" json:"whatsappNumber,omitempty"`
+	JoinedAt          time.Time       `gorm:"column:joined_at;type:timestamptz;not null;default:now()" json:"joinedAt"`
 	Addresses         []*Address      `gorm:"foreignKey:CustomerID;references:ID" json:"addresses,omitempty"`
 	Notes             []*CustomerNote `gorm:"foreignKey:CustomerID;references:ID" json:"notes,omitempty"`
 }
@@ -60,6 +63,7 @@ type CreateCustomerRequest struct {
 	FacebookUsername  string         `json:"facebookUsername" binding:"omitempty"`
 	XUsername         string         `json:"xUsername" binding:"omitempty"`
 	SnapchatUsername  string         `json:"snapchatUsername" binding:"omitempty"`
+	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
 	WhatsappNumber    string         `json:"whatsappNumber" binding:"omitempty"`
 }
 
@@ -76,4 +80,5 @@ type UpdateCustomerRequest struct {
 	XUsername         string         `json:"xUsername" binding:"omitempty"`
 	SnapchatUsername  string         `json:"snapchatUsername" binding:"omitempty"`
 	WhatsappNumber    string         `json:"whatsappNumber" binding:"omitempty"`
+	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
 }

@@ -28,11 +28,13 @@ func (s *InvestmentService) CreateInvestment(ctx context.Context, storeID string
 	}
 
 	investment := &Investment{
-		Name:     req.Name,
-		Amount:   req.Amount,
-		Currency: store.Currency,
-		Note:     req.Note,
-		StoreID:  store.ID,
+		Name:       req.Name,
+		Amount:     req.Amount,
+		Currency:   store.Currency,
+		Note:       req.Note,
+		OwnerID:    req.OwnerID,
+		InvestedAt: req.InvestedAt,
+		StoreID:    store.ID,
 	}
 
 	if err := s.investmentRepo.createOne(ctx, investment); err != nil {
@@ -56,6 +58,9 @@ func (s *InvestmentService) UpdateInvestment(ctx context.Context, storeID, inves
 	}
 	if req.Note != "" {
 		investment.Note = req.Note
+	}
+	if !req.InvestedAt.IsZero() {
+		investment.InvestedAt = req.InvestedAt
 	}
 
 	if err := s.investmentRepo.updateOne(ctx, investment); err != nil {

@@ -28,10 +28,12 @@ func (s *OwnerDrawService) CreateOwnerDraw(ctx context.Context, storeID string, 
 	}
 
 	ownerDraw := &OwnerDraw{
-		OwnerID: req.OwnerID,
-		Amount:  req.Amount,
-		Note:    req.Note,
-		StoreID: store.ID,
+		OwnerID:     req.OwnerID,
+		Amount:      req.Amount,
+		Note:        req.Note,
+		WithdrawnAt: req.WithdrawnAt,
+		Currency:    store.Currency,
+		StoreID:     store.ID,
 	}
 
 	if err := s.ownerDrawRepo.createOne(ctx, ownerDraw); err != nil {
@@ -55,6 +57,9 @@ func (s *OwnerDrawService) UpdateOwnerDraw(ctx context.Context, storeID, ownerDr
 	}
 	if req.Note != "" {
 		ownerDraw.Note = req.Note
+	}
+	if !req.WithdrawnAt.IsZero() {
+		ownerDraw.WithdrawnAt = req.WithdrawnAt
 	}
 
 	if err := s.ownerDrawRepo.updateOne(ctx, ownerDraw); err != nil {
@@ -96,5 +101,5 @@ func (s *OwnerDrawService) SumTotalOwnerDrawsByOwner(ctx context.Context, storeI
 // SumOwnerDraws returns the total amount of owner draws in the given date range.
 // When from or to is zero, it behaves as an open-ended bound (all-time if both are zero).
 func (s *OwnerDrawService) SumOwnerDraws(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
-	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeCreatedAt(from, to))
+	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeWithDrawnAt(from, to))
 }

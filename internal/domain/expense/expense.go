@@ -56,7 +56,7 @@ type Expense struct {
 	RecurringExpense   *RecurringExpense `gorm:"foreignKey:RecurringExpenseID;references:ID" json:"recurringExpense,omitempty"`
 	Amount             decimal.Decimal   `gorm:"column:amount;type:numeric;not null" json:"amount"`
 	Currency           string            `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
-	OccurredOn         time.Time         `gorm:"column:occurred_on;type:date;not null" json:"occurredOn"`
+	OccurredOn         time.Time         `gorm:"column:occurred_on;type:date;not null;default:now()" json:"occurredOn"`
 	Category           ExpenseCategory   `gorm:"column:category;type:text;not null;index" json:"category"`
 	Type               ExpenseType       `gorm:"column:type;type:text;not null;index" json:"type"`
 	Note               string            `gorm:"column:note;type:text" json:"note"`

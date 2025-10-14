@@ -112,6 +112,19 @@ func (r *orderRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *
 	}
 }
 
+func (r *orderRepository) scopeOrderedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("ordered_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("ordered_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("ordered_at <= ?", to)
+		}
+		return db
+	}
+}
+
 func (r *orderRepository) scopeCountryCode(countryCode string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Joins(fmt.Sprintf("JOIN %s on %s.id = %s.shipping_address_id", customer.AddressTable, customer.AddressTable, OrderTable)).
@@ -315,7 +328,7 @@ func (r *orderRepository) revenueTimeSeries(ctx context.Context, bucket string, 
 		bucket = "day"
 	}
 	rows := []types.TimeSeriesRow{}
-	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COALESCE(SUM(total),0)::float AS value", bucket)
+	sel := fmt.Sprintf("date_trunc('%s', ordered_at) AS timestamp, COALESCE(SUM(total),0)::float AS value", bucket)
 	q := r.db.Conn(ctx, opts...).Model(&Order{}).Model(&Order{})
 	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
 		return nil, err
@@ -331,7 +344,7 @@ func (r *orderRepository) countTimeSeries(ctx context.Context, bucket string, op
 		bucket = "day"
 	}
 	rows := []types.TimeSeriesRow{}
-	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COUNT(*)::float AS value", bucket)
+	sel := fmt.Sprintf("date_trunc('%s', ordered_at) AS timestamp, COUNT(*)::float AS value", bucket)
 	q := r.db.Conn(ctx, opts...).Model(&Order{})
 	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
 		return nil, err
@@ -385,7 +398,7 @@ func (r *orderRepository) returningCustomersTimeSeries(ctx context.Context, buck
 	}
 	rows := []types.TimeSeriesRow{}
 	// Approach: for each bucket date, count distinct customers with >1 cumulative orders up to that bucket. This is heavy; approximate by counting customers with >1 order inside bucket.
-	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COUNT(DISTINCT customer_id)::float AS value", bucket)
+	sel := fmt.Sprintf("date_trunc('%s', ordered_at) AS timestamp, COUNT(DISTINCT customer_id)::float AS value", bucket)
 	q := r.db.Conn(ctx, opts...).Model(&Order{}).Group("timestamp").Order("timestamp ASC")
 	if err := q.Select(sel).Scan(&rows).Error; err != nil {
 		return nil, err

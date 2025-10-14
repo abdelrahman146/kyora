@@ -44,6 +44,19 @@ func (r *customerRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB
 	}
 }
 
+func (r *customerRepository) scopeJoinedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("joined_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("joined_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("joined_at <= ?", to)
+		}
+		return db
+	}
+}
+
 func (r *customerRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)

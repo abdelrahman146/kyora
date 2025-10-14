@@ -39,6 +39,7 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, storeID string, cu
 		XUsername:         customer.XUsername,
 		SnapchatUsername:  customer.SnapchatUsername,
 		WhatsappNumber:    customer.WhatsappNumber,
+		JoinedAt:          customer.JoinedAt,
 	}
 
 	if err := s.customers.createOne(ctx, newCustomer); err != nil {
@@ -61,7 +62,7 @@ func (s *CustomerService) CountCustomers(ctx context.Context, storeID string) (i
 
 // CountNewCustomersInRange returns number of customers created in the provided range.
 func (s *CustomerService) CountNewCustomersInRange(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
-	return s.customers.count(ctx, s.customers.scopeStoreID(storeID), s.customers.scopeCreatedAt(from, to))
+	return s.customers.count(ctx, s.customers.scopeStoreID(storeID), s.customers.scopeJoinedAt(from, to))
 }
 
 // NewCustomersTimeSeries returns time series of new customer counts.
@@ -139,6 +140,9 @@ func (s *CustomerService) UpdateCustomer(ctx context.Context, customerID string,
 	}
 	if updates.WhatsappNumber != "" {
 		existingCustomer.WhatsappNumber = updates.WhatsappNumber
+	}
+	if !updates.JoinedAt.IsZero() {
+		existingCustomer.JoinedAt = updates.JoinedAt
 	}
 
 	if err := s.customers.updateOne(ctx, existingCustomer); err != nil {

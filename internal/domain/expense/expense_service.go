@@ -557,27 +557,22 @@ func (s *ExpenseService) backfillPastOccurrencesForCreate(ctx context.Context, s
 
 // ExpenseTotals returns total amount and count of expenses in range.
 func (s *ExpenseService) ExpenseTotals(ctx context.Context, storeID string, from, to time.Time) (total decimal.Decimal, count int64, err error) {
-	total, err = s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	total, err = s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeOccurredOnRange(from, to))
 	if err != nil {
 		return
 	}
-	count, err = s.expenseRepo.count(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	count, err = s.expenseRepo.count(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeOccurredOnRange(from, to))
 	return
 }
 
 func (s *ExpenseService) ExpenseBreakdownByCategory(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
-	return s.expenseRepo.breakdownByCategory(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	return s.expenseRepo.breakdownByCategory(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeOccurredOnRange(from, to))
 }
 
 func (s *ExpenseService) ExpenseAmountTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
-	return s.expenseRepo.amountTimeSeries(ctx, bucket, from, to, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	return s.expenseRepo.amountTimeSeries(ctx, bucket, from, to, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeOccurredOnRange(from, to))
 }
 
 func (s *ExpenseService) MarketingExpensesInRange(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
-	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeCategory(ExpenseCategoryMarketing), s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
-}
-
-// TotalExpensesAllTime returns the sum of all expenses for the store across all time.
-func (s *ExpenseService) TotalExpensesAllTime(ctx context.Context, storeID string) (decimal.Decimal, error) {
-	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeStoreID(storeID))
+	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeCategory(ExpenseCategoryMarketing), s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeOccurredOnRange(from, to))
 }

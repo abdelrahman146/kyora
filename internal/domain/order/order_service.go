@@ -111,6 +111,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 		ShippingFee:       order.ShippingFee,
 		Discount:          order.Discount,
 		Total:             total,
+		OrderedAt:         order.OrderedAt,
 		ShippingAddressID: order.ShippingAddressID,
 	}
 
@@ -225,17 +226,17 @@ func (s *OrderService) DeleteOrder(ctx context.Context, storeID, orderID string)
 }
 
 func (s *OrderService) AggregateSales(ctx context.Context, storeID string, from, to time.Time) (total decimal.Decimal, cogs decimal.Decimal, orderCount int64, err error) {
-	return s.orders.aggregateSales(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.aggregateSales(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 // ItemsSold returns the sum of quantities across order items of paid, active orders.
 func (s *OrderService) ItemsSold(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
-	return s.orders.sumItemsSold(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.sumItemsSold(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 // TopSellingProducts returns top-N products by quantity for paid, active orders.
 func (s *OrderService) TopSellingProducts(ctx context.Context, storeID string, from, to time.Time, limit int) ([]types.KeyValue, error) {
-	rows, err := s.orders.topSellingProducts(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	rows, err := s.orders.topSellingProducts(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 	if err != nil {
 		return nil, err
 	}
@@ -243,7 +244,7 @@ func (s *OrderService) TopSellingProducts(ctx context.Context, storeID string, f
 }
 
 func (s *OrderService) BreakdownByStatus(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
-	rows, err := s.orders.breakdownByStatus(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to))
+	rows, err := s.orders.breakdownByStatus(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to))
 	if err != nil {
 		return nil, err
 	}
@@ -251,7 +252,7 @@ func (s *OrderService) BreakdownByStatus(ctx context.Context, storeID string, fr
 }
 
 func (s *OrderService) BreakdownByChannel(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
-	rows, err := s.orders.breakdownByChannel(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	rows, err := s.orders.breakdownByChannel(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 	if err != nil {
 		return nil, err
 	}
@@ -259,7 +260,7 @@ func (s *OrderService) BreakdownByChannel(ctx context.Context, storeID string, f
 }
 
 func (s *OrderService) BreakdownByCountry(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
-	rows, err := s.orders.breakdownByCountry(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	rows, err := s.orders.breakdownByCountry(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 	if err != nil {
 		return nil, err
 	}
@@ -268,7 +269,7 @@ func (s *OrderService) BreakdownByCountry(ctx context.Context, storeID string, f
 
 // RevenueTimeSeries returns revenue per bucket defined by PostgreSQL date_trunc bucket.
 func (s *OrderService) RevenueTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
-	rows, err := s.orders.revenueTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	rows, err := s.orders.revenueTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 	if err != nil {
 		return nil, err
 	}
@@ -277,7 +278,7 @@ func (s *OrderService) RevenueTimeSeries(ctx context.Context, storeID string, fr
 
 // CountTimeSeries returns number of orders per bucket for paid, active orders.
 func (s *OrderService) CountTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
-	rows, err := s.orders.countTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	rows, err := s.orders.countTimeSeries(ctx, bucket, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 	if err != nil {
 		return nil, err
 	}
@@ -287,19 +288,19 @@ func (s *OrderService) CountTimeSeries(ctx context.Context, storeID string, from
 // ---- Customer analytics wrappers ----
 
 func (s *OrderService) DistinctPurchasingCustomers(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
-	return s.orders.distinctPurchasingCustomers(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.distinctPurchasingCustomers(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 func (s *OrderService) RevenuePerCustomer(ctx context.Context, storeID string, from, to time.Time, limit int) ([]types.KeyValue, error) {
-	return s.orders.revenuePerCustomer(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.revenuePerCustomer(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 func (s *OrderService) ReturningCustomersCount(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
-	return s.orders.returningCustomersCount(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.returningCustomersCount(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 func (s *OrderService) ReturningCustomersTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
-	return s.orders.returningCustomersTimeSeries(ctx, bucket, from, to, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+	return s.orders.returningCustomersTimeSeries(ctx, bucket, from, to, s.orders.scopeStoreID(storeID), s.orders.scopeOrderedAt(from, to), s.orders.scopePaidAndActive())
 }
 
 // ---- Dashboard helpers ----
