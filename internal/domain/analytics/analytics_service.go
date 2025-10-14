@@ -59,12 +59,12 @@ type SalesAnalytics struct {
 	TotalOrders           int64
 	AverageOrderValue     decimal.Decimal
 	ItemsSold             int64
-	NumberOfSalesOverTime *types.TimeSeries
-	RevenueOverTime       *types.TimeSeries
-	TopSellingProducts    []types.KeyValue
-	OrderStatusBreakdown  []types.KeyValue
-	SalesByLocation       []types.KeyValue
-	SalesByChannel        []types.KeyValue
+	NumberOfSalesOverTime *types.TimeSeries // line chart
+	RevenueOverTime       *types.TimeSeries // line chart
+	TopSellingProducts    []types.KeyValue  // pie chart
+	OrderStatusBreakdown  []types.KeyValue  // donut chart
+	SalesByCountry        []types.KeyValue  // Table
+	SalesByChannel        []types.KeyValue  // Table
 }
 
 func (s *analyticsService) GenerateSalesAnalytics(ctx context.Context, storeId string, from, to time.Time) (*SalesAnalytics, error) {
@@ -143,8 +143,76 @@ func (s *analyticsService) GenerateSalesAnalytics(ctx context.Context, storeId s
 		RevenueOverTime:       revenueOverTime,
 		TopSellingProducts:    topProducts,
 		OrderStatusBreakdown:  statusKV,
-		SalesByLocation:       locKV,
+		SalesByCountry:        locKV,
 		SalesByChannel:        chKV,
 	}
 	return result, nil
+}
+
+type InventoryAnalytics struct {
+	StoreID                     string
+	From                        time.Time
+	To                          time.Time
+	TotalInventoryValue         decimal.Decimal
+	TotalInStock                int64
+	LowStockItems               int64
+	OutOfStockItems             int64
+	InventoryTurnoverRatio      decimal.Decimal
+	SellThroughRate             decimal.Decimal
+	InventoryValueOverTime      *types.TimeSeries // line chart
+	TopProductsByInventoryValue []types.KeyValue  // Bar chart
+}
+
+func (s *analyticsService) GenerateInventoryAnalytics(ctx context.Context, storeId string, from, to time.Time) (*InventoryAnalytics, error) {
+	return nil, nil
+}
+
+type ExpenseAnalytics struct {
+	StoreID               string
+	From                  time.Time
+	To                    time.Time
+	TotalExpenses         decimal.Decimal
+	AveragExpenseAmount   decimal.Decimal
+	TotalNumberOfEntries  int64
+	ExpensesOverTime      *types.TimeSeries // line chart
+	TopExpensesByCategory []types.KeyValue  // Bar chart
+}
+
+func (s *analyticsService) GenerateExpenseAnalytics(ctx context.Context, storeId string, from, to time.Time) (*ExpenseAnalytics, error) {
+	return nil, nil
+}
+
+type CustomerAnalytics struct {
+	StoreID                          string
+	From                             time.Time
+	To                               time.Time
+	TotalCustomers                   int64
+	NewCustomers                     int64
+	ReturningCustomers               int64
+	RepeatCustomerRate               decimal.Decimal
+	AverageRevenuePerCustomer        decimal.Decimal
+	CustomerAcquisitionCost          decimal.Decimal
+	CustomerLifetimeValue            decimal.Decimal
+	AverageCustomerPurchaseFrequency decimal.Decimal
+	NewCustomersOverTime             *types.TimeSeries // line chart
+	ReturningCustomersOverTime       *types.TimeSeries // line chart
+	TopCustomersByRevenue            []any             // table 'cusomter id, custoemr name, country, total revenue
+}
+
+func (s *analyticsService) GenerateCustomerAnalytics(ctx context.Context, storeId string, from, to time.Time) (*CustomerAnalytics, error) {
+	return nil, nil
+}
+
+type AssetAnalytics struct {
+	StoreID                 string
+	From                    time.Time
+	To                      time.Time
+	TotalAssetsAquired      int64
+	TotalAssetValue         decimal.Decimal
+	AssetsByCategory        []types.KeyValue  // Bar chart
+	AssetInvestmentOverTime *types.TimeSeries // line chart
+}
+
+func (s *analyticsService) GenerateAssetAnalytics(ctx context.Context, storeId string, from, to time.Time) (*AssetAnalytics, error) {
+	return nil, nil
 }
