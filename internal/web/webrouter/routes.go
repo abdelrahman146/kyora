@@ -40,19 +40,19 @@ func RegisterRoutes(r *gin.Engine,
 	})
 
 	// handlers
-	handlers.AddAuthRoutes(r, accountDomain)
-	handlers.AddOnboardingRoutes(r, accountDomain)
-	handlers.AddAccountRoutes(r, accountDomain)
-	r.Group("/:storeId", middleware.AuthRequired, middleware.UserRequired(accountDomain.AuthService), middleware.StoreRequired(storeDomain.StoreService))
+	handlers.AddAuthRoutes(&r.RouterGroup, accountDomain)
+	handlers.AddOnboardingRoutes(&r.RouterGroup, accountDomain)
+	handlers.AddAccountRoutes(&r.RouterGroup, accountDomain)
+	rs := r.Group("/:storeId", middleware.AuthRequired, middleware.UserRequired(accountDomain.AuthService), middleware.StoreRequired(storeDomain.StoreService))
 	{
-		handlers.AddStoreRoutes(r, storeDomain)
-		handlers.AddDashboardRoutes(r, storeDomain, orderDomain, ownerDomain, expenseDomain, customerDomain, supplierDomain)
-		handlers.AddInventoryRoutes(r, inventoryDomain)
-		handlers.AddOrderRoutes(r, orderDomain)
-		handlers.AddSupplierRoutes(r, supplierDomain)
-		handlers.AddCustomerRoutes(r, customerDomain)
-		handlers.AddExpenseRoutes(r, expenseDomain)
-		handlers.AddAnalyticsRoutes(r, storeDomain, orderDomain, ownerDomain, inventoryDomain, expenseDomain, customerDomain, supplierDomain)
+		handlers.AddStoreRoutes(rs, storeDomain)
+		handlers.AddDashboardRoutes(rs, storeDomain, orderDomain, ownerDomain, expenseDomain, customerDomain, supplierDomain)
+		handlers.AddInventoryRoutes(rs, inventoryDomain)
+		handlers.AddOrderRoutes(rs, orderDomain)
+		handlers.AddSupplierRoutes(rs, supplierDomain)
+		handlers.AddCustomerRoutes(rs, customerDomain)
+		handlers.AddExpenseRoutes(rs, expenseDomain)
+		handlers.AddAnalyticsRoutes(rs, storeDomain, orderDomain, ownerDomain, inventoryDomain, expenseDomain, customerDomain, supplierDomain)
 
 	}
 }

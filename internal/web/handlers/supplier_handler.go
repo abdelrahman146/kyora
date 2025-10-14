@@ -12,13 +12,13 @@ type supplierHandler struct {
 	supplierDomain *supplier.SupplierDomain
 }
 
-func AddSupplierRoutes(r *gin.Engine, supplierDomain *supplier.SupplierDomain) {
+func AddSupplierRoutes(r *gin.RouterGroup, supplierDomain *supplier.SupplierDomain) {
 	h := &supplierHandler{supplierDomain: supplierDomain}
 	h.RegisterRoutes(r)
 }
 
-func (h *supplierHandler) RegisterRoutes(r *gin.Engine) {
-	r.Group("/suppliers")
+func (h *supplierHandler) RegisterRoutes(c *gin.RouterGroup) {
+	r := c.Group("/suppliers")
 	{
 		r.GET("/", h.Index)
 		r.GET("/new", h.New)

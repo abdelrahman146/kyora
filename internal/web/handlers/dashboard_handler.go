@@ -23,7 +23,7 @@ type dashboardHandler struct {
 }
 
 func AddDashboardRoutes(
-	r *gin.Engine,
+	r *gin.RouterGroup,
 	storeDomain *store.StoreDomain,
 	orderDomain *order.OrderDomain,
 	ownerDomain *owner.OwnerDomain,
@@ -42,8 +42,11 @@ func AddDashboardRoutes(
 	h.registerRoutes(r)
 }
 
-func (h *dashboardHandler) registerRoutes(r *gin.Engine) {
-	r.GET("/", h.index)
+func (h *dashboardHandler) registerRoutes(c *gin.RouterGroup) {
+	r := c.Group("/dashboard")
+	{
+		r.GET("/", h.index)
+	}
 }
 
 func (h *dashboardHandler) index(c *gin.Context) {

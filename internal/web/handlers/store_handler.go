@@ -12,12 +12,12 @@ type storeHandler struct {
 	storeDomain *store.StoreDomain
 }
 
-func AddStoreRoutes(r *gin.Engine, storeDomain *store.StoreDomain) {
+func AddStoreRoutes(r *gin.RouterGroup, storeDomain *store.StoreDomain) {
 	h := &storeHandler{storeDomain}
 	h.registerRoutes(r)
 }
 
-func (h *storeHandler) registerRoutes(r *gin.Engine) {
+func (h *storeHandler) registerRoutes(r *gin.RouterGroup) {
 	r.GET("/", h.business)
 }
 

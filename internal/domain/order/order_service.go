@@ -67,6 +67,28 @@ func (s *OrderService) calculateSubtotal(ctx context.Context, items []*CreateOrd
 	return subtotal
 }
 
+func (s *OrderService) calculateCOGS(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {
+	cogs := decimal.MustNew(0, 0)
+	for _, item := range items {
+		quantity, err := decimal.NewFromInt64(int64(item.Quantity), 0, 0)
+		if err != nil {
+			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
+			return decimal.MustNew(0, 0)
+		}
+		totalCost, err := item.UnitCost.Mul(quantity)
+		if err != nil {
+			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
+			return decimal.MustNew(0, 0)
+		}
+		cogs, err = cogs.Add(totalCost)
+		if err != nil {
+			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
+			return decimal.MustNew(0, 0)
+		}
+	}
+	return cogs
+}
+
 func (s *OrderService) calculateTotal(ctx context.Context, subtotal, vat, shippingFee, discount decimal.Decimal) decimal.Decimal {
 	total, err := subtotal.Add(vat)
 	if err != nil {
@@ -104,6 +126,10 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 		return nil, err
 	}
 	subtotal := s.calculateSubtotal(ctx, order.Items)
+	cogs := s.calculateCOGS(ctx, order.Items)
+	// if cogs.GreaterThan(subtotal) {
+	// 	return nil, utils.Problem.BadRequest("COGS cannot be greater than subtotal")
+	// }
 	vat := s.calculateVat(ctx, subtotal, store.VatRate)
 	total := s.calculateTotal(ctx, subtotal, vat, order.ShippingFee, order.Discount)
 	orderNumber := s.generateOrderNumber()
@@ -116,6 +142,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 		PaymentMethod:     order.PaymentMethod,
 		Currency:          store.Currency,
 		Subtotal:          subtotal,
+		Channel:           order.Channel,
+		COGS:              cogs,
 		VAT:               vat,
 		VATRate:           store.VatRate,
 		ShippingFee:       order.ShippingFee,
@@ -144,6 +172,7 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 				ProductID: item.ProductID,
 				Quantity:  item.Quantity,
 				UnitPrice: item.UnitPrice,
+				UnitCost:  item.UnitCost,
 				Total:     total,
 				Currency:  store.Currency,
 			}

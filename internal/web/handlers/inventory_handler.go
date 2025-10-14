@@ -14,15 +14,15 @@ type inventoryHandler struct {
 	inventoryDomain *inventory.InventoryDomain
 }
 
-func AddInventoryRoutes(r *gin.Engine, inventoryDomain *inventory.InventoryDomain) {
+func AddInventoryRoutes(r *gin.RouterGroup, inventoryDomain *inventory.InventoryDomain) {
 	h := &inventoryHandler{
 		inventoryDomain: inventoryDomain,
 	}
 	h.registerRoutes(r)
 }
 
-func (h *inventoryHandler) registerRoutes(r *gin.Engine) {
-	r.Group("/inventory")
+func (h *inventoryHandler) registerRoutes(c *gin.RouterGroup) {
+	r := c.Group("/inventory")
 	{
 		r.GET("/", h.index)
 		r.GET("/new", h.new)

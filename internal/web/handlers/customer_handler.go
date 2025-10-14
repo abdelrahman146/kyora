@@ -14,13 +14,13 @@ type customerHandler struct {
 	customerDomain *customer.CustomerDomain
 }
 
-func AddCustomerRoutes(r *gin.Engine, customerDomain *customer.CustomerDomain) {
+func AddCustomerRoutes(r *gin.RouterGroup, customerDomain *customer.CustomerDomain) {
 	h := &customerHandler{customerDomain: customerDomain}
 	h.registerRoutes(r)
 }
 
-func (h *customerHandler) registerRoutes(r *gin.Engine) {
-	r.Group("/customers")
+func (h *customerHandler) registerRoutes(c *gin.RouterGroup) {
+	r := c.Group("/customers")
 	{
 		r.GET("/", h.index)
 		r.GET("/new", h.new)

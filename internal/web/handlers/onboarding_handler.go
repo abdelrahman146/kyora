@@ -81,14 +81,14 @@ func (o onboardingSubmission) toRequests() (*account.CreateOrganizationRequest, 
 	return orgReq, userReq, storeReq
 }
 
-func AddOnboardingRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
+func AddOnboardingRoutes(r *gin.RouterGroup, accountDomain *account.AccountDomain) {
 	h := &onboardingHandler{accountDomain}
 	h.registerRoutes(r)
 }
 
-func (h *onboardingHandler) registerRoutes(r *gin.Engine) {
+func (h *onboardingHandler) registerRoutes(c *gin.RouterGroup) {
 	// wizard
-	r.Group(onboardingPath)
+	r := c.Group(onboardingPath)
 	{
 		r.GET("/", h.index)
 		r.POST("/step2", h.step2)

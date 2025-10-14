@@ -83,11 +83,13 @@ type Order struct {
 	Customer           *customer.Customer `gorm:"foreignKey:CustomerID;references:ID" json:"customer,omitempty"`
 	ShippingAddressID  string             `gorm:"column:shipping_address_id;type:text" json:"shippingAddressId,omitempty"`
 	ShippingAddress    *customer.Address  `gorm:"foreignKey:ShippingAddressID;references:ID" json:"shippingAddress,omitempty"`
+	Channel            string             `gorm:"column:channel;type:text;not null" json:"channel"`
 	Subtotal           decimal.Decimal    `gorm:"column:subtotal;type:numeric;not null;default:0" json:"subtotal"`
 	VAT                decimal.Decimal    `gorm:"column:vat;type:numeric;not null;default:0" json:"vat"`
 	VATRate            decimal.Decimal    `gorm:"column:vat_rate;type:numeric;not null;default:0" json:"vatRate"`
 	ShippingFee        decimal.Decimal    `gorm:"column:shipping_fee;type:numeric;not null;default:0" json:"shippingFee"`
 	Discount           decimal.Decimal    `gorm:"column:discount;type:numeric;not null;default:0" json:"discount"`
+	COGS               decimal.Decimal    `gorm:"column:cogs;type:numeric;not null;default:0" json:"cogs"`
 	Total              decimal.Decimal    `gorm:"column:total;type:numeric;not null;default:0" json:"total"`
 	Currency           string             `gorm:"column:currency;type:text;not null" json:"currency"`
 	Status             OrderStatus        `gorm:"column:status;type:text;not null;default:'pending'" json:"status"`
@@ -116,6 +118,7 @@ func (m *Order) BeforeCreate(tx *gorm.DB) (err error) {
 
 type CreateOrderRequest struct {
 	CustomerID        string                    `json:"customerId" binding:"required"`
+	Channel           string                    `json:"channel" binding:"required"`
 	ShippingAddressID string                    `json:"shippingAddressId" binding:"required"`
 	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
 	Discount          decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
@@ -126,6 +129,7 @@ type CreateOrderRequest struct {
 
 type UpdateOrderRequest struct {
 	ShippingFee decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
+	Channel     string                    `json:"channel" binding:"omitempty"`
 	Discount    decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
 	Items       []*UpdateOrderItemRequest `json:"items" binding:"omitempty,dive,required"`
 }

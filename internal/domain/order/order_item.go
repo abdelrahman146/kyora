@@ -23,6 +23,8 @@ type OrderItem struct {
 	Quantity  int                `gorm:"column:quantity;type:int;not null;default:1" json:"quantity"`
 	Currency  string             `gorm:"column:currency;type:text;not null" json:"currency"`
 	UnitPrice decimal.Decimal    `gorm:"column:unit_price;type:numeric;not null;default:0" json:"unitPrice"`
+	UnitCost  decimal.Decimal    `gorm:"column:unit_cost;type:numeric;not null;default:0" json:"unitCost"`
+	TotalCost decimal.Decimal    `gorm:"column:total_cost;type:numeric;not null;default:0" json:"totalCost"`
 	Total     decimal.Decimal    `gorm:"column:total;type:numeric;not null;default:0" json:"total"`
 }
 
@@ -37,9 +39,11 @@ type CreateOrderItemRequest struct {
 	ProductID string          `json:"productId" binding:"required"`
 	Quantity  int             `json:"quantity" binding:"required,min=1"`
 	UnitPrice decimal.Decimal `json:"unitPrice" binding:"required,gt=0"`
+	UnitCost  decimal.Decimal `json:"unitCost" binding:"omitempty,gte=0"`
 }
 
 type UpdateOrderItemRequest struct {
 	Quantity  int             `json:"quantity" binding:"omitempty,min=1"`
 	UnitPrice decimal.Decimal `json:"unitPrice" binding:"omitempty,gt=0"`
+	UnitCost  decimal.Decimal `json:"unitCost" binding:"omitempty,gte=0"`
 }

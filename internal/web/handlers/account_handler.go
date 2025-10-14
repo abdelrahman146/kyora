@@ -1,6 +1,8 @@
 package handlers
 
 import (
+	"net/http"
+
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/web/middleware"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
@@ -13,30 +15,21 @@ type accountHandler struct {
 	accountDomain *account.AccountDomain
 }
 
-func AddAccountRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
+func AddAccountRoutes(r *gin.RouterGroup, accountDomain *account.AccountDomain) {
 	h := &accountHandler{
 		accountDomain: accountDomain,
 	}
 	h.registerRoutes(r, accountDomain)
 }
 
-func (h *accountHandler) registerRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
-	r.Group("/accounts")
+func (h *accountHandler) registerRoutes(c *gin.RouterGroup, accountDomain *account.AccountDomain) {
+	r := c.Group("/accounts")
 	{
 		r.Use(middleware.AuthRequired, middleware.UserRequired(accountDomain.AuthService))
-		r.GET("/", h.profile)
-		r.GET("/new", h.new)
-		r.GET("/:id/edit", h.edit)
+		r.GET("/profile", h.profile)
+		r.GET("/manage", h.manage)
+		r.POST("/invite", h.invite)
 	}
-}
-
-func (h *accountHandler) new(c *gin.Context) {
-	c.String(200, "New Account")
-}
-
-func (h *accountHandler) edit(c *gin.Context) {
-	id := c.Param("id")
-	c.String(200, "Edit Account %s", id)
 }
 
 func (h *accountHandler) profile(c *gin.Context) {
@@ -46,13 +39,35 @@ func (h *accountHandler) profile(c *gin.Context) {
 		Title:       "Edit Profile",
 		Description: "Edit your profile information",
 		Keywords:    "edit profile, Kyora",
-		Path:        "/profile",
+		Path:        "/accounts/profile",
 		Breadcrumbs: []webcontext.Breadcrumb{
-			{Href: "/", Label: "Dashboard"},
+			{Href: "/accounts", Label: "Accounts"},
 			{Label: "Profile"},
 		},
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
 	webutils.Render(c, 200, pages.ProfileEdit())
+}
+
+func (h *accountHandler) manage(c *gin.Context) {
+	info := webcontext.PageInfo{
+		Locale:      "en",
+		Dir:         "ltr",
+		Title:       "Accounts Management",
+		Description: "Manage your team accounts",
+		Keywords:    "manage accounts, Kyora",
+		Path:        "/accounts/manage",
+		Breadcrumbs: []webcontext.Breadcrumb{
+			{Href: "/accounts", Label: "Accounts"},
+			{Label: "Accounts Management"},
+		},
+	}
+	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
+	c.Request = c.Request.WithContext(ctx)
+	webutils.Redirect(c, "/dashboard")
+}
+
+func (h *accountHandler) invite(c *gin.Context) {
+	c.String(http.StatusOK, "Not implemented")
 }

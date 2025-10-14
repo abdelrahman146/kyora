@@ -12,15 +12,15 @@ type orderHandler struct {
 	orderDomain *order.OrderDomain
 }
 
-func AddOrderRoutes(r *gin.Engine, orderDomain *order.OrderDomain) {
+func AddOrderRoutes(r *gin.RouterGroup, orderDomain *order.OrderDomain) {
 	h := &orderHandler{
 		orderDomain: orderDomain,
 	}
 	h.RegisterRoutes(r)
 }
 
-func (h *orderHandler) RegisterRoutes(r *gin.Engine) {
-	r.GET("/orders")
+func (h *orderHandler) RegisterRoutes(c *gin.RouterGroup) {
+	r := c.Group("/orders")
 	{
 		r.GET("/", h.index)
 		r.GET("/new", h.new)

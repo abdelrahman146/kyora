@@ -21,7 +21,7 @@ type authHandler struct {
 	accountDomain *account.AccountDomain
 }
 
-func AddAuthRoutes(r *gin.Engine, accountDomain *account.AccountDomain) {
+func AddAuthRoutes(r *gin.RouterGroup, accountDomain *account.AccountDomain) {
 	h := &authHandler{accountDomain}
 	h.registerRoutes(r)
 }
@@ -32,7 +32,7 @@ const (
 	resetPasswordPath  = "/reset-password"
 )
 
-func (h *authHandler) registerRoutes(r *gin.Engine) {
+func (h *authHandler) registerRoutes(r *gin.RouterGroup) {
 	r.GET(loginPath, h.loginPage)
 	r.POST(loginPath, h.login)
 	r.GET(forgotPasswordPath, h.forgotPasswordPage)

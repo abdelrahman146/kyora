@@ -14,13 +14,13 @@ type expenseHandler struct {
 	expenseDomain *expense.ExpenseDomain
 }
 
-func AddExpenseRoutes(r *gin.Engine, expenseDomain *expense.ExpenseDomain) {
+func AddExpenseRoutes(r *gin.RouterGroup, expenseDomain *expense.ExpenseDomain) {
 	h := &expenseHandler{expenseDomain: expenseDomain}
 	h.registerRoutes(r)
 }
 
-func (h *expenseHandler) registerRoutes(r *gin.Engine) {
-	r.Group("/expenses")
+func (h *expenseHandler) registerRoutes(c *gin.RouterGroup) {
+	r := c.Group("/expenses")
 	{
 		r.GET("/", h.index)
 		r.GET("/new", h.new)
