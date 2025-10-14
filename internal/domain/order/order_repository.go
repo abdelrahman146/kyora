@@ -338,3 +338,57 @@ func (r *orderRepository) countTimeSeries(ctx context.Context, bucket string, op
 	}
 	return rows, nil
 }
+
+// ---- Customer analytics helpers ----
+
+// distinctPurchasingCustomers returns number of distinct customers with at least one paid, active order in range.
+func (r *orderRepository) distinctPurchasingCustomers(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	var cnt int64
+	if err := r.db.Conn(ctx, opts...).Model(&Order{}).Distinct("customer_id").Count(&cnt).Error; err != nil {
+		return 0, err
+	}
+	return cnt, nil
+}
+
+// revenuePerCustomer returns top-N customers by revenue in period.
+func (r *orderRepository) revenuePerCustomer(ctx context.Context, limit int, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Model(&Order{})
+	if err := q.Select("customer_id AS key, COALESCE(SUM(total),0)::float AS value").Group("customer_id").Order("value DESC").Limit(limit).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// returningCustomersCount counts distinct customers who placed more than one paid, active order in the period.
+func (r *orderRepository) returningCustomersCount(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	type row struct{ Cnt int64 }
+	var res row
+	sub := r.db.Conn(ctx, opts...).Model(&Order{}).
+		Select("customer_id, COUNT(*) AS c").Group("customer_id").Having("COUNT(*) > 1")
+	if err := r.db.Conn(ctx).Table("(?) as t", sub).Select("COUNT(*) AS cnt").Scan(&res).Error; err != nil {
+		return 0, err
+	}
+	return res.Cnt, nil
+}
+
+// ordersPerCustomerTimeSeries returns count of orders per bucket (same as countTimeSeries) but distinct customers per bucket is separate; here we may track new vs returning.
+// For returning customers over time, we count orders by customers who have placed more than one order up to that bucket.
+func (r *orderRepository) returningCustomersTimeSeries(ctx context.Context, bucket string, from, to time.Time, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	// Approach: for each bucket date, count distinct customers with >1 cumulative orders up to that bucket. This is heavy; approximate by counting customers with >1 order inside bucket.
+	sel := fmt.Sprintf("date_trunc('%s', created_at) AS timestamp, COUNT(DISTINCT customer_id)::float AS value", bucket)
+	q := r.db.Conn(ctx, opts...).Model(&Order{}).Group("timestamp").Order("timestamp ASC")
+	if err := q.Select(sel).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}

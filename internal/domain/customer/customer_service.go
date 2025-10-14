@@ -2,8 +2,10 @@ package customer
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/types"
 )
 
 type CustomerService struct {
@@ -55,6 +57,16 @@ func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, pag
 
 func (s *CustomerService) CountCustomers(ctx context.Context, storeID string) (int64, error) {
 	return s.customers.count(ctx, s.customers.scopeStoreID(storeID))
+}
+
+// CountNewCustomersInRange returns number of customers created in the provided range.
+func (s *CustomerService) CountNewCustomersInRange(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
+	return s.customers.count(ctx, s.customers.scopeStoreID(storeID), s.customers.scopeCreatedAt(from, to))
+}
+
+// NewCustomersTimeSeries returns time series of new customer counts.
+func (s *CustomerService) NewCustomersTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	return s.customers.newCustomersTimeSeries(ctx, bucket, from, to, s.customers.scopeStoreID(storeID))
 }
 
 func (s *CustomerService) AddAddressToCustomer(ctx context.Context, customerID string, address *CreateAddressRequest) (*Address, error) {

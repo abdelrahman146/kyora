@@ -2,8 +2,10 @@ package asset
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 
 	"gorm.io/gorm"
@@ -55,6 +57,32 @@ func (r *assetRepository) scopeFilter(filter *AssetFilter) func(db *gorm.DB) *go
 		}
 		if len(filter.Types) > 0 {
 			db = db.Where("type IN ?", filter.Types)
+		}
+		return db
+	}
+}
+
+func (r *assetRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("created_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("created_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("created_at <= ?", to)
+		}
+		return db
+	}
+}
+
+func (r *assetRepository) scopePurchasedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("purchased_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("purchased_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("purchased_at <= ?", to)
 		}
 		return db
 	}
@@ -133,4 +161,33 @@ func (r *assetRepository) sumValue(ctx context.Context, opts ...db.PostgresOptio
 		return decimal.Zero, err
 	}
 	return total, nil
+}
+
+// ---- Analytics helpers ----
+
+// breakdownByType returns sum(value) per asset type.
+func (r *assetRepository) breakdownByType(ctx context.Context, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Model(&Asset{})
+	if err := q.Select("type AS key, COALESCE(SUM(value),0)::float AS value").Group("type").Order("value DESC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// valueTimeSeries returns sum(value) per bucket based on purchased_at if set, else created_at.
+func (r *assetRepository) valueTimeSeries(ctx context.Context, bucket string, from, to time.Time, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	// We use COALESCE(purchased_at, created_at) as the acquisition date
+	sel := "date_trunc('" + bucket + "', COALESCE(purchased_at, created_at)) AS timestamp, COALESCE(SUM(value),0)::float AS value"
+	q := r.db.Conn(ctx, opts...).Model(&Asset{}).Where("COALESCE(purchased_at, created_at) >= ? AND COALESCE(purchased_at, created_at) < ?", from, to)
+	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

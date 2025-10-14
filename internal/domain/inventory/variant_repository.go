@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -45,6 +46,12 @@ func (r *variantRepository) scopeSKUs(skus []string) func(db *gorm.DB) *gorm.DB 
 func (r *variantRepository) scopeProductID(productID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("product_id = ?", productID)
+	}
+}
+
+func (r *variantRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where("store_id = ?", storeID)
 	}
 }
 
@@ -195,4 +202,57 @@ func (r *variantRepository) sumSalePrice(ctx context.Context, opts ...db.Postgre
 		return decimal.Zero, err
 	}
 	return total, nil
+}
+
+// ---- Analytics helpers ----
+
+// sumStockQuantity returns the total units in stock across variants.
+func (r *variantRepository) sumStockQuantity(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	type row struct{ Qty int64 }
+	var res row
+	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Select("COALESCE(SUM(stock_quantity),0) AS qty").Scan(&res).Error; err != nil {
+		return 0, err
+	}
+	return res.Qty, nil
+}
+
+// sumInventoryValue returns the total inventory valuation using cost_price * stock_quantity.
+func (r *variantRepository) sumInventoryValue(ctx context.Context, opts ...db.PostgresOptions) (decimal.Decimal, error) {
+	var total decimal.Decimal
+	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Select("COALESCE(SUM(cost_price * stock_quantity),0)").Scan(&total).Error; err != nil {
+		return decimal.Zero, err
+	}
+	return total, nil
+}
+
+// countLowStock returns number of variants where stock_quantity <= stock_alert and stock_alert > 0.
+func (r *variantRepository) countLowStock(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	var count int64
+	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Where("stock_alert > 0 AND stock_quantity > 0 AND stock_quantity <= stock_alert").Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// countOutOfStock returns number of variants with zero quantity.
+func (r *variantRepository) countOutOfStock(ctx context.Context, opts ...db.PostgresOptions) (int64, error) {
+	var count int64
+	if err := r.db.Conn(ctx, opts...).Model(&Variant{}).Where("stock_quantity = 0").Count(&count).Error; err != nil {
+		return 0, err
+	}
+	return count, nil
+}
+
+// topProductsByInventoryValue aggregates inventory value per product (sum of variant cost*qty) and returns top-N rows.
+// Returns key=product name, value=float (inventory value)
+func (r *variantRepository) topProductsByInventoryValue(ctx context.Context, limit int, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Table(VariantTable + " v").Joins("JOIN products p ON p.id = v.product_id")
+	if err := q.Select("p.name AS key, COALESCE(SUM(v.cost_price * v.stock_quantity),0)::float AS value").Group("p.id, p.name").Order("value DESC").Limit(limit).Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

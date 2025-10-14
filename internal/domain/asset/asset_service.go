@@ -2,9 +2,12 @@ package asset
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 type AssetService struct {
@@ -44,6 +47,11 @@ func (s *AssetService) CreateAsset(ctx context.Context, storeID string, req *Cre
 		Currency: store.Currency,
 		Value:    req.Value,
 		Note:     req.Note,
+	}
+	if req.PurchasedAt != nil {
+		asset.PurchasedAt = *req.PurchasedAt
+	} else {
+		asset.PurchasedAt = time.Now()
 	}
 	if err := s.assetRepo.createOne(ctx, asset); err != nil {
 		return nil, err
@@ -85,4 +93,23 @@ func (s *AssetService) DeleteAsset(ctx context.Context, storeID, assetID string)
 		return err
 	}
 	return nil
+}
+
+// ---- Analytics wrappers ----
+
+func (s *AssetService) AssetTotals(ctx context.Context, storeID string, from, to time.Time) (totalValue decimal.Decimal, count int64, err error) {
+	totalValue, err = s.assetRepo.sumValue(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopePurchasedAt(from, to)) // current total value (snapshot)
+	if err != nil {
+		return
+	}
+	count, err = s.assetRepo.count(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopePurchasedAt(from, to))
+	return
+}
+
+func (s *AssetService) AssetBreakdownByType(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
+	return s.assetRepo.breakdownByType(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopePurchasedAt(from, to))
+}
+
+func (s *AssetService) AssetValueTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	return s.assetRepo.valueTimeSeries(ctx, bucket, from, to, s.assetRepo.scopeStoreID(storeID))
 }

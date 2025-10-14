@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/types"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -114,4 +115,22 @@ func (r *customerRepository) count(ctx context.Context, opts ...db.PostgresOptio
 		return 0, err
 	}
 	return count, nil
+}
+
+// ---- Analytics helpers ----
+
+// newCustomersTimeSeries counts new customers per bucket based on created_at.
+func (r *customerRepository) newCustomersTimeSeries(ctx context.Context, bucket string, from, to time.Time, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	sel := "date_trunc('" + bucket + "', created_at) AS timestamp, COUNT(*)::float AS value"
+	q := r.db.Conn(ctx, opts...).Model(&Customer{}).Scopes(r.scopeCreatedAt(from, to))
+	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

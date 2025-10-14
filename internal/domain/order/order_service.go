@@ -283,3 +283,21 @@ func (s *OrderService) CountTimeSeries(ctx context.Context, storeID string, from
 	}
 	return rows, nil
 }
+
+// ---- Customer analytics wrappers ----
+
+func (s *OrderService) DistinctPurchasingCustomers(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
+	return s.orders.distinctPurchasingCustomers(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}
+
+func (s *OrderService) RevenuePerCustomer(ctx context.Context, storeID string, from, to time.Time, limit int) ([]types.KeyValue, error) {
+	return s.orders.revenuePerCustomer(ctx, limit, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}
+
+func (s *OrderService) ReturningCustomersCount(ctx context.Context, storeID string, from, to time.Time) (int64, error) {
+	return s.orders.returningCustomersCount(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}
+
+func (s *OrderService) ReturningCustomersTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	return s.orders.returningCustomersTimeSeries(ctx, bucket, from, to, s.orders.scopeStoreID(storeID), s.orders.scopeCreatedAt(from, to), s.orders.scopePaidAndActive())
+}

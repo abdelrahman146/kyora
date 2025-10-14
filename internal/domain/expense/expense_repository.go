@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 
 	"gorm.io/gorm"
@@ -61,9 +62,16 @@ func (r *expenseRepository) scopeRecurringExpenseID(recurringExpenseID string) f
 	}
 }
 
-func (r *expenseRepository) scopeCreatedAtBetween(start, end time.Time) func(db *gorm.DB) *gorm.DB {
+func (r *expenseRepository) scopeCreatedAt(from, to time.Time) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
-		return db.Where("created_at >= ? AND created_at < ?", start, end)
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("created_at BETWEEN ? AND ?", from, to)
+		} else if !from.IsZero() {
+			return db.Where("created_at >= ?", from)
+		} else if !to.IsZero() {
+			return db.Where("created_at <= ?", to)
+		}
+		return db
 	}
 }
 
@@ -165,4 +173,32 @@ func (r *expenseRepository) sumAmount(ctx context.Context, opts ...db.PostgresOp
 		return decimal.Zero, err
 	}
 	return total, nil
+}
+
+// ---- Analytics helpers ----
+
+// breakdownByCategory returns total expense amount per category.
+func (r *expenseRepository) breakdownByCategory(ctx context.Context, opts ...db.PostgresOptions) ([]types.KeyValue, error) {
+	rows := []types.KeyValue{}
+	q := r.db.Conn(ctx, opts...).Model(&Expense{})
+	if err := q.Select("category AS key, COALESCE(SUM(amount),0)::float AS value").Group("category").Order("value DESC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
+}
+
+// amountTimeSeries returns sum(amount) per date_trunc bucket for occurred_on (preferred) falling back to created_at.
+func (r *expenseRepository) amountTimeSeries(ctx context.Context, bucket string, from, to time.Time, opts ...db.PostgresOptions) ([]types.TimeSeriesRow, error) {
+	switch bucket {
+	case "hour", "day", "week", "month", "quarter", "year":
+	default:
+		bucket = "day"
+	}
+	rows := []types.TimeSeriesRow{}
+	sel := "date_trunc('" + bucket + "', occurred_on) AS timestamp, COALESCE(SUM(amount),0)::float AS value"
+	q := r.db.Conn(ctx, opts...).Model(&Expense{}).Scopes(r.scopeCreatedAt(from, to))
+	if err := q.Select(sel).Group("timestamp").Order("timestamp ASC").Scan(&rows).Error; err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

@@ -8,6 +8,8 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 type InventoryService struct {
@@ -352,4 +354,36 @@ func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []stri
 		}
 		return nil
 	})
+}
+
+// ---- Analytics wrappers ----
+
+// InventoryTotals returns aggregate inventory metrics for the store.
+func (s *InventoryService) InventoryTotals(ctx context.Context, storeID string) (totalValue decimal.Decimal, totalUnits int64, lowStock int64, outOfStock int64, err error) {
+	totalValue, err = s.variants.sumInventoryValue(ctx, s.variants.scopeStoreID(storeID))
+	if err != nil {
+		return
+	}
+	totalUnits, err = s.variants.sumStockQuantity(ctx, s.variants.scopeStoreID(storeID))
+	if err != nil {
+		return
+	}
+	lowStock, err = s.variants.countLowStock(ctx, s.variants.scopeStoreID(storeID))
+	if err != nil {
+		return
+	}
+	outOfStock, err = s.variants.countOutOfStock(ctx, s.variants.scopeStoreID(storeID))
+	if err != nil {
+		return
+	}
+	return
+}
+
+// TopProductsByInventoryValue returns top-N products by inventory value.
+func (s *InventoryService) TopProductsByInventoryValue(ctx context.Context, storeID string, limit int) ([]types.KeyValue, error) {
+	rows, err := s.variants.topProductsByInventoryValue(ctx, limit, s.variants.scopeStoreID(storeID))
+	if err != nil {
+		return nil, err
+	}
+	return rows, nil
 }

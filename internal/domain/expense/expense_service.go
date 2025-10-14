@@ -7,6 +7,8 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
+	"github.com/shopspring/decimal"
 )
 
 type ExpenseService struct {
@@ -549,4 +551,28 @@ func (s *ExpenseService) backfillPastOccurrencesForCreate(ctx context.Context, s
 		return nil
 	}
 	return s.expenseRepo.createMany(ctx, toCreate)
+}
+
+// ---- Analytics wrappers ----
+
+// ExpenseTotals returns total amount and count of expenses in range.
+func (s *ExpenseService) ExpenseTotals(ctx context.Context, storeID string, from, to time.Time) (total decimal.Decimal, count int64, err error) {
+	total, err = s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	if err != nil {
+		return
+	}
+	count, err = s.expenseRepo.count(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+	return
+}
+
+func (s *ExpenseService) ExpenseBreakdownByCategory(ctx context.Context, storeID string, from, to time.Time) ([]types.KeyValue, error) {
+	return s.expenseRepo.breakdownByCategory(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+}
+
+func (s *ExpenseService) ExpenseAmountTimeSeries(ctx context.Context, storeID string, from, to time.Time, bucket string) ([]types.TimeSeriesRow, error) {
+	return s.expenseRepo.amountTimeSeries(ctx, bucket, from, to, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
+}
+
+func (s *ExpenseService) MarketingExpensesInRange(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
+	return s.expenseRepo.sumAmount(ctx, s.expenseRepo.scopeCategory(ExpenseCategoryMarketing), s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeCreatedAt(from, to))
 }
