@@ -147,7 +147,7 @@ func (s *analyticsService) GenerateInventoryAnalytics(ctx context.Context, store
 	bucket := types.BucketForRange(from, to)
 
 	// Aggregate current inventory state
-	totalValue, totalUnits, lowStock, outOfStock, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeId, from, to)
+	totalValue, totalUnits, lowStock, outOfStock, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeId, time.Time{}, to)
 	if err != nil {
 		return nil, err
 	}

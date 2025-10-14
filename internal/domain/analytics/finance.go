@@ -41,7 +41,8 @@ func (s *analyticsService) GenerateFinancialPositionReport(ctx context.Context, 
 	if err != nil {
 		return nil, err
 	}
-	totalInventoryValue, _, _, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID, from, to)
+	// Inventory valuation is a point-in-time snapshot; we use current value
+	totalInventoryValue, _, _, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID, time.Time{}, to)
 	if err != nil {
 		return nil, err
 	}

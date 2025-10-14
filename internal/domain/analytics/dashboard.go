@@ -54,7 +54,7 @@ func (s *analyticsService) GenerateDashboardAnalytics(ctx context.Context, store
 	}
 
 	// Inventory totals (low stock value only needed but call once to reuse).
-	_, _, lowStock, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID, from30, to)
+	_, _, lowStock, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID, time.Time{}, to)
 	if err != nil {
 		return nil, err
 	}
