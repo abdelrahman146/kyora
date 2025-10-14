@@ -56,6 +56,6 @@ type SalesAnalytics struct {
 	SalesByChannel        []*KeyValue
 }
 
-func (s *analyticsService) GenerateSalesAnalytics(ctx context.Context, storeId string, from, to time.Time) {
-
+func (s *analyticsService) GenerateSalesAnalytics(ctx context.Context, storeId string, from, to time.Time) (*SalesAnalytics, error) {
+	return nil, nil
 }
