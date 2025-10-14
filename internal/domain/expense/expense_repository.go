@@ -5,7 +5,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
-	"github.com/govalues/decimal"
+	"github.com/shopspring/decimal"
 
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"

@@ -5,7 +5,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
-	"github.com/govalues/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type InvestmentService struct {

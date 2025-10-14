@@ -5,7 +5,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
-	"github.com/govalues/decimal"
+	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
 

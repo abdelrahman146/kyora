@@ -12,7 +12,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/owner"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/domain/supplier"
-	"github.com/govalues/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type analyticsService struct {
@@ -25,17 +25,27 @@ type analyticsService struct {
 	ownerDomain     *owner.OwnerDomain
 	supplierDomain  *supplier.SupplierDomain
 }
+type analyticsDeps struct {
+	storeDomain     *store.StoreDomain
+	orderDomain     *order.OrderDomain
+	assetDomain     *asset.AssetDomain
+	customerDomain  *customer.CustomerDomain
+	expenseDomain   *expense.ExpenseDomain
+	inventoryDomain *inventory.InventoryDomain
+	ownerDomain     *owner.OwnerDomain
+	supplierDomain  *supplier.SupplierDomain
+}
 
-func newAnalyticsService(storeDomain *store.StoreDomain, orderDomain *order.OrderDomain, assetDomain *asset.AssetDomain, customerDomain *customer.CustomerDomain, expenseDomain *expense.ExpenseDomain, inventoryDomain *inventory.InventoryDomain, ownerDomain *owner.OwnerDomain, supplierDomain *supplier.SupplierDomain) *analyticsService {
+func newAnalyticsService(d analyticsDeps) *analyticsService {
 	return &analyticsService{
-		storeDomain:     storeDomain,
-		orderDomain:     orderDomain,
-		assetDomain:     assetDomain,
-		customerDomain:  customerDomain,
-		expenseDomain:   expenseDomain,
-		inventoryDomain: inventoryDomain,
-		ownerDomain:     ownerDomain,
-		supplierDomain:  supplierDomain,
+		storeDomain:     d.storeDomain,
+		orderDomain:     d.orderDomain,
+		assetDomain:     d.assetDomain,
+		customerDomain:  d.customerDomain,
+		expenseDomain:   d.expenseDomain,
+		inventoryDomain: d.inventoryDomain,
+		ownerDomain:     d.ownerDomain,
+		supplierDomain:  d.supplierDomain,
 	}
 }
 

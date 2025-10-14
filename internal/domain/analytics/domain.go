@@ -11,12 +11,28 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/supplier"
 )
 
-type AnalyticsDomain struct {
-	Service *analyticsService
+type AnalyticsDomain struct{ Service *analyticsService }
+
+type DomainDeps struct {
+	Store     *store.StoreDomain
+	Order     *order.OrderDomain
+	Asset     *asset.AssetDomain
+	Customer  *customer.CustomerDomain
+	Expense   *expense.ExpenseDomain
+	Inventory *inventory.InventoryDomain
+	Owner     *owner.OwnerDomain
+	Supplier  *supplier.SupplierDomain
 }
 
-func NewDomain(storeDomain *store.StoreDomain, orderDomain *order.OrderDomain, assetDomain *asset.AssetDomain, customerDomain *customer.CustomerDomain, expenseDomain *expense.ExpenseDomain, inventoryDomain *inventory.InventoryDomain, ownerDomain *owner.OwnerDomain, supplierDomain *supplier.SupplierDomain) *AnalyticsDomain {
-	return &AnalyticsDomain{
-		Service: newAnalyticsService(storeDomain, orderDomain, assetDomain, customerDomain, expenseDomain, inventoryDomain, ownerDomain, supplierDomain),
-	}
+func NewDomain(d DomainDeps) *AnalyticsDomain {
+	return &AnalyticsDomain{Service: newAnalyticsService(analyticsDeps{
+		storeDomain:     d.Store,
+		orderDomain:     d.Order,
+		assetDomain:     d.Asset,
+		customerDomain:  d.Customer,
+		expenseDomain:   d.Expense,
+		inventoryDomain: d.Inventory,
+		ownerDomain:     d.Owner,
+		supplierDomain:  d.Supplier,
+	})}
 }

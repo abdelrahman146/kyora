@@ -8,7 +8,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
-	"github.com/govalues/decimal"
+	"github.com/shopspring/decimal"
 )
 
 type OrderService struct {
@@ -46,73 +46,33 @@ func (s *OrderService) CountOrders(ctx context.Context, storeID string, filter *
 }
 
 func (s *OrderService) calculateSubtotal(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {
-	subtotal := decimal.MustNew(0, 0)
+	subtotal := decimal.Zero
 	for _, item := range items {
-		quantity, err := decimal.NewFromInt64(int64(item.Quantity), 0, 0)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate subtotal", "error", err)
-			return decimal.MustNew(0, 0)
-		}
-		total, err := item.UnitPrice.Mul(quantity)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate subtotal", "error", err)
-			return decimal.MustNew(0, 0)
-		}
-		subtotal, err = subtotal.Add(total)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate subtotal", "error", err)
-			return decimal.MustNew(0, 0)
-		}
+		quantity := decimal.NewFromInt(int64(item.Quantity))
+		total := item.UnitPrice.Mul(quantity)
+		subtotal = subtotal.Add(total)
 	}
 	return subtotal
 }
 
 func (s *OrderService) calculateCOGS(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {
-	cogs := decimal.MustNew(0, 0)
+	cogs := decimal.Zero
 	for _, item := range items {
-		quantity, err := decimal.NewFromInt64(int64(item.Quantity), 0, 0)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
-			return decimal.MustNew(0, 0)
-		}
-		totalCost, err := item.UnitCost.Mul(quantity)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
-			return decimal.MustNew(0, 0)
-		}
-		cogs, err = cogs.Add(totalCost)
-		if err != nil {
-			utils.Log.FromContext(ctx).Error("Failed to calculate COGS", "error", err)
-			return decimal.MustNew(0, 0)
-		}
+		quantity := decimal.NewFromInt(int64(item.Quantity))
+		totalCost := item.UnitCost.Mul(quantity)
+		cogs = cogs.Add(totalCost)
 	}
 	return cogs
 }
 
 func (s *OrderService) calculateTotal(ctx context.Context, subtotal, vat, shippingFee, discount decimal.Decimal) decimal.Decimal {
-	total, err := subtotal.Add(vat)
-	if err != nil {
-		utils.Log.FromContext(ctx).Error("Failed to calculate total", "error", err)
-		return decimal.MustNew(0, 0)
-	}
-	total, err = total.Add(shippingFee)
-	if err != nil {
-		utils.Log.FromContext(ctx).Error("Failed to calculate total", "error", err)
-		return decimal.MustNew(0, 0)
-	}
-	total, err = total.Sub(discount)
-	if err != nil {
-		utils.Log.FromContext(ctx).Error("Failed to calculate total", "error", err)
-		return decimal.MustNew(0, 0)
-	}
+	total := subtotal.Add(vat)
+	total = total.Add(shippingFee)
+	total = total.Sub(discount)
 	return total
 }
 func (s *OrderService) calculateVat(ctx context.Context, subtotal, vatRate decimal.Decimal) decimal.Decimal {
-	vat, err := subtotal.Mul(vatRate)
-	if err != nil {
-		utils.Log.FromContext(ctx).Error("Failed to calculate VAT", "error", err)
-		return decimal.MustNew(0, 0)
-	}
+	vat := subtotal.Mul(vatRate)
 	return vat
 }
 
@@ -159,14 +119,8 @@ func (s *OrderService) CreateOrder(ctx context.Context, storeID string, order *C
 
 		orderItems := make([]*OrderItem, len(order.Items))
 		for i, item := range order.Items {
-			quantity, err := decimal.NewFromInt64(int64(item.Quantity), 0, 0)
-			if err != nil {
-				return err
-			}
-			total, err := item.UnitPrice.Mul(quantity)
-			if err != nil {
-				return err
-			}
+			quantity := decimal.NewFromInt(int64(item.Quantity))
+			total := item.UnitPrice.Mul(quantity)
 			orderItems[i] = &OrderItem{
 				OrderID:   newOrder.ID,
 				ProductID: item.ProductID,
