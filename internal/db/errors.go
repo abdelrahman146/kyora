@@ -5,23 +5,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/abdelrahman146/kyora/internal/utils"
-
 	"gorm.io/gorm"
 )
-
-func HandleDBError(err error) *utils.ProblemDetails {
-	if err == nil {
-		return nil
-	}
-	if IsRecordNotFound(err) {
-		return utils.Problem.NotFound("The requested resource was not found").WithError(err)
-	}
-	if IsUniqueViolation(err) {
-		return utils.Problem.Conflict("A resource with the same unique attribute already exists").WithError(err)
-	}
-	return utils.Problem.InternalError().WithError(err)
-}
 
 func IsRecordNotFound(err error) bool {
 	return err == gorm.ErrRecordNotFound || err == sql.ErrNoRows

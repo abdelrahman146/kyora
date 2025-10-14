@@ -122,7 +122,7 @@ func (s *InventoryService) createVariantsWithRetry(ctx context.Context, storeCod
 		}
 		return nil
 	}
-	return db.HandleDBError(errors.New("max attempts reached"))
+	return errors.New("max attempts reached")
 }
 
 // createVariantWithRetry inserts a single variant and retries on unique SKU conflicts by regenerating SKU.
@@ -141,7 +141,7 @@ func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode
 		}
 		return nil
 	}
-	return db.HandleDBError(errors.New("max attempts reached"))
+	return errors.New("max attempts reached")
 }
 
 func (s *InventoryService) GetProductByID(ctx context.Context, productID string) (*Product, error) {
