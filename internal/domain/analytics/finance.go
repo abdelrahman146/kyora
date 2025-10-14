@@ -9,9 +9,9 @@ import (
 )
 
 type FinancialPosition struct {
-	StoreID string     `json:"storeId"`
-	From    *time.Time `json:"from"` // The start date of the reporting period.
-	To      *time.Time `json:"to"`   // The end date of the reporting period.
+	StoreID string    `json:"storeId"`
+	From    time.Time `json:"from"` // The start date of the reporting period.
+	To      time.Time `json:"to"`   // The end date of the reporting period.
 	// core totals
 	TotalAssets      decimal.Decimal `json:"totalAssets"`      // The total value of everything the business owns. (CurrentAssets + FixedAssets)
 	TotalLiabilities decimal.Decimal `json:"totalLiabilities"` // The total value of everything the business owes. For now, this is zero. because we are not tracking liabilities yet.
@@ -28,59 +28,40 @@ type FinancialPosition struct {
 	OwnerDraws       decimal.Decimal `json:"ownerDraws"`       // The total amount of money the owner has withdrawn from the business for personal use.
 }
 
-func (s *analyticsService) GenerateFinancialPositionReport(ctx context.Context, storeID string, startDate, endDate *time.Time) (*FinancialPosition, error) {
-	// Reuse existing domain aggregates to build a snapshot-style financial position
-	// All-Time Revenue, COGS
-	allTimeRevenue, allTimeCOGS, _, err := s.orderDomain.OrderService.AllTimeSalesAggregate(ctx, storeID)
+func (s *analyticsService) GenerateFinancialPositionReport(ctx context.Context, storeID string, from, to time.Time) (*FinancialPosition, error) {
+	revenue, cogs, _, err := s.orderDomain.OrderService.AggregateSales(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	expenses, _, err := s.expenseDomain.ExpenseService.ExpenseTotals(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	ownerInvestment, ownerDraws, err := s.sumEquityMovements(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	totalInventoryValue, _, _, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	fixedAssets, _, err := s.assetDomain.AssetService.AssetTotals(ctx, storeID, from, to)
 	if err != nil {
 		return nil, err
 	}
 
-	// All-Time Operating Expenses (OPEX)
-	allTimeExpenses, err := s.expenseDomain.ExpenseService.TotalExpensesAllTime(ctx, storeID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Owner investments and draws (equity movements)
-	ownerInvestment, err := s.ownerDomain.InvestmentService.CalculateTotalInvestedAmount(ctx, storeID)
-	if err != nil {
-		return nil, err
-	}
-	ownerDraws, err := s.ownerDomain.OwnerDrawService.SumTotalOwnerDraws(ctx, storeID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Inventory valuation (current, at cost)
-	totalInventoryValue, _, _, _, err := s.inventoryDomain.InventoryService.InventoryTotals(ctx, storeID)
-	if err != nil {
-		return nil, err
-	}
-
-	// Fixed assets value (sum of purchased asset values, all-time)
-	// Pass zero time range to aggregate for all-time based on repository implementation
-	fixedAssets, _, err := s.assetDomain.AssetService.AssetTotals(ctx, storeID, time.Time{}, time.Time{})
-	if err != nil {
-		return nil, err
-	}
-
-	// Retained earnings: revenue - COGS - OPEX
-	retainedEarnings := allTimeRevenue.Sub(allTimeCOGS).Sub(allTimeExpenses)
-
-	// Cash on hand: (Revenue + Owner Investment) - (Expenses + Owner Draws + Asset Purchases)
-	cashOnHand := allTimeRevenue.Add(ownerInvestment).Sub(allTimeExpenses).Sub(ownerDraws).Sub(fixedAssets)
-
-	// Current assets: cash + inventory (simplified model)
+	// Retained earnings and cash approximation
+	retainedEarnings := revenue.Sub(cogs).Sub(expenses)
+	cashOnHand := revenue.Add(ownerInvestment).Sub(expenses).Sub(ownerDraws).Sub(fixedAssets)
 	currentAssets := cashOnHand.Add(totalInventoryValue)
-
-	// Totals
 	totalAssets := currentAssets.Add(fixedAssets)
 	totalLiabilities := decimal.Zero // Not tracked yet
 	totalEquity := totalAssets.Sub(totalLiabilities)
 
 	fp := &FinancialPosition{
 		StoreID:             storeID,
+		From:                from,
+		To:                  to,
 		TotalAssets:         totalAssets,
 		TotalLiabilities:    totalLiabilities,
 		TotalEquity:         totalEquity,
@@ -107,8 +88,37 @@ type ProfitAndLossStatement struct {
 	ExpensesByCategory []types.KeyValue `json:"expensesByCategory"` // Breakdown of expenses by category
 }
 
-func (s *analyticsService) GenerateProfitAndLossReport(ctx context.Context, storeID string, startDate, endDate *time.Time) (*ProfitAndLossStatement, error) {
-	return nil, nil
+func (s *analyticsService) GenerateProfitAndLossReport(ctx context.Context, storeID string, from, to time.Time) (*ProfitAndLossStatement, error) {
+	// Revenue, COGS and orders in range
+	revenue, cogs, _, err := s.orderDomain.OrderService.AggregateSales(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	gross := revenue.Sub(cogs)
+
+	// OPEX and by-category breakdown in range
+	totalOpex, _, err := s.expenseDomain.ExpenseService.ExpenseTotals(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	breakdown, err := s.expenseDomain.ExpenseService.ExpenseBreakdownByCategory(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+
+	net := gross.Sub(totalOpex)
+	pl := &ProfitAndLossStatement{
+		StoreID:            storeID,
+		From:               from,
+		To:                 to,
+		GrossProfit:        gross,
+		TotalExpenses:      totalOpex,
+		NetProfit:          net,
+		Revenue:            revenue,
+		COGS:               cogs,
+		ExpensesByCategory: breakdown,
+	}
+	return pl, nil
 }
 
 type CashFlowStatement struct {
@@ -129,6 +139,79 @@ type CashFlowStatement struct {
 	NetCashFlow            decimal.Decimal `json:"netCashFlow"`            // The total change in the business's cash balance during the period (Total Cash In - Total Cash Out). This can be positive (✅) or negative (🔻)
 }
 
-func (s *analyticsService) GenerateCashFlowReport(ctx context.Context, storeID string, startDate, endDate *time.Time) (*CashFlowStatement, error) {
-	return nil, nil
+func (s *analyticsService) GenerateCashFlowReport(ctx context.Context, storeID string, from, to time.Time) (*CashFlowStatement, error) {
+	// Cash inflows
+	revenue, _, _, err := s.orderDomain.OrderService.AggregateSales(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	ownerIn, err := s.ownerDomain.InvestmentService.SumInvestments(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	totalIn := revenue.Add(ownerIn)
+
+	// Cash outflows
+	opex, _, err := s.expenseDomain.ExpenseService.ExpenseTotals(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	// Inventory purchases not tracked explicitly; set to zero until purchase orders are modeled
+	inventoryPurchases := decimal.Zero
+	// Fixed asset purchases in range
+	assetValue, _, err := s.assetDomain.AssetService.AssetTotals(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	ownerDraws, err := s.ownerDomain.OwnerDrawService.SumOwnerDraws(ctx, storeID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	businessOperations := inventoryPurchases.Add(opex)
+	totalOut := businessOperations.Add(assetValue).Add(ownerDraws)
+
+	// Net cash flow in period
+	net := totalIn.Sub(totalOut)
+
+	// Cash at end approximated using financial position as of 'to'
+	// Use same approximation as FinancialPosition cashOnHand
+	endFP, err := s.GenerateFinancialPositionReport(ctx, storeID, time.Time{}, to)
+	if err != nil {
+		return nil, err
+	}
+	cashEnd := endFP.CashOnHand
+
+	// Cash at start = cashEnd - net
+	cashStart := cashEnd.Sub(net)
+
+	cs := &CashFlowStatement{
+		StoreID:                storeID,
+		From:                   from,
+		To:                     to,
+		CashAtStart:            cashStart,
+		CashAtEnd:              cashEnd,
+		CashFromCustomers:      revenue,
+		CashFromOwner:          ownerIn,
+		TotalCashIn:            totalIn,
+		InventoryPurchases:     inventoryPurchases,
+		OperatingExpenses:      opex,
+		TotalBusinessOperation: businessOperations,
+		BusinessInvestments:    assetValue,
+		OwnerDraws:             ownerDraws,
+		TotalCashOut:           totalOut,
+		NetCashFlow:            net,
+	}
+	return cs, nil
+}
+
+func (s *analyticsService) sumEquityMovements(ctx context.Context, storeID string, from, to time.Time) (investment decimal.Decimal, draws decimal.Decimal, err error) {
+	inv, e1 := s.ownerDomain.InvestmentService.SumInvestments(ctx, storeID, from, to)
+	if e1 != nil {
+		return decimal.Zero, decimal.Zero, e1
+	}
+	dr, e2 := s.ownerDomain.OwnerDrawService.SumOwnerDraws(ctx, storeID, from, to)
+	if e2 != nil {
+		return decimal.Zero, decimal.Zero, e2
+	}
+	return inv, dr, nil
 }

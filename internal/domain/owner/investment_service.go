@@ -2,6 +2,7 @@ package owner
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
@@ -106,4 +107,10 @@ func (s *InvestmentService) CalculateTotalInvestedAmountByOwner(ctx context.Cont
 		return decimal.Zero, err
 	}
 	return total, nil
+}
+
+// SumInvestments returns the total amount of investments in the given date range.
+// When from or to is zero, it behaves as an open-ended bound (all-time if both are zero).
+func (s *InvestmentService) SumInvestments(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
+	return s.investmentRepo.sumAmount(ctx, s.investmentRepo.scopeStoreID(storeID), s.investmentRepo.scopeCreatedAt(from, to))
 }

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
@@ -359,20 +360,20 @@ func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []stri
 // ---- Analytics wrappers ----
 
 // InventoryTotals returns aggregate inventory metrics for the store.
-func (s *InventoryService) InventoryTotals(ctx context.Context, storeID string) (totalValue decimal.Decimal, totalUnits int64, lowStock int64, outOfStock int64, err error) {
-	totalValue, err = s.variants.sumInventoryValue(ctx, s.variants.scopeStoreID(storeID))
+func (s *InventoryService) InventoryTotals(ctx context.Context, storeID string, from, to time.Time) (totalValue decimal.Decimal, totalUnits int64, lowStock int64, outOfStock int64, err error) {
+	totalValue, err = s.variants.sumInventoryValue(ctx, s.variants.scopeStoreID(storeID), s.variants.scopeCreatedAt(from, to))
 	if err != nil {
 		return
 	}
-	totalUnits, err = s.variants.sumStockQuantity(ctx, s.variants.scopeStoreID(storeID))
+	totalUnits, err = s.variants.sumStockQuantity(ctx, s.variants.scopeStoreID(storeID), s.variants.scopeCreatedAt(from, to))
 	if err != nil {
 		return
 	}
-	lowStock, err = s.variants.countLowStock(ctx, s.variants.scopeStoreID(storeID))
+	lowStock, err = s.variants.countLowStock(ctx, s.variants.scopeStoreID(storeID), s.variants.scopeCreatedAt(from, to))
 	if err != nil {
 		return
 	}
-	outOfStock, err = s.variants.countOutOfStock(ctx, s.variants.scopeStoreID(storeID))
+	outOfStock, err = s.variants.countOutOfStock(ctx, s.variants.scopeStoreID(storeID), s.variants.scopeCreatedAt(from, to))
 	if err != nil {
 		return
 	}

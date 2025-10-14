@@ -2,6 +2,7 @@ package owner
 
 import (
 	"context"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
@@ -90,4 +91,10 @@ func (s *OwnerDrawService) SumTotalOwnerDraws(ctx context.Context, storeID strin
 
 func (s *OwnerDrawService) SumTotalOwnerDrawsByOwner(ctx context.Context, storeID, ownerID string) (decimal.Decimal, error) {
 	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeOwnerID(ownerID))
+}
+
+// SumOwnerDraws returns the total amount of owner draws in the given date range.
+// When from or to is zero, it behaves as an open-ended bound (all-time if both are zero).
+func (s *OwnerDrawService) SumOwnerDraws(ctx context.Context, storeID string, from, to time.Time) (decimal.Decimal, error) {
+	return s.ownerDrawRepo.sumAmount(ctx, s.ownerDrawRepo.scopeStoreID(storeID), s.ownerDrawRepo.scopeCreatedAt(from, to))
 }
