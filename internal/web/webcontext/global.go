@@ -3,13 +3,10 @@ package webcontext
 import (
 	"context"
 
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/spf13/viper"
 )
-
-type ContextKey struct {
-	Name string
-}
 
 func GetAppName(ctx context.Context) string {
 	return GetValFromConfig[string](ctx, "app.name")
@@ -36,7 +33,7 @@ func GetValFromConfig[T any](ctx context.Context, key string) T {
 	return val
 }
 
-func GetVal[T any](ctx context.Context, key ContextKey) T {
+func GetVal[T any](ctx context.Context, key types.ContextKey) T {
 	val, ok := ctx.Value(key).(T)
 	if !ok {
 		utils.Log.FromContext(ctx).Warn("failed to get value from context", "key", key.Name)

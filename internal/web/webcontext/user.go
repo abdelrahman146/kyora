@@ -4,10 +4,11 @@ import (
 	"context"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/types"
 )
 
 var (
-	UserKey = ContextKey{"user"}
+	UserKey = types.ContextKey{Name: "user"}
 )
 
 func SetupUserContext(ctx context.Context, user *account.User) context.Context {

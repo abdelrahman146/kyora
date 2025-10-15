@@ -1,9 +1,11 @@
 package middleware
 
-const (
+import "github.com/abdelrahman146/kyora/internal/types"
+
+var (
 	ClaimsKey     = "claims"
 	UserKey       = "user"
 	loginPath     = "/login"
-	StoreKey      = "store"
-	StoresListKey = "stores_list"
+	StoreKey      = types.ContextKey{Name: "store"}
+	StoresListKey = types.ContextKey{Name: "stores_list"}
 )

@@ -12,17 +12,152 @@ script HtmxHandle400Swap() {
 	});
 }
 
-script InitAlpine() {
+script InitTheme() {
 	document.addEventListener('alpine:init', () => {
-		Alpine.store('flash', {
-			messages: [],
-			add(message, type = 'info') {
-				this.messages.push({ message, type });
-				setTimeout(() => {
-					this.messages.shift();
-				}, 5000);
+		// ---- Theme Store (daisyUI) ----
+		// Modes: 'system' | 'light' | 'dracula'
+		const THEME_KEY = 'kyora.theme';
+		const prefersDark = window.matchMedia('(prefers-color-scheme: dracula)');
+
+		function applyTheme(mode) {
+			const resolved = mode === 'system' ? (prefersDark.matches ? 'dracula' : 'emerald') : mode;
+			document.documentElement.setAttribute('data-theme', resolved);
+			// Also set color-scheme to help native UI (scrollbars, etc.)
+			document.documentElement.style.colorScheme = resolved;
+			return resolved;
+		}
+
+		function loadTheme() {
+			const saved = localStorage.getItem(THEME_KEY);
+			return saved === 'emerald' || saved === 'dracula' || saved === 'system' ? saved : 'system';
+		}
+		const themeStore = {
+			mode: 'system',
+			resolved: 'emerald',
+			set(mode) {
+				this.mode = mode;
+				localStorage.setItem(THEME_KEY, mode);
+				this.resolved = applyTheme(mode);
+				document.dispatchEvent(new CustomEvent('theme:changed', { detail: { mode, resolved: this.resolved } }));
+			},
+			toggle() {
+				const next = this.mode === 'emerald' ? 'dracula' : (this.mode === 'dracula' ? 'system' : 'emerald');
+				this.set(next);
+			},
+			init() {
+				this.mode = loadTheme();
+				this.resolved = applyTheme(this.mode);
+				// React to OS scheme changes when in system mode
+				prefersDark.addEventListener('change', () => {
+					if (this.mode === 'system') {
+						this.resolved = applyTheme('system');
+					}
+				});
+				// Hook any element with data-theme-toggle to toggle on click
+				document.addEventListener('click', (e) => {
+					const t = e.target.closest('[data-theme-toggle]');
+					if (t) this.toggle();
+				});
 			}
+		};
+
+		// Expose as Alpine Store
+		Alpine.store('theme', themeStore);
+		themeStore.init();
+		window.Kyora.theme = themeStore;
+	});
+}
+
+script InitToastMessages() {
+	document.addEventListener('alpine:init', () => {
+		// ---- Flash Toasts Store ----
+		// Usage: Alpine.store('flash').push('success', 'Saved');
+		const FLASH_KEY_QUEUE = 'kyora.flash.queue'; // session-scoped queue across redirects
+		function loadQueuedFlashes() {
+			try {
+				const raw = sessionStorage.getItem(FLASH_KEY_QUEUE);
+				if (!raw) return [];
+				const arr = JSON.parse(raw);
+				sessionStorage.removeItem(FLASH_KEY_QUEUE);
+				return Array.isArray(arr) ? arr : [];
+			} catch { return []; }
+		}
+		function queueFlashesAcrossRedirect(messages) {
+			try {
+				const existing = JSON.parse(sessionStorage.getItem(FLASH_KEY_QUEUE) || '[]');
+				const next = existing.concat(messages);
+				sessionStorage.setItem(FLASH_KEY_QUEUE, JSON.stringify(next));
+			} catch { /* no-op */ }
+		}
+
+		const flashStore = {
+			messages: [], // { type: 'success'|'error'|'info', text: string, timeoutMs?: number }
+			push(type, text, timeoutMs) {
+				const idx = this.messages.push({ type, text, timeoutMs }) - 1;
+				if (timeoutMs && timeoutMs > 0) {
+					setTimeout(() => this.dismiss(idx), timeoutMs);
+				}
+			},
+			addMany(items) {
+				if (!Array.isArray(items)) return;
+				items.forEach(m => this.push(m.type || 'info', m.text || String(m), m.timeoutMs));
+			},
+			dismiss(index) {
+				this.messages.splice(index, 1);
+			},
+			clear() {
+				this.messages = [];
+			},
+			queueAcrossRedirect(items) {
+				queueFlashesAcrossRedirect(items);
+			},
+			init() {
+				const boot = loadQueuedFlashes();
+				if (boot.length) this.addMany(boot);
+			}
+		};
+		Alpine.store('flash', flashStore);
+		flashStore.init();
+
+		// Bridge HTMX -> Alpine flash store via HX-Trigger events
+		// Server can send header: HX-Trigger: {"flash": {"messages": [{"type":"success","text":"Saved"}]}}
+		document.addEventListener('flash', (evt) => {
+			const detail = evt.detail || {};
+			const msgs = Array.isArray(detail) ? detail : (detail.messages || []);
+			flashStore.addMany(msgs);
 		});
+
+		// Generic HTMX error hooks => toast
+		document.body.addEventListener('htmx:responseError', (evt) => {
+			const xhr = evt.detail && evt.detail.xhr;
+			const status = xhr ? xhr.status : 0;
+			let text = 'Request failed';
+			try {
+				// Try to read server-provided text
+				const ct = xhr.getResponseHeader('Content-Type') || '';
+				if (ct.includes('application/json')) {
+					const j = JSON.parse(xhr.responseText);
+					text = j.detail || j.message || text;
+				} else {
+					text = xhr.responseText || text;
+				}
+			} catch {}
+			flashStore.push('error', `${status >= 500 ? 'Server error' : 'Request error'}: ${text}`, 6000);
+		});
+	});
+}
+
+script InitStoreDetection() {
+	document.addEventListener('alpine:init', () => {
+		window.Kyora = window.Kyora || {};
+		// ---- Store ID exposure ----
+		function detectStoreId() {
+			// Prefer meta tag or data attribute if provided by a page
+			const meta = document.querySelector('meta[name="store-id"]');
+			if (meta && meta.content) return meta.content;
+			return '';
+		}
+		window.Kyora.storeId = detectStoreId();
 	});
 }
 
@@ -41,6 +176,10 @@ templ Root() {
 			<title>{ webcontext.ComposeFullTitle(webcontext.GetPageTitle(ctx)) }</title>
 			<meta name="description" content={ webcontext.GetPageDescription(ctx) }/>
 			<meta name="keywords" content={ webcontext.GetPageKeywords(ctx) }/>
+			if store, ok := webcontext.GetStore(ctx); ok && store != nil {
+				<meta name="store-name" content={ store.Name }/>
+				<meta name="store-id" content={ store.ID }/>
+			}
 			<!-- [Favicon] icon -->
 			<link rel="icon" href="/static/images/favicon.svg" type="image/x-icon"/>
 			<!-- Base CSS (Tailwind compiled) -->
@@ -55,12 +194,15 @@ templ Root() {
 			<script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
 			<!-- HTMX -->
 			<script src="https://cdn.jsdelivr.net/npm/htmx.org@2.0.7/dist/htmx.min.js"></script>
-			<!-- Optional: Chart.js, Moment.js, Litepicker for analytics and date pickers -->
+			<!-- Chart.js -->
 			<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.3/dist/chart.umd.min.js"></script>
 		</head>
 		<body class="bg-base-200" x-data>
 			{ children... }
 			@templ.JSFuncCall("feather.replace")
+			@InitTheme()
+			@InitStoreDetection()
+			@InitToastMessages()
 			@HtmxHandle400Swap()
 			@components.FlashToasts()
 		</body>

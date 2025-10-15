@@ -3,11 +3,12 @@ package webcontext
 import (
 	"context"
 
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/spf13/viper"
 )
 
 var (
-	PageInfoKey = ContextKey{"page_info"}
+	PageInfoKey = types.ContextKey{Name: "page_info"}
 )
 
 type PageInfo struct {

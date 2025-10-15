@@ -1,6 +1,7 @@
 package middleware
 
 import (
+	"context"
 	"fmt"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -44,6 +45,8 @@ func StoreRequired(storeService *store.StoreService) gin.HandlerFunc {
 		}
 		c.Set(StoresListKey, userOrgStores)
 		c.Set(StoreKey, storeFound)
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), StoresListKey, userOrgStores))
+		c.Request = c.Request.WithContext(context.WithValue(c.Request.Context(), StoreKey, storeFound))
 		c.Next()
 	}
 }
