@@ -12,6 +12,20 @@ script HtmxHandle400Swap() {
 	});
 }
 
+script InitAlpine() {
+	document.addEventListener('alpine:init', () => {
+		Alpine.store('flash', {
+			messages: [],
+			add(message, type = 'info') {
+				this.messages.push({ message, type });
+				setTimeout(() => {
+					this.messages.shift();
+				}, 5000);
+			}
+		});
+	});
+}
+
 templ Root() {
 	<!DOCTYPE html>
 	<html
