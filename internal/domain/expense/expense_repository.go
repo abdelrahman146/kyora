@@ -95,24 +95,6 @@ func (r *expenseRepository) scopeOccurredOnRange(from, to time.Time) func(db *go
 	}
 }
 
-func (r *expenseRepository) scopeFilter(filter *ExpenseFilter) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if filter == nil {
-			return db
-		}
-		if len(filter.IDs) > 0 {
-			db = db.Where("id IN ?", filter.IDs)
-		}
-		if len(filter.Categories) > 0 {
-			db = db.Where("category IN ?", filter.Categories)
-		}
-		if len(filter.Types) > 0 {
-			db = db.Where("type IN ?", filter.Types)
-		}
-		return db
-	}
-}
-
 func (r *expenseRepository) createOne(ctx context.Context, expense *Expense, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(expense).Error
 }

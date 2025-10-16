@@ -3,38 +3,25 @@ package handlers
 import (
 	"fmt"
 
-	"github.com/abdelrahman146/kyora/internal/domain/customer"
-	"github.com/abdelrahman146/kyora/internal/domain/expense"
-	"github.com/abdelrahman146/kyora/internal/domain/inventory"
-	"github.com/abdelrahman146/kyora/internal/domain/order"
-	"github.com/abdelrahman146/kyora/internal/domain/owner"
+	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
-	"github.com/abdelrahman146/kyora/internal/domain/supplier"
+	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
 	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
+	"github.com/spf13/cast"
 )
 
 type analyticsHandler struct {
 	storeDomain     *store.StoreDomain
-	orderDomain     *order.OrderDomain
-	ownerDomain     *owner.OwnerDomain
-	inventoryDomain *inventory.InventoryDomain
-	expenseDomain   *expense.ExpenseDomain
-	customerDomain  *customer.CustomerDomain
-	supplierDomain  *supplier.SupplierDomain
+	analyticsDomain *analytics.AnalyticsDomain
 }
 
-func AddAnalyticsRoutes(c *gin.RouterGroup, storeDomain *store.StoreDomain, orderDomain *order.OrderDomain, ownerDomain *owner.OwnerDomain, inventoryDomain *inventory.InventoryDomain, expenseDomain *expense.ExpenseDomain, customerDomain *customer.CustomerDomain, supplierDomain *supplier.SupplierDomain) {
+func AddAnalyticsRoutes(c *gin.RouterGroup, storeDomain *store.StoreDomain, analyticsDomain *analytics.AnalyticsDomain) {
 	h := &analyticsHandler{
 		storeDomain:     storeDomain,
-		orderDomain:     orderDomain,
-		ownerDomain:     ownerDomain,
-		inventoryDomain: inventoryDomain,
-		expenseDomain:   expenseDomain,
-		customerDomain:  customerDomain,
-		supplierDomain:  supplierDomain,
+		analyticsDomain: analyticsDomain,
 	}
 	h.registerRoutes(c)
 }
@@ -42,11 +29,10 @@ func AddAnalyticsRoutes(c *gin.RouterGroup, storeDomain *store.StoreDomain, orde
 func (h *analyticsHandler) registerRoutes(c *gin.RouterGroup) {
 	r := c.Group("/analytics")
 	{
-		r.GET("/inventory", h.getInventoryReport)
 		r.GET("/sales", h.getSalesReport)
+		r.GET("/inventory", h.getInventoryReport)
 		r.GET("/customers", h.getCustomersReport)
-		r.GET("/expenses", h.getExpensesReport)
-		r.GET("/capital", h.getCapitalReport)
+		r.GET("/assets", h.getAssetsReport)
 	}
 }
 
@@ -66,11 +52,17 @@ func (h *analyticsHandler) getSalesReport(c *gin.Context) {
 			{Label: "Sales Report"},
 		},
 	}
-	_ = webutils.NewFromDate(c.Request.Context(), c.Query("from"))
-	_ = webutils.NewToDate(c.Request.Context(), c.Query("to"))
+	from := cast.ToTime(c.Query("from"))
+	to := cast.ToTime(c.Query("to"))
+	_, err := h.analyticsDomain.Service.GenerateSalesAnalytics(c.Request.Context(), storeId, from, to)
+	if err != nil {
+		utils.Log.FromContext(c.Request.Context()).Error("failed to generate sales report", "error", err, "storeId", storeId)
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load sales report"))
+		return
+	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.SalesReport())
+	webutils.Render(c, 200, pages.NotImplemented("Sales Report"))
 }
 
 func (h *analyticsHandler) getCustomersReport(c *gin.Context) {
@@ -89,9 +81,17 @@ func (h *analyticsHandler) getCustomersReport(c *gin.Context) {
 			{Label: "Customers Report"},
 		},
 	}
+	from := cast.ToTime(c.Query("from"))
+	to := cast.ToTime(c.Query("to"))
+	_, err := h.analyticsDomain.Service.GenerateCustomerAnalytics(c.Request.Context(), storeId, from, to)
+	if err != nil {
+		utils.Log.FromContext(c.Request.Context()).Error("failed to generate customers report", "error", err, "storeId", storeId)
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load customers report"))
+		return
+	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.CustomersReport())
+	webutils.Render(c, 200, pages.NotImplemented("Customers Report"))
 }
 
 func (h *analyticsHandler) getExpensesReport(c *gin.Context) {
@@ -110,9 +110,17 @@ func (h *analyticsHandler) getExpensesReport(c *gin.Context) {
 			{Label: "Expenses Report"},
 		},
 	}
+	from := cast.ToTime(c.Query("from"))
+	to := cast.ToTime(c.Query("to"))
+	_, err := h.analyticsDomain.Service.GenerateExpenseAnalytics(c.Request.Context(), storeId, from, to)
+	if err != nil {
+		utils.Log.FromContext(c.Request.Context()).Error("failed to generate expenses report", "error", err, "storeId", storeId)
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load expenses report"))
+		return
+	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.ExpensesReport())
+	webutils.Render(c, 200, pages.NotImplemented("Expenses Report"))
 }
 
 func (h *analyticsHandler) getInventoryReport(c *gin.Context) {
@@ -131,28 +139,44 @@ func (h *analyticsHandler) getInventoryReport(c *gin.Context) {
 			{Label: "Inventory Report"},
 		},
 	}
+	from := cast.ToTime(c.Query("from"))
+	to := cast.ToTime(c.Query("to"))
+	_, err := h.analyticsDomain.Service.GenerateInventoryAnalytics(c.Request.Context(), storeId, from, to)
+	if err != nil {
+		utils.Log.FromContext(c.Request.Context()).Error("failed to generate inventory report", "error", err, "storeId", storeId)
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load inventory report"))
+		return
+	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	c.String(200, "Not implemented")
+	webutils.Render(c, 200, pages.NotImplemented("Inventory Report"))
 }
 
-func (h *analyticsHandler) getCapitalReport(c *gin.Context) {
+func (h *analyticsHandler) getAssetsReport(c *gin.Context) {
 	path := c.Request.URL.RequestURI()
 	storeId := c.Param("storeId")
 	info := webcontext.PageInfo{
 		Locale:      "en",
 		Dir:         "ltr",
-		Title:       "Capital Report",
-		Description: "View the capital report",
-		Keywords:    "capital report, Kyora",
+		Title:       "Assets Report",
+		Description: "View the assets report",
+		Keywords:    "assets report, Kyora",
 		Path:        path,
 		Breadcrumbs: []webcontext.Breadcrumb{
 			{Href: fmt.Sprintf("/%s/dashboard", storeId), Label: "Dashboard"},
 			{Href: fmt.Sprintf("/%s/analytics", storeId), Label: "Analytics"},
-			{Label: "Capital Report"},
+			{Label: "Assets Report"},
 		},
+	}
+	from := cast.ToTime(c.Query("from"))
+	to := cast.ToTime(c.Query("to"))
+	_, err := h.analyticsDomain.Service.GenerateAssetAnalytics(c.Request.Context(), storeId, from, to)
+	if err != nil {
+		utils.Log.FromContext(c.Request.Context()).Error("failed to generate assets report", "error", err, "storeId", storeId)
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load assets report"))
+		return
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	c.String(200, "Not implemented")
+	webutils.Render(c, 200, pages.NotImplemented("Assets Report"))
 }

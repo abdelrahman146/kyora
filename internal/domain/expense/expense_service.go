@@ -35,10 +35,9 @@ func (s *ExpenseService) GetExpenseByID(ctx context.Context, storeID, id string)
 	return exp, nil
 }
 
-func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, filter *ExpenseFilter, page, pageSize int, orderBy string, ascending bool) ([]*Expense, error) {
+func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Expense, error) {
 	exps, err := s.expenseRepo.list(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
-		s.expenseRepo.scopeFilter(filter),
 		db.WithPagination(page, pageSize),
 		db.WithSorting(orderBy, ascending),
 	)
@@ -48,10 +47,9 @@ func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, filte
 	return exps, nil
 }
 
-func (s *ExpenseService) CountExpenses(ctx context.Context, storeID string, filter *ExpenseFilter) (int64, error) {
+func (s *ExpenseService) CountExpenses(ctx context.Context, storeID string) (int64, error) {
 	count, err := s.expenseRepo.count(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
-		s.expenseRepo.scopeFilter(filter),
 	)
 	if err != nil {
 		return 0, err
@@ -128,16 +126,6 @@ func (s *ExpenseService) DeleteExpense(ctx context.Context, storeID, id string) 
 	return nil
 }
 
-func (s *ExpenseService) DeleteExpenses(ctx context.Context, storeID string, filter *ExpenseFilter) error {
-	if err := s.storeService.ValidateStoreID(ctx, storeID); err != nil {
-		return err
-	}
-	if err := s.expenseRepo.deleteMany(ctx, s.expenseRepo.scopeStoreID(storeID), s.expenseRepo.scopeFilter(filter)); err != nil {
-		return err
-	}
-	return nil
-}
-
 func (s *ExpenseService) GetRecurringExpenseByID(ctx context.Context, storeID, id string) (*RecurringExpense, error) {
 	exp, err := s.recurringRepo.findOne(ctx, s.recurringRepo.scopeStoreID(storeID), s.recurringRepo.scopeID(id))
 	if err != nil {
@@ -146,10 +134,9 @@ func (s *ExpenseService) GetRecurringExpenseByID(ctx context.Context, storeID, i
 	return exp, nil
 }
 
-func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID string, filter *RecurringExpenseFilter, page, pageSize int, orderBy string, ascending bool) ([]*RecurringExpense, error) {
+func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*RecurringExpense, error) {
 	exps, err := s.recurringRepo.list(ctx,
 		s.recurringRepo.scopeStoreID(storeID),
-		s.recurringRepo.scopeFilter(filter),
 		db.WithPagination(page, pageSize),
 		db.WithSorting(orderBy, ascending),
 	)
@@ -159,10 +146,9 @@ func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID stri
 	return exps, nil
 }
 
-func (s *ExpenseService) CountRecurringExpenses(ctx context.Context, storeID string, filter *RecurringExpenseFilter) (int64, error) {
+func (s *ExpenseService) CountRecurringExpenses(ctx context.Context, storeID string) (int64, error) {
 	count, err := s.recurringRepo.count(ctx,
 		s.recurringRepo.scopeStoreID(storeID),
-		s.recurringRepo.scopeFilter(filter),
 	)
 	if err != nil {
 		return 0, err

@@ -2,6 +2,7 @@ package webrouter
 
 import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/asset"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/expense"
@@ -28,6 +29,7 @@ func RegisterRoutes(r *gin.Engine,
 	assetDomain *asset.AssetDomain,
 	expenseDomain *expense.ExpenseDomain,
 	supplierDomain *supplier.SupplierDomain,
+	analyticsDomain *analytics.AnalyticsDomain,
 ) {
 	r.Static("/static", "./public")
 	// Health check endpoint
@@ -46,13 +48,13 @@ func RegisterRoutes(r *gin.Engine,
 	rs := r.Group("/:storeId", middleware.AuthRequired, middleware.UserRequired(accountDomain.AuthService), middleware.StoreRequired(storeDomain.StoreService))
 	{
 		handlers.AddStoreRoutes(rs, storeDomain)
-		handlers.AddDashboardRoutes(rs, storeDomain, orderDomain, ownerDomain, expenseDomain, customerDomain, supplierDomain)
+		handlers.AddDashboardRoutes(rs, storeDomain, analyticsDomain)
 		handlers.AddInventoryRoutes(rs, inventoryDomain)
 		handlers.AddOrderRoutes(rs, orderDomain)
 		handlers.AddSupplierRoutes(rs, supplierDomain)
 		handlers.AddCustomerRoutes(rs, customerDomain)
 		handlers.AddExpenseRoutes(rs, expenseDomain)
-		handlers.AddAnalyticsRoutes(rs, storeDomain, orderDomain, ownerDomain, inventoryDomain, expenseDomain, customerDomain, supplierDomain)
+		handlers.AddAnalyticsRoutes(rs, storeDomain, analyticsDomain)
 
 	}
 }

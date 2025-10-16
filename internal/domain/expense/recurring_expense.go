@@ -74,9 +74,3 @@ type UpdateRecurringExpenseRequest struct {
 	Category           ExpenseCategory           `form:"category" json:"category" binding:"omitempty"`
 	Note               string                    `form:"note" json:"note" binding:"omitempty"`
 }
-
-type RecurringExpenseFilter struct {
-	IDs         []string `form:"ids" json:"ids" binding:"omitempty,dive,required"`
-	Categories  []string `form:"categories" json:"categories" binding:"omitempty,dive,required"`
-	Frequencies []string `form:"frequencies" json:"frequencies" binding:"omitempty,dive,required,oneof=daily weekly monthly yearly"`
-}

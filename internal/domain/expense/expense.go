@@ -86,9 +86,3 @@ type UpdateExpenseRequest struct {
 	Note               string          `form:"note" json:"note" binding:"omitempty"`
 	OccurredOn         *time.Time      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
 }
-
-type ExpenseFilter struct {
-	IDs        []string          `form:"ids" json:"ids" binding:"omitempty,dive,required"`
-	Categories []ExpenseCategory `form:"categories" json:"categories" binding:"omitempty"`
-	Types      []ExpenseType     `form:"types" json:"types" binding:"omitempty"`
-}

@@ -1,8 +1,6 @@
 package inventory
 
 import (
-	"time"
-
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/shopspring/decimal"
@@ -56,14 +54,4 @@ type UpdateVariantRequest struct {
 	Currency      string          `form:"currency" json:"currency" binding:"omitempty,len=3"`
 	StockQuantity int             `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
 	StockAlert    int             `form:"stockAlert" json:"stockAlert" binding:"omitempty,gte=0"`
-}
-
-type VariantFilter struct {
-	IDs         []string  `form:"ids" json:"ids" binding:"omitempty,dive,required"`
-	SKUs        []string  `form:"skus" json:"skus" binding:"omitempty,dive,required"`
-	ProductIDs  []string  `form:"productIds" json:"productIds" binding:"omitempty,dive,required"`
-	ProductTags []string  `form:"productTags" json:"productTags" binding:"omitempty,dive,required"`
-	SearchQuery string    `form:"searchQuery" json:"searchQuery" binding:"omitempty"`
-	From        time.Time `form:"from" json:"from" binding:"omitempty"`
-	To          time.Time `form:"to" json:"to" binding:"omitempty"`
 }

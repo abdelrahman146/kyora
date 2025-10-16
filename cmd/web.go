@@ -8,6 +8,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/asset"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/expense"
@@ -80,6 +81,16 @@ func runWeb(cmd *cobra.Command, args []string) {
 	orderDomain := order.NewDomain(postgres, atomicProcess, cache, storeDomain)
 	ownerDomain := owner.NewDomain(postgres, atomicProcess, cache, storeDomain)
 	supplierDomain := supplier.NewDomain(postgres, atomicProcess, cache, storeDomain)
+	analyticsDomain := analytics.NewDomain(analytics.DomainDeps{
+		Store:     storeDomain,
+		Order:     orderDomain,
+		Asset:     assetDomain,
+		Customer:  customerDomain,
+		Expense:   expenseDomain,
+		Inventory: inventoryDomain,
+		Owner:     ownerDomain,
+		Supplier:  supplierDomain,
+	})
 
 	router := webrouter.NewRouter()
 	webrouter.RegisterRoutes(router,
@@ -92,6 +103,7 @@ func runWeb(cmd *cobra.Command, args []string) {
 		assetDomain,
 		expenseDomain,
 		supplierDomain,
+		analyticsDomain,
 	)
 
 	err = router.Run(viper.GetString("server.port"))

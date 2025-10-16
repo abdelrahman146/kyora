@@ -48,8 +48,8 @@ func (s *CustomerService) CreateCustomer(ctx context.Context, storeID string, cu
 	return newCustomer, nil
 }
 
-func (s *CustomerService) GetCustomerByID(ctx context.Context, id string) (*Customer, error) {
-	return s.customers.findByID(ctx, id, db.WithPreload(AddressStruct), db.WithPreload(CustomerNoteStruct))
+func (s *CustomerService) GetCustomerByID(ctx context.Context, storeId string, id string) (*Customer, error) {
+	return s.customers.findOne(ctx, s.customers.scopeID(id), s.customers.scopeStoreID(storeId), db.WithPreload(AddressStruct), db.WithPreload(CustomerNoteStruct))
 }
 
 func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Customer, error) {

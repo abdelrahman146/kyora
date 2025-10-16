@@ -1,8 +1,6 @@
 package handlers
 
 import (
-	"net/http"
-
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/web/middleware"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
@@ -65,9 +63,9 @@ func (h *accountHandler) manage(c *gin.Context) {
 	}
 	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
 	c.Request = c.Request.WithContext(ctx)
-	webutils.Redirect(c, "/dashboard")
+	webutils.Render(c, 200, pages.NotImplemented("Accounts Management"))
 }
 
 func (h *accountHandler) invite(c *gin.Context) {
-	c.String(http.StatusOK, "Not implemented")
+	webutils.Render(c, 200, pages.NotImplemented("Invite User"))
 }

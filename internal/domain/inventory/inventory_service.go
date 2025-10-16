@@ -147,64 +147,64 @@ func (s *InventoryService) createVariantWithRetry(ctx context.Context, storeCode
 	return errors.New("max attempts reached")
 }
 
-func (s *InventoryService) GetProductByID(ctx context.Context, productID string) (*Product, error) {
-	product, err := s.products.findByID(ctx, productID, db.WithPreload(VariantStruct))
+func (s *InventoryService) GetProductByID(ctx context.Context, storeID string, productID string) (*Product, error) {
+	product, err := s.products.findOne(ctx, db.WithPreload(VariantStruct), s.products.scopeStoreID(storeID), s.products.scopeID(productID))
 	if err != nil {
 		return nil, err
 	}
 	return product, nil
 }
 
-func (s *InventoryService) GetVariantByID(ctx context.Context, variantID string) (*Variant, error) {
-	variant, err := s.variants.findByID(ctx, variantID, db.WithPreload(ProductStruct))
+func (s *InventoryService) GetVariantByID(ctx context.Context, storeID string, variantID string) (*Variant, error) {
+	variant, err := s.variants.findOne(ctx, db.WithPreload(ProductStruct), s.variants.scopeStoreID(storeID), s.variants.scopeID(variantID))
 	if err != nil {
 		return nil, err
 	}
 	return variant, nil
 }
 
-func (s *InventoryService) GetVariantBySKU(ctx context.Context, sku string) (*Variant, error) {
-	variant, err := s.variants.findOne(ctx, s.variants.scopeSKU(sku), db.WithPreload(ProductStruct))
+func (s *InventoryService) GetVariantBySKU(ctx context.Context, storeID string, sku string) (*Variant, error) {
+	variant, err := s.variants.findOne(ctx, s.variants.scopeSKU(sku), db.WithPreload(ProductStruct), s.variants.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
 	return variant, nil
 }
 
-func (s *InventoryService) ListVariantsByProductID(ctx context.Context, productID string) ([]*Variant, error) {
-	variants, err := s.variants.list(ctx, s.variants.scopeProductID(productID))
+func (s *InventoryService) ListVariantsByProductID(ctx context.Context, storeID string, productID string) ([]*Variant, error) {
+	variants, err := s.variants.list(ctx, s.variants.scopeProductID(productID), s.variants.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
 	return variants, nil
 }
 
-func (s *InventoryService) ListVariants(ctx context.Context, filter *VariantFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Variant, error) {
-	variants, err := s.variants.list(ctx, s.variants.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending))
+func (s *InventoryService) ListVariants(ctx context.Context, storeID string, page int, pageSize int, orderBy string, ascending bool) ([]*Variant, error) {
+	variants, err := s.variants.list(ctx, db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending), s.variants.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
 	return variants, nil
 }
 
-func (s *InventoryService) CountVariants(ctx context.Context, filter *VariantFilter) (int64, error) {
-	count, err := s.variants.count(ctx, s.variants.scopeFilter(filter))
+func (s *InventoryService) CountVariants(ctx context.Context, storeID string) (int64, error) {
+	count, err := s.variants.count(ctx, s.variants.scopeStoreID(storeID))
 	if err != nil {
 		return 0, err
 	}
 	return count, nil
 }
 
-func (s *InventoryService) ListProducts(ctx context.Context, filter *ProductFilter, page int, pageSize int, orderBy string, ascending bool) ([]*Product, error) {
-	products, err := s.products.list(ctx, s.products.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
+func (s *InventoryService) ListProducts(ctx context.Context, storeID string, page int, pageSize int, orderBy string, ascending bool) ([]*Product, error) {
+	products, err := s.products.list(ctx, s.products.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
 	if err != nil {
 		return nil, err
 	}
 	return products, nil
 }
 
-func (s *InventoryService) CountProducts(ctx context.Context, filter *ProductFilter) (int64, error) {
-	count, err := s.products.count(ctx, s.products.scopeFilter(filter))
+func (s *InventoryService) CountProducts(ctx context.Context, storeID string) (int64, error) {
+	count, err := s.products.count(ctx, s.products.scopeStoreID(storeID))
 	if err != nil {
 		return 0, err
 	}
@@ -303,9 +303,9 @@ func updateVariantFields(variant *Variant, productName string, updateReq *Update
 	}
 }
 
-func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) error {
+func (s *InventoryService) DeleteVariant(ctx context.Context, storeID string, variantID string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		variant, err := s.variants.findByID(ctx, variantID)
+		variant, err := s.variants.findByID(ctx, variantID, db.WithPreload(ProductStruct), s.variants.scopeStoreID(storeID))
 		if err != nil {
 			return err
 		}
@@ -316,9 +316,9 @@ func (s *InventoryService) DeleteVariant(ctx context.Context, variantID string) 
 	})
 }
 
-func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, productID string) error {
+func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, storeID string, productID string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		variants, err := s.variants.list(ctx, s.variants.scopeProductID(productID))
+		variants, err := s.variants.list(ctx, s.variants.scopeProductID(productID), s.variants.scopeStoreID(storeID))
 		if err != nil {
 			return err
 		}
@@ -331,25 +331,25 @@ func (s *InventoryService) DeleteVariantsByProductID(ctx context.Context, produc
 	})
 }
 
-func (s *InventoryService) DeleteProduct(ctx context.Context, productID string) error {
+func (s *InventoryService) DeleteProduct(ctx context.Context, storeID string, productID string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
-		if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
+		if err := s.DeleteVariantsByProductID(ctx, storeID, productID); err != nil {
 			return err
 		}
-		if err := s.products.deleteOne(ctx, s.products.scopeID(productID)); err != nil {
+		if err := s.products.deleteOne(ctx, s.products.scopeID(productID), s.products.scopeStoreID(storeID)); err != nil {
 			return err
 		}
 		return nil
 	})
 }
 
-func (s *InventoryService) DeleteProducts(ctx context.Context, productIDs []string) error {
+func (s *InventoryService) DeleteProducts(ctx context.Context, storeID string, productIDs []string) error {
 	return s.atomicProcess.Exec(ctx, func(ctx context.Context) error {
 		for _, productID := range productIDs {
-			if err := s.DeleteVariantsByProductID(ctx, productID); err != nil {
+			if err := s.DeleteVariantsByProductID(ctx, storeID, productID); err != nil {
 				return err
 			}
-			if err := s.products.deleteOne(ctx, s.products.scopeID(productID)); err != nil {
+			if err := s.products.deleteOne(ctx, s.products.scopeID(productID), s.products.scopeStoreID(storeID)); err != nil {
 				return err
 			}
 		}

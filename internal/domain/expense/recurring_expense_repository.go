@@ -61,24 +61,6 @@ func (r *recurringExpenseRepository) scopeFrequencies(frequencies []RecurringExp
 	}
 }
 
-func (r *recurringExpenseRepository) scopeFilter(filter *RecurringExpenseFilter) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if filter == nil {
-			return db
-		}
-		if len(filter.IDs) > 0 {
-			db = db.Where("id IN ?", filter.IDs)
-		}
-		if len(filter.Categories) > 0 {
-			db = db.Where("category IN ?", filter.Categories)
-		}
-		if len(filter.Frequencies) > 0 {
-			db = db.Where("frequency IN ?", filter.Frequencies)
-		}
-		return db
-	}
-}
-
 func (r *recurringExpenseRepository) scopeStatus(status RecurringExpenseStatus) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB { return db.Where("status = ?", status) }
 }

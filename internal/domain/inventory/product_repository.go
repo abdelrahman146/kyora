@@ -64,27 +64,6 @@ func (r *productRepository) scopeTags(tags []string) func(db *gorm.DB) *gorm.DB 
 	}
 }
 
-func (r *productRepository) scopeFilter(filter *ProductFilter) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if filter == nil {
-			return db
-		}
-		if len(filter.IDs) > 0 {
-			db = db.Scopes(r.scopeIDs(filter.IDs))
-		}
-		if len(filter.Tags) > 0 {
-			db = db.Scopes(r.scopeTags(filter.Tags))
-		}
-		if filter.From.IsZero() && filter.To.IsZero() {
-			db = db.Scopes(r.scopeCreatedAt(filter.From, filter.To))
-		}
-		if filter.SearchQuery != "" {
-			db = db.Scopes(r.scopeSearchQuery(filter.SearchQuery))
-		}
-		return db
-	}
-}
-
 func (r *productRepository) scopeStoreID(storeID string) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("store_id = ?", storeID)

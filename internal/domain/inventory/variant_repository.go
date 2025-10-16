@@ -88,33 +88,6 @@ func (r *variantRepository) scopeSearchQuery(query string) func(db *gorm.DB) *go
 	}
 }
 
-func (r *variantRepository) scopeFilter(filter *VariantFilter) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if filter == nil {
-			return db
-		}
-		if len(filter.IDs) > 0 {
-			db = db.Where("id IN ?", filter.IDs)
-		}
-		if len(filter.SKUs) > 0 {
-			db = db.Where("sku IN ?", filter.SKUs)
-		}
-		if len(filter.ProductIDs) > 0 {
-			db = db.Where("product_id IN ?", filter.ProductIDs)
-		}
-		if !filter.From.IsZero() || !filter.To.IsZero() {
-			db = r.scopeCreatedAt(filter.From, filter.To)(db)
-		}
-		if len(filter.ProductTags) > 0 {
-			db = db.Joins("JOIN products ON products.id = variants.product_id").Where("products.tags && ?", filter.ProductTags)
-		}
-		if filter.SearchQuery != "" {
-			db = r.scopeSearchQuery(filter.SearchQuery)(db)
-		}
-		return db
-	}
-}
-
 func (r *variantRepository) createOne(ctx context.Context, variant *Variant, opts ...db.PostgresOptions) error {
 	return r.db.Conn(ctx, opts...).Create(variant).Error
 }

@@ -1,8 +1,6 @@
 package inventory
 
 import (
-	"time"
-
 	"github.com/abdelrahman146/kyora/internal/domain/store"
 	"github.com/abdelrahman146/kyora/internal/utils"
 	"github.com/lib/pq"
@@ -43,12 +41,4 @@ type UpdateProductRequest struct {
 	Name        string   `json:"name" binding:"omitempty"`
 	Description string   `json:"description" binding:"omitempty"`
 	Tags        []string `json:"tags" binding:"omitempty,dive,required"`
-}
-
-type ProductFilter struct {
-	IDs         []string  `form:"ids" json:"ids" binding:"omitempty,dive,required"`
-	Tags        []string  `form:"tags" json:"tags" binding:"omitempty,dive,required"`
-	SearchQuery string    `form:"searchQuery" json:"searchQuery" binding:"omitempty"`
-	From        time.Time `form:"from" json:"from" binding:"omitempty"`
-	To          time.Time `form:"to" json:"to" binding:"omitempty"`
 }

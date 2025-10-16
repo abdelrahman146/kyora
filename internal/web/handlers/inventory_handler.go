@@ -1,11 +1,8 @@
 package handlers
 
 import (
-	"fmt"
-
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/web/views/pages"
-	"github.com/abdelrahman146/kyora/internal/web/webcontext"
 	"github.com/abdelrahman146/kyora/internal/web/webutils"
 	"github.com/gin-gonic/gin"
 )
@@ -22,67 +19,73 @@ func AddInventoryRoutes(r *gin.RouterGroup, inventoryDomain *inventory.Inventory
 }
 
 func (h *inventoryHandler) registerRoutes(c *gin.RouterGroup) {
-	r := c.Group("/inventory")
+	r := c.Group("/inventory/products")
 	{
 		r.GET("/", h.index)
-		r.GET("/new", h.new)
-		r.GET("/:id/edit", h.edit)
+		r.POST("/", h.create)
+		r.GET("/:id", h.show)
+		r.PUT("/:id", h.update)
+		r.DELETE("/:id", h.delete)
+	}
+	rv := c.Group("/inventory/variants")
+	{
+		rv.GET("/", h.index)
 	}
 }
 
 func (h *inventoryHandler) index(c *gin.Context) {
-	info := webcontext.PageInfo{
-		Locale:      "en",
-		Dir:         "ltr",
-		Title:       "Products",
-		Description: "Manage your products",
-		Keywords:    "products, Kyora",
-		Path:        "/products",
-		Breadcrumbs: []webcontext.Breadcrumb{
-			{Href: "/", Label: "Dashboard"},
-			{Label: "Products"},
-		},
+	storeId := c.Param("storeId")
+	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
+	_, err := h.inventoryDomain.InventoryService.ListProducts(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	if err != nil {
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load products"))
+		return
 	}
-	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
-	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.ProductsList())
+	webutils.Render(c, 200, pages.NotImplemented("Products List"))
 }
 
-func (h *inventoryHandler) new(c *gin.Context) {
-	info := webcontext.PageInfo{
-		Locale:      "en",
-		Dir:         "ltr",
-		Title:       "New Product",
-		Description: "Create a new product",
-		Keywords:    "new product, Kyora",
-		Path:        "/products/new",
-		Breadcrumbs: []webcontext.Breadcrumb{
-			{Href: "/", Label: "Dashboard"},
-			{Href: "/products", Label: "Products"},
-			{Label: "New Product"},
-		},
-	}
-	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
-	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.ProductForm(pages.ProductFormProps{IsEdit: false}))
+func (h *inventoryHandler) create(c *gin.Context) {
+	_ = c.Param("storeId")
+	// receive form data and validate inventory.CreateProductRequest
+	c.String(200, "not implemented")
 }
 
-func (h *inventoryHandler) edit(c *gin.Context) {
-	productID := c.Param("id")
-	info := webcontext.PageInfo{
-		Locale:      "en",
-		Dir:         "ltr",
-		Title:       "Edit Product " + productID,
-		Description: "Edit product " + productID,
-		Keywords:    "edit product, Kyora",
-		Path:        fmt.Sprintf("/products/%s/edit", productID),
-		Breadcrumbs: []webcontext.Breadcrumb{
-			{Href: "/", Label: "Dashboard"},
-			{Href: "/products", Label: "Products"},
-			{Label: "Edit Product"},
-		},
+func (h *inventoryHandler) show(c *gin.Context) {
+	storeId := c.Param("storeId")
+	id := c.Param("id")
+	_, err := h.inventoryDomain.InventoryService.GetProductByID(c.Request.Context(), storeId, id)
+	if err != nil {
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load product"))
+		return
 	}
-	ctx := webcontext.SetupPageInfo(c.Request.Context(), info)
-	c.Request = c.Request.WithContext(ctx)
-	webutils.Render(c, 200, pages.ProductForm(pages.ProductFormProps{IsEdit: true, Product: &pages.Product{}}))
+	webutils.Render(c, 200, pages.NotImplemented("Product Details"))
+}
+
+func (h *inventoryHandler) update(c *gin.Context) {
+	storeId := c.Param("storeId")
+	id := c.Param("id")
+	_ = storeId
+	_ = id
+	// receive form data and validate inventory.UpdateProductRequest
+	c.String(200, "not implemented")
+}
+
+func (h *inventoryHandler) delete(c *gin.Context) {
+	storeId := c.Param("storeId")
+	id := c.Param("id")
+	_ = storeId
+	_ = id
+	// perform delete operation
+	c.String(200, "not implemented")
+}
+
+func (h *inventoryHandler) variantsIndex(c *gin.Context) {
+	storeId := c.Param("storeId")
+	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
+	_, err := h.inventoryDomain.InventoryService.ListVariants(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	if err != nil {
+		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load variants"))
+		return
+	}
+	webutils.Render(c, 200, pages.NotImplemented("Variants List"))
 }
