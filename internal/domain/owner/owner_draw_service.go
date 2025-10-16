@@ -6,6 +6,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -73,8 +74,8 @@ func (s *OwnerDrawService) GetOwnerDrawByID(ctx context.Context, storeID, ownerD
 	return s.ownerDrawRepo.findOne(ctx, s.ownerDrawRepo.scopeID(ownerDrawID), s.ownerDrawRepo.scopeStoreID(storeID))
 }
 
-func (s *OwnerDrawService) ListOwnerDraws(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*OwnerDraw, error) {
-	return s.ownerDrawRepo.list(ctx, s.ownerDrawRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+func (s *OwnerDrawService) ListOwnerDraws(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*OwnerDraw, error) {
+	return s.ownerDrawRepo.list(ctx, s.ownerDrawRepo.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithOrderBy(listReq.OrderBy))
 }
 
 func (s *OwnerDrawService) CountOwnerDraws(ctx context.Context, storeID string) (int64, error) {

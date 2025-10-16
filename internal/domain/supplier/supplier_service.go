@@ -5,6 +5,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
 )
 
 type SupplierService struct {
@@ -20,8 +21,8 @@ func (s *SupplierService) GetSupplierByID(ctx context.Context, storeID, id strin
 	return s.supplierRepo.findByID(ctx, id, opts...)
 }
 
-func (s *SupplierService) ListSuppliers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Supplier, error) {
-	return s.supplierRepo.list(ctx, s.supplierRepo.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+func (s *SupplierService) ListSuppliers(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Supplier, error) {
+	return s.supplierRepo.list(ctx, s.supplierRepo.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithOrderBy(listReq.OrderBy))
 }
 
 func (s *SupplierService) CountSuppliers(ctx context.Context, storeID string) (int64, error) {

@@ -179,8 +179,8 @@ func (s *InventoryService) ListVariantsByProductID(ctx context.Context, storeID 
 	return variants, nil
 }
 
-func (s *InventoryService) ListVariants(ctx context.Context, storeID string, page int, pageSize int, orderBy string, ascending bool) ([]*Variant, error) {
-	variants, err := s.variants.list(ctx, db.WithPagination(page, pageSize), db.WithPreload(ProductStruct), db.WithSorting(orderBy, ascending), s.variants.scopeStoreID(storeID))
+func (s *InventoryService) ListVariants(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Variant, error) {
+	variants, err := s.variants.list(ctx, db.WithPagination(listReq.Page, listReq.PageSize), db.WithPreload(ProductStruct), db.WithOrderBy(listReq.OrderBy), s.variants.scopeStoreID(storeID))
 	if err != nil {
 		return nil, err
 	}
@@ -195,8 +195,8 @@ func (s *InventoryService) CountVariants(ctx context.Context, storeID string) (i
 	return count, nil
 }
 
-func (s *InventoryService) ListProducts(ctx context.Context, storeID string, page int, pageSize int, orderBy string, ascending bool) ([]*Product, error) {
-	products, err := s.products.list(ctx, s.products.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithPreload(VariantStruct), db.WithSorting(orderBy, ascending))
+func (s *InventoryService) ListProducts(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Product, error) {
+	products, err := s.products.list(ctx, s.products.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithPreload(VariantStruct), db.WithOrderBy(listReq.OrderBy))
 	if err != nil {
 		return nil, err
 	}

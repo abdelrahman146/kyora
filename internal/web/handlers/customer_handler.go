@@ -30,8 +30,8 @@ func (h *customerHandler) registerRoutes(c *gin.RouterGroup) {
 
 func (h *customerHandler) index(c *gin.Context) {
 	storeId := c.Param("storeId")
-	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
-	_, err := h.customerDomain.CustomerService.ListCustomers(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	listReq := webutils.GetPaginationParams(c)
+	_, err := h.customerDomain.CustomerService.ListCustomers(c.Request.Context(), storeId, listReq)
 	if err != nil {
 		utils.Log.FromContext(c.Request.Context()).Error("failed to list customers", "error", err, "storeId", storeId)
 		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load customers"))

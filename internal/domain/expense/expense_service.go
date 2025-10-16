@@ -35,11 +35,11 @@ func (s *ExpenseService) GetExpenseByID(ctx context.Context, storeID, id string)
 	return exp, nil
 }
 
-func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Expense, error) {
+func (s *ExpenseService) ListExpenses(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Expense, error) {
 	exps, err := s.expenseRepo.list(ctx,
 		s.expenseRepo.scopeStoreID(storeID),
-		db.WithPagination(page, pageSize),
-		db.WithSorting(orderBy, ascending),
+		db.WithPagination(listReq.Page, listReq.PageSize),
+		db.WithOrderBy(listReq.OrderBy),
 	)
 	if err != nil {
 		return nil, err
@@ -134,11 +134,11 @@ func (s *ExpenseService) GetRecurringExpenseByID(ctx context.Context, storeID, i
 	return exp, nil
 }
 
-func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*RecurringExpense, error) {
+func (s *ExpenseService) ListRecurringExpenses(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*RecurringExpense, error) {
 	exps, err := s.recurringRepo.list(ctx,
 		s.recurringRepo.scopeStoreID(storeID),
-		db.WithPagination(page, pageSize),
-		db.WithSorting(orderBy, ascending),
+		db.WithPagination(listReq.Page, listReq.PageSize),
+		db.WithOrderBy(listReq.OrderBy),
 	)
 	if err != nil {
 		return nil, err

@@ -35,8 +35,8 @@ func (h *inventoryHandler) registerRoutes(c *gin.RouterGroup) {
 
 func (h *inventoryHandler) index(c *gin.Context) {
 	storeId := c.Param("storeId")
-	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
-	_, err := h.inventoryDomain.InventoryService.ListProducts(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	listReq := webutils.GetPaginationParams(c)
+	_, err := h.inventoryDomain.InventoryService.ListProducts(c.Request.Context(), storeId, listReq)
 	if err != nil {
 		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load products"))
 		return
@@ -81,8 +81,8 @@ func (h *inventoryHandler) delete(c *gin.Context) {
 
 func (h *inventoryHandler) variantsIndex(c *gin.Context) {
 	storeId := c.Param("storeId")
-	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
-	_, err := h.inventoryDomain.InventoryService.ListVariants(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	listReq := webutils.GetPaginationParams(c)
+	_, err := h.inventoryDomain.InventoryService.ListVariants(c.Request.Context(), storeId, listReq)
 	if err != nil {
 		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load variants"))
 		return

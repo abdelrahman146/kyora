@@ -39,12 +39,12 @@ func (s *OrderService) GetOrderByOrderNumber(ctx context.Context, storeID string
 	return s.orders.findOne(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderNumber(orderNumber), db.WithPreload(OrderItemStruct), db.WithPreload(OrderNoteStruct), db.WithPreload(customer.CustomerStruct))
 }
 
-func (s *OrderService) ListOrders(ctx context.Context, storeID string, filter *OrderFilter, page, pageSize int, orderBy string, ascending bool) ([]*Order, error) {
-	return s.orders.list(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+func (s *OrderService) ListOrders(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Order, error) {
+	return s.orders.list(ctx, s.orders.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithOrderBy(listReq.OrderBy))
 }
 
-func (s *OrderService) CountOrders(ctx context.Context, storeID string, filter *OrderFilter) (int64, error) {
-	return s.orders.count(ctx, s.orders.scopeStoreID(storeID), s.orders.scopeOrderFilter(filter))
+func (s *OrderService) CountOrders(ctx context.Context, storeID string) (int64, error) {
+	return s.orders.count(ctx, s.orders.scopeStoreID(storeID))
 }
 
 func (s *OrderService) calculateSubtotal(ctx context.Context, items []*CreateOrderItemRequest) decimal.Decimal {

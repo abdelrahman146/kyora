@@ -37,8 +37,8 @@ func (h *expenseHandler) registerRoutes(c *gin.RouterGroup) {
 
 func (h *expenseHandler) index(c *gin.Context) {
 	storeId := c.Param("storeId")
-	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
-	_, err := h.expenseDomain.ExpenseService.ListExpenses(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	listReq := webutils.GetPaginationParams(c)
+	_, err := h.expenseDomain.ExpenseService.ListExpenses(c.Request.Context(), storeId, listReq)
 	if err != nil {
 		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load expenses"))
 		return
@@ -79,8 +79,8 @@ func (h *expenseHandler) delete(c *gin.Context) {
 
 func (h *expenseHandler) recurringIndex(c *gin.Context) {
 	storeId := c.Param("storeId")
-	page, pageSize, orderBy, isAscending := webutils.GetPaginationParams(c)
-	_, err := h.expenseDomain.ExpenseService.ListRecurringExpenses(c.Request.Context(), storeId, page, pageSize, orderBy, isAscending)
+	listReq := webutils.GetPaginationParams(c)
+	_, err := h.expenseDomain.ExpenseService.ListRecurringExpenses(c.Request.Context(), storeId, listReq)
 	if err != nil {
 		webutils.Render(c, 500, pages.ErrorPage(500, "Failed to load recurring expenses"))
 		return

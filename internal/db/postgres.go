@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 
+	"github.com/samber/lo"
 	"gorm.io/driver/postgres"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
@@ -109,7 +110,7 @@ func WithPagination(page, pageSize int) PostgresOptions {
 		case pageSize > 100:
 			pageSize = 100
 		case pageSize <= 0:
-			pageSize = 10
+			pageSize = 30
 		}
 		offset := (page - 1) * pageSize
 		return db.Offset(offset).Limit(pageSize)
@@ -125,13 +126,16 @@ func WithLimit(limit int) PostgresOptions {
 	}
 }
 
-func WithSorting(orderBy string, ascending bool) PostgresOptions {
+func WithOrderBy(orderBy []string) PostgresOptions {
 	return func(db *gorm.DB) *gorm.DB {
-		if orderBy != "" {
-			if ascending {
-				return db.Order(orderBy + " ASC")
+		for _, ob := range orderBy {
+			if ob != "" && len(ob) > 1 {
+				if ob[0] == '-' {
+					db = db.Order(lo.SnakeCase(ob[1:]) + " DESC")
+				} else {
+					db = db.Order(lo.SnakeCase(ob) + " ASC")
+				}
 			}
-			return db.Order(orderBy + " DESC")
 		}
 		return db
 	}

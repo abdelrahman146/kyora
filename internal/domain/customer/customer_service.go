@@ -52,8 +52,8 @@ func (s *CustomerService) GetCustomerByID(ctx context.Context, storeId string, i
 	return s.customers.findOne(ctx, s.customers.scopeID(id), s.customers.scopeStoreID(storeId), db.WithPreload(AddressStruct), db.WithPreload(CustomerNoteStruct))
 }
 
-func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Customer, error) {
-	return s.customers.list(ctx, s.customers.scopeStoreID(storeID), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+func (s *CustomerService) ListCustomers(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Customer, error) {
+	return s.customers.list(ctx, s.customers.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithOrderBy(listReq.OrderBy))
 }
 
 func (s *CustomerService) CountCustomers(ctx context.Context, storeID string) (int64, error) {

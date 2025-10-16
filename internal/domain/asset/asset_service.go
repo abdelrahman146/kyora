@@ -27,8 +27,8 @@ func (s *AssetService) GetAssetByID(ctx context.Context, storeID, assetID string
 	return asset, nil
 }
 
-func (s *AssetService) ListAssets(ctx context.Context, storeID string, filter *AssetFilter, page, pageSize int, orderBy string, ascending bool) ([]*Asset, error) {
-	assets, err := s.assetRepo.list(ctx, s.assetRepo.scopeStoreID(storeID), s.assetRepo.scopeFilter(filter), db.WithPagination(page, pageSize), db.WithSorting(orderBy, ascending))
+func (s *AssetService) ListAssets(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Asset, error) {
+	assets, err := s.assetRepo.list(ctx, s.assetRepo.scopeStoreID(storeID), db.WithPagination(listReq.Page, listReq.PageSize), db.WithOrderBy(listReq.OrderBy))
 	if err != nil {
 		return nil, err
 	}

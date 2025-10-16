@@ -6,6 +6,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/db"
 	"github.com/abdelrahman146/kyora/internal/domain/store"
+	"github.com/abdelrahman146/kyora/internal/types"
 	"github.com/shopspring/decimal"
 )
 
@@ -83,11 +84,11 @@ func (s *InvestmentService) GetInvestmentByID(ctx context.Context, storeID strin
 	return s.investmentRepo.findOne(ctx, s.investmentRepo.scopeID(investmentID), s.investmentRepo.scopeStoreID(storeID))
 }
 
-func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string, page, pageSize int, orderBy string, ascending bool) ([]*Investment, error) {
+func (s *InvestmentService) ListInvestments(ctx context.Context, storeID string, listReq *types.ListRequest) ([]*Investment, error) {
 	return s.investmentRepo.list(ctx,
 		s.investmentRepo.scopeStoreID(storeID),
-		db.WithPagination(page, pageSize),
-		db.WithSorting(orderBy, ascending),
+		db.WithPagination(listReq.Page, listReq.PageSize),
+		db.WithOrderBy(listReq.OrderBy),
 	)
 }
 
