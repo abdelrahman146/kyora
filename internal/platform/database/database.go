@@ -1,0 +1,86 @@
+// Package database provides database utilities
+// implements gorm
+package database
+
+import (
+	"context"
+	"log/slog"
+	"time"
+
+	"github.com/abdelrahman146/kyora/internal/platform/config"
+	"github.com/abdelrahman146/kyora/internal/platform/types/ctxkey"
+	"github.com/spf13/viper"
+	"gorm.io/driver/postgres"
+	"gorm.io/gorm"
+)
+
+type Database struct {
+	db *gorm.DB
+}
+
+var TxKey = ctxkey.New("transaction")
+
+func NewConnection() *Database {
+	dsn := viper.GetString(config.DatabaseDSN)
+	logLevel := viper.GetString(config.DatabaseLogLevel)
+	maxAttempts := 5
+	var db *gorm.DB
+	var err error
+	logger := NewSlogGormLogger(logLevel)
+	for attempts := 1; attempts <= maxAttempts; attempts++ {
+		db, err = gorm.Open(postgres.Open(dsn), &gorm.Config{
+			Logger: logger,
+		})
+		if err == nil {
+			break
+		}
+		slog.Warn("Failed to connect to database, retrying...", "attempt", attempts, "error", err)
+		time.Sleep(time.Duration(attempts) * time.Second)
+	}
+	if err != nil {
+		slog.Error("Could not connect to the database", "error", err)
+		panic(err)
+	}
+	sqlDB, err := db.DB()
+	if err != nil {
+		slog.Error("Could not get database instance", "error", err)
+		panic(err)
+	}
+	maxOpenConns := viper.GetInt(config.DatabaseMaxOpenConns)
+	maxIdleConns := viper.GetInt(config.DatabaseMaxIdleConns)
+	maxIdleTime := viper.GetDuration(config.DatabaseMaxIdleTime)
+	sqlDB.SetMaxOpenConns(maxOpenConns)
+	sqlDB.SetMaxIdleConns(maxIdleConns)
+	sqlDB.SetConnMaxIdleTime(maxIdleTime)
+	return &Database{db: db}
+}
+
+func (d *Database) GetDB() *gorm.DB {
+	return d.db
+}
+
+func (d *Database) CloseConnection() error {
+	sqlDB, err := d.db.DB()
+	if err != nil {
+		return err
+	}
+	return sqlDB.Close()
+}
+
+func (d *Database) Conn(ctx context.Context) *gorm.DB {
+	if tx, ok := ctx.Value(TxKey).(*gorm.DB); ok {
+		return tx
+	}
+	return d.db.WithContext(ctx)
+}
+
+func (d *Database) ApplyOptions(db *gorm.DB, opts ...DatabaseOption) *gorm.DB {
+	for _, opt := range opts {
+		db = opt(db)
+	}
+	return db
+}
+
+func (d *Database) AutoMigrate(models ...interface{}) error {
+	return d.db.AutoMigrate(models...)
+}

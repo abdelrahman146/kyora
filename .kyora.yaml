@@ -1,0 +1,41 @@
+env: development
+app:
+  name: kyora
+  domain: localhost
+  notifications_email: "noreply@kyora.io"
+log: 
+  level: INFO
+  format: json
+http:
+  port: 8080
+  base_url: "http://localhost:8080"
+  trace_id_header: "X-Trace-ID"
+database:
+  dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=Asia/Dubai"
+  max_open_conns: 25
+  max_idle_conns: 25
+  conn_max_lifetime_minutes: 5
+  log_level: "warn"
+cache:
+  hosts:
+    - "localhost:11211"
+auth:
+  jwt:
+    secret: "your_jwt_secret_key"
+    expiry_seconds: 3600
+    issuer: "kyora"
+    audience: "kyora_users"
+  password_reset_ttl_seconds: 900
+  verify_email_ttl_seconds: 900
+  google_oauth:
+    client_id: ""
+    client_secret: ""
+    redirect_url: "http://localhost:8080/auth/google/callback"
+billing:
+  stripe:
+    api_key: "sk_test_your_stripe_api_key"
+    webhook_secret: "whsec_your_webhook_secret"
+email:
+  provider: "resend" # options: resend, mock
+  resend_api_key: "re_your_resend_api_key"
+  resend_base_url: "https://api.resend.com"

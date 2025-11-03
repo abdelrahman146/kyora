@@ -1,92 +1,58 @@
-# Kyora — Copilot Instructions
+Kyora codebase guide for AI coding agents
 
-Concise, codebase-specific guidance for AI agents.
+Purpose and shape
 
-## Overview
+- Go monolith (Go 1.25) using Cobra CLI (entry: `main.go` -> `cmd/root.go`) and a layered internal package structure under `internal/`.
+- Two major layers:
+  - platform: cross-cutting infra (config, DB, cache, logging, request/response, auth, event bus, types).
+  - domain: business modules (account, accounting, analytics, billing, business, customer, inventory, order). Each domain typically has `model.go`, `service.go`, `storage.go`, `errors.go` and sometimes a `state_machine.go`.
 
-Kyora is a lightweight business management web app built with the GOTTH stack — Go, Templ, TailwindCSS, and HTMX and alpinejs. It helps solo entrepreneurs and small teams manage products, inventory, orders, customers, and expenses and finances and generate analytics and financial reports.
-The target user is a solo entrepreneur or home/social-commerce seller, with priorities of simplicity, speed, and minimal hosting costs.
+Run and config
 
-This document provides guidelines for Copilot to assist with consistent development of Kyora’s codebase, following its architecture and functional design.
+- Local dev uses Air (live-reload). Command: `make dev.server` (requires `air` installed). Air builds `./tmp/main` and runs it with args; the Makefile passes `server` to the binary. If you add an HTTP server, implement a Cobra subcommand named `server` under `cmd/`.
+- Configuration is loaded via Viper from `.kyora.yaml` at repo root and env vars (see keys in `internal/platform/config/config.go`). Example file exists in root; prefer the code constants over guessing key names.
+- Data store: Postgres via GORM; memcached for cache. Stripe (billing) and Google OAuth are wired but opt‑in via config.
 
-## Core Principles
+Core platform patterns
 
-Simplicity first: Minimize dependencies, abstractions, and config.
-Server-side rendering (SSR): All pages use Templ and HTMX for interactivity. Avoid full SPAs.
-Multi-user / multi-tenant by design: All data is scoped by `store_id` (a user’s business). an organization can have multiple stores. and users can belong to one organization.
-Idempotence and correctness over optimization.
-Readable, self-contained Go code (prefer standard library + a few vetted libs).
+- Database access
+  - `internal/platform/database.Database` wraps a GORM connection and exposes `Conn(ctx)` which picks up a transaction from context when present (key: `database.TxKey`).
+  - Generic repository `database.Repository[T]` provides CRUD and common scopes: `ScopeBusinessID/WorkspaceID/Equals/In/Time/CreatedAt`, preloading (`WithPreload`), joins, ordering (`WithOrderBy`), pagination, `WithReturning`, aggregates (`Sum/Avg/Count`, time series helpers).
+  - Transactions: use an `atomic.AtomicProcessor` (implemented by `database.AtomicProcess`). Wrap multi-step operations with `Exec(ctx, func(ctx) error, atomic.WithIsolationLevel(...), atomic.WithRetries(n))`. The transaction is injected into `ctx` so all repository calls in the closure are consistent.
+- HTTP and errors
+  - Logging middleware (`internal/platform/logger/middleware.go`) attaches `traceId` (header from `http.trace_id_header`, default `X-Trace-ID`) and logs JSON via slog; use `logger.FromContext(ctx)` inside services.
+  - Auth uses JWT cookies (`jwt` cookie). `request.EnforceAuthentication` parses JWT and stores claims in Gin context; follow with `request.EnforceValidActor` and `request.EnforceBusinessValidity` to resolve `*account.User` and `*business.Business` from context.
+  - Responses: use `response.SuccessJSON/SuccessText/SuccessEmpty` and `response.Error`. Errors are normalized to RFC 7807 Problem JSON (`internal/platform/types/problem`). DB errors are mapped (NotFound/Conflict) via `database.IsRecordNotFound/IsUniqueViolation`.
+- Event bus
+  - Lightweight async pub/sub in `internal/platform/bus` with `Bus.Emit(topic, payload)` and `Bus.Listen(topic, handler)`. Built-in topics: `VerifyEmailTopic`, `ResetPasswordTopic`.
+- Lists and analytics
+  - For pagination/sorting, pass `*list.ListRequest` through services; build DB ordering via `req.ParsedOrderBy(schemaDef)` where `schemaDef` is the domain `...Schema` (see `internal/platform/types/schema/field.go`). Wrap results with `list.NewListResponse`.
+  - Time series helpers in `database.Repository` (`TimeSeriesSum/TimeSeriesCount`) plus label formatting in `internal/platform/types/timeseries`.
 
-## Big picture
+Domain conventions (copy when adding a module)
 
-- Go monolith with a Cobra CLI and two primary commands:
-  - `web`: HTTP server (Gin) + Templ views. See `cmd/web.go`.
-  - `recurring`: daily recurring expenses job. See `cmd/recurring.go`.
-- Config via Viper from `config.yaml` (AutomaticEnv enabled but no key replacer; prefer YAML).
-- Data: Postgres via GORM wrapped by `internal/db.Postgres`; caching via `internal/db.Memcache`.
-- Domains under `internal/domain/**`: Repository + Service layers. Repos expose GORM scopes; Services orchestrate logic/transactions.
+- model.go: GORM models with `gorm.Model` and string `ID` generated via `utils/id` (e.g., `id.KsuidWithPrefix("ord")`). Define a `...Schema` struct of `schema.Field` to map DB columns to JSON field names for ordering/search.
+- storage.go: construct `database.Repository[T]` per aggregate; `NewStorage` wires repositories (and cache if needed). Repos auto‑migrate their model on construction.
+- service.go: business methods have signature `(ctx, actor *account.User, biz *business.Business, ...)` to enforce tenancy. Use repository scopes like `ScopeBusinessID` in all reads/writes. Use atomic processor for multi-entity updates. Prefer returning domain-specific problems from `errors.go`.
+- state_machine.go: encode allowed transitions (see `order/state_machine.go`) and update timestamp fields on transitions.
 
-## App startup (what happens)
+Integration points and examples
 
-- `main.go` → `cmd.Execute()`.
-- `cmd/web.go`: read config → setup logging (`utils.Log`) → create Postgres + Memcache → create `db.AtomicProcess` → init domains → build Gin router (`webrouter.NewRouter()`) → instantiate handlers and `RegisterRoutes` → `router.Run(server.port)`.
-- `cmd/recurring.go`: similar boot, runs `postgres.AutoMigrate(expense.Expense, expense.RecurringExpense)` then `expense.Service.ProcessRecurringExpensesDaily(ctx)`.
+- Billing/Stripe: `internal/domain/billing` injects `*stripe.Client` and reads secrets from `billing.stripe.*` config keys.
+- OAuth: `internal/platform/auth/google_oauth.go` for Google OAuth; JWT helpers in `internal/platform/auth/jwt.go` (cookie name `jwt`).
+- Cache: `internal/platform/cache.Cache` (memcached). Use `Marshal/Unmarshal` helpers and `Increment` for counters.
 
-## Data access patterns (do this)
+Gotchas you’ll likely hit
 
-- Always pass a `context.Context`; use `Postgres.Conn(ctx, opts...)`. It auto-binds to ambient tx in ctx.
-- Transactions: `atomic.Exec(ctx, func(txCtx) error { ... })`; inside use `txCtx` so repos share the tx.
-- Compose queries with repo scopes + Postgres options:
-  - Scopes: repo methods like `scopeID`, `ScopeStoreID`, `ScopeFilter` etc.
-  - Options: `db.WithPagination`, `db.WithSorting`, `db.WithPreload`, `db.WithLock`, `db.WithLimit`, `db.WithJoins`.
-- Examples: see `inventory/product_repository.go` (scopes, upsert) and `order/order_service.go` (calc totals, preloads, transactions).
+- Config keys: treat `internal/platform/config/config.go` as the source of truth for key names. The sample `.kyora.yaml` is illustrative and may diverge; e.g., DB idle/connection timing keys.
+- Multi‑tenancy: always scope by `BusinessID` (and/or `WorkspaceID`) using repository scopes; many services assume this contract.
+- JWT source: `JwtFromContext` reads only the cookie, not the Authorization header.
+- Ordering: `ListRequest.OrderBy()` expects JSON field names (e.g., `-createdAt`), which are translated via `...Schema`. Don’t pass DB column names directly.
 
-## Web conventions (Gin + Templ)
+File map to learn by example
 
-- Router: `webrouter.NewRouter()` adds recovery, `middleware.LoggerMiddleware()`, and `registerRoutes(r)`; handlers register routes in `cmd/web.go`.
-- Handlers: implement `RegisterRoutes(r gin.IRoutes)` and actions like `Index/New/Show/Edit`.
-  - Each action builds `webcontext.PageInfo` → `webcontext.SetupPageInfo` on the request context → `webutils.Render(c, status, templComponent)`.
-- Fragments/redirects: `webutils.RenderFragments(c, status, component, keys...)`; `webutils.Redirect(c, location)` sets `HX-Redirect`.
-- Auth: `AuthRequiredMiddleware` requires JWT cookie `jwt` (see `utils.JWT`); `GuestRequiredMiddleware` redirects logged-in users from guest pages.
-
-## Errors, logging, IDs
-
-- Structured logging: use `utils.Log.FromContext(ctx)`; `LoggerMiddleware` injects `X-Trace-ID` (configurable via `server.trace_id_header`).
-- DB errors → RFC7807: `err` returns `utils.ProblemDetails` (NotFound/Conflict/Internal).
-- IDs: `utils.ID.NewKsuid()` (trace); `utils.ID.NewBase62WithPrefix(prefix, n)` for human-friendly codes (orders).
-
-## Dev workflows
-
-- Make:
-  - `make templates` (runs `templ generate`).
-  - `make dev.web` (requires `air`; clears `tmp/` then `air web`).
-  - `make dev.css` (`yarn css:watch` → builds Tailwind v4 + daisyUI v5 from `public/css/tw-input.css` → `public/css/base.css`).
-- Without Make: `go run . web` or `go run . recurring`; CSS via `yarn css:watch`.
-- Config: edit `config.yaml` (Postgres DSN, memcache hosts, JWT secret/expiry, ports, site info).
-
-## Frontend styling
-
-- Tailwind CSS v4 + daisyUI v5 (see `package.json`). Prefer daisyUI component classes in Templ views; avoid custom CSS when possible.
-- For daisyUI specifics (components, themes, upgrade notes), see `.github/instructions/daisyui.instructions.md` in this repo.
-
-## Templ specifics (SSR components)
-
-- Views live under `internal/web/views/**` with `.templ` sources; generated `*_templ.go` files are committed. After changing `.templ`, run `make templates` (or `templ generate`).
-- Rendering:
-  - Full page: `webutils.Render(c, status, component)` sets content-type and renders.
-  - Partials/HTMX: `webutils.RenderFragments(c, status, component, keys...)` renders only marked fragments. Define fragment keys in the handler (e.g., `var header webcontext.FragmentKey`) and in the `.templ` wrap the target area with `templ.Fragment(&header)`; then pass `header` to `RenderFragments`.
-- Live reload (optional): Use Templ proxy to rebuild and hot-reload on `.templ` edits while proxying to the Gin server: `templ generate --watch --proxy="http://localhost:{server.port}" --cmd "go run . web"`. Keep CSS watcher (`yarn css:watch`) running in parallel.
-- Testing components: In Go tests, render components into a buffer (`comp.Render(ctx, &buf)`) and assert on the HTML string. Prefer minimal snapshot-style assertions around stable selectors over full-document string equality.
-
-## Adding features (happy path)
-
-- Repo: add under the relevant domain with `Scope*` and CRUD methods using `db.Postgres`.
-- Service: orchestrate, use `AtomicProcess` for multi-write operations, use `decimal` for money.
-- Web: new handler + `RegisterRoutes`; set `PageInfo`; render components from `internal/web/views/**` via `webutils.Render`.
-- Wire the handler in `cmd/web.go`.
-
-## External deps
-
-Gin, Templ, GORM, Cobra, Viper, gomemcache, govalues/decimal, golang-jwt/jwt.
-
-Notes: env overrides are limited (no key replacer); migrations aren’t centralized (only `recurring` migrates expense tables).
+- Repos/scopes: `internal/platform/database/repository.go`
+- Transactions: `internal/platform/database/atomic.go`, `internal/platform/types/atomic/atomic.go`
+- Problem errors: `internal/platform/types/problem/problem.go`; domain examples: `internal/domain/order/errors.go`
+- Time series: `internal/platform/types/timeseries/timeseries.go` and usage in `internal/domain/order/service.go`
+- Middleware chain: `internal/platform/request/*.go`, `internal/platform/logger/middleware.go`, responses in `internal/platform/response/response.go`

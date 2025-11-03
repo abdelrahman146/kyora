@@ -1,8 +1,4 @@
-.PHONY: dev.web dev.css templates
-templates:
-	@templ generate
-dev.web:
+.PHONY: dev.server
+dev.server:
 	@rm -rf tmp
-	@air web
-dev.css:
-	@yarn css:watch
+	@air server
