@@ -5,7 +5,6 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
-	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -16,15 +15,13 @@ type Service struct {
 	storage         *Storage
 	atomicProcessor atomic.AtomicProcessor
 	bus             *bus.Bus
-	billing         *billing.Service
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, billing *billing.Service) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus) *Service {
 	return &Service{
 		storage:         storage,
 		atomicProcessor: atomicProcessor,
 		bus:             bus,
-		billing:         billing,
 	}
 }
 

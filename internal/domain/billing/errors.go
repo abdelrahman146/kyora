@@ -48,5 +48,45 @@ func ErrCannotChangeToSamePlan(err error) error {
 }
 
 func ErrCannotDowngradePlan(err error) error {
-	return problem.BadRequest("cannot downgrade to a plan with fewer features").WithError(err)
+	return problem.BadRequest("cannot downgrade to a plan with fewer features or lower limits").WithError(err)
+}
+
+func ErrStripeOperationFailed(err error, operation string) error {
+	return problem.InternalError().With("detail", "billing operation failed").With("operation", operation).WithError(err)
+}
+
+// ErrCustomerCreationFailed indicates a failure creating a Stripe customer
+func ErrCustomerCreationFailed(customerID string, err error) *problem.Problem {
+	return problem.InternalError().With("detail",
+		fmt.Sprintf("Failed to create Stripe customer for user %s", customerID),
+	).WithError(err)
+}
+
+// ErrPlanSyncFailed indicates failure syncing plan with billing provider
+func ErrPlanSyncFailed(planID string, err error) *problem.Problem {
+	return problem.InternalError().With("detail", "failed to sync plan with billing provider").With("planId", planID).WithError(err)
+}
+
+func ErrWebhookProcessingFailed(err error, eventType string) error {
+	return problem.InternalError().With("detail", "failed to process billing webhook").With("eventType", eventType).WithError(err)
+}
+
+func ErrCheckoutSessionFailed(err error) error {
+	return problem.BadRequest("failed to create checkout session").WithError(err)
+}
+
+func ErrBillingPortalFailed(err error) error {
+	return problem.BadRequest("failed to create billing portal session").WithError(err)
+}
+
+func ErrUsageLimitExceeded(err error, feature string, current, limit int64) error {
+	return problem.Forbidden("usage limit exceeded for feature").
+		With("feature", feature).
+		With("current", current).
+		With("limit", limit).
+		WithError(err)
+}
+
+func ErrUnauthorized() error {
+	return problem.Unauthorized("authentication required")
 }

@@ -1,10 +1,10 @@
-package request
+package business
 
 import (
 	"context"
 	"errors"
 
-	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/ctxkey"
@@ -17,12 +17,12 @@ var (
 )
 
 type businessRequiredBusinessService interface {
-	GetBusinessByDescriptor(ctx context.Context, workspaceID string, descriptor string) (*business.Business, error)
+	GetBusinessByDescriptor(ctx context.Context, workspaceID string, descriptor string) (*Business, error)
 }
 
 func EnforceBusinessValidity(businessService businessRequiredBusinessService) gin.HandlerFunc {
 	return func(c *gin.Context) {
-		user, err := ActorFromContext(c)
+		user, err := account.ActorFromContext(c)
 		if err != nil {
 			response.Error(c, err)
 			return
@@ -38,13 +38,13 @@ func EnforceBusinessValidity(businessService businessRequiredBusinessService) gi
 	}
 }
 
-func BusinessFromContext(c *gin.Context) (*business.Business, error) {
+func BusinessFromContext(c *gin.Context) (*Business, error) {
 	biz, exists := c.Get(BusinessKey)
 	if !exists {
 		logger.FromContext(c.Request.Context()).Error("business not found in context, make sure EnforceBusinessValidity middleware is applied")
 		return nil, problem.InternalError().WithError(errors.New("business not found in context"))
 	}
-	if b, ok := biz.(*business.Business); ok {
+	if b, ok := biz.(*Business); ok {
 		return b, nil
 	}
 	return nil, problem.InternalError().WithError(errors.New("business not found in context"))

@@ -24,6 +24,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
+	"github.com/stripe/stripe-go/v83"
 )
 
 type Server struct {
@@ -34,6 +35,15 @@ type Server struct {
 }
 
 func New() (*Server, error) {
+	// Initialize Stripe with API key
+	stripeAPIKey := viper.GetString(config.StripeAPIKey)
+	if stripeAPIKey != "" {
+		stripe.Key = stripeAPIKey
+		slog.Info("Stripe client initialized")
+	} else {
+		slog.Warn("Stripe API key not configured - billing functionality will be limited")
+	}
+
 	db := database.NewConnection()
 	cacheDB := cache.NewConnection()
 	atomicProcessor := database.NewAtomicProcess(db)
@@ -45,9 +55,10 @@ func New() (*Server, error) {
 
 	billingStorage := billing.NewStorage(db, cacheDB)
 	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc)
+	_ = billingSvc // to avoid unused variable warning
 
 	businessStorage := business.NewStorage(db, cacheDB)
-	businessSvc := business.NewService(businessStorage, atomicProcessor, bus, billingSvc)
+	businessSvc := business.NewService(businessStorage, atomicProcessor, bus)
 	_ = businessSvc // to avoid unused variable warning
 
 	inventoryStorage := inventory.NewStorage(db, cacheDB)

@@ -7,7 +7,6 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
-	"github.com/shopspring/decimal"
 )
 
 type Storage struct {
@@ -26,43 +25,6 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	}
 	s.init()
 	return s
-}
-
-// predefined plans
-// these will be upserted into the database on storage initialization
-// this is a simple approach for now, in the future we might want to have a more dynamic approach
-var plans = []Plan{
-	{
-		Descriptor:   "starter",
-		Name:         "Starter Plan",
-		Description:  "For Sole Owners just getting started",
-		Price:        decimal.NewFromInt(0),
-		StripePlanID: "plan_xxxx",
-		BillingCycle: BillingCycleMonthly,
-		Features: PlanFeature{
-			CustomerManagement:       true,
-			InventoryManagement:      true,
-			OrderManagement:          true,
-			ExpenseManagement:        true,
-			AssetsManagement:         true,
-			Accounting:               true,
-			BasicAnalytics:           true,
-			FinancialReports:         true,
-			DataImport:               false,
-			DataExport:               false,
-			AdvancedAnalytics:        false,
-			AdvancedFinancialReports: false,
-			OrderPaymentLinks:        false,
-			InvoiceGeneration:        false,
-			ExportAnalyticsData:      false,
-			AIBusinessAssistant:      false,
-		},
-		Limits: PlanLimit{
-			MaxOrdersPerMonth: 25,
-			MaxTeamMembers:    1,
-			MaxBusinesses:     1,
-		},
-	},
 }
 
 func (s *Storage) init() {

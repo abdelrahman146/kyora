@@ -220,6 +220,7 @@ const (
 	SubscriptionStatusCanceled   SubscriptionStatus = "canceled"
 	SubscriptionStatusUnpaid     SubscriptionStatus = "unpaid"
 	SubscriptionStatusIncomplete SubscriptionStatus = "incomplete"
+	SubscriptionStatusTrialing   SubscriptionStatus = "trialing"
 )
 
 type Subscription struct {
@@ -273,4 +274,23 @@ var SubscriptionSchema = struct {
 	CreatedAt:        schema.NewField("created_at", "createdAt"),
 	UpdatedAt:        schema.NewField("updated_at", "updatedAt"),
 	DeletedAt:        schema.NewField("deleted_at", "deletedAt"),
+}
+
+// Request/Response DTOs
+type attachPMRequest struct {
+	PaymentMethodID string `json:"paymentMethodId" binding:"required"`
+}
+
+type subRequest struct {
+	PlanDescriptor string `json:"planDescriptor" binding:"required"`
+}
+
+type checkoutRequest struct {
+	PlanDescriptor string `json:"planDescriptor" binding:"required"`
+	SuccessURL     string `json:"successUrl" binding:"required,url"`
+	CancelURL      string `json:"cancelUrl" binding:"required,url"`
+}
+
+type billingPortalRequest struct {
+	ReturnURL string `json:"returnUrl" binding:"required,url"`
 }
