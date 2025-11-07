@@ -49,12 +49,20 @@ func New() (*Server, error) {
 	atomicProcessor := database.NewAtomicProcess(db)
 	bus := bus.New()
 
-	// DI
-	accountStorage := account.NewStorage(db, cacheDB)
-	accountSvc := account.NewService(accountStorage, atomicProcessor, bus)
+	// Email service initialization (add proper email client initialization here in future)
+	// For now, we'll create a nil email integration to avoid breaking the compilation
 
+	// DI - create storages first
+	accountStorage := account.NewStorage(db, cacheDB)
 	billingStorage := billing.NewStorage(db, cacheDB)
-	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc)
+
+	// Create placeholder email integrations (will be properly configured with email client later)
+	accountEmailIntegration := (*account.EmailIntegration)(nil)
+	billingEmailIntegration := (*billing.EmailIntegration)(nil)
+
+	// Create services with email integrations
+	accountSvc := account.NewService(accountStorage, atomicProcessor, bus, accountEmailIntegration)
+	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc, billingEmailIntegration)
 	_ = billingSvc // to avoid unused variable warning
 
 	businessStorage := business.NewStorage(db, cacheDB)

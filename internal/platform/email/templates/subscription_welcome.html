@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{default "Reset your password" .subject}}</title>
+    <title>{{default "Welcome to your subscription!" .subject}}</title>
     <!--[if mso]>
     <noscript>
         <xml>
@@ -53,7 +53,7 @@
         }
         
         .email-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             padding: 32px;
             text-align: center;
         }
@@ -66,6 +66,18 @@
             letter-spacing: -0.025em;
         }
         
+        .success-icon {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin: 16px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
         .email-content {
             padding: 40px 32px;
         }
@@ -76,6 +88,7 @@
             color: #111827;
             margin-bottom: 16px;
             line-height: 1.3;
+            text-align: center;
         }
         
         .email-text {
@@ -90,6 +103,50 @@
             margin-bottom: 8px;
         }
         
+        .subscription-details {
+            background: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 100%);
+            border: 1px solid #10b981;
+            border-radius: 8px;
+            padding: 24px;
+            margin: 24px 0;
+        }
+        
+        .subscription-details-title {
+            font-weight: 700;
+            color: #065f46;
+            margin-bottom: 16px;
+            font-size: 18px;
+        }
+        
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 8px 0;
+            border-bottom: 1px solid rgba(16, 185, 129, 0.2);
+        }
+        
+        .detail-row:last-child {
+            border-bottom: none;
+        }
+        
+        .detail-label {
+            font-weight: 600;
+            color: #047857;
+            font-size: 14px;
+        }
+        
+        .detail-value {
+            color: #065f46;
+            font-size: 14px;
+        }
+        
+        .price-highlight {
+            font-size: 20px;
+            font-weight: 700;
+            color: #065f46;
+        }
+        
         .button-container {
             text-align: center;
             margin: 32px 0;
@@ -97,7 +154,7 @@
         
         .button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
             color: #ffffff !important;
             text-decoration: none;
             padding: 16px 32px;
@@ -105,60 +162,48 @@
             font-weight: 600;
             font-size: 16px;
             letter-spacing: 0.025em;
-            box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39);
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
             transition: all 0.2s ease-in-out;
         }
         
         .button:hover {
-            box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
+            box-shadow: 0 6px 20px 0 rgba(16, 185, 129, 0.5);
             transform: translateY(-1px);
         }
         
-        .security-notice {
-            background-color: #f3f4f6;
-            border-left: 4px solid #fbbf24;
-            padding: 16px;
+        .button.secondary {
+            background: transparent;
+            color: #10b981 !important;
+            border: 2px solid #10b981;
+            box-shadow: none;
+            margin-left: 16px;
+        }
+        
+        .button.secondary:hover {
+            background-color: #10b981;
+            color: #ffffff !important;
+            box-shadow: 0 4px 14px 0 rgba(16, 185, 129, 0.39);
+        }
+        
+        .billing-info {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
             margin: 24px 0;
-            border-radius: 0 6px 6px 0;
+            border-radius: 0 8px 8px 0;
         }
         
-        .security-notice-title {
+        .billing-info-title {
             font-weight: 600;
-            color: #92400e;
+            color: #0c4a6e;
             margin-bottom: 8px;
-            font-size: 14px;
+            font-size: 16px;
         }
         
-        .security-notice-text {
+        .billing-info-text {
             font-size: 14px;
-            color: #78350f;
+            color: #075985;
             line-height: 1.5;
-        }
-        
-        .link-fallback {
-            background-color: #f9fafb;
-            padding: 16px;
-            border-radius: 6px;
-            margin: 24px 0;
-            border: 1px solid #e5e7eb;
-        }
-        
-        .link-fallback-title {
-            font-size: 14px;
-            font-weight: 600;
-            color: #374151;
-            margin-bottom: 8px;
-        }
-        
-        .link-fallback-url {
-            word-break: break-all;
-            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
-            font-size: 13px;
-            color: #6b7280;
-            background-color: #ffffff;
-            padding: 8px;
-            border-radius: 4px;
-            border: 1px solid #d1d5db;
         }
         
         .email-footer {
@@ -175,7 +220,7 @@
         }
         
         .footer-link {
-            color: #667eea;
+            color: #10b981;
             text-decoration: none;
         }
         
@@ -190,6 +235,8 @@
             .email-header { padding: 24px; }
             .email-title { font-size: 22px; }
             .button { padding: 14px 28px; font-size: 15px; }
+            .success-icon { width: 60px; height: 60px; font-size: 24px; }
+            .button.secondary { margin-left: 0; margin-top: 12px; display: block; }
         }
         
         @media only screen and (max-width: 480px) {
@@ -197,6 +244,8 @@
             .email-header { padding: 20px; }
             .email-title { font-size: 20px; }
             .email-text { font-size: 15px; }
+            .detail-row { flex-direction: column; align-items: flex-start; }
+            .detail-value { margin-top: 4px; }
         }
     </style>
 </head>
@@ -206,39 +255,58 @@
             <!-- Header -->
             <div class="email-header">
                 <div class="email-logo">{{default "Kyora" .productName}}</div>
+                <div class="success-icon">🎉</div>
             </div>
             
             <!-- Content -->
             <div class="email-content">
-                <h1 class="email-title">Reset Your Password</h1>
+                <h1 class="email-title">Welcome to {{default "Pro" .planName}}!</h1>
                 
                 <p class="email-text greeting">Hi {{default "there" .userName}},</p>
                 
                 <p class="email-text">
-                    We received a request to reset your password for your {{default "Kyora" .productName}} account. 
-                    If you made this request, click the button below to create a new password.
+                    Thank you for subscribing to {{default "Kyora Pro" .planName}}! Your subscription is now active 
+                    and you have access to all the powerful features that will help grow your business.
                 </p>
                 
-                <div class="button-container">
-                    <a href="{{default "#" .resetURL}}" class="button">Reset My Password</a>
-                </div>
-                
-                <div class="security-notice">
-                    <div class="security-notice-title">🔒 Security Notice</div>
-                    <div class="security-notice-text">
-                        For your security, this link will expire in {{default "24 hours" .expiryTime}}. 
-                        If you didn't request a password reset, you can safely ignore this email.
+                <div class="subscription-details">
+                    <div class="subscription-details-title">📋 Subscription Details</div>
+                    <div class="detail-row">
+                        <div class="detail-label">Plan:</div>
+                        <div class="detail-value">{{default "Pro Plan" .planName}}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Billing:</div>
+                        <div class="detail-value">{{default "$29.99" .amount}} / {{default "month" .billingCycle}}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Next billing date:</div>
+                        <div class="detail-value">{{default "January 15, 2024" .nextBillingDate}}</div>
+                    </div>
+                    <div class="detail-row">
+                        <div class="detail-label">Payment method:</div>
+                        <div class="detail-value">•••• •••• •••• {{default "4242" .lastFour}}</div>
                     </div>
                 </div>
                 
-                <div class="link-fallback">
-                    <div class="link-fallback-title">Having trouble with the button?</div>
-                    <div class="link-fallback-url">{{default "#" .resetURL}}</div>
+                <div class="button-container">
+                    <a href="{{default "#" .dashboardURL}}" class="button">Access Your Dashboard</a>
+                    <a href="{{default "#" .billingURL}}" class="button secondary">Manage Billing</a>
+                </div>
+                
+                <div class="billing-info">
+                    <div class="billing-info-title">💳 Billing Information</div>
+                    <div class="billing-info-text">
+                        Your subscription will automatically renew on {{default "the 15th of each month" .nextBillingDate}}. 
+                        You can update your billing information, change your plan, or cancel anytime from your 
+                        <a href="{{default "#" .billingURL}}" class="footer-link">billing dashboard</a>.
+                    </div>
                 </div>
                 
                 <p class="email-text">
-                    If you have any questions or concerns, please don't hesitate to 
-                    <a href="mailto:{{default "support@kyora.com" .supportEmail}}" class="footer-link">contact our support team</a>.
+                    If you have any questions about your subscription or need help getting started, 
+                    our support team is here to help at 
+                    <a href="mailto:{{default "support@kyora.com" .supportEmail}}" class="footer-link">{{default "support@kyora.com" .supportEmail}}</a>.
                 </p>
             </div>
             

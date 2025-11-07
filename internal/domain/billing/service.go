@@ -10,7 +10,9 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
+	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/shopspring/decimal"
 	stripelib "github.com/stripe/stripe-go/v83"
@@ -31,19 +33,21 @@ import (
 )
 
 type Service struct {
-	storage         *Storage
-	atomicProcessor atomic.AtomicProcessor
-	bus             *bus.Bus
-	account         *account.Service
+	storage          *Storage
+	atomicProcessor  atomic.AtomicProcessor
+	bus              *bus.Bus
+	account          *account.Service
+	emailIntegration *EmailIntegration
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailIntegration *EmailIntegration) *Service {
 	// Note: Stripe is used via package-level helpers using API key configured globally if needed in future.
 	s := &Service{
-		storage:         storage,
-		atomicProcessor: atomicProcessor,
-		bus:             bus,
-		account:         accountSvc,
+		storage:          storage,
+		atomicProcessor:  atomicProcessor,
+		bus:              bus,
+		account:          accountSvc,
+		emailIntegration: emailIntegration,
 	}
 	// Best-effort background plan sync on service creation
 	go func() {
@@ -116,7 +120,7 @@ func (s *Service) EnsureCustomer(ctx context.Context, ws *account.Workspace) (st
 			return ws.StripeCustomerID.String, nil
 		}
 		// Customer doesn't exist in Stripe anymore, need to create a new one
-		slog.Warn("Stripe customer not found, creating new one", "workspace_id", ws.ID, "old_customer_id", ws.StripeCustomerID.String)
+		logger.FromContext(ctx).Warn("Stripe customer not found, creating new one", "workspace_id", ws.ID, "old_customer_id", ws.StripeCustomerID.String)
 	}
 
 	// Use workspace ID as idempotency key to prevent duplicate customers
@@ -131,16 +135,16 @@ func (s *Service) EnsureCustomer(ctx context.Context, ws *account.Workspace) (st
 
 	c, err := customer.New(params)
 	if err != nil {
-		slog.Error("Failed to create Stripe customer", "error", err, "workspace_id", ws.ID)
+		logger.FromContext(ctx).Error("Failed to create Stripe customer", "error", err, "workspace_id", ws.ID)
 		return "", fmt.Errorf("failed to create customer: %w", err)
 	}
 
 	if err := s.account.SetWorkspaceStripeCustomer(ctx, ws.ID, c.ID); err != nil {
-		slog.Error("Failed to save Stripe customer ID to workspace", "error", err, "workspace_id", ws.ID, "customer_id", c.ID)
+		logger.FromContext(ctx).Error("Failed to save Stripe customer ID to workspace", "error", err, "workspace_id", ws.ID, "customer_id", c.ID)
 		return "", fmt.Errorf("failed to save customer ID: %w", err)
 	}
 
-	slog.Info("Created new Stripe customer", "workspace_id", ws.ID, "customer_id", c.ID)
+	logger.FromContext(ctx).Info("Created new Stripe customer", "workspace_id", ws.ID, "customer_id", c.ID)
 	return c.ID, nil
 }
 
@@ -158,7 +162,7 @@ func (s *Service) AttachAndSetDefaultPaymentMethod(ctx context.Context, ws *acco
 	// First verify the payment method exists and is valid
 	pm, err := paymentmethod.Get(pmID, nil)
 	if err != nil {
-		slog.Error("Failed to retrieve payment method", "error", err, "payment_method_id", pmID)
+		logger.FromContext(ctx).Error("Failed to retrieve payment method", "error", err, "payment_method_id", pmID)
 		return ErrInvalidPaymentMethod(fmt.Errorf("payment method not found: %w", err))
 	}
 
@@ -176,7 +180,7 @@ func (s *Service) AttachAndSetDefaultPaymentMethod(ctx context.Context, ws *acco
 
 	_, err = paymentmethod.Attach(pmID, attachParams)
 	if err != nil {
-		slog.Error("Failed to attach payment method", "error", err, "payment_method_id", pmID, "customer_id", custID)
+		logger.FromContext(ctx).Error("Failed to attach payment method", "error", err, "payment_method_id", pmID, "customer_id", custID)
 		return ErrInvalidPaymentMethod(fmt.Errorf("failed to attach payment method: %w", err))
 	}
 
@@ -191,17 +195,17 @@ func (s *Service) AttachAndSetDefaultPaymentMethod(ctx context.Context, ws *acco
 
 	_, err = customer.Update(custID, updateParams)
 	if err != nil {
-		slog.Error("Failed to set default payment method", "error", err, "payment_method_id", pmID, "customer_id", custID)
+		logger.FromContext(ctx).Error("Failed to set default payment method", "error", err, "payment_method_id", pmID, "customer_id", custID)
 		return fmt.Errorf("failed to set default payment method: %w", err)
 	}
 
 	// Save to local database
 	if err := s.account.SetWorkspaceDefaultPaymentMethod(ctx, ws.ID, pmID); err != nil {
-		slog.Error("Failed to save payment method to workspace", "error", err, "workspace_id", ws.ID, "payment_method_id", pmID)
+		logger.FromContext(ctx).Error("Failed to save payment method to workspace", "error", err, "workspace_id", ws.ID, "payment_method_id", pmID)
 		return fmt.Errorf("failed to save payment method: %w", err)
 	}
 
-	slog.Info("Successfully attached and set default payment method", "workspace_id", ws.ID, "payment_method_id", pmID, "customer_id", custID)
+	logger.FromContext(ctx).Info("Successfully attached and set default payment method", "workspace_id", ws.ID, "payment_method_id", pmID, "customer_id", custID)
 	return nil
 }
 
@@ -227,11 +231,11 @@ func (s *Service) CreateSetupIntent(ctx context.Context, ws *account.Workspace) 
 
 	si, err := setupintent.New(params)
 	if err != nil {
-		slog.Error("Failed to create setup intent", "error", err, "workspace_id", ws.ID, "customer_id", custID)
+		logger.FromContext(ctx).Error("Failed to create setup intent", "error", err, "workspace_id", ws.ID, "customer_id", custID)
 		return "", fmt.Errorf("failed to create setup intent: %w", err)
 	}
 
-	slog.Info("Created setup intent", "workspace_id", ws.ID, "customer_id", custID, "setup_intent_id", si.ID)
+	logger.FromContext(ctx).Info("Created setup intent", "workspace_id", ws.ID, "customer_id", custID, "setup_intent_id", si.ID)
 	return si.ClientSecret, nil
 }
 
@@ -298,11 +302,11 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 
 	session, err := checkoutsession.New(params)
 	if err != nil {
-		slog.Error("Failed to create checkout session", "error", err, "workspace_id", ws.ID, "plan_id", plan.ID)
+		logger.FromContext(ctx).Error("Failed to create checkout session", "error", err, "workspace_id", ws.ID, "plan_id", plan.ID)
 		return "", fmt.Errorf("failed to create checkout session: %w", err)
 	}
 
-	slog.Info("Created checkout session", "workspace_id", ws.ID, "plan_id", plan.ID, "session_id", session.ID)
+	logger.FromContext(ctx).Info("Created checkout session", "workspace_id", ws.ID, "plan_id", plan.ID, "session_id", session.ID)
 	return session.URL, nil
 }
 
@@ -320,11 +324,11 @@ func (s *Service) CreateBillingPortalSession(ctx context.Context, ws *account.Wo
 
 	session, err := portalsession.New(params)
 	if err != nil {
-		slog.Error("Failed to create billing portal session", "error", err, "workspace_id", ws.ID, "customer_id", custID)
+		logger.FromContext(ctx).Error("Failed to create billing portal session", "error", err, "workspace_id", ws.ID, "customer_id", custID)
 		return "", fmt.Errorf("failed to create billing portal session: %w", err)
 	}
 
-	slog.Info("Created billing portal session", "workspace_id", ws.ID, "customer_id", custID)
+	logger.FromContext(ctx).Info("Created billing portal session", "workspace_id", ws.ID, "customer_id", custID)
 	return session.URL, nil
 }
 
@@ -394,7 +398,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 
 			stripeSub, err = subscription.Update(existing.StripeSubID, updateParams)
 			if err != nil {
-				slog.Error("Failed to update Stripe subscription", "error", err, "subscription_id", existing.StripeSubID, "plan_id", plan.ID)
+				logger.FromContext(ctx).Error("Failed to update Stripe subscription", "error", err, "subscription_id", existing.StripeSubID, "plan_id", plan.ID)
 				return fmt.Errorf("failed to update subscription: %w", err)
 			}
 
@@ -407,7 +411,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 			}
 
 			result = existing
-			slog.Info("Updated subscription", "workspace_id", ws.ID, "subscription_id", existing.StripeSubID, "new_plan_id", plan.ID)
+			logger.FromContext(ctx).Info("Updated subscription", "workspace_id", ws.ID, "subscription_id", existing.StripeSubID, "new_plan_id", plan.ID)
 			return nil
 		}
 
@@ -441,7 +445,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 
 		stripeSub, err = subscription.New(createParams)
 		if err != nil {
-			slog.Error("Failed to create Stripe subscription", "error", err, "customer_id", custID, "plan_id", plan.ID)
+			logger.FromContext(ctx).Error("Failed to create Stripe subscription", "error", err, "customer_id", custID, "plan_id", plan.ID)
 			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 
@@ -459,12 +463,28 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		}
 
 		result = newSub
-		slog.Info("Created new subscription", "workspace_id", ws.ID, "subscription_id", stripeSub.ID, "plan_id", plan.ID)
+		logger.FromContext(ctx).Info("Created new subscription", "workspace_id", ws.ID, "subscription_id", stripeSub.ID, "plan_id", plan.ID)
 		return nil
 	}, atomic.WithRetries(2))
 
 	if err != nil {
 		return nil, err
+	}
+
+	// Send subscription welcome email for new subscriptions
+	if result != nil && existing == nil && s.emailIntegration != nil {
+		// Try to get payment method info for the email
+		paymentMethodLastFour := ""
+		if details, err := s.GetSubscriptionDetails(ctx, ws); err == nil && details.PaymentMethod.Last4 != "" {
+			paymentMethodLastFour = details.PaymentMethod.Last4
+		}
+
+		// Send welcome email asynchronously to avoid blocking the main flow
+		go func() {
+			if err := s.emailIntegration.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
+				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspace_id", ws.ID, "subscription_id", result.ID)
+			}
+		}()
 	}
 
 	return result, nil
@@ -496,7 +516,7 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 
 		_, err = subscription.Cancel(subRec.StripeSubID, cancelParams)
 		if err != nil {
-			slog.Error("Failed to cancel Stripe subscription", "error", err, "subscription_id", subRec.StripeSubID, "workspace_id", ws.ID)
+			logger.FromContext(ctx).Error("Failed to cancel Stripe subscription", "error", err, "subscription_id", subRec.StripeSubID, "workspace_id", ws.ID)
 			// Don't return error immediately - still update local state
 		}
 
@@ -505,7 +525,7 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 		subRec.CurrentPeriodEnd = time.Now()
 
 		if updateErr := s.storage.subscription.UpdateOne(ctx, subRec); updateErr != nil {
-			slog.Error("Failed to update local subscription status", "error", updateErr, "subscription_id", subRec.StripeSubID)
+			logger.FromContext(ctx).Error("Failed to update local subscription status", "error", updateErr, "subscription_id", subRec.StripeSubID)
 			return fmt.Errorf("failed to update local subscription: %w", updateErr)
 		}
 
@@ -513,7 +533,22 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 			return fmt.Errorf("failed to cancel Stripe subscription: %w", err)
 		}
 
-		slog.Info("Successfully canceled subscription", "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
+		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
+
+		// Send cancellation email after successful cancellation
+		if s.emailIntegration != nil {
+			// Get plan details for the email
+			plan, planErr := s.GetPlanByID(ctx, subRec.PlanID)
+			if planErr == nil {
+				// Send email asynchronously to avoid blocking the main flow
+				go func() {
+					if err := s.emailIntegration.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
+						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
+					}
+				}()
+			}
+		}
+
 		return nil
 	}, atomic.WithRetries(2))
 }
@@ -553,9 +588,6 @@ func (s *Service) ensureFeatureCompatibility(currentPlan, newPlan *Plan) error {
 		return ErrCannotDowngradePlan(nil)
 	}
 	if cur.ExpenseManagement && !nxt.ExpenseManagement {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.AssetsManagement && !nxt.AssetsManagement {
 		return ErrCannotDowngradePlan(nil)
 	}
 	if cur.Accounting && !nxt.Accounting {
@@ -686,16 +718,16 @@ func (s *Service) RefundAndFinalizeCancellation(ctx context.Context, stripeSubID
 								},
 							})
 							if rerr != nil {
-								slog.Error("failed to create credit note refund", "error", rerr, "invoice", inv.ID)
+								logger.FromContext(ctx).Error("failed to create credit note refund", "error", rerr, "invoice", inv.ID)
 							}
 						} else {
-							slog.Info("skip credit note refund: already applied", "invoice", inv.ID, "subscription", stripeSubID)
+							logger.FromContext(ctx).Info("skip credit note refund: already applied", "invoice", inv.ID, "subscription", stripeSubID)
 						}
 					}
 				}
 			}
 		} else {
-			slog.Info("Skipping refund calculation: missing period bounds", "subscription", stripeSubID)
+			logger.FromContext(ctx).Info("Skipping refund calculation: missing period bounds", "subscription", stripeSubID)
 		}
 	}
 	// Cancel at Stripe immediately without additional proration (credit note already applied)
@@ -839,7 +871,7 @@ func (s *Service) SyncPlansToStripe(ctx context.Context) error {
 		return fmt.Errorf("failed to fetch plans: %w", err)
 	}
 
-	slog.Info("Starting plan sync to Stripe", "plan_count", len(plans))
+	logger.FromContext(ctx).Info("Starting plan sync to Stripe", "plan_count", len(plans))
 
 	for _, p := range plans {
 		if err := s.syncSinglePlanToStripe(ctx, p); err != nil {
@@ -849,7 +881,7 @@ func (s *Service) SyncPlansToStripe(ctx context.Context) error {
 		}
 	}
 
-	slog.Info("Completed plan sync to Stripe")
+	logger.FromContext(ctx).Info("Completed plan sync to Stripe")
 	return nil
 }
 
@@ -862,13 +894,13 @@ func (s *Service) syncSinglePlanToStripe(ctx context.Context, p *Plan) error {
 	}
 
 	// Ensure price exists and is correct
-	needNewPrice, err := s.validateExistingPrice(p, prod.ID)
+	needNewPrice, err := s.validateExistingPrice(ctx, p, prod.ID)
 	if err != nil {
 		return fmt.Errorf("failed to validate existing price: %w", err)
 	}
 
 	if needNewPrice {
-		newPrice, err := s.createPrice(p, prod.ID)
+		newPrice, err := s.createPrice(ctx, p, prod.ID)
 		if err != nil {
 			return fmt.Errorf("failed to create new price: %w", err)
 		}
@@ -876,11 +908,11 @@ func (s *Service) syncSinglePlanToStripe(ctx context.Context, p *Plan) error {
 		// Update local plan with new price ID
 		p.StripePlanID = newPrice.ID
 		if err := s.storage.plan.UpdateOne(ctx, p); err != nil {
-			slog.Error("Failed to update plan with new Stripe price ID", "error", err, "plan_id", p.ID, "price_id", newPrice.ID)
+			logger.FromContext(ctx).Error("Failed to update plan with new Stripe price ID", "error", err, "plan_id", p.ID, "price_id", newPrice.ID)
 			return fmt.Errorf("failed to update plan: %w", err)
 		}
 
-		slog.Info("Created new price for plan", "plan_id", p.ID, "price_id", newPrice.ID, "amount", p.Price)
+		logger.FromContext(ctx).Info("Created new price for plan", "plan_id", p.ID, "price_id", newPrice.ID, "amount", p.Price)
 	}
 
 	return nil
@@ -902,7 +934,7 @@ func (s *Service) findOrCreateProduct(ctx context.Context, p *Plan) (*stripelib.
 					}
 				}
 				// Product exists but metadata doesn't match - update it
-				return s.updateProductMetadata(prod, p)
+				return s.updateProductMetadata(ctx, prod, p)
 			}
 		}
 	}
@@ -919,7 +951,7 @@ func (s *Service) findOrCreateProduct(ctx context.Context, p *Plan) (*stripelib.
 	}
 
 	// Create new product
-	return s.createProduct(p)
+	return s.createProduct(ctx, p)
 }
 
 // findProductByMetadata searches for an existing product with matching metadata
@@ -951,7 +983,7 @@ func (s *Service) findProductByMetadata(p *Plan) (*stripelib.Product, error) {
 }
 
 // createProduct creates a new Stripe product
-func (s *Service) createProduct(p *Plan) (*stripelib.Product, error) {
+func (s *Service) createProduct(ctx context.Context, p *Plan) (*stripelib.Product, error) {
 	idempotencyKey := fmt.Sprintf("product_%s", p.ID)
 	params := &stripelib.ProductParams{
 		Name:        stripelib.String(p.Name),
@@ -968,12 +1000,12 @@ func (s *Service) createProduct(p *Plan) (*stripelib.Product, error) {
 		return nil, fmt.Errorf("failed to create Stripe product: %w", err)
 	}
 
-	slog.Info("Created new Stripe product", "plan_id", p.ID, "product_id", prod.ID, "name", p.Name)
+	logger.FromContext(ctx).Info("Created new Stripe product", "plan_id", p.ID, "product_id", prod.ID, "name", p.Name)
 	return prod, nil
 }
 
 // updateProductMetadata updates an existing product's metadata
-func (s *Service) updateProductMetadata(prod *stripelib.Product, p *Plan) (*stripelib.Product, error) {
+func (s *Service) updateProductMetadata(ctx context.Context, prod *stripelib.Product, p *Plan) (*stripelib.Product, error) {
 	params := &stripelib.ProductParams{
 		Name:        stripelib.String(p.Name),
 		Description: stripelib.String(p.Description),
@@ -988,19 +1020,19 @@ func (s *Service) updateProductMetadata(prod *stripelib.Product, p *Plan) (*stri
 		return nil, fmt.Errorf("failed to update product metadata: %w", err)
 	}
 
-	slog.Info("Updated product metadata", "plan_id", p.ID, "product_id", prod.ID)
+	logger.FromContext(ctx).Info("Updated product metadata", "plan_id", p.ID, "product_id", prod.ID)
 	return updatedProd, nil
 }
 
 // validateExistingPrice checks if the current price matches the plan requirements
-func (s *Service) validateExistingPrice(p *Plan, productID string) (bool, error) {
+func (s *Service) validateExistingPrice(ctx context.Context, p *Plan, productID string) (bool, error) {
 	if p.StripePlanID == "" {
 		return true, nil // Need new price
 	}
 
 	existingPrice, err := price.Get(p.StripePlanID, nil)
 	if err != nil {
-		slog.Warn("Failed to fetch existing price, will create new one", "price_id", p.StripePlanID, "error", err)
+		logger.FromContext(ctx).Warn("Failed to fetch existing price, will create new one", "price_id", p.StripePlanID, "error", err)
 		return true, nil
 	}
 
@@ -1014,28 +1046,28 @@ func (s *Service) validateExistingPrice(p *Plan, productID string) (bool, error)
 
 	// Validate all price properties
 	if string(existingPrice.Currency) != p.Currency {
-		slog.Info("Price currency mismatch", "expected", p.Currency, "actual", existingPrice.Currency)
+		logger.FromContext(ctx).Info("Price currency mismatch", "expected", p.Currency, "actual", existingPrice.Currency)
 		return true, nil
 	}
 
 	if existingPrice.Recurring == nil {
-		slog.Info("Price missing recurring configuration")
+		logger.FromContext(ctx).Info("Price missing recurring configuration")
 		return true, nil
 	}
 
 	if string(existingPrice.Recurring.Interval) != interval {
-		slog.Info("Price interval mismatch", "expected", interval, "actual", existingPrice.Recurring.Interval)
+		logger.FromContext(ctx).Info("Price interval mismatch", "expected", interval, "actual", existingPrice.Recurring.Interval)
 		return true, nil
 	}
 
 	if existingPrice.UnitAmount != expectedAmount {
-		slog.Info("Price amount mismatch", "expected", expectedAmount, "actual", existingPrice.UnitAmount)
+		logger.FromContext(ctx).Info("Price amount mismatch", "expected", expectedAmount, "actual", existingPrice.UnitAmount)
 		return true, nil
 	}
 
 	// Verify product association
 	if existingPrice.Product == nil || existingPrice.Product.ID != productID {
-		slog.Info("Price associated with wrong product", "expected_product", productID, "actual_product", existingPrice.Product)
+		logger.FromContext(ctx).Info("Price associated with wrong product", "expected_product", productID, "actual_product", existingPrice.Product)
 		return true, nil
 	}
 
@@ -1043,7 +1075,7 @@ func (s *Service) validateExistingPrice(p *Plan, productID string) (bool, error)
 }
 
 // createPrice creates a new Stripe price
-func (s *Service) createPrice(p *Plan, productID string) (*stripelib.Price, error) {
+func (s *Service) createPrice(ctx context.Context, p *Plan, productID string) (*stripelib.Price, error) {
 	interval := "month"
 	if p.BillingCycle == BillingCycleYearly {
 		interval = "year"
@@ -1557,7 +1589,7 @@ type TrialInfo struct {
 
 // CreateInvoice creates a new invoice for the workspace
 func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, description string, amount int64, currency string, dueDate *string) (*stripelib.Invoice, error) {
-	logger := slog.With("workspace_id", ws.ID, "amount", amount, "currency", currency)
+	logger := logger.FromContext(ctx).With("workspace_id", ws.ID, "amount", amount, "currency", currency)
 	logger.Info("creating invoice")
 
 	customerID, err := s.EnsureCustomer(ctx, ws)
@@ -1607,7 +1639,7 @@ func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, desc
 
 // ScheduleSubscriptionChange schedules a subscription change for a future date
 func (s *Service) ScheduleSubscriptionChange(ctx context.Context, ws *account.Workspace, plan *Plan, effectiveDate, prorationMode string) (*stripelib.SubscriptionSchedule, error) {
-	logger := slog.With("workspace_id", ws.ID, "plan_descriptor", plan.Descriptor, "effective_date", effectiveDate)
+	logger := logger.FromContext(ctx).With("workspace_id", ws.ID, "plan_descriptor", plan.Descriptor, "effective_date", effectiveDate)
 	logger.Info("scheduling subscription change")
 
 	// Get current subscription
@@ -1670,7 +1702,7 @@ func (s *Service) CancelSubscription(ctx context.Context, ws *account.Workspace)
 
 // GetSubscriptionUsage retrieves usage data for metered billing
 func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspace) (map[string]int64, error) {
-	logger := slog.With("workspace_id", ws.ID)
+	logger := logger.FromContext(ctx).With("workspace_id", ws.ID)
 	logger.Info("retrieving subscription usage")
 
 	// Get current subscription
@@ -1695,7 +1727,7 @@ func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspac
 
 // ValidateSubscriptionAccess checks if workspace has access to specific features
 func (s *Service) ValidateSubscriptionAccess(ctx context.Context, ws *account.Workspace, feature string) error {
-	logger := slog.With("workspace_id", ws.ID, "feature", feature)
+	logger := logger.FromContext(ctx).With("workspace_id", ws.ID, "feature", feature)
 	logger.Info("validating subscription access")
 
 	// Get current subscription and plan
@@ -1745,7 +1777,7 @@ func (s *Service) ValidateSubscriptionAccess(ctx context.Context, ws *account.Wo
 
 // EstimateProrationAmount estimates the proration amount for plan changes
 func (s *Service) EstimateProrationAmount(ctx context.Context, ws *account.Workspace, newPlanDescriptor string) (int64, error) {
-	logger := slog.With("workspace_id", ws.ID, "new_plan", newPlanDescriptor)
+	logger := logger.FromContext(ctx).With("workspace_id", ws.ID, "new_plan", newPlanDescriptor)
 	logger.Info("estimating proration amount")
 
 	// Get current subscription
@@ -1785,7 +1817,7 @@ func (s *Service) EstimateProrationAmount(ctx context.Context, ws *account.Works
 
 // ProcessWebhook processes incoming Stripe webhooks
 func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature string) error {
-	logger := slog.With("event_type", "webhook")
+	logger := logger.FromContext(ctx).With("event_type", "webhook")
 	logger.Info("processing stripe webhook")
 
 	// Note: In a real implementation, you'd need the webhook endpoint secret
@@ -1829,7 +1861,7 @@ func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature 
 }
 
 func (s *Service) handleSubscriptionCreated(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "subscription_created")
+	logger := logger.FromContext(ctx).With("event", "subscription_created")
 	logger.Info("handling subscription created webhook")
 
 	// Extract subscription data
@@ -1869,7 +1901,7 @@ func (s *Service) handleSubscriptionCreated(ctx context.Context, event map[strin
 }
 
 func (s *Service) handleSubscriptionUpdated(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "subscription_updated")
+	logger := logger.FromContext(ctx).With("event", "subscription_updated")
 	logger.Info("handling subscription updated webhook")
 
 	// Similar to created, but may need to handle plan changes
@@ -1909,7 +1941,7 @@ func (s *Service) handleSubscriptionUpdated(ctx context.Context, event map[strin
 }
 
 func (s *Service) handleSubscriptionDeleted(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "subscription_deleted")
+	logger := logger.FromContext(ctx).With("event", "subscription_deleted")
 	logger.Info("handling subscription deleted webhook")
 
 	data, ok := event["data"].(map[string]interface{})
@@ -1943,7 +1975,7 @@ func (s *Service) handleSubscriptionDeleted(ctx context.Context, event map[strin
 }
 
 func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "invoice_payment_succeeded")
+	logger := logger.FromContext(ctx).With("event", "invoice_payment_succeeded")
 	logger.Info("handling invoice payment succeeded webhook")
 
 	data, ok := event["data"].(map[string]interface{})
@@ -1960,6 +1992,69 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[s
 	if subscriptionID, ok := object["subscription"].(string); ok && subscriptionID != "" {
 		s.MarkSubscriptionActive(ctx, subscriptionID)
 		logger.Info("subscription marked as active after successful payment")
+
+		// Send payment confirmation email notification
+		if s.emailIntegration != nil {
+			go func() {
+				// Get subscription details to send notification
+				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+				if err != nil {
+					logger.Error("Failed to get subscription for payment succeeded email", "error", err, "subscription_id", subscriptionID)
+					return
+				}
+
+				// Get plan details
+				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				if err != nil {
+					logger.Error("Failed to get plan for payment succeeded email", "error", err, "plan_id", subscription.PlanID)
+					return
+				}
+
+				// Try to get payment method info and invoice details from event
+				paymentMethodLastFour := "****"
+				invoiceURL := ""
+
+				// Extract payment method from event (simplified approach)
+				if charge, ok := object["charge"].(map[string]interface{}); ok {
+					if pm, ok := charge["payment_method_details"].(map[string]interface{}); ok {
+						if card, ok := pm["card"].(map[string]interface{}); ok {
+							if last4, ok := card["last4"].(string); ok {
+								paymentMethodLastFour = last4
+							}
+						}
+					}
+				}
+
+				// Get invoice URL from object
+				if hostedInvoiceURL, ok := object["hosted_invoice_url"].(string); ok {
+					invoiceURL = hostedInvoiceURL
+				} else if invoicePDF, ok := object["invoice_pdf"].(string); ok {
+					invoiceURL = invoicePDF
+				}
+
+				// Determine if this is first payment (subscription creation) or renewal
+				// Check if subscription was recently created (within last 24 hours)
+				isFirstPayment := time.Since(subscription.CreatedAt) < 24*time.Hour
+
+				paymentDate := time.Now()
+				if created, ok := object["created"].(float64); ok {
+					paymentDate = time.Unix(int64(created), 0)
+				}
+
+				var emailErr error
+				if isFirstPayment {
+					// Send subscription confirmed email for first payment
+					emailErr = s.emailIntegration.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL)
+				} else {
+					// Send payment succeeded email for renewals
+					emailErr = s.emailIntegration.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL, paymentDate)
+				}
+
+				if emailErr != nil {
+					logger.Error("Failed to send payment confirmation email", "error", emailErr, "workspace_id", subscription.WorkspaceID, "is_first_payment", isFirstPayment)
+				}
+			}()
+		}
 	}
 
 	logger.Info("invoice payment succeeded webhook processed successfully")
@@ -1967,7 +2062,7 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[s
 }
 
 func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "invoice_payment_failed")
+	logger := logger.FromContext(ctx).With("event", "invoice_payment_failed")
 	logger.Info("handling invoice payment failed webhook")
 
 	data, ok := event["data"].(map[string]interface{})
@@ -1984,6 +2079,33 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[stri
 	if subscriptionID, ok := object["subscription"].(string); ok && subscriptionID != "" {
 		s.MarkSubscriptionPastDue(ctx, subscriptionID)
 		logger.Info("subscription marked as past due after failed payment")
+
+		// Send payment failed email notification
+		if s.emailIntegration != nil {
+			go func() {
+				// Get subscription details to send notification
+				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+				if err != nil {
+					logger.Error("Failed to get subscription for payment failed email", "error", err, "subscription_id", subscriptionID)
+					return
+				}
+
+				// Get plan details
+				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				if err != nil {
+					logger.Error("Failed to get plan for payment failed email", "error", err, "plan_id", subscription.PlanID)
+					return
+				}
+
+				// Try to get payment method info (simplified - would need to extract from Stripe)
+				paymentMethodLastFour := "****"
+
+				err = s.emailIntegration.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, time.Now(), nil)
+				if err != nil {
+					logger.Error("Failed to send payment failed email", "error", err, "workspace_id", subscription.WorkspaceID)
+				}
+			}()
+		}
 	}
 
 	logger.Info("invoice payment failed webhook processed successfully")
@@ -1991,7 +2113,7 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[stri
 }
 
 func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]interface{}) error {
-	logger := slog.With("event", "trial_will_end")
+	logger := logger.FromContext(ctx).With("event", "trial_will_end")
 	logger.Info("handling trial will end webhook")
 
 	// This is a good place to send notification emails or trigger
@@ -2012,10 +2134,36 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]inter
 		return ErrWebhookProcessingFailed(nil, "missing_subscription_id")
 	}
 
-	// Here you could:
-	// 1. Send trial ending notification email
-	// 2. Update subscription metadata
-	// 3. Trigger business logic for trial conversion
+	// Send trial ending notification email
+	if s.emailIntegration != nil {
+		go func() {
+			// Get subscription details
+			subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+			if err != nil {
+				logger.Error("Failed to get subscription for trial ending email", "error", err, "subscription_id", subscriptionID)
+				return
+			}
+
+			// Get plan details
+			plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+			if err != nil {
+				logger.Error("Failed to get plan for trial ending email", "error", err, "plan_id", subscription.PlanID)
+				return
+			}
+
+			// Get trial status
+			trialInfo, err := s.CheckTrialStatus(context.Background(), &account.Workspace{ID: subscription.WorkspaceID})
+			if err != nil {
+				logger.Error("Failed to get trial status for trial ending email", "error", err, "workspace_id", subscription.WorkspaceID)
+				return
+			}
+
+			err = s.emailIntegration.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
+			if err != nil {
+				logger.Error("Failed to send trial ending email", "error", err, "workspace_id", subscription.WorkspaceID)
+			}
+		}()
+	}
 
 	logger.Info("trial will end webhook processed successfully", "subscription_id", subscriptionID)
 	return nil
@@ -2025,8 +2173,8 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]inter
 
 // CanUseFeature checks if a workspace's subscription allows a specific feature
 // This method is designed to work with the enforce_plan_feature middleware
-func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature string) error {
-	logger := slog.With("workspace_id", workspaceID, "feature", feature)
+func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature role.Resource) error {
+	logger := logger.FromContext(ctx).With("workspace_id", workspaceID, "feature", feature)
 	logger.Info("checking feature availability")
 
 	// Get subscription for workspace
@@ -2051,67 +2199,63 @@ func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature
 
 	// Check feature availability
 	switch feature {
-	case "customer_management":
+	case role.ResourceCustomer:
 		if !plan.Features.CustomerManagement {
 			return ErrFeatureNotAvailable(nil, PlanSchema.CustomerManagement)
 		}
-	case "inventory_management":
+	case role.ResourceInventory:
 		if !plan.Features.InventoryManagement {
 			return ErrFeatureNotAvailable(nil, PlanSchema.InventoryManagement)
 		}
-	case "order_management":
+	case role.ResourceOrder:
 		if !plan.Features.OrderManagement {
 			return ErrFeatureNotAvailable(nil, PlanSchema.OrderManagement)
 		}
-	case "expense_management":
+	case role.ResourceExpense:
 		if !plan.Features.ExpenseManagement {
 			return ErrFeatureNotAvailable(nil, PlanSchema.ExpenseManagement)
 		}
-	case "assets_management":
-		if !plan.Features.AssetsManagement {
-			return ErrFeatureNotAvailable(nil, PlanSchema.AssetsManagement)
-		}
-	case "accounting":
+	case role.ResourceAccounting:
 		if !plan.Features.Accounting {
 			return ErrFeatureNotAvailable(nil, PlanSchema.Accounting)
 		}
-	case "basic_analytics":
+	case role.ResourceBasicAnalytics:
 		if !plan.Features.BasicAnalytics {
 			return ErrFeatureNotAvailable(nil, PlanSchema.BasicAnalytics)
 		}
-	case "financial_reports":
+	case role.ResourceFinancialReports:
 		if !plan.Features.FinancialReports {
 			return ErrFeatureNotAvailable(nil, PlanSchema.FinancialReports)
 		}
-	case "data_import":
+	case role.ResourceDataImport:
 		if !plan.Features.DataImport {
 			return ErrFeatureNotAvailable(nil, PlanSchema.DataImport)
 		}
-	case "data_export":
+	case role.ResourceDataExport:
 		if !plan.Features.DataExport {
 			return ErrFeatureNotAvailable(nil, PlanSchema.DataExport)
 		}
-	case "advanced_analytics":
+	case role.ResourceAdvancedAnalytics:
 		if !plan.Features.AdvancedAnalytics {
 			return ErrFeatureNotAvailable(nil, PlanSchema.AdvancedAnalytics)
 		}
-	case "advanced_financial_reports":
+	case role.ResourceAdvancedFinancialReports:
 		if !plan.Features.AdvancedFinancialReports {
 			return ErrFeatureNotAvailable(nil, PlanSchema.AdvancedFinancialReports)
 		}
-	case "order_payment_links":
+	case role.ResourceOrderPaymentLinks:
 		if !plan.Features.OrderPaymentLinks {
 			return ErrFeatureNotAvailable(nil, PlanSchema.OrderPaymentLinks)
 		}
-	case "invoice_generation":
+	case role.ResourceOrderInvoiceGeneration:
 		if !plan.Features.InvoiceGeneration {
 			return ErrFeatureNotAvailable(nil, PlanSchema.InvoiceGeneration)
 		}
-	case "export_analytics_data":
+	case role.ResourceExportAnalyticsData:
 		if !plan.Features.ExportAnalyticsData {
 			return ErrFeatureNotAvailable(nil, PlanSchema.ExportAnalyticsData)
 		}
-	case "ai_business_assistant":
+	case role.ResourceAIBusinessAssistant:
 		if !plan.Features.AIBusinessAssistant {
 			return ErrFeatureNotAvailable(nil, PlanSchema.AIBusinessAssistant)
 		}
@@ -2127,7 +2271,7 @@ func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature
 // CheckUsageLimitWithCallback checks if additional usage would exceed plan limits
 // This method is designed to work with the enforce_plan_limit middleware
 func (s *Service) CheckUsageLimitWithCallback(ctx context.Context, workspaceID, limitType string, additionalUsage int64, checkFunc func(used, limit int64) error) error {
-	logger := slog.With("workspace_id", workspaceID, "limit_type", limitType, "additional_usage", additionalUsage)
+	logger := logger.FromContext(ctx).With("workspace_id", workspaceID, "limit_type", limitType, "additional_usage", additionalUsage)
 	logger.Info("checking usage limit with callback")
 
 	// Get current usage and limits
@@ -2163,7 +2307,7 @@ func (s *Service) CheckUsageLimitWithCallback(ctx context.Context, workspaceID, 
 
 // GetSubscriptionByWorkspaceIDSafe safely retrieves subscription info for middleware
 func (s *Service) GetSubscriptionByWorkspaceIDSafe(ctx context.Context, workspaceID string) (*Subscription, error) {
-	logger := slog.With("workspace_id", workspaceID)
+	logger := logger.FromContext(ctx).With("workspace_id", workspaceID)
 	logger.Info("getting subscription for middleware check")
 
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, workspaceID)
@@ -2194,7 +2338,7 @@ func (s *Service) ValidateActiveSubscription(ctx context.Context, workspaceID st
 
 // GetWorkspaceSubscriptionInfo returns comprehensive subscription information for a workspace
 func (s *Service) GetWorkspaceSubscriptionInfo(ctx context.Context, workspaceID string) (*WorkspaceSubscriptionInfo, error) {
-	logger := slog.With("workspace_id", workspaceID)
+	logger := logger.FromContext(ctx).With("workspace_id", workspaceID)
 	logger.Info("getting workspace subscription info")
 
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, workspaceID)

@@ -4,7 +4,7 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <title>{{default "Reset your password" .subject}}</title>
+    <title>{{default "Verify your email address" .subject}}</title>
     <!--[if mso]>
     <noscript>
         <xml>
@@ -53,7 +53,7 @@
         }
         
         .email-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             padding: 32px;
             text-align: center;
         }
@@ -66,6 +66,18 @@
             letter-spacing: -0.025em;
         }
         
+        .email-icon {
+            background-color: rgba(255, 255, 255, 0.2);
+            border-radius: 50%;
+            width: 80px;
+            height: 80px;
+            margin: 16px auto 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 32px;
+        }
+        
         .email-content {
             padding: 40px 32px;
         }
@@ -76,6 +88,7 @@
             color: #111827;
             margin-bottom: 16px;
             line-height: 1.3;
+            text-align: center;
         }
         
         .email-text {
@@ -90,6 +103,10 @@
             margin-bottom: 8px;
         }
         
+        .email-text.center {
+            text-align: center;
+        }
+        
         .button-container {
             text-align: center;
             margin: 32px 0;
@@ -97,7 +114,7 @@
         
         .button {
             display: inline-block;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #3b82f6 0%, #1d4ed8 100%);
             color: #ffffff !important;
             text-decoration: none;
             padding: 16px 32px;
@@ -105,33 +122,54 @@
             font-weight: 600;
             font-size: 16px;
             letter-spacing: 0.025em;
-            box-shadow: 0 4px 14px 0 rgba(102, 126, 234, 0.39);
+            box-shadow: 0 4px 14px 0 rgba(59, 130, 246, 0.39);
             transition: all 0.2s ease-in-out;
         }
         
         .button:hover {
-            box-shadow: 0 6px 20px 0 rgba(102, 126, 234, 0.5);
+            box-shadow: 0 6px 20px 0 rgba(59, 130, 246, 0.5);
             transform: translateY(-1px);
         }
         
-        .security-notice {
+        .welcome-notice {
+            background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%);
+            border-left: 4px solid #3b82f6;
+            padding: 20px;
+            margin: 24px 0;
+            border-radius: 0 8px 8px 0;
+        }
+        
+        .welcome-notice-title {
+            font-weight: 600;
+            color: #1e40af;
+            margin-bottom: 8px;
+            font-size: 16px;
+        }
+        
+        .welcome-notice-text {
+            font-size: 14px;
+            color: #1e3a8a;
+            line-height: 1.5;
+        }
+        
+        .verification-info {
             background-color: #f3f4f6;
-            border-left: 4px solid #fbbf24;
+            border-left: 4px solid #6b7280;
             padding: 16px;
             margin: 24px 0;
             border-radius: 0 6px 6px 0;
         }
         
-        .security-notice-title {
+        .verification-info-title {
             font-weight: 600;
-            color: #92400e;
+            color: #374151;
             margin-bottom: 8px;
             font-size: 14px;
         }
         
-        .security-notice-text {
+        .verification-info-text {
             font-size: 14px;
-            color: #78350f;
+            color: #4b5563;
             line-height: 1.5;
         }
         
@@ -175,7 +213,7 @@
         }
         
         .footer-link {
-            color: #667eea;
+            color: #3b82f6;
             text-decoration: none;
         }
         
@@ -190,6 +228,7 @@
             .email-header { padding: 24px; }
             .email-title { font-size: 22px; }
             .button { padding: 14px 28px; font-size: 15px; }
+            .email-icon { width: 60px; height: 60px; font-size: 24px; }
         }
         
         @media only screen and (max-width: 480px) {
@@ -206,38 +245,47 @@
             <!-- Header -->
             <div class="email-header">
                 <div class="email-logo">{{default "Kyora" .productName}}</div>
+                <div class="email-icon">📧</div>
             </div>
             
             <!-- Content -->
             <div class="email-content">
-                <h1 class="email-title">Reset Your Password</h1>
+                <h1 class="email-title">Verify Your Email Address</h1>
                 
                 <p class="email-text greeting">Hi {{default "there" .userName}},</p>
                 
-                <p class="email-text">
-                    We received a request to reset your password for your {{default "Kyora" .productName}} account. 
-                    If you made this request, click the button below to create a new password.
+                <div class="welcome-notice">
+                    <div class="welcome-notice-title">🎉 Welcome to {{default "Kyora" .productName}}!</div>
+                    <div class="welcome-notice-text">
+                        Thanks for joining us! To complete your account setup and ensure the security of your account, 
+                        we need to verify your email address.
+                    </div>
+                </div>
+                
+                <p class="email-text center">
+                    Click the button below to verify your email address and activate your account:
                 </p>
                 
                 <div class="button-container">
-                    <a href="{{default "#" .resetURL}}" class="button">Reset My Password</a>
+                    <a href="{{default "#" .verifyURL}}" class="button">Verify My Email</a>
                 </div>
                 
-                <div class="security-notice">
-                    <div class="security-notice-title">🔒 Security Notice</div>
-                    <div class="security-notice-text">
-                        For your security, this link will expire in {{default "24 hours" .expiryTime}}. 
-                        If you didn't request a password reset, you can safely ignore this email.
+                <div class="verification-info">
+                    <div class="verification-info-title">📍 What happens next?</div>
+                    <div class="verification-info-text">
+                        Once your email is verified, you'll have full access to all {{default "Kyora" .productName}} features. 
+                        This link will expire in {{default "24 hours" .expiryTime}} for security reasons.
                     </div>
                 </div>
                 
                 <div class="link-fallback">
                     <div class="link-fallback-title">Having trouble with the button?</div>
-                    <div class="link-fallback-url">{{default "#" .resetURL}}</div>
+                    <div class="link-fallback-url">{{default "#" .verifyURL}}</div>
                 </div>
                 
                 <p class="email-text">
-                    If you have any questions or concerns, please don't hesitate to 
+                    If you didn't create an account with {{default "Kyora" .productName}}, you can safely ignore this email. 
+                    If you have any questions, feel free to 
                     <a href="mailto:{{default "support@kyora.com" .supportEmail}}" class="footer-link">contact our support team</a>.
                 </p>
             </div>

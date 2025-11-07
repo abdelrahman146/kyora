@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <title>Payment Received - Subscription Renewed</title>
+    <!--[if mso]>
+    <noscript>
+        <xml>
+            <o:OfficeDocumentSettings>
+                <o:PixelsPerInch>96</o:PixelsPerInch>
+            </o:OfficeDocumentSettings>
+        </xml>
+    </noscript>
+    <![endif]-->
+    <style>
+        /* Reset styles */
+        body, table, td, a { -webkit-text-size-adjust: 100%; -ms-text-size-adjust: 100%; }
+        table, td { mso-table-lspace: 0pt; mso-table-rspace: 0pt; }
+        img { -ms-interpolation-mode: bicubic; border: 0; height: auto; line-height: 100%; outline: none; text-decoration: none; }
+
+        /* Base styles */
+        body {
+            height: 100% !important;
+            margin: 0 !important;
+            padding: 0 !important;
+            width: 100% !important;
+            background-color: #f8fafc;
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            line-height: 1.6;
+            color: #334155;
+        }
+
+        /* Container styles */
+        .email-container {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #ffffff;
+        }
+
+        /* Header styles */
+        .header {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            padding: 40px 30px;
+            text-align: center;
+        }
+
+        .logo {
+            font-size: 32px;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            margin-bottom: 10px;
+            display: inline-block;
+        }
+
+        .header-subtitle {
+            color: #d1fae5;
+            font-size: 16px;
+            margin: 0;
+        }
+
+        /* Success badge */
+        .success-badge {
+            background-color: rgba(255, 255, 255, 0.2);
+            padding: 12px 24px;
+            border-radius: 50px;
+            display: inline-block;
+            margin: 20px 0;
+            color: #ffffff;
+            font-weight: 600;
+            font-size: 14px;
+        }
+
+        /* Content styles */
+        .content {
+            padding: 40px 30px;
+        }
+
+        .greeting {
+            font-size: 22px;
+            margin-bottom: 20px;
+            color: #1e293b;
+            font-weight: 600;
+        }
+
+        /* Payment summary */
+        .payment-summary {
+            background: linear-gradient(135deg, #ecfdf5 0%, #f0fdf4 100%);
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+            text-align: center;
+            border: 1px solid #10b981;
+        }
+
+        .payment-summary h2 {
+            color: #059669;
+            margin: 0 0 10px 0;
+            font-size: 24px;
+            font-weight: 700;
+        }
+
+        .payment-summary .amount {
+            font-size: 36px;
+            color: #10b981;
+            font-weight: 800;
+            margin: 15px 0;
+        }
+
+        .payment-summary p {
+            color: #065f46;
+            margin: 0;
+            font-size: 16px;
+        }
+
+        /* Invoice details */
+        .invoice-details {
+            background-color: #f8fafc;
+            border-radius: 8px;
+            padding: 25px;
+            margin: 25px 0;
+            border: 1px solid #e2e8f0;
+        }
+
+        .invoice-details h3 {
+            margin: 0 0 20px 0;
+            color: #1e293b;
+            font-size: 18px;
+            font-weight: 600;
+        }
+
+        .detail-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 0;
+            border-bottom: 1px solid #e2e8f0;
+        }
+
+        .detail-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+
+        .detail-label {
+            font-weight: 500;
+            color: #64748b;
+            font-size: 15px;
+        }
+
+        .detail-value {
+            color: #1e293b;
+            font-weight: 600;
+            font-size: 15px;
+            text-align: right;
+        }
+
+        .invoice-number {
+            font-family: 'Courier New', monospace;
+            background-color: #e2e8f0;
+            padding: 6px 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            color: #475569;
+        }
+
+        /* Button styles */
+        .button-container {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 16px 32px;
+            background-color: #7c3aed;
+            color: #ffffff !important;
+            text-decoration: none;
+            border-radius: 8px;
+            font-weight: 600;
+            font-size: 16px;
+            transition: background-color 0.2s;
+            margin: 0 8px 8px 0;
+        }
+
+        .button:hover {
+            background-color: #6d28d9;
+        }
+
+        .button-secondary {
+            background-color: #10b981;
+        }
+
+        .button-secondary:hover {
+            background-color: #059669;
+        }
+
+        .button-outline {
+            background-color: transparent;
+            color: #7c3aed !important;
+            border: 2px solid #7c3aed;
+        }
+
+        .button-outline:hover {
+            background-color: #7c3aed;
+            color: #ffffff !important;
+        }
+
+        /* Next billing info */
+        .billing-info {
+            background-color: #f0f9ff;
+            border-left: 4px solid #0ea5e9;
+            padding: 20px;
+            margin: 25px 0;
+            border-radius: 0 8px 8px 0;
+        }
+
+        .billing-info h4 {
+            margin: 0 0 10px 0;
+            color: #0c4a6e;
+            font-size: 16px;
+            font-weight: 600;
+        }
+
+        .billing-info p {
+            margin: 0;
+            color: #0c4a6e;
+            font-size: 14px;
+        }
+
+        /* Footer styles */
+        .footer {
+            background-color: #f8fafc;
+            padding: 30px;
+            border-top: 1px solid #e2e8f0;
+            text-align: center;
+        }
+
+        .footer p {
+            margin: 0 0 10px 0;
+            color: #64748b;
+            font-size: 14px;
+        }
+
+        .footer-links {
+            margin: 20px 0;
+        }
+
+        .footer-links a {
+            color: #7c3aed;
+            text-decoration: none;
+            margin: 0 15px;
+            font-size: 14px;
+        }
+
+        .footer-links a:hover {
+            text-decoration: underline;
+        }
+
+        .copyright {
+            color: #94a3b8;
+            font-size: 12px;
+            margin-top: 20px;
+        }
+
+        /* Mobile responsiveness */
+        @media only screen and (max-width: 600px) {
+            .email-container {
+                width: 100% !important;
+            }
+            
+            .header, .content, .footer {
+                padding-left: 20px !important;
+                padding-right: 20px !important;
+            }
+            
+            .logo {
+                font-size: 28px;
+            }
+            
+            .greeting {
+                font-size: 20px;
+            }
+            
+            .payment-summary .amount {
+                font-size: 28px;
+            }
+            
+            .detail-row {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 4px;
+            }
+            
+            .detail-value {
+                text-align: left;
+            }
+            
+            .button {
+                display: block;
+                width: 100%;
+                max-width: 280px;
+                margin: 0 auto 12px auto;
+            }
+        }
+
+        /* Dark mode support */
+        @media (prefers-color-scheme: dark) {
+            .email-container {
+                background-color: #1e293b;
+            }
+            
+            .content {
+                color: #e2e8f0;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="email-container">
+        <!-- Header -->
+        <div class="header">
+            <a href="#" class="logo">{{default "Kyora" .productName}}</a>
+            <p class="header-subtitle">Payment Confirmation</p>
+            <div class="success-badge">✓ Payment Successful</div>
+        </div>
+
+        <!-- Content -->
+        <div class="content">
+            <p class="greeting">Hi {{default "there" .userName}},</p>
+            
+            <p>Thank you! Your subscription has been automatically renewed and your payment has been successfully processed.</p>
+
+            <div class="payment-summary">
+                <h2>Payment Received</h2>
+                <div class="amount">{{default "$29.00" .amount}}</div>
+                <p>for {{default "Pro Plan" .planName}} subscription</p>
+            </div>
+
+            <div class="invoice-details">
+                <h3>📄 Invoice Details</h3>
+                <div class="detail-row">
+                    <span class="detail-label">Invoice Number:</span>
+                    <span class="detail-value invoice-number">{{default "INV-001" .invoiceNumber}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Payment Date:</span>
+                    <span class="detail-value">{{default "Today" .paymentDate}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Plan:</span>
+                    <span class="detail-value">{{default "Pro Plan" .planName}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Amount Paid:</span>
+                    <span class="detail-value">{{default "$29.00" .amount}}</span>
+                </div>
+                <div class="detail-row">
+                    <span class="detail-label">Next Billing Date:</span>
+                    <span class="detail-value">{{default "Next month" .nextBillingDate}}</span>
+                </div>
+            </div>
+
+            <div class="button-container">
+                <a href="{{.invoiceURL}}" class="button button-outline">Download Invoice</a>
+                <a href="{{default "#" .dashboardURL}}" class="button">View Dashboard</a>
+            </div>
+
+            <div class="billing-info">
+                <h4>📅 Next Billing Information</h4>
+                <p>
+                    Your subscription will automatically renew on <strong>{{default "next month" .nextBillingDate}}</strong>. 
+                    You'll receive another invoice confirmation email when the next payment is processed.
+                </p>
+            </div>
+
+            <div style="background-color: #f0fdf4; border-left: 4px solid #10b981; padding: 20px; border-radius: 0 8px 8px 0; margin-top: 30px;">
+                <h4 style="margin: 0 0 10px 0; color: #059669; font-size: 16px;">🎯 Continue Building</h4>
+                <p style="margin: 0; color: #065f46;">
+                    Your subscription is active and all features are available. 
+                    Continue building your business with full access to all {{default "Kyora" .productName}} tools.
+                </p>
+            </div>
+
+            <p style="margin-top: 30px; color: #64748b; font-size: 14px; text-align: center;">
+                Need to update your billing information or have questions about your subscription?<br>
+                <a href="mailto:{{default "support@kyora.com" .supportEmail}}" style="color: #7c3aed; text-decoration: none;">Contact our support team</a>
+            </p>
+        </div>
+
+        <!-- Footer -->
+        <div class="footer">
+            <p>Thank you for being a {{default "Kyora" .productName}} customer!</p>
+            <div class="footer-links">
+                <a href="{{default "#" .helpURL}}">Help Center</a>
+                <a href="{{default "#" .dashboardURL}}">Dashboard</a>
+                <a href="{{default "#" .billingURL}}">Billing Settings</a>
+                <a href="#">Privacy Policy</a>
+            </div>
+            <p class="copyright">© {{default "2024" .currentYear}} {{default "Kyora" .productName}}. All rights reserved.</p>
+        </div>
+    </div>
+</body>
+</html>

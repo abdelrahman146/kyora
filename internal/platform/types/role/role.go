@@ -55,14 +55,24 @@ const (
 type Resource string
 
 const (
-	ResourceAccount    Resource = "account"
-	ResourceBilling    Resource = "billing"
-	ResourceBusiness   Resource = "business"
-	ResourceCustomer   Resource = "customer"
-	ResourceOrder      Resource = "order"
-	ResourceInventory  Resource = "inventory"
-	ResourceExpense    Resource = "expense"
-	ResourceAccounting Resource = "accounting"
+	ResourceAccount                  Resource = "account"
+	ResourceBilling                  Resource = "billing"
+	ResourceBusiness                 Resource = "business"
+	ResourceCustomer                 Resource = "customer"
+	ResourceOrder                    Resource = "order"
+	ResourceInventory                Resource = "inventory"
+	ResourceExpense                  Resource = "expense"
+	ResourceAccounting               Resource = "accounting"
+	ResourceBasicAnalytics           Resource = "basic_analytics"
+	ResourceAdvancedAnalytics        Resource = "advanced_analytics"
+	ResourceFinancialReports         Resource = "basic_financial_reports"
+	ResourceAdvancedFinancialReports Resource = "advanced_financial_reports"
+	ResourceOrderPaymentLinks        Resource = "order_payment_links"
+	ResourceOrderInvoiceGeneration   Resource = "order_invoice_generation"
+	ResourceAIBusinessAssistant      Resource = "ai_business_assistant"
+	ResourceExportAnalyticsData      Resource = "export_analytics_data"
+	ResourceDataImport               Resource = "data_import"
+	ResourceDataExport               Resource = "data_export"
 )
 
 func (r Role) HasPermission(action Action, resource Resource) error {

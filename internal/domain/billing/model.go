@@ -41,7 +41,6 @@ type PlanFeature struct {
 	InventoryManagement      bool `json:"inventoryManagement"`
 	OrderManagement          bool `json:"orderManagement"`
 	ExpenseManagement        bool `json:"expenseManagement"`
-	AssetsManagement         bool `json:"assetsManagement"`
 	Accounting               bool `json:"accounting"` // owner draws, investments, loans tracking
 	BasicAnalytics           bool `json:"basicAnalytics"`
 	FinancialReports         bool `json:"financialReports"`
@@ -63,7 +62,6 @@ func (pf *PlanFeature) CanUseFeature(feature schema.Field) error {
 		PlanSchema.InventoryManagement:      pf.InventoryManagement,
 		PlanSchema.OrderManagement:          pf.OrderManagement,
 		PlanSchema.ExpenseManagement:        pf.ExpenseManagement,
-		PlanSchema.AssetsManagement:         pf.AssetsManagement,
 		PlanSchema.Accounting:               pf.Accounting,
 		PlanSchema.BasicAnalytics:           pf.BasicAnalytics,
 		PlanSchema.FinancialReports:         pf.FinancialReports,
@@ -152,7 +150,6 @@ var PlanSchema = struct {
 	InventoryManagement      schema.Field
 	OrderManagement          schema.Field
 	ExpenseManagement        schema.Field
-	AssetsManagement         schema.Field
 	Accounting               schema.Field
 	BasicAnalytics           schema.Field
 	FinancialReports         schema.Field
@@ -185,7 +182,6 @@ var PlanSchema = struct {
 	InventoryManagement:      schema.NewField("features->inventoryManagement", "features.inventoryManagement"),
 	OrderManagement:          schema.NewField("features->orderManagement", "features.orderManagement"),
 	ExpenseManagement:        schema.NewField("features->expenseManagement", "features.expenseManagement"),
-	AssetsManagement:         schema.NewField("features->assetsManagement", "features.assetsManagement"),
 	Accounting:               schema.NewField("features->accounting", "features.accounting"),
 	BasicAnalytics:           schema.NewField("features->basicAnalytics", "features.basicAnalytics"),
 	FinancialReports:         schema.NewField("features->financialReports", "features.financialReports"),

@@ -12,16 +12,18 @@ import (
 )
 
 type Service struct {
-	bus             *bus.Bus
-	storage         *Storage
-	atomicProcessor atomic.AtomicProcessor
+	bus              *bus.Bus
+	storage          *Storage
+	atomicProcessor  atomic.AtomicProcessor
+	emailIntegration *EmailIntegration
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, emailIntegration *EmailIntegration) *Service {
 	return &Service{
-		storage:         storage,
-		atomicProcessor: atomicProcessor,
-		bus:             bus,
+		storage:          storage,
+		atomicProcessor:  atomicProcessor,
+		bus:              bus,
+		emailIntegration: emailIntegration,
 	}
 }
 
@@ -70,6 +72,11 @@ type LoginResponse struct {
 }
 
 func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email, password string) (*LoginResponse, error) {
+	return s.LoginWithEmailAndPasswordWithContext(ctx, email, password, "", "")
+}
+
+// LoginWithEmailAndPasswordWithContext includes client context for security notifications
+func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, email, password, clientIP, userAgent string) (*LoginResponse, error) {
 	user, err := s.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, ErrInvalidCredentials(err)
@@ -79,6 +86,17 @@ func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email, password
 		if err != nil {
 			return nil, problem.InternalError().WithError(err)
 		}
+
+		// Send login notification email asynchronously
+		if s.emailIntegration != nil {
+			go func() {
+				if err := s.emailIntegration.SendLoginNotificationEmail(context.Background(), user, clientIP, userAgent); err != nil {
+					// Log error but don't fail the login process
+					// Login notifications are a security feature but shouldn't block user access
+				}
+			}()
+		}
+
 		return &LoginResponse{
 			User:  user,
 			Token: token,
@@ -100,11 +118,27 @@ func (s *Service) CreateVerifyEmailToken(ctx context.Context, email string) (str
 	if err != nil {
 		return "", problem.InternalError().WithError(err)
 	}
-	s.bus.Emit(bus.VerifyEmailTopic, &bus.VerifyEmailEvent{
-		Email:    user.Email,
-		ExpireAt: expAt,
-		Token:    token,
-	})
+
+	// Try to send email using the email integration
+	if s.emailIntegration != nil {
+		err = s.emailIntegration.SendEmailVerificationEmail(ctx, user, token, expAt)
+		if err != nil {
+			// Log error but don't fail the token creation
+			// Fall back to the bus system
+			s.bus.Emit(bus.VerifyEmailTopic, &bus.VerifyEmailEvent{
+				Email:    user.Email,
+				ExpireAt: expAt,
+				Token:    token,
+			})
+		}
+	} else {
+		// Fallback to old bus system if email integration not available
+		s.bus.Emit(bus.VerifyEmailTopic, &bus.VerifyEmailEvent{
+			Email:    user.Email,
+			ExpireAt: expAt,
+			Token:    token,
+		})
+	}
 	return token, nil
 }
 
@@ -142,11 +176,27 @@ func (s *Service) CreatePasswordResetToken(ctx context.Context, email string) (s
 	if err != nil {
 		return "", problem.InternalError().WithError(err)
 	}
-	s.bus.Emit(bus.ResetPasswordTopic, &bus.ResetPasswordEvent{
-		Email:    user.Email,
-		ExpireAt: expAt,
-		Token:    token,
-	})
+
+	// Try to send email using the email integration
+	if s.emailIntegration != nil {
+		err = s.emailIntegration.SendForgotPasswordEmail(ctx, user, token, expAt)
+		if err != nil {
+			// Log error but don't fail the token creation
+			// Fall back to the bus system
+			s.bus.Emit(bus.ResetPasswordTopic, &bus.ResetPasswordEvent{
+				Email:    user.Email,
+				ExpireAt: expAt,
+				Token:    token,
+			})
+		}
+	} else {
+		// Fallback to old bus system if email integration not available
+		s.bus.Emit(bus.ResetPasswordTopic, &bus.ResetPasswordEvent{
+			Email:    user.Email,
+			ExpireAt: expAt,
+			Token:    token,
+		})
+	}
 	return token, nil
 }
 
@@ -171,6 +221,17 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	err = s.storage.ConsumePasswordResetToken(token)
 	if err != nil {
 		return problem.InternalError().WithError(err)
+	}
+
+	// Send password reset confirmation email
+	if s.emailIntegration != nil {
+		// We don't have client IP in this context, so pass empty string
+		// In a real implementation, you'd extract this from the HTTP request
+		err = s.emailIntegration.SendPasswordResetConfirmationEmail(ctx, user, "")
+		if err != nil {
+			// Log error but don't fail the password reset operation
+			// The password has already been changed successfully
+		}
 	}
 	return nil
 }
