@@ -5,6 +5,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
@@ -12,18 +13,20 @@ import (
 )
 
 type Service struct {
-	bus              *bus.Bus
-	storage          *Storage
-	atomicProcessor  atomic.AtomicProcessor
-	emailIntegration *EmailIntegration
+	bus             *bus.Bus
+	storage         *Storage
+	atomicProcessor atomic.AtomicProcessor
+	notification    *Notification
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, emailIntegration *EmailIntegration) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, emailClient email.Client) *Service {
+	emailInfo := email.NewEmail()
+	notification := NewNotification(emailClient, emailInfo)
 	return &Service{
-		storage:          storage,
-		atomicProcessor:  atomicProcessor,
-		bus:              bus,
-		emailIntegration: emailIntegration,
+		storage:         storage,
+		atomicProcessor: atomicProcessor,
+		bus:             bus,
+		notification:    notification,
 	}
 }
 
@@ -88,14 +91,12 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 		}
 
 		// Send login notification email asynchronously
-		if s.emailIntegration != nil {
-			go func() {
-				if err := s.emailIntegration.SendLoginNotificationEmail(context.Background(), user, clientIP, userAgent); err != nil {
-					// Log error but don't fail the login process
-					// Login notifications are a security feature but shouldn't block user access
-				}
-			}()
-		}
+		go func() {
+			if err := s.notification.SendLoginNotificationEmail(context.Background(), user, clientIP, userAgent); err != nil {
+				// Log error but don't fail the login process
+				// Login notifications are a security feature but shouldn't block user access
+			}
+		}()
 
 		return &LoginResponse{
 			User:  user,
@@ -119,25 +120,9 @@ func (s *Service) CreateVerifyEmailToken(ctx context.Context, email string) (str
 		return "", problem.InternalError().WithError(err)
 	}
 
-	// Try to send email using the email integration
-	if s.emailIntegration != nil {
-		err = s.emailIntegration.SendEmailVerificationEmail(ctx, user, token, expAt)
-		if err != nil {
-			// Log error but don't fail the token creation
-			// Fall back to the bus system
-			s.bus.Emit(bus.VerifyEmailTopic, &bus.VerifyEmailEvent{
-				Email:    user.Email,
-				ExpireAt: expAt,
-				Token:    token,
-			})
-		}
-	} else {
-		// Fallback to old bus system if email integration not available
-		s.bus.Emit(bus.VerifyEmailTopic, &bus.VerifyEmailEvent{
-			Email:    user.Email,
-			ExpireAt: expAt,
-			Token:    token,
-		})
+	err = s.notification.SendEmailVerificationEmail(ctx, user, token, expAt)
+	if err != nil {
+		// Log error but don't fail the token creation
 	}
 	return token, nil
 }
@@ -178,19 +163,10 @@ func (s *Service) CreatePasswordResetToken(ctx context.Context, email string) (s
 	}
 
 	// Try to send email using the email integration
-	if s.emailIntegration != nil {
-		err = s.emailIntegration.SendForgotPasswordEmail(ctx, user, token, expAt)
-		if err != nil {
-			// Log error but don't fail the token creation
-			// Fall back to the bus system
-			s.bus.Emit(bus.ResetPasswordTopic, &bus.ResetPasswordEvent{
-				Email:    user.Email,
-				ExpireAt: expAt,
-				Token:    token,
-			})
-		}
-	} else {
-		// Fallback to old bus system if email integration not available
+	err = s.notification.SendForgotPasswordEmail(ctx, user, token, expAt)
+	if err != nil {
+		// Log error but don't fail the token creation
+		// Fall back to the bus system
 		s.bus.Emit(bus.ResetPasswordTopic, &bus.ResetPasswordEvent{
 			Email:    user.Email,
 			ExpireAt: expAt,
@@ -224,14 +200,10 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	}
 
 	// Send password reset confirmation email
-	if s.emailIntegration != nil {
-		// We don't have client IP in this context, so pass empty string
-		// In a real implementation, you'd extract this from the HTTP request
-		err = s.emailIntegration.SendPasswordResetConfirmationEmail(ctx, user, "")
-		if err != nil {
-			// Log error but don't fail the password reset operation
-			// The password has already been changed successfully
-		}
+	err = s.notification.SendPasswordResetConfirmationEmail(ctx, user, "")
+	if err != nil {
+		// Log error but don't fail the password reset operation
+		// The password has already been changed successfully
 	}
 	return nil
 }

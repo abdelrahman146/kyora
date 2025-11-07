@@ -10,6 +10,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -33,21 +34,23 @@ import (
 )
 
 type Service struct {
-	storage          *Storage
-	atomicProcessor  atomic.AtomicProcessor
-	bus              *bus.Bus
-	account          *account.Service
-	emailIntegration *EmailIntegration
+	storage         *Storage
+	atomicProcessor atomic.AtomicProcessor
+	bus             *bus.Bus
+	account         *account.Service
+	notification    *Notification
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailIntegration *EmailIntegration) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailClient email.Client) *Service {
 	// Note: Stripe is used via package-level helpers using API key configured globally if needed in future.
+	emailInfo := email.NewEmail()
+	notification := NewNotification(emailClient, emailInfo, accountSvc)
 	s := &Service{
-		storage:          storage,
-		atomicProcessor:  atomicProcessor,
-		bus:              bus,
-		account:          accountSvc,
-		emailIntegration: emailIntegration,
+		storage:         storage,
+		atomicProcessor: atomicProcessor,
+		bus:             bus,
+		account:         accountSvc,
+		notification:    notification,
 	}
 	// Best-effort background plan sync on service creation
 	go func() {
@@ -472,7 +475,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 	}
 
 	// Send subscription welcome email for new subscriptions
-	if result != nil && existing == nil && s.emailIntegration != nil {
+	if result != nil && existing == nil && s.notification != nil {
 		// Try to get payment method info for the email
 		paymentMethodLastFour := ""
 		if details, err := s.GetSubscriptionDetails(ctx, ws); err == nil && details.PaymentMethod.Last4 != "" {
@@ -481,7 +484,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 
 		// Send welcome email asynchronously to avoid blocking the main flow
 		go func() {
-			if err := s.emailIntegration.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
+			if err := s.notification.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
 				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspace_id", ws.ID, "subscription_id", result.ID)
 			}
 		}()
@@ -536,13 +539,13 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
 
 		// Send cancellation email after successful cancellation
-		if s.emailIntegration != nil {
+		if s.notification != nil {
 			// Get plan details for the email
 			plan, planErr := s.GetPlanByID(ctx, subRec.PlanID)
 			if planErr == nil {
 				// Send email asynchronously to avoid blocking the main flow
 				go func() {
-					if err := s.emailIntegration.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
+					if err := s.notification.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
 						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
 					}
 				}()
@@ -1994,7 +1997,7 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[s
 		logger.Info("subscription marked as active after successful payment")
 
 		// Send payment confirmation email notification
-		if s.emailIntegration != nil {
+		if s.notification != nil {
 			go func() {
 				// Get subscription details to send notification
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
@@ -2044,10 +2047,10 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[s
 				var emailErr error
 				if isFirstPayment {
 					// Send subscription confirmed email for first payment
-					emailErr = s.emailIntegration.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL)
+					emailErr = s.notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL)
 				} else {
 					// Send payment succeeded email for renewals
-					emailErr = s.emailIntegration.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL, paymentDate)
+					emailErr = s.notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL, paymentDate)
 				}
 
 				if emailErr != nil {
@@ -2081,7 +2084,7 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[stri
 		logger.Info("subscription marked as past due after failed payment")
 
 		// Send payment failed email notification
-		if s.emailIntegration != nil {
+		if s.notification != nil {
 			go func() {
 				// Get subscription details to send notification
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
@@ -2100,7 +2103,7 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[stri
 				// Try to get payment method info (simplified - would need to extract from Stripe)
 				paymentMethodLastFour := "****"
 
-				err = s.emailIntegration.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, time.Now(), nil)
+				err = s.notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, time.Now(), nil)
 				if err != nil {
 					logger.Error("Failed to send payment failed email", "error", err, "workspace_id", subscription.WorkspaceID)
 				}
@@ -2135,7 +2138,7 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]inter
 	}
 
 	// Send trial ending notification email
-	if s.emailIntegration != nil {
+	if s.notification != nil {
 		go func() {
 			// Get subscription details
 			subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
@@ -2158,7 +2161,7 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]inter
 				return
 			}
 
-			err = s.emailIntegration.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
+			err = s.notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
 			if err != nil {
 				logger.Error("Failed to send trial ending email", "error", err, "workspace_id", subscription.WorkspaceID)
 			}

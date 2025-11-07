@@ -20,6 +20,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/gin-gonic/gin"
@@ -48,21 +49,19 @@ func New() (*Server, error) {
 	cacheDB := cache.NewConnection()
 	atomicProcessor := database.NewAtomicProcess(db)
 	bus := bus.New()
-
-	// Email service initialization (add proper email client initialization here in future)
-	// For now, we'll create a nil email integration to avoid breaking the compilation
+	emailClient, err := email.New()
+	if err != nil {
+		return nil, err
+	}
 
 	// DI - create storages first
 	accountStorage := account.NewStorage(db, cacheDB)
 	billingStorage := billing.NewStorage(db, cacheDB)
 
-	// Create placeholder email integrations (will be properly configured with email client later)
-	accountEmailIntegration := (*account.EmailIntegration)(nil)
-	billingEmailIntegration := (*billing.EmailIntegration)(nil)
-
 	// Create services with email integrations
-	accountSvc := account.NewService(accountStorage, atomicProcessor, bus, accountEmailIntegration)
-	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc, billingEmailIntegration)
+	accountSvc := account.NewService(accountStorage, atomicProcessor, bus, emailClient)
+
+	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc, emailClient)
 	_ = billingSvc // to avoid unused variable warning
 
 	businessStorage := business.NewStorage(db, cacheDB)

@@ -49,10 +49,14 @@ const (
 	StripeAPIKey        = "billing.stripe.api_key"
 	StripeWebhookSecret = "billing.stripe.webhook_secret"
 	// email configuration
-	EmailProvider    = "email.provider"        // values: resend, mock
-	EmailMockEnabled = "email.mock.enabled"    // bool toggle to force mock
-	ResendAPIKey     = "email.resend.api_key"  // API key for Resend
-	ResendAPIBaseURL = "email.resend.base_url" // optional, defaults to https://api.resend.com
+	EmailProvider     = "email.provider"        // values: resend, mock
+	EmailMockEnabled  = "email.mock.enabled"    // bool toggle to force mock
+	ResendAPIKey      = "email.resend.api_key"  // API key for Resend
+	ResendAPIBaseURL  = "email.resend.base_url" // optional, defaults to https://api.resend.com
+	EmailFromEmail    = "email.from_email"      // default From email address
+	EmailFromName     = "email.from_name"       // default From display name
+	EmailSupportEmail = "email.support_email"   // support contact email
+	EmailHelpURL      = "email.help_url"        // help/knowledge base URL
 )
 
 func init() {
