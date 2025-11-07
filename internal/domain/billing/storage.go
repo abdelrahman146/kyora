@@ -2,11 +2,11 @@ package billing
 
 import (
 	"context"
-	"log/slog"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/logger"
 )
 
 type Storage struct {
@@ -33,18 +33,18 @@ func (s *Storage) init() {
 	for _, plan := range plans {
 		existing, err := s.plan.FindOne(ctx, s.plan.ScopeEquals(PlanSchema.Descriptor, plan.Descriptor))
 		if err != nil && !database.IsRecordNotFound(err) {
-			slog.Default().Error("failed to fetch existing plan", "error", err, "descriptor", plan.Descriptor)
+			logger.FromContext(ctx).Error("failed to fetch existing plan", "error", err, "descriptor", plan.Descriptor)
 			continue
 		}
 		if existing == nil {
 			if err := s.plan.CreateOne(ctx, &plan); err != nil {
-				slog.Default().Error("failed to create plan", "error", err, "descriptor", plan.Descriptor)
+				logger.FromContext(ctx).Error("failed to create plan", "error", err, "descriptor", plan.Descriptor)
 				continue
 			}
 		} else {
 			plan.ID = existing.ID
 			if err := s.plan.UpdateOne(ctx, &plan); err != nil {
-				slog.Default().Error("failed to update plan", "error", err, "descriptor", plan.Descriptor)
+				logger.FromContext(ctx).Error("failed to update plan", "error", err, "descriptor", plan.Descriptor)
 				continue
 			}
 		}

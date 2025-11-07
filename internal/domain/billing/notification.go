@@ -3,12 +3,12 @@ package billing
 import (
 	"context"
 	"fmt"
-	"log/slog"
 	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
+	"github.com/abdelrahman146/kyora/internal/platform/logger"
 )
 
 // Notification encapsulates email sending for billing domain
@@ -28,8 +28,8 @@ func (n *Notification) SendSubscriptionWelcomeEmail(ctx context.Context, workspa
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_subscription_welcome", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending subscription welcome email")
+	logger := logger.FromContext(ctx).With("action", "send_subscription_welcome", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending subscription welcome email")
 
 	// Resolve primary user for workspace
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
@@ -65,10 +65,10 @@ func (n *Notification) SendSubscriptionWelcomeEmail(ctx context.Context, workspa
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplateSubscriptionWelcome, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send subscription welcome email", "error", err)
+		logger.Error("Failed to send subscription welcome email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Subscription welcome email sent successfully")
+	logger.Info("Subscription welcome email sent successfully")
 	return nil
 }
 
@@ -77,8 +77,8 @@ func (n *Notification) SendPaymentFailedEmail(ctx context.Context, workspaceID s
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_payment_failed", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending payment failed email")
+	logger := logger.FromContext(ctx).With("action", "send_payment_failed", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending payment failed email")
 
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
 	if err != nil {
@@ -113,10 +113,10 @@ func (n *Notification) SendPaymentFailedEmail(ctx context.Context, workspaceID s
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplatePaymentFailed, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send payment failed email", "error", err)
+		logger.Error("Failed to send payment failed email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Payment failed email sent successfully")
+	logger.Info("Payment failed email sent successfully")
 	return nil
 }
 
@@ -125,8 +125,8 @@ func (n *Notification) SendSubscriptionCanceledEmail(ctx context.Context, worksp
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_subscription_canceled", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending subscription canceled email")
+	logger := logger.FromContext(ctx).With("action", "send_subscription_canceled", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending subscription canceled email")
 
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
 	if err != nil {
@@ -156,10 +156,10 @@ func (n *Notification) SendSubscriptionCanceledEmail(ctx context.Context, worksp
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplateSubscriptionCanceled, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send subscription canceled email", "error", err)
+		logger.Error("Failed to send subscription canceled email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Subscription canceled email sent successfully")
+	logger.Info("Subscription canceled email sent successfully")
 	return nil
 }
 
@@ -168,8 +168,8 @@ func (n *Notification) SendTrialEndingEmail(ctx context.Context, workspaceID str
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_trial_ending", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending trial ending email")
+	logger := logger.FromContext(ctx).With("action", "send_trial_ending", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending trial ending email")
 
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
 	if err != nil {
@@ -205,10 +205,10 @@ func (n *Notification) SendTrialEndingEmail(ctx context.Context, workspaceID str
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplateTrialEnding, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send trial ending email", "error", err)
+		logger.Error("Failed to send trial ending email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Trial ending email sent successfully")
+	logger.Info("Trial ending email sent successfully")
 	return nil
 }
 
@@ -217,8 +217,8 @@ func (n *Notification) SendSubscriptionConfirmedEmail(ctx context.Context, works
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_subscription_confirmed", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending subscription confirmed email")
+	logger := logger.FromContext(ctx).With("action", "send_subscription_confirmed", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending subscription confirmed email")
 
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
 	if err != nil {
@@ -250,10 +250,10 @@ func (n *Notification) SendSubscriptionConfirmedEmail(ctx context.Context, works
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplateSubscriptionConfirmed, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send subscription confirmed email", "error", err)
+		logger.Error("Failed to send subscription confirmed email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Subscription confirmed email sent successfully")
+	logger.Info("Subscription confirmed email sent successfully")
 	return nil
 }
 
@@ -262,8 +262,8 @@ func (n *Notification) SendPaymentSucceededEmail(ctx context.Context, workspaceI
 	if n.client == nil {
 		return fmt.Errorf("email client not available")
 	}
-	logger := slog.With("action", "send_payment_succeeded", "workspace_id", workspaceID, "subscription_id", subscription.ID)
-	logger.InfoContext(ctx, "Sending payment succeeded email")
+	logger := logger.FromContext(ctx).With("action", "send_payment_succeeded", "workspace_id", workspaceID, "subscription_id", subscription.ID)
+	logger.Info("Sending payment succeeded email")
 
 	ws, err := n.accountSvc.GetWorkspaceByID(ctx, workspaceID)
 	if err != nil {
@@ -295,10 +295,10 @@ func (n *Notification) SendPaymentSucceededEmail(ctx context.Context, workspaceI
 	}
 	from := n.info.FormattedFrom()
 	if _, err := n.client.SendTemplate(ctx, email.TemplatePaymentSucceeded, []string{user.Email}, from, "", data); err != nil {
-		logger.ErrorContext(ctx, "Failed to send payment succeeded email", "error", err)
+		logger.Error("Failed to send payment succeeded email", "error", err)
 		return fmt.Errorf("failed to send email: %w", err)
 	}
-	logger.InfoContext(ctx, "Payment succeeded email sent successfully")
+	logger.Info("Payment succeeded email sent successfully")
 	return nil
 }
 
