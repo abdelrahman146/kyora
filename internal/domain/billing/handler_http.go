@@ -304,7 +304,7 @@ func (h *HttpHandler) ListInvoices(c *gin.Context) {
 	}
 	status := c.Query("status")
 	req := list.NewListRequest(page, pageSize, orderBy, "")
-	resp := h.service.ListInvoicesStandard(c.Request.Context(), ws, status, req)
+	resp := h.service.ListInvoices(c.Request.Context(), ws, status, req)
 	response.SuccessJSON(c, http.StatusOK, resp)
 }
 

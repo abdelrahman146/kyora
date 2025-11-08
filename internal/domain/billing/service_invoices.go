@@ -26,9 +26,9 @@ type InvoiceSummary struct {
 	InvoicePDF       string     `json:"invoicePdf,omitempty"`
 }
 
-// ListInvoicesStandard returns a ListResponse using limit/offset emulated over Stripe's cursor pagination.
+// ListInvoices returns a ListResponse using limit/offset emulated over Stripe's cursor pagination.
 // page & pageSize come from ListRequest; offset = (page-1)*pageSize. We fetch up to offset+pageSize+1 to compute hasMore.
-func (s *Service) ListInvoicesStandard(ctx context.Context, ws *account.Workspace, status string, req *list.ListRequest) *list.ListResponse[InvoiceSummary] {
+func (s *Service) ListInvoices(ctx context.Context, ws *account.Workspace, status string, req *list.ListRequest) *list.ListResponse[InvoiceSummary] {
 	custID, err := s.EnsureCustomer(ctx, ws)
 	if err != nil {
 		return list.NewListResponse[InvoiceSummary](nil, req.Page(), req.PageSize(), 0, false)

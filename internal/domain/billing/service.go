@@ -80,26 +80,6 @@ func (pc *planCache) set(planID, priceID string) {
 	pc.mu.Unlock()
 }
 
-// InvoiceSummary is a lightweight view of a Stripe invoice for UI consumption
-// invoice-related types and methods moved to service_invoices.go
-
-// PaymentMethodInfo represents the default card details associated with the customer's subscription
-// customer/payment method types moved to service_customer.go
-
-// SubscriptionDetails aggregates subscription record and payment method details
-// subscription details type moved to service_customer.go
-
-// plan/subscription getters moved to service_subscription.go
-
-// EnsureCustomer makes sure the workspace has a Stripe customer and returns it
-// EnsureCustomer moved to service_customer.go
-
-// AttachAndSetDefaultPaymentMethod attaches a payment method to the customer and sets it as default
-// AttachAndSetDefaultPaymentMethod moved to service_customer.go
-
-// CreateSetupIntent returns a client secret to collect and save a payment method for the workspace
-// CreateSetupIntent moved to service_customer.go
-
 // CreateCheckoutSession creates a Stripe Checkout Session for subscription signup or changes
 // This is the recommended approach for payment collection as per Stripe best practices
 func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspace, plan *Plan, successURL, cancelURL string) (string, error) {
@@ -181,109 +161,6 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 	logger.FromContext(ctx).Info("created checkout session", "workspaceId", ws.ID, "planId", plan.ID, "sessionId", session.ID)
 	return session.URL, nil
 }
-
-// CreateBillingPortalSession creates a Stripe Customer Portal session for self-service billing management
-// CreateBillingPortalSession moved to service_customer.go
-
-// CreateOrUpdateSubscription creates a new subscription or updates existing to new plan with proration
-// This method now includes proper error handling, validation, and follows Stripe best practices
-// subscription create/update moved to service_subscription.go
-
-// CancelSubscriptionImmediately cancels subscription now with proper error handling and atomic updates
-// subscription cancellation moved to service_subscription.go
-
-// mapStripeStatus moved to service_subscription.go
-
-// ensureFeatureCompatibility prevents downgrades that remove features used by the current plan.
-// Conservative rule: if a feature is enabled on the current plan but disabled on the new plan,
-// block the downgrade. This can be relaxed later with usage-aware feature checks per module.
-// feature compatibility check moved to service_subscription.go
-
-// SyncSubscriptionStatus updates the local record based on Stripe status
-// subscription status sync moved to service_subscription.go
-
-// MarkSubscriptionPastDue sets subscription status to past_due
-// mark past due moved to service_subscription.go
-
-// MarkSubscriptionActive sets subscription status to active
-// mark active moved to service_subscription.go
-
-// RefundAndFinalizeCancellation computes prorated refund and cancels in Stripe, then updates local DB
-// refund and finalize cancellation moved to service_subscription.go
-
-// ListInvoices returns invoice summaries for the workspace's customer
-// invoice list moved to service_invoices.go
-
-// DownloadInvoiceURL returns the downloadable PDF URL for an invoice if it belongs to the customer's workspace
-// invoice download URL moved to service_invoices.go
-
-// PayInvoice attempts to pay an open invoice for the workspace's customer
-// invoice pay moved to service_invoices.go
-
-// GetSubscriptionDetails returns current subscription plus default payment method details
-// GetSubscriptionDetails moved to service_customer.go
-
-// SyncPlansToStripe ensures all local plans exist in Stripe as products/prices with proper conflict resolution
-// Plan synchronization & Stripe product/price helpers moved to plan_sync.go
-
-// ensureWithinNewPlanLimits enforces usage within new plan limits (users, businesses, monthly orders)
-// plan limit enforcement moved to service_subscription.go
-
-// ResumeSubscriptionIfNoDue attempts to pay open invoices then recreates a subscription with the same plan
-// resume subscription moved to service_subscription.go
-
-// tax calculation moved to service_usage_tax.go
-
-// UpdateTaxSettings updates the account's tax settings for automatic tax calculation
-// update tax settings moved to service_usage_tax.go
-
-// TrackUsage is a helper method to track API calls, storage, or other metered usage
-// usage tracking moved to service_usage_tax.go
-
-// GetUsageQuota checks current usage against plan limits
-// usage quota moved to service_usage_tax.go
-
-// CheckUsageLimit verifies if usage is within plan limits
-// usage limit check moved to service_usage_tax.go
-
-// CreateTrialSubscription creates a subscription with a trial period
-// trial subscription creation moved to service_usage_tax.go
-
-// ExtendTrialPeriod extends the trial period for an existing subscription
-// trial extension moved to service_usage_tax.go
-
-// HandleGracePeriod manages grace periods for failed payments
-// grace period handling moved to service_usage_tax.go
-
-// CheckTrialStatus checks if a subscription is in trial and returns trial information
-// trial status check moved to service_usage_tax.go
-
-// TrialInfo contains information about subscription trial status
-// TrialInfo moved to service_usage_tax.go
-
-// CreateInvoice creates a new invoice for the workspace
-// invoice creation moved to service_invoices.go
-
-// ScheduleSubscriptionChange schedules a subscription change for a future date
-// schedule subscription change moved to service_subscription.go
-
-// Additional enhanced service methods for complete billing functionality
-
-// CancelSubscription cancels a subscription immediately (alias for existing method)
-// CancelSubscription alias moved to service_subscription.go
-
-// GetSubscriptionUsage retrieves usage data for metered billing
-// subscription usage moved to service_usage_tax.go
-
-// ValidateSubscriptionAccess checks if workspace has access to specific features
-// subscription access validation moved to service_usage_tax.go
-
-// EstimateProrationAmount estimates the proration amount for plan changes
-// proration estimate moved to service_subscription.go
-
-// Webhook handlers moved to webhooks.go
-
-// Enhanced middleware support methods
 
 // CanUseFeature checks if a workspace's subscription allows a specific feature
 // This method is designed to work with the enforce_plan_feature middleware
