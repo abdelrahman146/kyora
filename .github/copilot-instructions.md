@@ -1,58 +1,55 @@
-Kyora codebase guide for AI coding agents
+Kyora — AI coding agent quickstart
 
-Purpose and shape
+Big picture
 
-- Go monolith (Go 1.25) using Cobra CLI (entry: `main.go` -> `cmd/root.go`) and a layered internal package structure under `internal/`.
-- Two major layers:
-  - platform: cross-cutting infra (config, DB, cache, logging, request/response, auth, event bus, types).
-  - domain: business modules (account, accounting, analytics, billing, business, customer, inventory, order). Each domain typically has `model.go`, `service.go`, `storage.go`, `errors.go` and sometimes a `state_machine.go`.
+- Go 1.25 monolith using Cobra CLI (entry: `main.go` → `cmd/root.go`). HTTP runs via the `server` subcommand in `cmd/server.go` which delegates to `internal/server/server.go`.
+- Layered `internal/` packages:
+  - platform: infra (config, DB, cache, logging, request/response, auth, event bus, types).
+  - domain: business modules (account, accounting, analytics, billing, business, customer, inventory, order, onboarding). Typical files: `model.go`, `storage.go`, `service.go`, `errors.go`, optional `state_machine.go`.
 
-Run and config
+Run and configure
 
-- Local dev uses Air (live-reload). Command: `make dev.server` (requires `air` installed). Air builds `./tmp/main` and runs it with args; the Makefile passes `server` to the binary. If you add an HTTP server, implement a Cobra subcommand named `server` under `cmd/`.
-- Configuration is loaded via Viper from `.kyora.yaml` at repo root and env vars (see keys in `internal/platform/config/config.go`). Example file exists in root; prefer the code constants over guessing key names.
-- Data store: Postgres via GORM; memcached for cache. Stripe (billing) and Google OAuth are wired but opt‑in via config.
+- Local dev: `make dev.server` (needs `air`). Air builds to `./tmp/main` and runs `kyora server` for live reload.
+- Config: Viper loads `.kyora.yaml` + env. Treat `internal/platform/config/config.go` as the source of truth for keys (app/http/db/cache/jwt/google oauth/stripe/email). Example keys: `http.port`, `database.dsn`, `auth.jwt.secret`, `billing.stripe.api_key`, `email.provider`.
+- Data stores: Postgres via GORM; memcached cache. Stripe Billing and Google OAuth are opt‑in via config.
 
-Core platform patterns
+Core patterns you must follow
 
-- Database access
-  - `internal/platform/database.Database` wraps a GORM connection and exposes `Conn(ctx)` which picks up a transaction from context when present (key: `database.TxKey`).
-  - Generic repository `database.Repository[T]` provides CRUD and common scopes: `ScopeBusinessID/WorkspaceID/Equals/In/Time/CreatedAt`, preloading (`WithPreload`), joins, ordering (`WithOrderBy`), pagination, `WithReturning`, aggregates (`Sum/Avg/Count`, time series helpers).
-  - Transactions: use an `atomic.AtomicProcessor` (implemented by `database.AtomicProcess`). Wrap multi-step operations with `Exec(ctx, func(ctx) error, atomic.WithIsolationLevel(...), atomic.WithRetries(n))`. The transaction is injected into `ctx` so all repository calls in the closure are consistent.
-- HTTP and errors
-  - Logging middleware (`internal/platform/logger/middleware.go`) attaches `traceId` (header from `http.trace_id_header`, default `X-Trace-ID`) and logs JSON via slog; use `logger.FromContext(ctx)` inside services.
-  - Auth uses JWT cookies (`jwt` cookie). `request.EnforceAuthentication` parses JWT and stores claims in Gin context; follow with `request.EnforceValidActor` and `request.EnforceBusinessValidity` to resolve `*account.User` and `*business.Business` from context.
-  - Responses: use `response.SuccessJSON/SuccessText/SuccessEmpty` and `response.Error`. Errors are normalized to RFC 7807 Problem JSON (`internal/platform/types/problem`). DB errors are mapped (NotFound/Conflict) via `database.IsRecordNotFound/IsUniqueViolation`.
-- Event bus
-  - Lightweight async pub/sub in `internal/platform/bus` with `Bus.Emit(topic, payload)` and `Bus.Listen(topic, handler)`. Built-in topics: `VerifyEmailTopic`, `ResetPasswordTopic`.
-- Lists and analytics
-  - For pagination/sorting, pass `*list.ListRequest` through services; build DB ordering via `req.ParsedOrderBy(schemaDef)` where `schemaDef` is the domain `...Schema` (see `internal/platform/types/schema/field.go`). Wrap results with `list.NewListResponse`.
-  - Time series helpers in `database.Repository` (`TimeSeriesSum/TimeSeriesCount`) plus label formatting in `internal/platform/types/timeseries`.
+- DB access: use `internal/platform/database.Database.Conn(ctx)` (transaction-aware). Prefer generic `database.Repository[T]` with scopes: `ScopeBusinessID/WorkspaceID/Equals/In/Time/CreatedAt`, plus `WithPreload`, joins, `WithOrderBy`, pagination, `WithReturning`, aggregates and time series.
+- Transactions: wrap multi-step writes with `database.AtomicProcess.Exec(ctx, func(ctx) error, ...)`. The transaction is injected into `ctx` so repos inside the closure are consistent.
+- HTTP: use middleware chain in `internal/platform/logger/middleware.go` (adds `traceId` from `http.trace_id_header`, default `X-Trace-ID`). Auth uses JWT cookie named `jwt`; call `request.EnforceAuthentication`, then `request.EnforceValidActor` and `request.EnforceBusinessValidity` to resolve user/business.
+- Responses & errors: return via `response.SuccessJSON/SuccessText/SuccessEmpty` and `response.Error`. Errors are RFC 7807 Problems (`internal/platform/types/problem`) and DB errors normalize via `database.IsRecordNotFound/IsUniqueViolation`.
 
-Domain conventions (copy when adding a module)
+Domain conventions (copy when adding modules)
 
-- model.go: GORM models with `gorm.Model` and string `ID` generated via `utils/id` (e.g., `id.KsuidWithPrefix("ord")`). Define a `...Schema` struct of `schema.Field` to map DB columns to JSON field names for ordering/search.
-- storage.go: construct `database.Repository[T]` per aggregate; `NewStorage` wires repositories (and cache if needed). Repos auto‑migrate their model on construction.
-- service.go: business methods have signature `(ctx, actor *account.User, biz *business.Business, ...)` to enforce tenancy. Use repository scopes like `ScopeBusinessID` in all reads/writes. Use atomic processor for multi-entity updates. Prefer returning domain-specific problems from `errors.go`.
-- state_machine.go: encode allowed transitions (see `order/state_machine.go`) and update timestamp fields on transitions.
+- `model.go`: GORM model with string `ID` from `utils/id` (e.g., `id.KsuidWithPrefix("ord")`). Define `...Schema` using `types/schema.Field` to map DB columns → JSON names for ordering/search.
+- `storage.go`: construct `database.Repository[T]` per aggregate; auto-migrate on construction.
+- `service.go`: methods `(ctx, actor *account.User, biz *business.Business, ...)` to enforce tenancy. Always scope queries by `BusinessID`. Use atomic processor for multi-entity updates. Prefer domain errors from `errors.go`.
+- `state_machine.go`: encode transitions (see `internal/domain/order/state_machine.go`) and maintain transition timestamps.
 
-Integration points and examples
+Lists & analytics
 
-- Billing/Stripe: `internal/domain/billing` injects `*stripe.Client` and reads secrets from `billing.stripe.*` config keys.
-- OAuth: `internal/platform/auth/google_oauth.go` for Google OAuth; JWT helpers in `internal/platform/auth/jwt.go` (cookie name `jwt`).
-- Cache: `internal/platform/cache.Cache` (memcached). Use `Marshal/Unmarshal` helpers and `Increment` for counters.
+- Pagination/sorting: pass `*list.ListRequest`; build ordering with `req.ParsedOrderBy(domainSchema)`. The order-by value expects JSON field names (e.g., `-createdAt`), not DB columns. Wrap results with `list.NewListResponse`.
+- Time series: use repo helpers `TimeSeriesSum/TimeSeriesCount`; labels via `internal/platform/types/timeseries`.
 
-Gotchas you’ll likely hit
+Events & integrations
 
-- Config keys: treat `internal/platform/config/config.go` as the source of truth for key names. The sample `.kyora.yaml` is illustrative and may diverge; e.g., DB idle/connection timing keys.
-- Multi‑tenancy: always scope by `BusinessID` (and/or `WorkspaceID`) using repository scopes; many services assume this contract.
-- JWT source: `JwtFromContext` reads only the cookie, not the Authorization header.
-- Ordering: `ListRequest.OrderBy()` expects JSON field names (e.g., `-createdAt`), which are translated via `...Schema`. Don’t pass DB column names directly.
+- Event bus: `internal/platform/bus` with `Bus.Emit(topic, payload)` and `Bus.Listen(topic, handler)`. Built-in topics: `VerifyEmailTopic`, `ResetPasswordTopic`.
+- Billing/Stripe: domain code in `internal/domain/billing` (handlers, services, webhooks). Config keys: `billing.stripe.api_key`, `billing.stripe.webhook_secret`.
+- Email: `internal/platform/email` with templates under `internal/platform/email/templates`. Provider via config: `email.provider` = `resend` or `mock` (see also `EmailFrom*` keys). Use `SendTemplate` for built-in templates (see package README).
+- OAuth: `internal/platform/auth/google_oauth.go`; JWT helpers in `internal/platform/auth/jwt.go` (cookie name `jwt`).
 
-File map to learn by example
+Gotchas
+
+- Multi‑tenancy: always scope by `BusinessID` (and/or `WorkspaceID`) using repository scopes; many services assume this.
+- Config truth: rely on constants in `internal/platform/config/config.go` instead of guessing key names.
+- JWT source: `JwtFromContext` reads only the cookie, not `Authorization` header.
+- Ordering: use JSON field names mapped by your domain `...Schema`.
+
+Pointers (good examples)
 
 - Repos/scopes: `internal/platform/database/repository.go`
 - Transactions: `internal/platform/database/atomic.go`, `internal/platform/types/atomic/atomic.go`
-- Problem errors: `internal/platform/types/problem/problem.go`; domain examples: `internal/domain/order/errors.go`
-- Time series: `internal/platform/types/timeseries/timeseries.go` and usage in `internal/domain/order/service.go`
-- Middleware chain: `internal/platform/request/*.go`, `internal/platform/logger/middleware.go`, responses in `internal/platform/response/response.go`
+- Errors/Problems: `internal/platform/types/problem/problem.go`, e.g., `internal/domain/order/errors.go`
+- Time series: `internal/platform/types/timeseries/timeseries.go` and `internal/domain/order/service.go`
+- HTTP helpers: `internal/platform/request/*.go`, `internal/platform/logger/middleware.go`, `internal/platform/response/response.go`
