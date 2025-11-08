@@ -2,16 +2,15 @@ package list
 
 type ListResponse[T any] struct {
 	Items      []T   `json:"items"`
-	TotalCount int64 `json:"totalCount"`
+	TotalCount int64 `json:"totalCount,omitempty"`
 	Page       int   `json:"page"`
 	PageSize   int   `json:"pageSize"`
-	TotalPages int   `json:"totalPages"`
+	TotalPages int   `json:"totalPages,omitempty"`
 	HasMore    bool  `json:"hasMore"`
 }
 
-func NewListResponse[T any](items []T, page, pageSize int, totalCount int64) *ListResponse[T] {
+func NewListResponse[T any](items []T, page, pageSize int, totalCount int64, hasMore bool) *ListResponse[T] {
 	totalPages := int((totalCount + int64(pageSize) - 1) / int64(pageSize))
-	hasMore := page < totalPages
 	return &ListResponse[T]{
 		Items:      items,
 		TotalCount: totalCount,

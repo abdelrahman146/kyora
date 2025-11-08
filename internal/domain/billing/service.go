@@ -3,6 +3,7 @@ package billing
 import (
 	"context"
 	"fmt"
+	"sync"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -22,6 +23,7 @@ type Service struct {
 	bus             *bus.Bus
 	account         *account.Service
 	notification    *Notification
+	cache           *planCache
 }
 
 func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailClient email.Client) *Service {
@@ -34,6 +36,7 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		bus:             bus,
 		account:         accountSvc,
 		notification:    notification,
+		cache:           newPlanCache(5 * time.Minute),
 	}
 	// Best-effort background plan sync on service creation
 	go func() {
@@ -43,6 +46,38 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		}
 	}()
 	return s
+}
+
+// simple in-memory cache for Stripe price IDs to reduce API chatter
+type planCache struct {
+	mu      sync.RWMutex
+	ttl     time.Duration
+	entries map[string]planCacheEntry
+}
+
+type planCacheEntry struct {
+	stripePriceID string
+	expiresAt     time.Time
+}
+
+func newPlanCache(ttl time.Duration) *planCache {
+	return &planCache{ttl: ttl, entries: map[string]planCacheEntry{}}
+}
+
+func (pc *planCache) get(planID string) (string, bool) {
+	pc.mu.RLock()
+	e, ok := pc.entries[planID]
+	pc.mu.RUnlock()
+	if !ok || time.Now().After(e.expiresAt) {
+		return "", false
+	}
+	return e.stripePriceID, true
+}
+
+func (pc *planCache) set(planID, priceID string) {
+	pc.mu.Lock()
+	pc.entries[planID] = planCacheEntry{stripePriceID: priceID, expiresAt: time.Now().Add(pc.ttl)}
+	pc.mu.Unlock()
 }
 
 // InvoiceSummary is a lightweight view of a Stripe invoice for UI consumption
@@ -84,12 +119,18 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 	var lineItems []*stripelib.CheckoutSessionLineItemParams
 
 	if plan.Price.IsZero() {
-		// For free plans, use setup mode to save payment method for future use
-		mode = stripelib.CheckoutSessionModeSetup
+		// Free plan: create or update subscription directly without collecting payment method.
+		// Returns empty URL indicating no redirect needed.
+		_, subErr := s.CreateOrUpdateSubscription(ctx, ws, plan)
+		if subErr != nil {
+			return "", subErr
+		}
+		logger.FromContext(ctx).Info("free plan subscription created without checkout session", "workspaceId", ws.ID, "planId", plan.ID)
+		return "", nil
 	} else {
 		// Ensure plan exists in Stripe
 		if err := s.ensurePlanSynced(ctx, plan); err != nil {
-			logger.FromContext(ctx).Error("Failed to ensure plan synced before checkout", "error", err, "plan_id", plan.ID)
+			logger.FromContext(ctx).Error("failed to ensure plan synced before checkout", "error", err, "planId", plan.ID)
 			return "", fmt.Errorf("failed to ensure plan in stripe: %w", err)
 		}
 		// For paid plans, create subscription
@@ -133,11 +174,11 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 
 	session, err := checkoutsession.New(params)
 	if err != nil {
-		logger.FromContext(ctx).Error("Failed to create checkout session", "error", err, "workspace_id", ws.ID, "plan_id", plan.ID)
+		logger.FromContext(ctx).Error("failed to create checkout session", "error", err, "workspaceId", ws.ID, "planId", plan.ID)
 		return "", fmt.Errorf("failed to create checkout session: %w", err)
 	}
 
-	logger.FromContext(ctx).Info("Created checkout session", "workspace_id", ws.ID, "plan_id", plan.ID, "session_id", session.ID)
+	logger.FromContext(ctx).Info("created checkout session", "workspaceId", ws.ID, "planId", plan.ID, "sessionId", session.ID)
 	return session.URL, nil
 }
 
@@ -247,7 +288,7 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 // CanUseFeature checks if a workspace's subscription allows a specific feature
 // This method is designed to work with the enforce_plan_feature middleware
 func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature role.Resource) error {
-	logger := logger.FromContext(ctx).With("workspace_id", workspaceID, "feature", feature)
+	logger := logger.FromContext(ctx).With("workspaceId", workspaceID, "feature", feature)
 	logger.Info("checking feature availability")
 
 	// Get subscription for workspace
@@ -344,7 +385,7 @@ func (s *Service) CanUseFeature(ctx context.Context, workspaceID string, feature
 // CheckUsageLimitWithCallback checks if additional usage would exceed plan limits
 // This method is designed to work with the enforce_plan_limit middleware
 func (s *Service) CheckUsageLimitWithCallback(ctx context.Context, workspaceID, limitType string, additionalUsage int64, checkFunc func(used, limit int64) error) error {
-	logger := logger.FromContext(ctx).With("workspace_id", workspaceID, "limit_type", limitType, "additional_usage", additionalUsage)
+	logger := logger.FromContext(ctx).With("workspaceId", workspaceID, "limitType", limitType, "additionalUsage", additionalUsage)
 	logger.Info("checking usage limit with callback")
 
 	// Get current usage and limits
@@ -380,7 +421,7 @@ func (s *Service) CheckUsageLimitWithCallback(ctx context.Context, workspaceID, 
 
 // GetSubscriptionByWorkspaceIDSafe safely retrieves subscription info for middleware
 func (s *Service) GetSubscriptionByWorkspaceIDSafe(ctx context.Context, workspaceID string) (*Subscription, error) {
-	logger := logger.FromContext(ctx).With("workspace_id", workspaceID)
+	logger := logger.FromContext(ctx).With("workspaceId", workspaceID)
 	logger.Info("getting subscription for middleware check")
 
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, workspaceID)
@@ -411,7 +452,7 @@ func (s *Service) ValidateActiveSubscription(ctx context.Context, workspaceID st
 
 // GetWorkspaceSubscriptionInfo returns comprehensive subscription information for a workspace
 func (s *Service) GetWorkspaceSubscriptionInfo(ctx context.Context, workspaceID string) (*WorkspaceSubscriptionInfo, error) {
-	logger := logger.FromContext(ctx).With("workspace_id", workspaceID)
+	logger := logger.FromContext(ctx).With("workspaceId", workspaceID)
 	logger.Info("getting workspace subscription info")
 
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, workspaceID)

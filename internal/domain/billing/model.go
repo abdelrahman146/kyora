@@ -290,3 +290,34 @@ type checkoutRequest struct {
 type billingPortalRequest struct {
 	ReturnURL string `json:"returnUrl" binding:"required,url"`
 }
+
+// Additional request DTOs (new endpoints)
+type scheduleChangeRequest struct {
+	PlanDescriptor string `json:"planDescriptor" binding:"required"`
+	EffectiveDate  string `json:"effectiveDate" binding:"required"`  // ISO8601 ("2006-01-02" or "2006-01-02T15:04:05Z")
+	ProrationMode  string `json:"prorationMode" binding:"omitempty"` // Stripe proration behavior ("create_prorations" | "none")
+}
+
+type prorationEstimateRequest struct {
+	NewPlanDescriptor string `json:"newPlanDescriptor" binding:"required"`
+}
+
+type resumeSubscriptionRequest struct {
+	// currently no fields; placeholder for future (e.g. payment method enforcement)
+}
+
+type manualInvoiceRequest struct {
+	Description string  `json:"description" binding:"required"`
+	Amount      int64   `json:"amount" binding:"required,min=1"` // amount in minor units (e.g., cents)
+	Currency    string  `json:"currency" binding:"required"`
+	DueDate     *string `json:"dueDate" binding:"omitempty"` // YYYY-MM-DD
+}
+
+type trialExtendRequest struct {
+	AdditionalDays int `json:"additionalDays" binding:"required,min=1,max=30"`
+}
+
+type taxCalculateRequest struct {
+	Amount   int64  `json:"amount" binding:"required,min=1"`
+	Currency string `json:"currency" binding:"required"`
+}

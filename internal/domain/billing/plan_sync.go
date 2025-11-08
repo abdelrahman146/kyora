@@ -17,10 +17,10 @@ func (s *Service) SyncPlansToStripe(ctx context.Context) error {
 	if err != nil {
 		return fmt.Errorf("failed to fetch plans: %w", err)
 	}
-	logger.FromContext(ctx).Info("Starting plan sync to Stripe", "plan_count", len(plans))
+	logger.FromContext(ctx).Info("Starting plan sync to Stripe", "planCount", len(plans))
 	for _, p := range plans {
 		if err := s.syncSinglePlanToStripe(ctx, p); err != nil {
-			logger.FromContext(ctx).Error("Failed to sync plan", "error", err, "plan_id", p.ID, "descriptor", p.Descriptor)
+			logger.FromContext(ctx).Error("Failed to sync plan", "error", err, "planId", p.ID, "descriptor", p.Descriptor)
 			continue
 		}
 	}
@@ -34,6 +34,12 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 	if p == nil {
 		return fmt.Errorf("plan is nil")
 	}
+	// Check cache first
+	if p.StripePlanID != "" {
+		if cached, ok := s.cache.get(p.ID); ok && cached == p.StripePlanID {
+			return nil
+		}
+	}
 	if p.StripePlanID == "" {
 		// Full sync path
 		if err := s.syncSinglePlanToStripe(ctx, p); err != nil {
@@ -42,6 +48,7 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 		if p.StripePlanID == "" { // still empty — treat as error
 			return fmt.Errorf("plan %s not synced to Stripe (missing price id)", p.ID)
 		}
+		s.cache.set(p.ID, p.StripePlanID)
 		return nil
 	}
 	// Validate existing price still conforms. If mismatch create new one.
@@ -62,6 +69,9 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 		if err := s.storage.plan.UpdateOne(ctx, p); err != nil {
 			return fmt.Errorf("failed updating plan price id: %w", err)
 		}
+		s.cache.set(p.ID, p.StripePlanID)
+	} else {
+		s.cache.set(p.ID, p.StripePlanID)
 	}
 	return nil
 }
@@ -150,11 +160,11 @@ func (s *Service) createProduct(ctx context.Context, p *Plan) (*stripelib.Produc
 		},
 	}
 	params.SetIdempotencyKey(idempotencyKey)
-	prod, err := product.New(params)
+	prod, err := withStripeRetry(ctx, 3, func() (*stripelib.Product, error) { return product.New(params) })
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Stripe product: %w", err)
 	}
-	logger.FromContext(ctx).Info("Created new Stripe product", "plan_id", p.ID, "product_id", prod.ID, "name", p.Name)
+	logger.FromContext(ctx).Info("Created new Stripe product", "planId", p.ID, "productId", prod.ID, "name", p.Name)
 	return prod, nil
 }
 
@@ -167,11 +177,11 @@ func (s *Service) updateProductMetadata(ctx context.Context, prod *stripelib.Pro
 			"descriptor":    p.Descriptor,
 		},
 	}
-	updatedProd, err := product.Update(prod.ID, params)
+	updatedProd, err := withStripeRetry(ctx, 3, func() (*stripelib.Product, error) { return product.Update(prod.ID, params) })
 	if err != nil {
 		return nil, fmt.Errorf("failed to update product metadata: %w", err)
 	}
-	logger.FromContext(ctx).Info("Updated product metadata", "plan_id", p.ID, "product_id", prod.ID)
+	logger.FromContext(ctx).Info("Updated product metadata", "planId", p.ID, "productId", prod.ID)
 	return updatedProd, nil
 }
 
@@ -181,7 +191,7 @@ func (s *Service) validateExistingPrice(ctx context.Context, p *Plan, productID 
 	}
 	existingPrice, err := price.Get(p.StripePlanID, nil)
 	if err != nil {
-		logger.FromContext(ctx).Warn("Failed to fetch existing price, will create new one", "price_id", p.StripePlanID, "error", err)
+		logger.FromContext(ctx).Warn("Failed to fetch existing price, will create new one", "priceId", p.StripePlanID, "error", err)
 		return true, nil
 	}
 	interval := "month"
@@ -213,7 +223,7 @@ func (s *Service) createPrice(ctx context.Context, p *Plan, productID string) (*
 		},
 	}
 	params.SetIdempotencyKey(idempotencyKey)
-	newPrice, err := price.New(params)
+	newPrice, err := withStripeRetry(ctx, 3, func() (*stripelib.Price, error) { return price.New(params) })
 	if err != nil {
 		return nil, fmt.Errorf("failed to create Stripe price: %w", err)
 	}

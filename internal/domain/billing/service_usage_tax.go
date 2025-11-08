@@ -17,7 +17,7 @@ import (
 // CalculateTax calculates tax for a given amount and workspace location
 func (s *Service) CalculateTax(ctx context.Context, ws *account.Workspace, amount int64, currency string) (*stripelib.TaxCalculation, error) {
 	idempotencyKey := id.KsuidWithPrefix("tax_calc")
-	logger.FromContext(ctx).Info("Calculating tax", "workspace_id", ws.ID, "amount", amount, "currency", currency, "idempotency_key", idempotencyKey)
+	logger.FromContext(ctx).Info("calculating tax", "workspaceId", ws.ID, "amount", amount, "currency", currency, "idempotencyKey", idempotencyKey)
 	lineItems := []*stripelib.TaxCalculationLineItemParams{{Amount: stripelib.Int64(amount), Reference: stripelib.String("service_charge"), TaxCode: stripelib.String("txcd_10000000")}}
 	params := &stripelib.TaxCalculationParams{
 		Currency:        stripelib.String(currency),
@@ -25,44 +25,48 @@ func (s *Service) CalculateTax(ctx context.Context, ws *account.Workspace, amoun
 		CustomerDetails: &stripelib.TaxCalculationCustomerDetailsParams{AddressSource: stripelib.String("billing")},
 	}
 	params.SetIdempotencyKey(idempotencyKey)
-	calc, err := calculation.New(params)
+	calc, err := withStripeRetry[*stripelib.TaxCalculation](ctx, 3, func() (*stripelib.TaxCalculation, error) {
+		return calculation.New(params)
+	})
 	if err != nil {
-		logger.FromContext(ctx).Error("Failed to calculate tax", "error", err, "amount", amount, "currency", currency, "idempotency_key", idempotencyKey)
+		logger.FromContext(ctx).Error("failed to calculate tax", "error", err, "amount", amount, "currency", currency, "idempotencyKey", idempotencyKey)
 		return nil, ErrStripeOperationFailed(err, "calculate_tax")
 	}
-	logger.FromContext(ctx).Info("Tax calculation completed", "calculation_id", calc.ID, "amount_total", calc.AmountTotal, "tax_amount_exclusive", calc.TaxAmountExclusive, "tax_amount_inclusive", calc.TaxAmountInclusive)
+	logger.FromContext(ctx).Info("tax calculation completed", "calculationId", calc.ID, "amountTotal", calc.AmountTotal, "taxAmountExclusive", calc.TaxAmountExclusive, "taxAmountInclusive", calc.TaxAmountInclusive)
 	return calc, nil
 }
 
 // UpdateTaxSettings updates the account's tax settings for automatic tax calculation
 func (s *Service) UpdateTaxSettings(ctx context.Context, defaultTaxCode string) error {
 	idempotencyKey := id.KsuidWithPrefix("tax_settings")
-	logger.FromContext(ctx).Info("Updating tax settings", "default_tax_code", defaultTaxCode, "idempotency_key", idempotencyKey)
+	logger.FromContext(ctx).Info("updating tax settings", "defaultTaxCode", defaultTaxCode, "idempotencyKey", idempotencyKey)
 	params := &stripelib.TaxSettingsParams{Defaults: &stripelib.TaxSettingsDefaultsParams{TaxCode: stripelib.String(defaultTaxCode)}}
 	params.SetIdempotencyKey(idempotencyKey)
-	taxSettings, err := settings.Update(params)
+	taxSettings, err := withStripeRetry[*stripelib.TaxSettings](ctx, 3, func() (*stripelib.TaxSettings, error) {
+		return settings.Update(params)
+	})
 	if err != nil {
-		logger.FromContext(ctx).Error("Failed to update tax settings", "error", err, "default_tax_code", defaultTaxCode, "idempotency_key", idempotencyKey)
+		logger.FromContext(ctx).Error("failed to update tax settings", "error", err, "defaultTaxCode", defaultTaxCode, "idempotencyKey", idempotencyKey)
 		return ErrStripeOperationFailed(err, "update_tax_settings")
 	}
-	logger.FromContext(ctx).Info("Tax settings updated successfully", "status", taxSettings.Status, "default_tax_code", taxSettings.Defaults.TaxCode)
+	logger.FromContext(ctx).Info("tax settings updated successfully", "status", taxSettings.Status, "defaultTaxCode", taxSettings.Defaults.TaxCode)
 	return nil
 }
 
 // TrackUsage is a helper method to track API calls, storage, or other metered usage
 func (s *Service) TrackUsage(ctx context.Context, ws *account.Workspace, usageType string, quantity int64) error {
-	logger.FromContext(ctx).Info("Tracking usage", "workspace_id", ws.ID, "usage_type", usageType, "quantity", quantity)
+	logger.FromContext(ctx).Info("tracking usage", "workspaceId", ws.ID, "usageType", usageType, "quantity", quantity)
 	subscription, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
 		return fmt.Errorf("failed to get subscription for usage tracking: %w", err)
 	}
-	logger.FromContext(ctx).Info("Usage tracked locally", "workspace_id", ws.ID, "subscription_id", subscription.ID, "usage_type", usageType, "quantity", quantity, "timestamp", time.Now().Unix())
+	logger.FromContext(ctx).Info("usage tracked locally", "workspaceId", ws.ID, "subscriptionId", subscription.ID, "usageType", usageType, "quantity", quantity, "timestamp", time.Now().Unix())
 	return nil
 }
 
 // GetUsageQuota checks current usage against plan limits
 func (s *Service) GetUsageQuota(ctx context.Context, ws *account.Workspace, usageType string) (used int64, limit int64, err error) {
-	logger.FromContext(ctx).Info("Checking usage quota", "workspace_id", ws.ID, "usage_type", usageType)
+	logger.FromContext(ctx).Info("checking usage quota", "workspaceId", ws.ID, "usageType", usageType)
 	subscription, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
 		return 0, 0, fmt.Errorf("failed to get subscription for quota check: %w", err)
@@ -83,7 +87,7 @@ func (s *Service) GetUsageQuota(ctx context.Context, ws *account.Workspace, usag
 		return 0, 0, fmt.Errorf("unsupported usage type: %s", usageType)
 	}
 	currentUsage := int64(0)
-	logger.FromContext(ctx).Info("Usage quota retrieved", "workspace_id", ws.ID, "usage_type", usageType, "current_usage", currentUsage, "quota_limit", quotaLimit)
+	logger.FromContext(ctx).Info("usage quota retrieved", "workspaceId", ws.ID, "usageType", usageType, "currentUsage", currentUsage, "quotaLimit", quotaLimit)
 	return currentUsage, quotaLimit, nil
 }
 
@@ -189,7 +193,7 @@ func (s *Service) HandleGracePeriod(ctx context.Context, ws *account.Workspace, 
 
 // CheckTrialStatus checks if a subscription is in trial and returns trial information
 func (s *Service) CheckTrialStatus(ctx context.Context, ws *account.Workspace) (*TrialInfo, error) {
-	logger.FromContext(ctx).Info("Checking trial status", "workspace_id", ws.ID)
+	logger.FromContext(ctx).Info("checking trial status", "workspaceId", ws.ID)
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to get subscription: %w", err)
@@ -203,7 +207,7 @@ func (s *Service) CheckTrialStatus(ctx context.Context, ws *account.Workspace) (
 		daysRemaining := time.Until(trialInfo.TrialEnd).Hours() / 24
 		trialInfo.DaysRemaining = int(daysRemaining)
 	}
-	logger.FromContext(ctx).Info("Trial status checked", "subscription_id", sub.StripeSubID, "is_in_trial", trialInfo.IsInTrial, "days_remaining", trialInfo.DaysRemaining)
+	logger.FromContext(ctx).Info("trial status checked", "subscriptionId", sub.StripeSubID, "isInTrial", trialInfo.IsInTrial, "daysRemaining", trialInfo.DaysRemaining)
 	return trialInfo, nil
 }
 
@@ -216,7 +220,7 @@ type TrialInfo struct {
 
 // GetSubscriptionUsage retrieves usage data for metered billing (placeholder)
 func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspace) (map[string]int64, error) {
-	l := logger.FromContext(ctx).With("workspace_id", ws.ID)
+	l := logger.FromContext(ctx).With("workspaceId", ws.ID)
 	l.Info("retrieving subscription usage")
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
@@ -224,13 +228,13 @@ func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspac
 		return nil, err
 	}
 	usage := map[string]int64{"api_calls": 1250, "storage_gb": 15, "users": 5, "projects": 3, "integrations": 2}
-	l.Info("usage retrieved successfully", "subscription_id", sub.ID)
+	l.Info("usage retrieved successfully", "subscriptionId", sub.ID)
 	return usage, nil
 }
 
 // ValidateSubscriptionAccess checks if workspace has access to specific features
 func (s *Service) ValidateSubscriptionAccess(ctx context.Context, ws *account.Workspace, feature string) error {
-	l := logger.FromContext(ctx).With("workspace_id", ws.ID, "feature", feature)
+	l := logger.FromContext(ctx).With("workspaceId", ws.ID, "feature", feature)
 	l.Info("validating subscription access")
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {

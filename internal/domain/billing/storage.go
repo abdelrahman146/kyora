@@ -14,6 +14,7 @@ type Storage struct {
 	db           *database.Database
 	plan         *database.Repository[Plan]
 	subscription *database.Repository[Subscription]
+	event        *database.Repository[StripeEvent]
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
@@ -22,6 +23,7 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 		db:           db,
 		plan:         database.NewRepository[Plan](db),
 		subscription: database.NewRepository[Subscription](db),
+		event:        database.NewRepository[StripeEvent](db),
 	}
 	s.init()
 	return s

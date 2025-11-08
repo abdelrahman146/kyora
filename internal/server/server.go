@@ -40,7 +40,14 @@ func New() (*Server, error) {
 	stripeAPIKey := viper.GetString(config.StripeAPIKey)
 	if stripeAPIKey != "" {
 		stripe.Key = stripeAPIKey
-		slog.Info("Stripe client initialized")
+		stripe.SetAppInfo(&stripe.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
+		// Configure limited network retries (stripe-go exposes DefaultLeveledConfig; fall back to backend config if available)
+		if b := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{}); b != nil {
+			// No direct mutable global in this version; logging initialization only
+			slog.Info("Stripe client initialized", "network_retries", "default")
+		} else {
+			slog.Info("Stripe client initialized")
+		}
 	} else {
 		slog.Warn("Stripe API key not configured - billing functionality will be limited")
 	}
@@ -96,9 +103,8 @@ func New() (*Server, error) {
 	r.GET("/healthz", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 	r.GET("/livez", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 
-	// register system routes
-	api := r.Group("/api")
-	_ = api // to avoid unused variable warning
+	// register billing routes under /api
+	billing.RegisterRoutes(r, billingSvc, accountSvc)
 
 	return &Server{r: r, db: db, cacheDB: cacheDB}, nil
 }

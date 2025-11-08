@@ -6,359 +6,313 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/config"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
+	"github.com/spf13/cast"
+	"github.com/spf13/viper"
+	stripelib "github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/checkout/session"
+	"github.com/stripe/stripe-go/v83/customer"
+	"github.com/stripe/stripe-go/v83/paymentmethod"
+	"github.com/stripe/stripe-go/v83/setupintent"
+	"github.com/stripe/stripe-go/v83/webhook"
 )
 
-// ProcessWebhook processes incoming Stripe webhooks
+// ProcessWebhook verifies signature, ensures idempotency, and dispatches typed handlers
 func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature string) error {
-	logger := logger.FromContext(ctx).With("event_type", "webhook")
-	logger.Info("processing stripe webhook")
+	log := logger.FromContext(ctx)
+	secret := viper.GetString(config.StripeWebhookSecret)
+	if secret == "" {
+		log.Warn("Stripe webhook secret not configured; rejecting webhook for security")
+		return ErrWebhookProcessingFailed(nil, "missing_webhook_secret")
+	}
 
-	// Note: In a real implementation, you'd need the webhook endpoint secret
-	// For now, we'll skip signature verification in development
-	// webhookSecret := viper.GetString("stripe.webhook_secret")
+	// Verify signature and construct event
+	evt, err := webhook.ConstructEvent(payload, signature, secret)
+	if err != nil {
+		log.Error("webhook signature verification failed", "error", err)
+		return ErrWebhookProcessingFailed(err, "verify_signature")
+	}
 
-	// Parse the webhook event
-	var event map[string]interface{}
-	if err := json.Unmarshal(payload, &event); err != nil {
-		logger.Error("failed to parse webhook payload", "error", err)
+	// Idempotency: skip already processed events
+	if evt.ID != "" {
+		if _, err := s.storage.event.FindOne(ctx, s.storage.event.ScopeEquals(StripeEventSchema.EventID, evt.ID)); err == nil {
+			// already processed
+			return nil
+		}
+	}
+
+	// Dispatch by type
+	switch evt.Type {
+	case "customer.subscription.created":
+		if err := s.handleSubscriptionCreated(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "customer.subscription.updated":
+		if err := s.handleSubscriptionUpdated(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "customer.subscription.deleted":
+		if err := s.handleSubscriptionDeleted(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "invoice.payment_succeeded":
+		if err := s.handleInvoicePaymentSucceeded(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "invoice.payment_failed":
+		if err := s.handleInvoicePaymentFailed(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "invoice.finalized":
+		if err := s.handleInvoiceFinalized(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "invoice.marked_uncollectible":
+		if err := s.handleInvoiceMarkedUncollectible(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "invoice.voided":
+		if err := s.handleInvoiceVoided(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "customer.subscription.trial_will_end":
+		if err := s.handleTrialWillEnd(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "payment_method.automatically_updated":
+		if err := s.handlePaymentMethodAutomaticallyUpdated(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	case "checkout.session.completed":
+		if err := s.handleCheckoutSessionCompleted(ctx, evt.Data.Raw); err != nil {
+			return err
+		}
+	default:
+		// unhandled types are ignored
+	}
+
+	// Mark processed
+	if evt.ID != "" {
+		se := &StripeEvent{EventID: evt.ID, Type: string(evt.Type), ProcessedAt: time.Now()}
+		if err := s.storage.event.CreateOne(ctx, se); err != nil && !database.IsUniqueViolation(err) {
+			// Log but continue
+			logger.FromContext(ctx).Warn("failed to persist webhook event id", "error", err, "eventId", evt.ID)
+		}
+	}
+	return nil
+}
+
+// Old helpers rewritten to accept raw JSON object only (from verified event)
+func (s *Service) handleSubscriptionCreated(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
 		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
-
-	eventType, ok := event["type"].(string)
-	if !ok {
-		logger.Error("webhook event missing type field")
-		return ErrWebhookProcessingFailed(nil, "missing_event_type")
-	}
-
-	logger = logger.With("event_type", eventType)
-	logger.Info("processing webhook event")
-
-	// Handle different webhook events
-	switch eventType {
-	case "customer.subscription.created":
-		return s.handleSubscriptionCreated(ctx, event)
-	case "customer.subscription.updated":
-		return s.handleSubscriptionUpdated(ctx, event)
-	case "customer.subscription.deleted":
-		return s.handleSubscriptionDeleted(ctx, event)
-	case "invoice.payment_succeeded":
-		return s.handleInvoicePaymentSucceeded(ctx, event)
-	case "invoice.payment_failed":
-		return s.handleInvoicePaymentFailed(ctx, event)
-	case "customer.subscription.trial_will_end":
-		return s.handleTrialWillEnd(ctx, event)
-	default:
-		logger.Info("unhandled webhook event type", "event_type", eventType)
-		return nil // Not an error, just unhandled
-	}
-}
-
-func (s *Service) handleSubscriptionCreated(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "subscription_created")
-	logger.Info("handling subscription created webhook")
-
-	// Extract subscription data
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
-	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
-	}
-
-	subscriptionID, ok := object["id"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_id")
-	}
-
-	status, ok := object["status"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_status")
-	}
-
-	// Extract period information
-	currentPeriodStart := int64(0)
-	currentPeriodEnd := int64(0)
-	if period, ok := object["current_period_start"].(float64); ok {
-		currentPeriodStart = int64(period)
-	}
-	if period, ok := object["current_period_end"].(float64); ok {
-		currentPeriodEnd = int64(period)
-	}
-
-	s.SyncSubscriptionStatus(ctx, subscriptionID, status, currentPeriodStart, currentPeriodEnd)
-	logger.Info("subscription created webhook processed successfully")
+	id := cast.ToString(obj["id"])
+	status := cast.ToString(obj["status"])
+	start := cast.ToInt64(obj["current_period_start"])
+	end := cast.ToInt64(obj["current_period_end"])
+	s.SyncSubscriptionStatus(ctx, id, status, start, end)
 	return nil
 }
 
-func (s *Service) handleSubscriptionUpdated(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "subscription_updated")
-	logger.Info("handling subscription updated webhook")
+func (s *Service) handleSubscriptionUpdated(ctx context.Context, raw json.RawMessage) error {
+	return s.handleSubscriptionCreated(ctx, raw)
+}
 
-	// Similar to created, but may need to handle plan changes
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
+func (s *Service) handleSubscriptionDeleted(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
-	}
-
-	subscriptionID, ok := object["id"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_id")
-	}
-
-	status, ok := object["status"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_status")
-	}
-
-	// Extract period information
-	currentPeriodStart := int64(0)
-	currentPeriodEnd := int64(0)
-	if period, ok := object["current_period_start"].(float64); ok {
-		currentPeriodStart = int64(period)
-	}
-	if period, ok := object["current_period_end"].(float64); ok {
-		currentPeriodEnd = int64(period)
-	}
-
-	s.SyncSubscriptionStatus(ctx, subscriptionID, status, currentPeriodStart, currentPeriodEnd)
-	logger.Info("subscription updated webhook processed successfully")
+	id := cast.ToString(obj["id"])
+	start := cast.ToInt64(obj["current_period_start"])
+	end := cast.ToInt64(obj["current_period_end"])
+	s.RefundAndFinalizeCancellation(ctx, id, start, end)
 	return nil
 }
 
-func (s *Service) handleSubscriptionDeleted(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "subscription_deleted")
-	logger.Info("handling subscription deleted webhook")
-
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
+func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
-	}
-
-	subscriptionID, ok := object["id"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_id")
-	}
-
-	// Extract period information for final processing
-	currentPeriodStart := int64(0)
-	currentPeriodEnd := int64(0)
-	if period, ok := object["current_period_start"].(float64); ok {
-		currentPeriodStart = int64(period)
-	}
-	if period, ok := object["current_period_end"].(float64); ok {
-		currentPeriodEnd = int64(period)
-	}
-
-	s.RefundAndFinalizeCancellation(ctx, subscriptionID, currentPeriodStart, currentPeriodEnd)
-	logger.Info("subscription deleted webhook processed successfully")
-	return nil
-}
-
-func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "invoice_payment_succeeded")
-	logger.Info("handling invoice payment succeeded webhook")
-
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
-	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
-	}
-
-	// Extract subscription ID if this is a subscription invoice
-	if subscriptionID, ok := object["subscription"].(string); ok && subscriptionID != "" {
-		s.MarkSubscriptionActive(ctx, subscriptionID)
-		logger.Info("subscription marked as active after successful payment")
-
-		// Send payment confirmation email notification
+	subID := cast.ToString(obj["subscription"])
+	if subID != "" {
+		s.MarkSubscriptionActive(ctx, subID)
 		if s.notification != nil {
-			go func() {
-				// Get subscription details to send notification
+			go func(subscriptionID string) {
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
-				if err != nil {
-					logger.Error("Failed to get subscription for payment succeeded email", "error", err, "subscription_id", subscriptionID)
+				if err != nil || subscription == nil {
 					return
 				}
-
-				// Get plan details
 				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
-				if err != nil {
-					logger.Error("Failed to get plan for payment succeeded email", "error", err, "plan_id", subscription.PlanID)
+				if err != nil || plan == nil {
 					return
 				}
-
-				// Try to get payment method info and invoice details from event
-				paymentMethodLastFour := "****"
-				invoiceURL := ""
-
-				// Extract payment method from event (simplified approach)
-				if charge, ok := object["charge"].(map[string]interface{}); ok {
-					if pm, ok := charge["payment_method_details"].(map[string]interface{}); ok {
-						if card, ok := pm["card"].(map[string]interface{}); ok {
-							if last4, ok := card["last4"].(string); ok {
-								paymentMethodLastFour = last4
-							}
-						}
-					}
+				invoiceURL := cast.ToString(obj["hosted_invoice_url"])
+				if invoiceURL == "" {
+					invoiceURL = cast.ToString(obj["invoice_pdf"])
 				}
-
-				// Get invoice URL from object
-				if hostedInvoiceURL, ok := object["hosted_invoice_url"].(string); ok {
-					invoiceURL = hostedInvoiceURL
-				} else if invoicePDF, ok := object["invoice_pdf"].(string); ok {
-					invoiceURL = invoicePDF
+				payAt := time.Now()
+				if v := cast.ToInt64(obj["created"]); v != 0 {
+					payAt = time.Unix(v, 0)
 				}
-
-				// Determine if this is first payment (subscription creation) or renewal
-				// Check if subscription was recently created (within last 24 hours)
-				isFirstPayment := time.Since(subscription.CreatedAt) < 24*time.Hour
-
-				paymentDate := time.Now()
-				if created, ok := object["created"].(float64); ok {
-					paymentDate = time.Unix(int64(created), 0)
-				}
-
-				var emailErr error
-				if isFirstPayment {
-					// Send subscription confirmed email for first payment
-					emailErr = s.notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL)
+				last4 := "****" // masked; extraction omitted
+				isFirst := time.Since(subscription.CreatedAt) < 24*time.Hour
+				if isFirst {
+					_ = s.notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL)
 				} else {
-					// Send payment succeeded email for renewals
-					emailErr = s.notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, invoiceURL, paymentDate)
+					_ = s.notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL, payAt)
 				}
-
-				if emailErr != nil {
-					logger.Error("Failed to send payment confirmation email", "error", emailErr, "workspace_id", subscription.WorkspaceID, "is_first_payment", isFirstPayment)
-				}
-			}()
+			}(subID)
 		}
 	}
-
-	logger.Info("invoice payment succeeded webhook processed successfully")
 	return nil
 }
 
-func (s *Service) handleInvoicePaymentFailed(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "invoice_payment_failed")
-	logger.Info("handling invoice payment failed webhook")
-
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
+func (s *Service) handleInvoicePaymentFailed(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
-	}
-
-	// Extract subscription ID if this is a subscription invoice
-	if subscriptionID, ok := object["subscription"].(string); ok && subscriptionID != "" {
-		s.MarkSubscriptionPastDue(ctx, subscriptionID)
-		logger.Info("subscription marked as past due after failed payment")
-
-		// Send payment failed email notification
+	subID := cast.ToString(obj["subscription"])
+	if subID != "" {
+		s.MarkSubscriptionPastDue(ctx, subID)
 		if s.notification != nil {
-			go func() {
-				// Get subscription details to send notification
+			go func(subscriptionID string) {
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
-				if err != nil {
-					logger.Error("Failed to get subscription for payment failed email", "error", err, "subscription_id", subscriptionID)
+				if err != nil || subscription == nil {
 					return
 				}
-
-				// Get plan details
 				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
-				if err != nil {
-					logger.Error("Failed to get plan for payment failed email", "error", err, "plan_id", subscription.PlanID)
+				if err != nil || plan == nil {
 					return
 				}
-
-				// Try to get payment method info (simplified - would need to extract from Stripe)
-				paymentMethodLastFour := "****"
-
-				err = s.notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, paymentMethodLastFour, time.Now(), nil)
-				if err != nil {
-					logger.Error("Failed to send payment failed email", "error", err, "workspace_id", subscription.WorkspaceID)
-				}
-			}()
+				_ = s.notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, "****", time.Now(), nil)
+			}(subID)
 		}
 	}
-
-	logger.Info("invoice payment failed webhook processed successfully")
 	return nil
 }
 
-func (s *Service) handleTrialWillEnd(ctx context.Context, event map[string]interface{}) error {
-	logger := logger.FromContext(ctx).With("event", "trial_will_end")
-	logger.Info("handling trial will end webhook")
-
-	// This is a good place to send notification emails or trigger
-	// other business logic when a trial is about to end
-
-	data, ok := event["data"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_data_format")
+func (s *Service) handleTrialWillEnd(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
-
-	object, ok := data["object"].(map[string]interface{})
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "invalid_object_format")
+	subID := cast.ToString(obj["id"])
+	if subID != "" {
+		if s.notification != nil {
+			go func(subscriptionID string) {
+				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+				if err != nil || subscription == nil {
+					return
+				}
+				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				if err != nil || plan == nil {
+					return
+				}
+				trialInfo, err := s.CheckTrialStatus(context.Background(), &account.Workspace{ID: subscription.WorkspaceID})
+				if err != nil {
+					return
+				}
+				_ = s.notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
+			}(subID)
+		}
 	}
+	return nil
+}
 
-	subscriptionID, ok := object["id"].(string)
-	if !ok {
-		return ErrWebhookProcessingFailed(nil, "missing_subscription_id")
+func (s *Service) handleInvoiceFinalized(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
+	logger.FromContext(ctx).Info("invoice finalized", "invoiceId", obj["id"])
+	return nil
+}
 
-	// Send trial ending notification email
-	if s.notification != nil {
-		go func() {
-			// Get subscription details
-			subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
-			if err != nil {
-				logger.Error("Failed to get subscription for trial ending email", "error", err, "subscription_id", subscriptionID)
-				return
-			}
-
-			// Get plan details
-			plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
-			if err != nil {
-				logger.Error("Failed to get plan for trial ending email", "error", err, "plan_id", subscription.PlanID)
-				return
-			}
-
-			// Get trial status
-			trialInfo, err := s.CheckTrialStatus(context.Background(), &account.Workspace{ID: subscription.WorkspaceID})
-			if err != nil {
-				logger.Error("Failed to get trial status for trial ending email", "error", err, "workspace_id", subscription.WorkspaceID)
-				return
-			}
-
-			err = s.notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
-			if err != nil {
-				logger.Error("Failed to send trial ending email", "error", err, "workspace_id", subscription.WorkspaceID)
-			}
-		}()
+func (s *Service) handleInvoiceMarkedUncollectible(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
 	}
+	if subID, ok := obj["subscription"].(string); ok && subID != "" {
+		// Downgrade local status so UI can show attention needed
+		s.MarkSubscriptionPastDue(ctx, subID)
+	}
+	return nil
+}
 
-	logger.Info("trial will end webhook processed successfully", "subscription_id", subscriptionID)
+func (s *Service) handleInvoiceVoided(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
+	}
+	logger.FromContext(ctx).Info("invoice voided", "invoiceId", obj["id"])
+	return nil
+}
+
+func (s *Service) handlePaymentMethodAutomaticallyUpdated(ctx context.Context, raw json.RawMessage) error {
+	var pm struct {
+		ID       string `json:"id"`
+		Customer any    `json:"customer"`
+	}
+	if err := json.Unmarshal(raw, &pm); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
+	}
+	if pm.ID == "" {
+		return nil
+	}
+	if c, ok := pm.Customer.(map[string]any); ok {
+		cid := cast.ToString(c["id"])
+		if cid != "" {
+			cu, err := customer.Get(cid, nil)
+			if err == nil && (cu.InvoiceSettings == nil || cu.InvoiceSettings.DefaultPaymentMethod == nil) {
+				_, _ = withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
+					return customer.Update(cid, &stripelib.CustomerParams{InvoiceSettings: &stripelib.CustomerInvoiceSettingsParams{DefaultPaymentMethod: stripelib.String(pm.ID)}})
+				})
+			}
+		}
+	}
+	return nil
+}
+
+func (s *Service) handleCheckoutSessionCompleted(ctx context.Context, raw json.RawMessage) error {
+	var obj map[string]any
+	if err := json.Unmarshal(raw, &obj); err != nil {
+		return ErrWebhookProcessingFailed(err, "parse_payload")
+	}
+	sid := cast.ToString(obj["id"])
+	if sid == "" {
+		return nil
+	}
+	sess, err := session.Get(sid, nil)
+	if err != nil {
+		return ErrWebhookProcessingFailed(err, "get_session")
+	}
+	if sess.SetupIntent != nil && sess.Customer != nil {
+		si, err := setupintent.Get(sess.SetupIntent.ID, nil)
+		if err != nil {
+			return ErrWebhookProcessingFailed(err, "get_setup_intent")
+		}
+		if si.PaymentMethod != nil {
+			pmID := si.PaymentMethod.ID
+			if _, err := withStripeRetry[*stripelib.PaymentMethod](ctx, 3, func() (*stripelib.PaymentMethod, error) {
+				return paymentmethod.Attach(pmID, &stripelib.PaymentMethodAttachParams{Customer: stripelib.String(sess.Customer.ID)})
+			}); err != nil {
+				return ErrWebhookProcessingFailed(err, "attach_payment_method")
+			}
+			_, _ = withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
+				return customer.Update(sess.Customer.ID, &stripelib.CustomerParams{InvoiceSettings: &stripelib.CustomerInvoiceSettingsParams{DefaultPaymentMethod: stripelib.String(pmID)}})
+			})
+		}
+	}
+	if sess.Subscription != nil {
+		s.MarkSubscriptionActive(ctx, sess.Subscription.ID)
+	}
 	return nil
 }

@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -12,6 +13,7 @@ import (
 	stripelib "github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/creditnote"
 	"github.com/stripe/stripe-go/v83/invoice"
+	"github.com/stripe/stripe-go/v83/paymentmethod"
 	"github.com/stripe/stripe-go/v83/subscription"
 	"github.com/stripe/stripe-go/v83/subscriptionschedule"
 )
@@ -83,7 +85,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 			updateParams.SetIdempotencyKey(idempotencyKey)
 			stripeSub, err = subscription.Update(existing.StripeSubID, updateParams)
 			if err != nil {
-				logger.FromContext(ctx).Error("Failed to update Stripe subscription", "error", err, "subscription_id", existing.StripeSubID, "plan_id", plan.ID)
+				logger.FromContext(ctx).Error("Failed to update Stripe subscription", "error", err, "subscriptionId", existing.StripeSubID, "planId", plan.ID)
 				return fmt.Errorf("failed to update subscription: %w", err)
 			}
 			existing.PlanID = plan.ID
@@ -92,7 +94,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 				return fmt.Errorf("failed to update local subscription: %w", err)
 			}
 			result = existing
-			logger.FromContext(ctx).Info("Updated subscription", "workspace_id", ws.ID, "subscription_id", existing.StripeSubID, "new_plan_id", plan.ID)
+			logger.FromContext(ctx).Info("Updated subscription", "workspaceId", ws.ID, "subscriptionId", existing.StripeSubID, "newPlanId", plan.ID)
 			return nil
 		}
 		idempotencyKey := fmt.Sprintf("sub_create_%s_%s", ws.ID, plan.ID)
@@ -110,9 +112,9 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 			createParams.CollectionMethod = stripelib.String("charge_automatically")
 		}
 		createParams.SetIdempotencyKey(idempotencyKey)
-		stripeSub, err = subscription.New(createParams)
+		stripeSub, err = withStripeRetry(ctx, 3, func() (*stripelib.Subscription, error) { return subscription.New(createParams) })
 		if err != nil {
-			logger.FromContext(ctx).Error("Failed to create Stripe subscription", "error", err, "customer_id", custID, "plan_id", plan.ID)
+			logger.FromContext(ctx).Error("Failed to create Stripe subscription", "error", err, "customerId", custID, "planId", plan.ID)
 			return fmt.Errorf("failed to create subscription: %w", err)
 		}
 		newSub := &Subscription{
@@ -126,7 +128,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 			return fmt.Errorf("failed to create local subscription: %w", err)
 		}
 		result = newSub
-		logger.FromContext(ctx).Info("Created new subscription", "workspace_id", ws.ID, "subscription_id", stripeSub.ID, "plan_id", plan.ID)
+		logger.FromContext(ctx).Info("Created new subscription", "workspaceId", ws.ID, "subscriptionId", stripeSub.ID, "planId", plan.ID)
 		return nil
 	}, atomic.WithRetries(2))
 	if err != nil {
@@ -139,7 +141,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		}
 		go func() {
 			if err := s.notification.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
-				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspace_id", ws.ID, "subscription_id", result.ID)
+				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspaceId", ws.ID, "subscriptionId", result.ID)
 			}
 		}()
 	}
@@ -162,25 +164,25 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 		idempotencyKey := fmt.Sprintf("cancel_%s", subRec.StripeSubID)
 		cancelParams := &stripelib.SubscriptionCancelParams{InvoiceNow: stripelib.Bool(false), Prorate: stripelib.Bool(false)}
 		cancelParams.SetIdempotencyKey(idempotencyKey)
-		_, err = subscription.Cancel(subRec.StripeSubID, cancelParams)
+		_, err = withStripeRetry(ctx, 3, func() (*stripelib.Subscription, error) { return subscription.Cancel(subRec.StripeSubID, cancelParams) })
 		if err != nil {
-			logger.FromContext(ctx).Error("Failed to cancel Stripe subscription", "error", err, "subscription_id", subRec.StripeSubID, "workspace_id", ws.ID)
+			logger.FromContext(ctx).Error("Failed to cancel Stripe subscription", "error", err, "subscriptionId", subRec.StripeSubID, "workspaceId", ws.ID)
 		}
 		subRec.Status = SubscriptionStatusCanceled
 		subRec.CurrentPeriodEnd = time.Now()
 		if updateErr := s.storage.subscription.UpdateOne(ctx, subRec); updateErr != nil {
-			logger.FromContext(ctx).Error("Failed to update local subscription status", "error", updateErr, "subscription_id", subRec.StripeSubID)
+			logger.FromContext(ctx).Error("Failed to update local subscription status", "error", updateErr, "subscriptionId", subRec.StripeSubID)
 			return fmt.Errorf("failed to update local subscription: %w", updateErr)
 		}
 		if err != nil {
 			return fmt.Errorf("failed to cancel Stripe subscription: %w", err)
 		}
-		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
+		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
 		if s.notification != nil {
 			if plan, planErr := s.GetPlanByID(ctx, subRec.PlanID); planErr == nil {
 				go func() {
 					if err := s.notification.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
-						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspace_id", ws.ID, "subscription_id", subRec.StripeSubID)
+						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
 					}
 				}()
 			}
@@ -210,50 +212,44 @@ func mapStripeStatus(s stripelib.SubscriptionStatus) SubscriptionStatus {
 func (s *Service) ensureFeatureCompatibility(currentPlan, newPlan *Plan) error {
 	cur := currentPlan.Features
 	nxt := newPlan.Features
-	if cur.CustomerManagement && !nxt.CustomerManagement {
-		return ErrCannotDowngradePlan(nil)
+	curMap := map[string]bool{
+		"customerManagement":       cur.CustomerManagement,
+		"inventoryManagement":      cur.InventoryManagement,
+		"orderManagement":          cur.OrderManagement,
+		"expenseManagement":        cur.ExpenseManagement,
+		"accounting":               cur.Accounting,
+		"basicAnalytics":           cur.BasicAnalytics,
+		"financialReports":         cur.FinancialReports,
+		"dataImport":               cur.DataImport,
+		"dataExport":               cur.DataExport,
+		"advancedAnalytics":        cur.AdvancedAnalytics,
+		"advancedFinancialReports": cur.AdvancedFinancialReports,
+		"orderPaymentLinks":        cur.OrderPaymentLinks,
+		"invoiceGeneration":        cur.InvoiceGeneration,
+		"exportAnalyticsData":      cur.ExportAnalyticsData,
+		"aiBusinessAssistant":      cur.AIBusinessAssistant,
 	}
-	if cur.InventoryManagement && !nxt.InventoryManagement {
-		return ErrCannotDowngradePlan(nil)
+	nxtMap := map[string]bool{
+		"customerManagement":       nxt.CustomerManagement,
+		"inventoryManagement":      nxt.InventoryManagement,
+		"orderManagement":          nxt.OrderManagement,
+		"expenseManagement":        nxt.ExpenseManagement,
+		"accounting":               nxt.Accounting,
+		"basicAnalytics":           nxt.BasicAnalytics,
+		"financialReports":         nxt.FinancialReports,
+		"dataImport":               nxt.DataImport,
+		"dataExport":               nxt.DataExport,
+		"advancedAnalytics":        nxt.AdvancedAnalytics,
+		"advancedFinancialReports": nxt.AdvancedFinancialReports,
+		"orderPaymentLinks":        nxt.OrderPaymentLinks,
+		"invoiceGeneration":        nxt.InvoiceGeneration,
+		"exportAnalyticsData":      nxt.ExportAnalyticsData,
+		"aiBusinessAssistant":      nxt.AIBusinessAssistant,
 	}
-	if cur.OrderManagement && !nxt.OrderManagement {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.ExpenseManagement && !nxt.ExpenseManagement {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.Accounting && !nxt.Accounting {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.BasicAnalytics && !nxt.BasicAnalytics {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.FinancialReports && !nxt.FinancialReports {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.DataImport && !nxt.DataImport {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.DataExport && !nxt.DataExport {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.AdvancedAnalytics && !nxt.AdvancedAnalytics {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.AdvancedFinancialReports && !nxt.AdvancedFinancialReports {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.OrderPaymentLinks && !nxt.OrderPaymentLinks {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.InvoiceGeneration && !nxt.InvoiceGeneration {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.ExportAnalyticsData && !nxt.ExportAnalyticsData {
-		return ErrCannotDowngradePlan(nil)
-	}
-	if cur.AIBusinessAssistant && !nxt.AIBusinessAssistant {
-		return ErrCannotDowngradePlan(nil)
+	for k, v := range curMap {
+		if v && !nxtMap[k] {
+			return ErrCannotDowngradePlan(nil)
+		}
 	}
 	return nil
 }
@@ -387,38 +383,106 @@ func (s *Service) ensureWithinNewPlanLimits(ctx context.Context, workspaceID str
 }
 
 // ResumeSubscriptionIfNoDue attempts to pay open invoices then recreates a subscription
+// ResumeSubscriptionIfNoDue attempts to restore a canceled/past_due/unpaid/incomplete subscription by settling invoices
+// and recreating or updating the subscription. It performs robust checks and returns a fully active local record if possible.
 func (s *Service) ResumeSubscriptionIfNoDue(ctx context.Context, ws *account.Workspace) (*Subscription, error) {
+	l := logger.FromContext(ctx).With("workspaceId", ws.ID)
+	l.Info("attempting subscription resume")
 	rec, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
 		return nil, ErrSubscriptionNotFound(err, ws.ID)
 	}
-	if rec.Status != SubscriptionStatusCanceled {
+	if rec.Status == SubscriptionStatusActive {
+		l.Info("subscription already active")
 		return rec, nil
 	}
 	custID, err := s.EnsureCustomer(ctx, ws)
 	if err != nil {
+		l.Error("ensure customer failed", "error", err)
 		return nil, err
 	}
-	ip := &stripelib.InvoiceListParams{Customer: stripelib.String(custID)}
-	ip.Status = stripelib.String(string(stripelib.InvoiceStatusOpen))
-	ip.Limit = stripelib.Int64(10)
-	it := invoice.List(ip)
+	// Fetch Stripe subscription (may be deleted)
+	stripeSub, subErr := subscription.Get(rec.StripeSubID, nil)
+	if subErr != nil {
+		// If not found (deleted), create new later
+		l.Warn("stripe subscription fetch failed; will recreate", "error", subErr)
+		stripeSub = nil
+	}
+	// Attempt to pay any open invoices
+	payParams := &stripelib.InvoiceListParams{Customer: stripelib.String(custID)}
+	payParams.Status = stripelib.String(string(stripelib.InvoiceStatusOpen))
+	payParams.Limit = stripelib.Int64(25)
+	it := invoice.List(payParams)
+	var payFailures []error
 	for it.Next() {
 		inv := it.Invoice()
-		if _, err := invoice.Pay(inv.ID, &stripelib.InvoicePayParams{}); err != nil {
-			return nil, ErrSubscriptionNotActive(err)
+		if inv.Status == stripelib.InvoiceStatusOpen || inv.Status == stripelib.InvoiceStatusDraft {
+			if inv.Status == stripelib.InvoiceStatusDraft {
+				if _, err := invoice.FinalizeInvoice(inv.ID, nil); err != nil {
+					l.Error("failed to finalize invoice", "invoice_id", inv.ID, "error", err)
+					payFailures = append(payFailures, err)
+					continue
+				}
+			}
+			if _, err := invoice.Pay(inv.ID, &stripelib.InvoicePayParams{}); err != nil {
+				l.Error("failed to pay invoice", "invoice_id", inv.ID, "error", err)
+				payFailures = append(payFailures, err)
+			} else {
+				l.Info("invoice paid", "invoice_id", inv.ID)
+			}
 		}
 	}
+	if err := it.Err(); err != nil {
+		l.Error("invoice listing error during resume", "error", err)
+	}
+	// If we still have failures, surface a composite error
+	if len(payFailures) > 0 {
+		return nil, ErrSubscriptionNotActive(errors.Join(payFailures...))
+	}
+	// Ensure plan exists
 	plan, err := s.GetPlanByID(ctx, rec.PlanID)
 	if err != nil {
 		return nil, err
 	}
-	return s.CreateOrUpdateSubscription(ctx, ws, plan)
+	if stripeSub == nil || stripeSub.Status == stripelib.SubscriptionStatusCanceled {
+		l.Info("recreating subscription in Stripe")
+		newRec, createErr := s.CreateOrUpdateSubscription(ctx, ws, plan)
+		if createErr != nil {
+			return nil, createErr
+		}
+		l.Info("subscription recreated", "subscriptionId", newRec.StripeSubID)
+		return newRec, nil
+	}
+	// If subscription exists but not active try to update payment behavior
+	if stripeSub.Status != stripelib.SubscriptionStatusActive {
+		l.Info("updating existing stripe subscription for resume", "stripeStatus", stripeSub.Status)
+		updParams := &stripelib.SubscriptionParams{CancelAtPeriodEnd: stripelib.Bool(false)}
+		updParams.PaymentBehavior = stripelib.String("default_incomplete")
+		updParams.ProrationBehavior = stripelib.String("none")
+		if _, err := withStripeRetry(ctx, 3, func() (*stripelib.Subscription, error) { return subscription.Update(stripeSub.ID, updParams) }); err != nil {
+			l.Error("subscription update failed", "error", err)
+			return nil, ErrSubscriptionNotActive(err)
+		}
+		// Attempt to refresh default payment method if automatically updated
+		if stripeSub.DefaultPaymentMethod != nil {
+			if pm, err := paymentmethod.Get(stripeSub.DefaultPaymentMethod.ID, nil); err == nil {
+				l.Info("verified default payment method", "paymentMethodId", pm.ID)
+			}
+		}
+	}
+	// Sync local status (fetch again)
+	stripeSub2, err := subscription.Get(rec.StripeSubID, nil)
+	if err == nil {
+		s.SyncSubscriptionStatus(ctx, stripeSub2.ID, string(stripeSub2.Status), 0, 0)
+		rec, _ = s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
+		l.Info("subscription resume completed", "finalStatus", rec.Status)
+	}
+	return rec, nil
 }
 
 // ScheduleSubscriptionChange schedules a subscription change for a future date
 func (s *Service) ScheduleSubscriptionChange(ctx context.Context, ws *account.Workspace, plan *Plan, effectiveDate, prorationMode string) (*stripelib.SubscriptionSchedule, error) {
-	l := logger.FromContext(ctx).With("workspace_id", ws.ID, "plan_descriptor", plan.Descriptor, "effective_date", effectiveDate)
+	l := logger.FromContext(ctx).With("workspaceId", ws.ID, "planDescriptor", plan.Descriptor, "effectiveDate", effectiveDate)
 	l.Info("scheduling subscription change")
 	sub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
@@ -445,18 +509,18 @@ func (s *Service) ScheduleSubscriptionChange(ctx context.Context, ws *account.Wo
 		currentPhase.ProrationBehavior = stripelib.String(prorationMode)
 	}
 	scheduleParams.Phases = []*stripelib.SubscriptionSchedulePhaseParams{currentPhase}
-	schedule, err := subscriptionschedule.New(scheduleParams)
+	schedule, err := withStripeRetry(ctx, 3, func() (*stripelib.SubscriptionSchedule, error) { return subscriptionschedule.New(scheduleParams) })
 	if err != nil {
 		l.Error("failed to create subscription schedule", "error", err)
 		return nil, ErrStripeOperationFailed(err, "create_subscription_schedule")
 	}
-	l.Info("subscription schedule created successfully", "schedule_id", schedule.ID)
+	l.Info("subscription schedule created successfully", "scheduleId", schedule.ID)
 	return schedule, nil
 }
 
 // EstimateProrationAmount estimates the proration amount for plan changes
 func (s *Service) EstimateProrationAmount(ctx context.Context, ws *account.Workspace, newPlanDescriptor string) (int64, error) {
-	l := logger.FromContext(ctx).With("workspace_id", ws.ID, "new_plan", newPlanDescriptor)
+	l := logger.FromContext(ctx).With("workspaceId", ws.ID, "newPlan", newPlanDescriptor)
 	l.Info("estimating proration amount")
 	currentSub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {

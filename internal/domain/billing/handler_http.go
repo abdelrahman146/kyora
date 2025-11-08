@@ -2,10 +2,13 @@ package billing
 
 import (
 	"net/http"
+	"strconv"
+	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
+	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/gin-gonic/gin"
 )
@@ -37,8 +40,13 @@ func (h *HttpHandler) RegisterRoutes(router *gin.Engine) {
 	subscriptionGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(h.accountSvc), account.EnforceWorkspaceMembership(h.accountSvc))
 	{
 		subscriptionGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetSubscription)
+		subscriptionGroup.GET("/details", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetSubscriptionDetails)
 		subscriptionGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CreateSubscription)
 		subscriptionGroup.DELETE("", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CancelSubscription)
+		subscriptionGroup.POST("/resume", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ResumeSubscription)
+		subscriptionGroup.POST("/schedule-change", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ScheduleSubscriptionChange)
+		subscriptionGroup.POST("/estimate-proration", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.EstimateProration)
+		subscriptionGroup.POST("/trial/extend", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ExtendTrial)
 	}
 
 	// Payment Method Operations
@@ -46,6 +54,7 @@ func (h *HttpHandler) RegisterRoutes(router *gin.Engine) {
 	paymentGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(h.accountSvc), account.EnforceWorkspaceMembership(h.accountSvc))
 	{
 		paymentGroup.POST("/attach", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.AttachPaymentMethod)
+		paymentGroup.POST("/setup-intent", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CreateSetupIntent)
 	}
 
 	// Invoice Operations
@@ -55,6 +64,7 @@ func (h *HttpHandler) RegisterRoutes(router *gin.Engine) {
 		invoiceGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.ListInvoices)
 		invoiceGroup.GET("/:id/download", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.DownloadInvoice)
 		invoiceGroup.POST("/:id/pay", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.PayInvoice)
+		invoiceGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CreateInvoice)
 	}
 
 	// Checkout and Portal Operations
@@ -66,6 +76,19 @@ func (h *HttpHandler) RegisterRoutes(router *gin.Engine) {
 	portalGroup := group.Group("/portal")
 	{
 		portalGroup.POST("/session", h.CreateBillingPortalSession)
+	}
+
+	// Tax and Usage
+	usageGroup := group.Group("/usage")
+	usageGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(h.accountSvc), account.EnforceWorkspaceMembership(h.accountSvc))
+	{
+		usageGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetUsage)
+	}
+
+	taxGroup := group.Group("/tax")
+	taxGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(h.accountSvc), account.EnforceWorkspaceMembership(h.accountSvc))
+	{
+		taxGroup.POST("/calculate", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.CalculateTax)
 	}
 
 	// Webhook endpoint (public - no auth required)
@@ -149,6 +172,77 @@ func (h *HttpHandler) CancelSubscription(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
+func (h *HttpHandler) GetSubscriptionDetails(c *gin.Context) {
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	details, err := h.service.GetSubscriptionDetails(c.Request.Context(), ws)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, details)
+}
+
+func (h *HttpHandler) ResumeSubscription(c *gin.Context) {
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	sub, err := h.service.ResumeSubscriptionIfNoDue(c.Request.Context(), ws)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, sub)
+}
+
+func (h *HttpHandler) ScheduleSubscriptionChange(c *gin.Context) {
+	var req scheduleChangeRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, err)
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	plan, err := h.service.GetPlanByDescriptor(c.Request.Context(), req.PlanDescriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	schedule, err := h.service.ScheduleSubscriptionChange(c.Request.Context(), ws, plan, req.EffectiveDate, req.ProrationMode)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, schedule)
+}
+
+func (h *HttpHandler) EstimateProration(c *gin.Context) {
+	var req prorationEstimateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, err)
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	amount, err := h.service.EstimateProrationAmount(c.Request.Context(), ws, req.NewPlanDescriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, gin.H{"amount": amount})
+}
+
 // Payment Method Operations
 func (h *HttpHandler) AttachPaymentMethod(c *gin.Context) {
 	var req attachPMRequest
@@ -170,6 +264,20 @@ func (h *HttpHandler) AttachPaymentMethod(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusOK)
 }
 
+func (h *HttpHandler) CreateSetupIntent(c *gin.Context) {
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	secret, err := h.service.CreateSetupIntent(c.Request.Context(), ws)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, gin.H{"clientSecret": secret})
+}
+
 // Invoice Operations
 func (h *HttpHandler) ListInvoices(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
@@ -177,14 +285,27 @@ func (h *HttpHandler) ListInvoices(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-
-	status := c.Query("status")
-	list, err := h.service.ListInvoices(c.Request.Context(), ws, status)
-	if err != nil {
-		response.Error(c, err)
-		return
+	// Parse pagination inputs
+	page := 1
+	pageSize := 30
+	if v := c.Query("page"); v != "" {
+		if p, err := strconv.Atoi(v); err == nil && p > 0 {
+			page = p
+		}
 	}
-	response.SuccessJSON(c, http.StatusOK, list)
+	if v := c.Query("pageSize"); v != "" {
+		if ps, err := strconv.Atoi(v); err == nil && ps > 0 {
+			pageSize = ps
+		}
+	}
+	var orderBy []string
+	if v := c.Query("orderBy"); v != "" {
+		orderBy = strings.Split(v, ",")
+	}
+	status := c.Query("status")
+	req := list.NewListRequest(page, pageSize, orderBy, "")
+	resp := h.service.ListInvoicesStandard(c.Request.Context(), ws, status, req)
+	response.SuccessJSON(c, http.StatusOK, resp)
 }
 
 func (h *HttpHandler) DownloadInvoice(c *gin.Context) {
@@ -214,6 +335,25 @@ func (h *HttpHandler) PayInvoice(c *gin.Context) {
 		return
 	}
 	response.SuccessEmpty(c, http.StatusNoContent)
+}
+
+func (h *HttpHandler) CreateInvoice(c *gin.Context) {
+	var req manualInvoiceRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, err)
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	inv, err := h.service.CreateInvoice(c.Request.Context(), ws, req.Description, req.Amount, req.Currency, req.DueDate)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusCreated, inv)
 }
 
 // Checkout and Portal Operations
@@ -263,6 +403,58 @@ func (h *HttpHandler) CreateBillingPortalSession(c *gin.Context) {
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"portalUrl": url})
+}
+
+func (h *HttpHandler) GetUsage(c *gin.Context) {
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	usage, err := h.service.GetSubscriptionUsage(c.Request.Context(), ws)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, usage)
+}
+
+func (h *HttpHandler) CalculateTax(c *gin.Context) {
+	var req taxCalculateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, err)
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	calc, err := h.service.CalculateTax(c.Request.Context(), ws, req.Amount, req.Currency)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, calc)
+}
+
+// Trial Operations
+func (h *HttpHandler) ExtendTrial(c *gin.Context) {
+	var req trialExtendRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		response.Error(c, err)
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.service.ExtendTrialPeriod(c.Request.Context(), ws, req.AdditionalDays); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
 // Webhook handler
