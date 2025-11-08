@@ -8,6 +8,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
+	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 )
@@ -226,4 +227,48 @@ func (s *Service) ExchangeGoogleCodeAndFetchUser(ctx context.Context, code strin
 		return nil, problem.InternalError().WithError(err)
 	}
 	return info, nil
+}
+
+// BootstrapWorkspaceAndOwner creates a new workspace and an owner user atomically.
+// It avoids exposing storage details to callers that need to initialize a tenant.
+func (s *Service) BootstrapWorkspaceAndOwner(ctx context.Context, firstName, lastName, email, passwordHash string, emailVerified bool, stripeCustomerID string) (*User, *Workspace, error) {
+	var createdUser *User
+	var createdWs *Workspace
+	err := s.atomicProcessor.Exec(ctx, func(txCtx context.Context) error {
+		// Guard against existing user
+		if u, err := s.GetUserByEmail(txCtx, email); err == nil && u != nil {
+			return ErrInvalidCredentials(nil)
+		}
+		ws := &Workspace{}
+		if err := s.storage.workspace.CreateOne(txCtx, ws); err != nil {
+			return err
+		}
+		user := &User{
+			WorkspaceID:     ws.ID,
+			Role:            role.RoleAdmin,
+			FirstName:       firstName,
+			LastName:        lastName,
+			Email:           email,
+			Password:        passwordHash,
+			IsEmailVerified: emailVerified,
+		}
+		if err := s.storage.user.CreateOne(txCtx, user); err != nil {
+			return err
+		}
+		ws.OwnerID = user.ID
+		if stripeCustomerID != "" {
+			ws.StripeCustomerID.String = stripeCustomerID
+			ws.StripeCustomerID.Valid = true
+		}
+		if err := s.storage.workspace.UpdateOne(txCtx, ws); err != nil {
+			return err
+		}
+		createdUser = user
+		createdWs = ws
+		return nil
+	})
+	if err != nil {
+		return nil, nil, err
+	}
+	return createdUser, createdWs, nil
 }

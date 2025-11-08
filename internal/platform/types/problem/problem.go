@@ -124,3 +124,9 @@ func Conflict(detail string) *Problem {
 		Status: 409, Title: "Conflict", Detail: detail, Type: aboutBlank,
 	}
 }
+
+func TooManyRequests(detail string) *Problem {
+	return &Problem{
+		Status: 429, Title: "Too Many Requests", Detail: detail, Type: aboutBlank,
+	}
+}

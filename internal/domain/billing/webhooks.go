@@ -313,6 +313,15 @@ func (s *Service) handleCheckoutSessionCompleted(ctx context.Context, raw json.R
 	}
 	if sess.Subscription != nil {
 		s.MarkSubscriptionActive(ctx, sess.Subscription.ID)
+		// If this checkout was part of onboarding, notify the onboarding flow via callback
+		if sess.Metadata != nil {
+			if obID, ok := sess.Metadata["onboarding_session_id"]; ok && obID != "" {
+				// stripe subscription id may be nil early; pass if available
+				if s.onboardingPaymentHandler != nil {
+					_ = s.onboardingPaymentHandler(ctx, sess.ID, sess.Subscription.ID)
+				}
+			}
+		}
 	}
 	return nil
 }

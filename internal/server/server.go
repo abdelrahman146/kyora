@@ -15,6 +15,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
@@ -69,7 +70,6 @@ func New() (*Server, error) {
 	accountSvc := account.NewService(accountStorage, atomicProcessor, bus, emailClient)
 
 	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc, emailClient)
-	_ = billingSvc // to avoid unused variable warning
 
 	businessStorage := business.NewStorage(db, cacheDB)
 	businessSvc := business.NewService(businessStorage, atomicProcessor, bus)
@@ -103,8 +103,29 @@ func New() (*Server, error) {
 	r.GET("/healthz", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 	r.GET("/livez", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 
-	// register billing routes under /api
+	// register domain routes under /api
 	billing.RegisterRoutes(r, billingSvc, accountSvc)
+
+	// onboarding routes
+	onboardingStorage := onboarding.NewStorage(db, cacheDB)
+	onboardingSvc := onboarding.NewService(onboardingStorage, atomicProcessor, accountSvc, billingSvc, businessSvc, emailClient)
+	onboarding.RegisterRoutes(r, onboardingSvc)
+
+	// Wire onboarding payment handler into billing webhooks
+	billingSvc.SetOnboardingPaymentHandler(onboardingSvc.MarkPaymentSucceeded)
+
+	// housekeeping: lightweight goroutine to cleanup expired onboarding sessions periodically
+	go func() {
+		ticker := time.NewTicker(30 * time.Minute)
+		defer ticker.Stop()
+		for range ticker.C {
+			if err := onboardingStorage.DeleteAllExpired(context.Background()); err != nil {
+				slog.Warn("onboarding cleanup failed", "error", err)
+			} else {
+				slog.Debug("onboarding cleanup completed")
+			}
+		}
+	}()
 
 	return &Server{r: r, db: db, cacheDB: cacheDB}, nil
 }

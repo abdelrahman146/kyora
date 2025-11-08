@@ -24,6 +24,8 @@ type Service struct {
 	account         *account.Service
 	notification    *Notification
 	cache           *planCache
+	// optional callback set by server for onboarding payment completion
+	onboardingPaymentHandler func(ctx context.Context, checkoutSessionID, stripeSubscriptionID string) error
 }
 
 func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailClient email.Client) *Service {
@@ -46,6 +48,11 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		}
 	}()
 	return s
+}
+
+// SetOnboardingPaymentHandler wires a callback to notify onboarding flow when a checkout session completes
+func (s *Service) SetOnboardingPaymentHandler(h func(ctx context.Context, checkoutSessionID, stripeSubscriptionID string) error) {
+	s.onboardingPaymentHandler = h
 }
 
 // simple in-memory cache for Stripe price IDs to reduce API chatter
