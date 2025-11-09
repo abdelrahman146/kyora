@@ -321,6 +321,17 @@ Events & integrations
 - caching should be done in storage layer to keep the service layer clean and focused on business logic. never ever do caching in service layer.
 - in service layer we can only use the cache for business logic that requires expirable memory storage like authentication tokens and password reset tokens and email verification tokens and invitation tokens and similar use cases.
 
+**Seperation of concerns**
+
+- handler layer should should only handle requests and responses and request validation and maybe some transformations to match the service interface and delegate the business logic to the service layer.
+- service layer should only handle business logic and data transformations and delegate the data access to the storage layer and should never ever handle request or response or request validation.
+- storage layer should only handle data access and data transformations and should never ever handle business logic or request or response or request validation.
+- for models they might have some methods that are related to the model itself like state transitions or derived values calculations but they should never ever have business logic or data access or request or response handling.
+- for errors they should only define the domain specific errors.
+- for every domain it should never have circular dependencies with other domains. if you find yourself needing to use another domain service or storage you should always use event bus to communicate between domains or you can move the shared functionality to a common utils package or helpers package.
+- domains should be independent and self contained and should not depend on other domains to function.
+- domains should never access other domain storages directly. if you need to access another domain storage you should always use the other domain service to access the data.
+
   **Test cases**
 
 - In this Project, we should always reach 80%+ test coverage for any new code we add. the code currently doesn't have any test cases so we should start adding them as we go.
