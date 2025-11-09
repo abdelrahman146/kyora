@@ -395,3 +395,8 @@ Events & integrations
 - everytime we write code we should always think about the future and how this code will be used and maintained in the future and we should always write code that is easy to understand and maintain in the future.
 - whenever we introduce new design pattern or archiectural changes we need to make sure it aligns with the overall architecture and design principles of the project and we should document the changes properly to explain the reasoning behind them.
 - whenever you find a uncommented code or a function or a struct or a package without documentation we should always add a proper comment or documentation to explain its purpose and usage using godoc style.
+- don't leave deprecated code in the codebase, we should always remove it to keep the code clean and maintainable.
+- always do cleanups for no longer needed code or functions.
+- never ever brief any implementation. always provide complete and thorough implementations.
+- never ever settle on examples or partial implementations. always provide complete and thorough implementations.
+- always aim for high-quality code that is secure, robust, maintainable, and production-ready
