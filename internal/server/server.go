@@ -95,6 +95,10 @@ func New() (*Server, error) {
 	})
 	_ = analyticsSvc // to avoid unused variable warning
 
+	// onboarding routes
+	onboardingStorage := onboarding.NewStorage(db, cacheDB)
+	onboardingSvc := onboarding.NewService(onboardingStorage, atomicProcessor, accountSvc, billingSvc, businessSvc, emailClient)
+
 	// server initialization logic
 	r := gin.New()
 	r.Use(logger.Middleware())
@@ -104,28 +108,13 @@ func New() (*Server, error) {
 	r.GET("/livez", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 
 	// register domain routes under /api
-	billing.RegisterRoutes(r, billingSvc, accountSvc)
+	registerBillingRoutes(r, billing.NewHttpHandler(billingSvc, accountSvc), accountSvc)
 
-	// onboarding routes
-	onboardingStorage := onboarding.NewStorage(db, cacheDB)
-	onboardingSvc := onboarding.NewService(onboardingStorage, atomicProcessor, accountSvc, billingSvc, businessSvc, emailClient)
-	onboarding.RegisterRoutes(r, onboardingSvc)
+	// Register account routes with plan limit enforcement for team members
+	registerAccountRoutes(r, account.NewHttpHandler(accountSvc), accountSvc, billingSvc)
 
-	// Wire onboarding payment handler into billing webhooks
-	billingSvc.SetOnboardingPaymentHandler(onboardingSvc.MarkPaymentSucceeded)
-
-	// housekeeping: lightweight goroutine to cleanup expired onboarding sessions periodically
-	go func() {
-		ticker := time.NewTicker(30 * time.Minute)
-		defer ticker.Stop()
-		for range ticker.C {
-			if err := onboardingStorage.DeleteAllExpired(context.Background()); err != nil {
-				slog.Warn("onboarding cleanup failed", "error", err)
-			} else {
-				slog.Debug("onboarding cleanup completed")
-			}
-		}
-	}()
+	// Register onboarding routes
+	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
 
 	return &Server{r: r, db: db, cacheDB: cacheDB}, nil
 }

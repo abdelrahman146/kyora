@@ -128,3 +128,78 @@ var UserSchema = struct {
 	Email:           schema.NewField("email", "email"),
 	IsEmailVerified: schema.NewField("is_email_verified", "isEmailVerified"),
 }
+
+/* User Invitation Model */
+//-----------------------*/
+
+const (
+	UserInvitationTable  = "user_invitations"
+	UserInvitationStruct = "UserInvitation"
+	UserInvitationPrefix = "inv"
+)
+
+type InvitationStatus string
+
+const (
+	InvitationStatusPending  InvitationStatus = "pending"
+	InvitationStatusAccepted InvitationStatus = "accepted"
+	InvitationStatusExpired  InvitationStatus = "expired"
+	InvitationStatusRevoked  InvitationStatus = "revoked"
+)
+
+type UserInvitation struct {
+	gorm.Model
+	ID          string           `gorm:"column:id;primaryKey;type:text" json:"id"`
+	WorkspaceID string           `gorm:"column:workspace_id;type:text" json:"workspaceId"`
+	Workspace   *Workspace       `gorm:"foreignKey:WorkspaceID;references:ID" json:"workspace,omitempty"`
+	Email       string           `gorm:"column:email;type:text" json:"email"`
+	Role        role.Role        `gorm:"column:role;type:text;default:'user'" json:"role"`
+	InviterID   string           `gorm:"column:inviter_id;type:text" json:"inviterId"`
+	Inviter     *User            `gorm:"foreignKey:InviterID;references:ID" json:"inviter,omitempty"`
+	Status      InvitationStatus `gorm:"column:status;type:text;default:'pending'" json:"status"`
+	AcceptedAt  *gorm.DeletedAt  `gorm:"column:accepted_at;type:timestamp with time zone" json:"acceptedAt,omitempty"`
+}
+
+func (m *UserInvitation) TableName() string {
+	return UserInvitationTable
+}
+
+func (m *UserInvitation) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = id.KsuidWithPrefix(UserInvitationPrefix)
+	}
+	return nil
+}
+
+type InviteUserInput struct {
+	Email string    `form:"email" json:"email" binding:"required,email"`
+	Role  role.Role `form:"role" json:"role" binding:"required,oneof=user admin"`
+}
+
+type UpdateUserRoleInput struct {
+	Role role.Role `form:"role" json:"role" binding:"required,oneof=user admin"`
+}
+
+var UserInvitationSchema = struct {
+	ID          schema.Field
+	WorkspaceID schema.Field
+	Email       schema.Field
+	Role        schema.Field
+	InviterID   schema.Field
+	Status      schema.Field
+	AcceptedAt  schema.Field
+	CreatedAt   schema.Field
+	UpdatedAt   schema.Field
+	DeletedAt   schema.Field
+}{
+	ID:          schema.NewField("id", "id"),
+	WorkspaceID: schema.NewField("workspace_id", "workspaceId"),
+	Email:       schema.NewField("email", "email"),
+	Role:        schema.NewField("role", "role"),
+	InviterID:   schema.NewField("inviter_id", "inviterId"),
+	Status:      schema.NewField("status", "status"),
+	AcceptedAt:  schema.NewField("accepted_at", "acceptedAt"),
+	CreatedAt:   schema.NewField("created_at", "createdAt"),
+	UpdatedAt:   schema.NewField("updated_at", "updatedAt"),
+	DeletedAt:   schema.NewField("deleted_at", "deletedAt"),
+}

@@ -34,12 +34,6 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 	if p == nil {
 		return fmt.Errorf("plan is nil")
 	}
-	// Check cache first
-	if p.StripePlanID != "" {
-		if cached, ok := s.cache.get(p.ID); ok && cached == p.StripePlanID {
-			return nil
-		}
-	}
 	if p.StripePlanID == "" {
 		// Full sync path
 		if err := s.syncSinglePlanToStripe(ctx, p); err != nil {
@@ -48,7 +42,6 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 		if p.StripePlanID == "" { // still empty — treat as error
 			return fmt.Errorf("plan %s not synced to Stripe (missing price id)", p.ID)
 		}
-		s.cache.set(p.ID, p.StripePlanID)
 		return nil
 	}
 	// Validate existing price still conforms. If mismatch create new one.
@@ -69,9 +62,6 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 		if err := s.storage.plan.UpdateOne(ctx, p); err != nil {
 			return fmt.Errorf("failed updating plan price id: %w", err)
 		}
-		s.cache.set(p.ID, p.StripePlanID)
-	} else {
-		s.cache.set(p.ID, p.StripePlanID)
 	}
 	return nil
 }

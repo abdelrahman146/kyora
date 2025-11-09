@@ -12,16 +12,9 @@ type HttpHandler struct {
 	svc *Service
 }
 
-func RegisterRoutes(r *gin.Engine, svc *Service) {
+func NewHttpHandler(svc *Service) *HttpHandler {
 	h := &HttpHandler{svc: svc}
-	group := r.Group("/api/onboarding")
-	group.POST("/start", h.Start)
-	group.POST("/email/otp", h.SendEmailOTP)
-	group.POST("/email/verify", h.VerifyEmail)
-	group.POST("/oauth/google", h.OAuthGoogle)
-	group.POST("/business", h.SetBusiness)
-	group.POST("/payment/start", h.PaymentStart)
-	group.POST("/complete", h.Complete)
+	return h
 }
 
 type startRequest struct {

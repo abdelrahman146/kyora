@@ -18,6 +18,7 @@ const (
 	TemplateEmailVerification    TemplateID = "email_verification"
 	TemplateWelcome              TemplateID = "welcome"
 	TemplateLoginNotification    TemplateID = "login_notification"
+	TemplateWorkspaceInvitation  TemplateID = "workspace_invitation"
 
 	// Billing and Subscription Templates
 	TemplateSubscriptionWelcome   TemplateID = "subscription_welcome"
@@ -38,6 +39,7 @@ var templateFiles = map[TemplateID]string{
 	TemplateEmailVerification:    "templates/email_verification.html",
 	TemplateWelcome:              "templates/welcome.html",
 	TemplateLoginNotification:    "templates/login_notification.html",
+	TemplateWorkspaceInvitation:  "templates/workspace_invitation.html",
 
 	// Billing and Subscription Templates
 	TemplateSubscriptionWelcome:   "templates/subscription_welcome.html",
@@ -56,6 +58,7 @@ var subjects = map[TemplateID]string{
 	TemplateEmailVerification:    "Verify your email address",
 	TemplateWelcome:              "Welcome to Kyora!",
 	TemplateLoginNotification:    "New login to your account",
+	TemplateWorkspaceInvitation:  "You've been invited to join a workspace",
 
 	// Billing and Subscription Templates
 	TemplateSubscriptionWelcome:   "Welcome to your subscription!",

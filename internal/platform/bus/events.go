@@ -1,21 +1,16 @@
 package bus
 
-import "time"
+import (
+	"context"
+)
 
 type Topic string
 
-const VerifyEmailTopic Topic = "verify_email"
+const OnboardingPaymentSucceededTopic Topic = "onboarding_payment_succeeded"
 
-type VerifyEmailEvent struct {
-	Email    string    `json:"email"`
-	ExpireAt time.Time `json:"expireAt"`
-	Token    string    `json:"token"`
-}
-
-const ResetPasswordTopic Topic = "reset_password"
-
-type ResetPasswordEvent struct {
-	Email    string    `json:"email"`
-	ExpireAt time.Time `json:"expireAt"`
-	Token    string    `json:"token"`
+type OnboardingPaymentSucceededEvent struct {
+	Ctx                  context.Context `json:"-"`
+	OnboardingSessionID  string          `json:"onboardingSessionId"`
+	StripeCheckoutID     string          `json:"stripeCheckoutId"`
+	StripeSubscriptionID string          `json:"stripeSubscriptionId"`
 }

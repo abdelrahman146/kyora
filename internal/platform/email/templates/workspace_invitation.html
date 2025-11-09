@@ -1,0 +1,146 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Workspace Invitation</title>
+    <style>
+      body {
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          "Helvetica Neue", Arial, sans-serif;
+        line-height: 1.6;
+        color: #333;
+        max-width: 600px;
+        margin: 0 auto;
+        padding: 20px;
+        background-color: #f4f4f4;
+      }
+      .container {
+        background-color: #ffffff;
+        border-radius: 8px;
+        padding: 40px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        text-align: center;
+        margin-bottom: 30px;
+      }
+      .logo {
+        font-size: 28px;
+        font-weight: bold;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+      h1 {
+        color: #2c3e50;
+        font-size: 24px;
+        margin-bottom: 20px;
+      }
+      .content {
+        margin-bottom: 30px;
+      }
+      .invitation-details {
+        background-color: #f8f9fa;
+        border-left: 4px solid #3498db;
+        padding: 15px;
+        margin: 20px 0;
+      }
+      .invitation-details p {
+        margin: 8px 0;
+      }
+      .button {
+        display: inline-block;
+        padding: 14px 28px;
+        background-color: #3498db;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-weight: 600;
+        margin: 20px 0;
+      }
+      .button:hover {
+        background-color: #2980b9;
+      }
+      .footer {
+        text-align: center;
+        margin-top: 30px;
+        padding-top: 20px;
+        border-top: 1px solid #e0e0e0;
+        font-size: 12px;
+        color: #666;
+      }
+      .footer a {
+        color: #3498db;
+        text-decoration: none;
+      }
+      .expiry-notice {
+        background-color: #fff3cd;
+        border-left: 4px solid #ffc107;
+        padding: 12px;
+        margin: 20px 0;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <div class="logo">{{default "Kyora" .productName}}</div>
+      </div>
+
+      <h1>You've been invited to join a workspace!</h1>
+
+      <div class="content">
+        <p>Hello,</p>
+
+        <p>
+          <strong>{{.inviterName}}</strong> has invited you to join
+          <strong>{{.workspaceName}}</strong> on {{default "Kyora"
+          .productName}}.
+        </p>
+
+        <div class="invitation-details">
+          <p><strong>Workspace:</strong> {{.workspaceName}}</p>
+          <p><strong>Role:</strong> {{.role}}</p>
+          <p>
+            <strong>Invited by:</strong> {{.inviterName}} ({{.inviterEmail}})
+          </p>
+        </div>
+
+        <p>
+          Click the button below to accept this invitation and join the
+          workspace:
+        </p>
+
+        <div style="text-align: center">
+          <a href="{{.acceptURL}}" class="button">Accept Invitation</a>
+        </div>
+
+        <div class="expiry-notice">
+          <strong>Note:</strong> This invitation will expire in {{.expiryTime}}.
+          After that, you'll need to request a new invitation.
+        </div>
+
+        <p style="margin-top: 30px">
+          If you don't want to join this workspace or think this invitation was
+          sent by mistake, you can safely ignore this email.
+        </p>
+      </div>
+
+      <div class="footer">
+        <p>
+          If you have any questions, please contact our support team at
+          <a href="mailto:{{.supportEmail}}">{{.supportEmail}}</a>
+        </p>
+        <p>
+          Or visit our <a href="{{.helpURL}}">help center</a> for more
+          information.
+        </p>
+        <p style="margin-top: 15px">
+          &copy; {{.currentYear}} {{default "Kyora" .productName}}. All rights
+          reserved.
+        </p>
+      </div>
+    </div>
+  </body>
+</html>

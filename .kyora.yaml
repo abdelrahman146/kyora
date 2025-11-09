@@ -27,6 +27,7 @@ auth:
     audience: "kyora_users"
   password_reset_ttl_seconds: 900
   verify_email_ttl_seconds: 900
+  invitation_token_ttl_seconds: 604800
   google_oauth:
     client_id: ""
     client_secret: ""

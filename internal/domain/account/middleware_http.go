@@ -2,6 +2,7 @@ package account
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
@@ -42,6 +43,10 @@ func EnforceValidActor(service *Service) gin.HandlerFunc {
 			response.Error(c, err)
 			return
 		}
+		l := logger.FromContext(c.Request.Context())
+		l.With("actorID", user.ID, "actorEmail", user.Email, "actorName", fmt.Sprintf("%s %s", user.FirstName, user.LastName), "actorRole", user.Role)
+		ctx := logger.WithContext(c.Request.Context(), l)
+		c.Request = c.Request.WithContext(ctx)
 		c.Set(ActorKey, user)
 		c.Next()
 	}
@@ -79,6 +84,10 @@ func EnforceWorkspaceMembership(service *Service) gin.HandlerFunc {
 			response.Error(c, err)
 			return
 		}
+		l := logger.FromContext(c.Request.Context())
+		l.With("workspaceID", workspace.ID)
+		ctx := logger.WithContext(c.Request.Context(), l)
+		c.Request = c.Request.WithContext(ctx)
 		c.Set(WorkspaceKey, workspace)
 		c.Next()
 	}

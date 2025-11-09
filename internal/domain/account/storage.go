@@ -11,21 +11,24 @@ import (
 )
 
 const (
-	resetPasswordTokenPrefix = "pwreset:"
-	verifyEmailTokenPrefix   = "emailverify:"
+	resetPasswordTokenPrefix       = "pwreset:"
+	verifyEmailTokenPrefix         = "emailverify:"
+	workspaceInvitationTokenPrefix = "invitation:"
 )
 
 type Storage struct {
-	cache     *cache.Cache
-	workspace *database.Repository[Workspace]
-	user      *database.Repository[User]
+	cache      *cache.Cache
+	workspace  *database.Repository[Workspace]
+	user       *database.Repository[User]
+	invitation *database.Repository[UserInvitation]
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	return &Storage{
-		cache:     cache,
-		workspace: database.NewRepository[Workspace](db),
-		user:      database.NewRepository[User](db),
+		cache:      cache,
+		workspace:  database.NewRepository[Workspace](db),
+		user:       database.NewRepository[User](db),
+		invitation: database.NewRepository[UserInvitation](db),
 	}
 }
 
@@ -105,4 +108,45 @@ func (s *Storage) GetVerifyEmailToken(token string) (*VerifyEmailPayload, error)
 
 func (s *Storage) ConsumeVerifyEmailToken(token string) error {
 	return s.cache.Delete(verifyEmailTokenPrefix + token)
+}
+
+type WorkspaceInvitationPayload struct {
+	InvitationID string    `json:"invitationId"`
+	WorkspaceID  string    `json:"workspaceId"`
+	Email        string    `json:"email"`
+	Role         string    `json:"role"`
+	InviterID    string    `json:"inviterId"`
+	ExpAt        time.Time `json:"expAt"`
+}
+
+func (s *Storage) CreateWorkspaceInvitationToken(payload *WorkspaceInvitationPayload) (string, time.Time, error) {
+	key := workspaceInvitationTokenPrefix + payload.InvitationID
+	ttl := viper.GetInt32(config.WorkspaceInvitationTokenExpirySeconds)
+	payload.ExpAt = time.Now().Add(time.Duration(ttl) * time.Second)
+	payloadBytes, err := json.Marshal(payload)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	err = s.cache.SetX(key, payloadBytes, ttl)
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	return key, payload.ExpAt, nil
+}
+
+func (s *Storage) GetWorkspaceInvitationToken(token string) (*WorkspaceInvitationPayload, error) {
+	var payload WorkspaceInvitationPayload
+	data, err := s.cache.Get(workspaceInvitationTokenPrefix + token)
+	if err != nil {
+		return nil, err
+	}
+	err = json.Unmarshal(data, &payload)
+	if err != nil {
+		return nil, err
+	}
+	return &payload, nil
+}
+
+func (s *Storage) ConsumeWorkspaceInvitationToken(token string) error {
+	return s.cache.Delete(workspaceInvitationTokenPrefix + token)
 }

@@ -4,11 +4,11 @@ import (
 	"context"
 	"fmt"
 	"log/slog"
-	"net"
 	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/email"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/helpers"
 )
 
 // Notification encapsulates email sending for account domain
@@ -63,7 +63,7 @@ func (n *Notification) SendPasswordResetConfirmationEmail(ctx context.Context, u
 	logger.InfoContext(ctx, "Sending password reset confirmation email")
 
 	resetTime := time.Now()
-	location := n.getLocationFromIP(clientIP)
+	location := helpers.GetLocationFromIP(clientIP)
 	data := map[string]any{
 		"userName":      n.getUserDisplayName(user),
 		"loginURL":      fmt.Sprintf("%s/login", n.info.BaseURL),
@@ -151,8 +151,8 @@ func (n *Notification) SendLoginNotificationEmail(ctx context.Context, user *Use
 	logger.InfoContext(ctx, "Sending login notification email")
 
 	loginTime := time.Now()
-	location := n.getLocationFromIP(clientIP)
-	deviceInfo := n.parseUserAgent(userAgent)
+	location := helpers.GetLocationFromIP(clientIP)
+	deviceInfo := helpers.ParseUserAgent(userAgent)
 	resetURL := fmt.Sprintf("%s/reset-password", n.info.BaseURL)
 
 	data := map[string]any{
@@ -177,43 +177,6 @@ func (n *Notification) SendLoginNotificationEmail(ctx context.Context, user *Use
 	return nil
 }
 
-// Helpers (moved from old integration file)
-func (n *Notification) parseUserAgent(userAgent string) string {
-	if userAgent == "" {
-		return "Unknown device"
-	}
-	ua := strings.ToLower(userAgent)
-	var os string
-	if strings.Contains(ua, "windows") {
-		os = "Windows"
-	} else if strings.Contains(ua, "macintosh") || strings.Contains(ua, "mac os") {
-		os = "macOS"
-	} else if strings.Contains(ua, "linux") {
-		os = "Linux"
-	} else if strings.Contains(ua, "android") {
-		os = "Android"
-	} else if strings.Contains(ua, "iphone") || strings.Contains(ua, "ipad") {
-		os = "iOS"
-	} else {
-		os = "Unknown OS"
-	}
-	var browser string
-	if strings.Contains(ua, "chrome") && !strings.Contains(ua, "edge") {
-		browser = "Chrome"
-	} else if strings.Contains(ua, "firefox") {
-		browser = "Firefox"
-	} else if strings.Contains(ua, "safari") && !strings.Contains(ua, "chrome") {
-		browser = "Safari"
-	} else if strings.Contains(ua, "edge") {
-		browser = "Edge"
-	} else if strings.Contains(ua, "opera") {
-		browser = "Opera"
-	} else {
-		browser = "Unknown browser"
-	}
-	return fmt.Sprintf("%s on %s", browser, os)
-}
-
 func (n *Notification) getUserDisplayName(user *User) string {
 	if user.FirstName != "" {
 		if user.LastName != "" {
@@ -231,49 +194,37 @@ func (n *Notification) getUserDisplayName(user *User) string {
 	return "User"
 }
 
-func (n *Notification) getLocationFromIP(ip string) string {
-	if ip == "" {
-		return "Unknown location"
+// SendWorkspaceInvitationEmail sends a workspace invitation email
+func (n *Notification) SendWorkspaceInvitationEmail(ctx context.Context, inviteeEmail, workspaceName, inviterName, inviterEmail, roleStr, token string, expiryTime time.Time) error {
+	if n.client == nil {
+		return fmt.Errorf("email client not available")
 	}
-	if net.ParseIP(ip) == nil {
-		return "Unknown location"
-	}
-	if isPrivateIP(ip) {
-		return "Local network"
-	}
-	return fmt.Sprintf("IP: %s", ip)
-}
+	logger := slog.With("action", "send_workspace_invitation", "email", inviteeEmail, "workspace", workspaceName)
+	logger.InfoContext(ctx, "Sending workspace invitation email")
 
-func isPrivateIP(ipStr string) bool {
-	ip := net.ParseIP(ipStr)
-	if ip == nil {
-		return false
+	acceptURL := fmt.Sprintf("%s/accept-invitation?token=%s", n.info.BaseURL, token)
+	expiryDays := int(time.Until(expiryTime).Hours() / 24)
+	if expiryDays < 1 {
+		expiryDays = 1
 	}
-	if ip4 := ip.To4(); ip4 != nil {
-		if ip4[0] == 127 {
-			return true
-		}
-		if ip4[0] == 10 {
-			return true
-		}
-		if ip4[0] == 172 && ip4[1] >= 16 && ip4[1] <= 31 {
-			return true
-		}
-		if ip4[0] == 192 && ip4[1] == 168 {
-			return true
-		}
-	}
-	if ip.IsLoopback() {
-		return true
-	}
-	return false
-}
 
-// Backward compatibility with previous type name used by services
-type EmailIntegration = Notification
-
-// NewEmailIntegration is a backward-compatible constructor
-func NewEmailIntegration(client email.Client, info email.EmailInfo) *EmailIntegration {
-	n := NewNotification(client, info)
-	return (*EmailIntegration)(n)
+	data := map[string]any{
+		"workspaceName": workspaceName,
+		"inviterName":   inviterName,
+		"inviterEmail":  inviterEmail,
+		"role":          roleStr,
+		"acceptURL":     acceptURL,
+		"productName":   n.info.ProductName,
+		"supportEmail":  n.info.SupportEmail,
+		"helpURL":       n.info.HelpURL,
+		"expiryTime":    fmt.Sprintf("%d days", expiryDays),
+		"currentYear":   fmt.Sprintf("%d", time.Now().Year()),
+	}
+	from := n.info.FormattedFrom()
+	if _, err := n.client.SendTemplate(ctx, email.TemplateWorkspaceInvitation, []string{inviteeEmail}, from, "", data); err != nil {
+		logger.ErrorContext(ctx, "Failed to send workspace invitation email", "error", err)
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	logger.InfoContext(ctx, "Workspace invitation email sent successfully")
+	return nil
 }

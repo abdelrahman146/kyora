@@ -134,13 +134,13 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 	if err != nil {
 		return nil, err
 	}
-	if result != nil && existing == nil && s.notification != nil {
+	if result != nil && existing == nil && s.Notification != nil {
 		paymentMethodLastFour := ""
 		if details, err := s.GetSubscriptionDetails(ctx, ws); err == nil && details.PaymentMethod.Last4 != "" {
 			paymentMethodLastFour = details.PaymentMethod.Last4
 		}
 		go func() {
-			if err := s.notification.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
+			if err := s.Notification.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
 				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspaceId", ws.ID, "subscriptionId", result.ID)
 			}
 		}()
@@ -178,10 +178,10 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 			return fmt.Errorf("failed to cancel Stripe subscription: %w", err)
 		}
 		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
-		if s.notification != nil {
+		if s.Notification != nil {
 			if plan, planErr := s.GetPlanByID(ctx, subRec.PlanID); planErr == nil {
 				go func() {
-					if err := s.notification.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
+					if err := s.Notification.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
 						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
 					}
 				}()

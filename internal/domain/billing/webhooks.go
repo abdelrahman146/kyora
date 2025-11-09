@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
@@ -142,7 +143,7 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, raw json.Ra
 	subID := cast.ToString(obj["subscription"])
 	if subID != "" {
 		s.MarkSubscriptionActive(ctx, subID)
-		if s.notification != nil {
+		if s.Notification != nil {
 			go func(subscriptionID string) {
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
@@ -163,9 +164,9 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, raw json.Ra
 				last4 := "****" // masked; extraction omitted
 				isFirst := time.Since(subscription.CreatedAt) < 24*time.Hour
 				if isFirst {
-					_ = s.notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL)
+					_ = s.Notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL)
 				} else {
-					_ = s.notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL, payAt)
+					_ = s.Notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL, payAt)
 				}
 			}(subID)
 		}
@@ -181,7 +182,7 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, raw json.RawMe
 	subID := cast.ToString(obj["subscription"])
 	if subID != "" {
 		s.MarkSubscriptionPastDue(ctx, subID)
-		if s.notification != nil {
+		if s.Notification != nil {
 			go func(subscriptionID string) {
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
@@ -191,7 +192,7 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, raw json.RawMe
 				if err != nil || plan == nil {
 					return
 				}
-				_ = s.notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, "****", time.Now(), nil)
+				_ = s.Notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, "****", time.Now(), nil)
 			}(subID)
 		}
 	}
@@ -205,7 +206,7 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, raw json.RawMessage) e
 	}
 	subID := cast.ToString(obj["id"])
 	if subID != "" {
-		if s.notification != nil {
+		if s.Notification != nil {
 			go func(subscriptionID string) {
 				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
@@ -219,7 +220,7 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, raw json.RawMessage) e
 				if err != nil {
 					return
 				}
-				_ = s.notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
+				_ = s.Notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
 			}(subID)
 		}
 	}
@@ -313,13 +314,14 @@ func (s *Service) handleCheckoutSessionCompleted(ctx context.Context, raw json.R
 	}
 	if sess.Subscription != nil {
 		s.MarkSubscriptionActive(ctx, sess.Subscription.ID)
-		// If this checkout was part of onboarding, notify the onboarding flow via callback
+		// If this checkout was part of onboarding, notify the onboarding flow via event
 		if sess.Metadata != nil {
 			if obID, ok := sess.Metadata["onboarding_session_id"]; ok && obID != "" {
-				// stripe subscription id may be nil early; pass if available
-				if s.onboardingPaymentHandler != nil {
-					_ = s.onboardingPaymentHandler(ctx, sess.ID, sess.Subscription.ID)
-				}
+				s.bus.Emit(bus.OnboardingPaymentSucceededTopic, &bus.OnboardingPaymentSucceededEvent{
+					OnboardingSessionID:  obID,
+					StripeCheckoutID:     sid,
+					StripeSubscriptionID: sess.Subscription.ID,
+				})
 			}
 		}
 	}

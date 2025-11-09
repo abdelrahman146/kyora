@@ -41,6 +41,8 @@ const (
 	PasswordResetTokenExpirySeconds = "auth.password_reset_ttl_seconds"
 	// Email verification configuration
 	VerifyEmailTokenExpirySeconds = "auth.verify_email_ttl_seconds"
+	// Workspace invitation configuration
+	WorkspaceInvitationTokenExpirySeconds = "auth.invitation_token_ttl_seconds"
 	// Google OAuth configuration
 	GoogleOAuthClientID     = "auth.google_oauth.client_id"
 	GoogleOAuthClientSecret = "auth.google_oauth.client_secret"

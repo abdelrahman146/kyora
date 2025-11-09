@@ -3,7 +3,6 @@ package billing
 import (
 	"context"
 	"fmt"
-	"sync"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -22,10 +21,7 @@ type Service struct {
 	atomicProcessor atomic.AtomicProcessor
 	bus             *bus.Bus
 	account         *account.Service
-	notification    *Notification
-	cache           *planCache
-	// optional callback set by server for onboarding payment completion
-	onboardingPaymentHandler func(ctx context.Context, checkoutSessionID, stripeSubscriptionID string) error
+	Notification    *Notification
 }
 
 func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, accountSvc *account.Service, emailClient email.Client) *Service {
@@ -37,8 +33,7 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		atomicProcessor: atomicProcessor,
 		bus:             bus,
 		account:         accountSvc,
-		notification:    notification,
-		cache:           newPlanCache(5 * time.Minute),
+		Notification:    notification,
 	}
 	// Best-effort background plan sync on service creation
 	go func() {
@@ -48,43 +43,6 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		}
 	}()
 	return s
-}
-
-// SetOnboardingPaymentHandler wires a callback to notify onboarding flow when a checkout session completes
-func (s *Service) SetOnboardingPaymentHandler(h func(ctx context.Context, checkoutSessionID, stripeSubscriptionID string) error) {
-	s.onboardingPaymentHandler = h
-}
-
-// simple in-memory cache for Stripe price IDs to reduce API chatter
-type planCache struct {
-	mu      sync.RWMutex
-	ttl     time.Duration
-	entries map[string]planCacheEntry
-}
-
-type planCacheEntry struct {
-	stripePriceID string
-	expiresAt     time.Time
-}
-
-func newPlanCache(ttl time.Duration) *planCache {
-	return &planCache{ttl: ttl, entries: map[string]planCacheEntry{}}
-}
-
-func (pc *planCache) get(planID string) (string, bool) {
-	pc.mu.RLock()
-	e, ok := pc.entries[planID]
-	pc.mu.RUnlock()
-	if !ok || time.Now().After(e.expiresAt) {
-		return "", false
-	}
-	return e.stripePriceID, true
-}
-
-func (pc *planCache) set(planID, priceID string) {
-	pc.mu.Lock()
-	pc.entries[planID] = planCacheEntry{stripePriceID: priceID, expiresAt: time.Now().Add(pc.ttl)}
-	pc.mu.Unlock()
 }
 
 // CreateCheckoutSession creates a Stripe Checkout Session for subscription signup or changes
