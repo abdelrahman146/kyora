@@ -349,6 +349,25 @@ Events & integrations
 - we should have integration tests that cover end-to-end scenarios to ensure that different components work together as expected.
 - we should review and update our test cases regularly to ensure they remain relevant as the codebase evolves.
 - we should strive for high-quality tests that are reliable and maintainable.
+- test files should have `_test.go` suffix and should be placed in the same package as the code they are testing and they should have the package name suffixed with `_test` to avoid circular dependencies.
+- reusable test helpers and setup functions should be placed in a common testutils package to avoid duplication across test files and domains.
+- we should always use descriptive names for our test functions to clearly indicate what is being tested.
+- test cases should be independent and should not rely on the state of other tests to ensure reliability and consistency.
+- test cases should clean up any resources they create to avoid side effects on other tests.
+- test cases should be written in a way that they can be run in parallel to speed up the test suite execution.
+- test cases should use assertions to validate expected outcomes and should avoid using print statements for validation.
+- test cases should be reviewed as part of code reviews to ensure quality and coverage.
+- test cases should be included in the definition of done for any new feature or bug fix to ensure that new code is properly tested before merging.
+- test cases should be written with the mindset of future maintainers to ensure that they are easy to understand and maintain over time.
+- we should be able to run test cases by running `make test` command which should set up the necessary environment and dependencies to run the tests smoothly.
+- for running test coverage we should run `make test.coverage` command which should generate a coverage report and show the coverage percentage for the codebase.
+- for running profiling tests we should run `make test.profile` command which should generate a profiling report to help identify performance bottlenecks in the codebase.
+- for running specific domain test cases we should run `make test.domain DOMAIN=domain_name` command which should run the test cases for the specified domain only.
+- for running specific test file we should run `make test.file FILE=path/to/test_file.go` command which should run the test cases in the specified test file only.
+- we should always try to write randomized test cases using go fuzzing techniques to ensure that our code can handle unexpected inputs and edge cases.
+- for each domain we might have a `test_helper.go` file which should contain some domain specific test helpers but in general reusable test helpers should be placed in a common testutils package to avoid duplication across domains.
+- test files should be organized in a way that makes it easy to find and run tests for specific domains or components. and they should follow the same structure and patterns across domains for consistency. but if you find yourself duplicating test code across domains you should always move the shared test code to a common testutils package to avoid duplication.
+- test filess should not be very very long maximum 500 lines per test file to keep them maintainable and easy to navigate. if you find yourself having a very long test file you should always split it into smaller test files based on functionality or components being tested.
 
 **General Instructions**
 
