@@ -21,6 +21,18 @@ func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 }
 
 func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService *account.Service, billingService *billing.Service) {
+	// Public authentication endpoints (no auth required)
+	authGroup := r.Group("/v1/auth")
+	{
+		authGroup.POST("/login", h.Login)
+		authGroup.POST("/google/login", h.LoginWithGoogle)
+		authGroup.GET("/google/url", h.GetGoogleAuthURL)
+		authGroup.POST("/forgot-password", h.ForgotPassword)
+		authGroup.POST("/reset-password", h.ResetPassword)
+		authGroup.POST("/verify-email/request", h.RequestEmailVerification)
+		authGroup.POST("/verify-email", h.VerifyEmail)
+	}
+
 	// Public invitation acceptance endpoints (no auth required)
 	invitationGroup := r.Group("/v1/invitations")
 	{
@@ -28,11 +40,38 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 		invitationGroup.GET("/accept/google", h.AcceptInvitationWithGoogle)
 	}
 
-	// Protected workspace invitation management
-	workspaceGroup := r.Group("/v1/workspaces/:workspaceId")
-	workspaceGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+	// Protected user profile endpoints
+	userGroup := r.Group("/v1/users")
+	userGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService))
 	{
-		// Invitation management (admin only)
+		userGroup.GET("/me", h.GetCurrentUser)
+		userGroup.PATCH("/me", h.UpdateCurrentUser)
+	}
+
+	// Protected workspace endpoints
+	workspaceGroup := r.Group("/v1/workspaces")
+	workspaceGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService))
+	{
+		// Workspace info (all authenticated users)
+		workspaceGroup.GET("/me", h.GetCurrentWorkspace)
+
+		// Workspace users (view permission required)
+		workspaceGroup.GET("/users",
+			account.EnforceActorPermissions(role.ActionView, role.ResourceAccount),
+			h.GetWorkspaceUsers)
+		workspaceGroup.GET("/users/:userId",
+			account.EnforceActorPermissions(role.ActionView, role.ResourceAccount),
+			h.GetWorkspaceUser)
+
+		// User management (manage permission required)
+		workspaceGroup.PATCH("/users/:userId/role",
+			account.EnforceActorPermissions(role.ActionManage, role.ResourceAccount),
+			h.UpdateUserRole)
+		workspaceGroup.DELETE("/users/:userId",
+			account.EnforceActorPermissions(role.ActionManage, role.ResourceAccount),
+			h.RemoveUserFromWorkspace)
+
+		// Invitation management (manage permission required)
 		invitationsGroup := workspaceGroup.Group("/invitations")
 		invitationsGroup.Use(account.EnforceActorPermissions(role.ActionManage, role.ResourceAccount))
 		{
@@ -43,15 +82,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 			invitationsGroup.GET("", h.GetWorkspaceInvitations)
 			invitationsGroup.DELETE("/:invitationId", h.RevokeInvitation)
 		}
-
-		// User role management (admin only)
-		usersGroup := workspaceGroup.Group("/users")
-		usersGroup.Use(account.EnforceActorPermissions(role.ActionManage, role.ResourceAccount))
-		{
-			usersGroup.PATCH("/:userId/role", h.UpdateUserRole)
-		}
 	}
-
 }
 
 func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService *account.Service) {
