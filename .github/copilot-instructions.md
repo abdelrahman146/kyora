@@ -244,7 +244,7 @@ Events & integrations
 - JWT creation/parsing in `internal/platform/auth/jwt.go`
 - Cookie name: `jwt`
 
-Workspace-based multi-tenancy
+**Workspace-based multi-tenancy**
 
 - **Workspace model**: Groups users under a single subscription/billing entity
 - **User model**: Belongs to one workspace (`WorkspaceID`), has a role
@@ -254,7 +254,7 @@ Workspace-based multi-tenancy
 - **Role permissions**: Defined in `internal/platform/types/role` (actions: view/manage, resources: account/billing/orders/etc.)
 - **Middleware**: `EnforceWorkspaceMembership` ensures user belongs to workspace in URL param
 
-Gotchas & best practices
+**Gotchas & best practices**
 
 - **Multi-tenancy**: ALWAYS scope queries by `WorkspaceID` (or legacy `BusinessID`). Never return data across workspaces.
 - **Config constants**: Use constants from `internal/platform/config/config.go`, never hardcode config keys.
@@ -268,7 +268,7 @@ Gotchas & best practices
 - **Logging**: Use structured logging via `slog`. Logger is context-aware and enriched by middleware.
 - **State machines**: For entities with state transitions (orders, subscriptions), define allowed transitions and timestamp updates.
 
-Pointers (reference implementations)
+**Pointers (reference implementations)**
 
 - **Repository pattern**: `internal/platform/database/repository.go` (all scopes and methods)
 - **Transactions**: `internal/platform/database/atomic.go`, `internal/platform/types/atomic/atomic.go`
@@ -287,7 +287,7 @@ Pointers (reference implementations)
 - **Time series**: `internal/platform/types/timeseries/timeseries.go`
 - **Problems**: `internal/platform/types/problem/problem.go`
 
-HTTP handlers and middleware and routes and permissions and limits
+**HTTP handlers and middleware and routes and permissions and limits**
 
 - For every domain we have httpHandler and we might have other API interfaces like grpc or kafka events or internal event bus events handling, we should keep the same structure and patterns as the httpHandler for consistency.
 - we should always define the routes for every domain in the internal/server/routes.go file and keep the same patterns and structure as other domain routes for consistency.
@@ -300,7 +300,7 @@ HTTP handlers and middleware and routes and permissions and limits
 - we should always return the response in the http handlers using the response.SuccessJSON function to ensure consistent response formatting across the codebase.
 - we should always keep the middleware concise and delegate the business logic to the domain services.
 
-OpenAPI docs
+**OpenAPI docs**
 
 - we should always document the http handlers using OpenAPI specs to ensure that the API is well documented and easy to understand for other developers.
 - we will use the go package github.com/swaggo/swag to generate the OpenAPI docs from the code comments in the http handlers.
@@ -309,7 +309,19 @@ OpenAPI docs
 - we should always keep the OpenAPI docs up to date with the code changes.
 - we should always check the generated OpenAPI docs to ensure that they are correct and complete and match the code.
 
-Test cases
+**Caching (Memcached)**
+
+- we should always use caching for frequently accessed data to improve performance and reduce database load.
+- we should use the cache package from internal/platform/cache for caching data. which is usually a wrapper around memcached. and accessible in every service domain by the service storage (ex: s.storage.cache).
+- we should always set an appropriate expiration time for cached data to ensure that the data is fresh and up to date.
+- we should always follow a cache invalidation strategy to ensure that cached data is invalidated when the underlying data changes.
+- we should always use cache keys that are unique and descriptive to avoid collisions and make it easy to identify cached data.
+- for data retrieval caching we should always follow the read-through caching pattern to ensure that data is cached on first access and subsequent accesses are served from the cache with proper invalidation strategy
+- caching should be used judiciously and only for data that is frequently accessed and doesn't change frequently to avoid cache staleness and unnecessary complexity.
+- caching should be done in storage layer to keep the service layer clean and focused on business logic. never ever do caching in service layer.
+- in service layer we can only use the cache for business logic that requires expirable memory storage like authentication tokens and password reset tokens and email verification tokens and invitation tokens and similar use cases.
+
+  **Test cases**
 
 - In this Project, we should always reach 80%+ test coverage for any new code we add. the code currently doesn't have any test cases so we should start adding them as we go.
 - we should always use `github.com/stretchr/testify` for structuring our test cases and assertions with testify suite.
@@ -327,7 +339,7 @@ Test cases
 - we should review and update our test cases regularly to ensure they remain relevant as the codebase evolves.
 - we should strive for high-quality tests that are reliable and maintainable.
 
-General Instructions
+**General Instructions**
 
 - the code is maintained by a single developer so we should always aim for simplicity and clarity in the code we write.
 - the code is still under heavy development so we should always write code that is flexible and easy to change as requirements evolve and we can do breaking changes as needed.
