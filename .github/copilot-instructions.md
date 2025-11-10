@@ -368,6 +368,9 @@ Events & integrations
 - for each domain we might have a `test_helper.go` file which should contain some domain specific test helpers but in general reusable test helpers should be placed in a common testutils package to avoid duplication across domains.
 - test files should be organized in a way that makes it easy to find and run tests for specific domains or components. and they should follow the same structure and patterns across domains for consistency. but if you find yourself duplicating test code across domains you should always move the shared test code to a common testutils package to avoid duplication.
 - test filess should not be very very long maximum 500 lines per test file to keep them maintainable and easy to navigate. if you find yourself having a very long test file you should always split it into smaller test files based on functionality or components being tested.
+- every domain should have a `test_main.go` file which should contain the main test setup and teardown logic for the domain tests. but in general reusable test setup and teardown logic should be placed in a common testutils package to avoid duplication across domains.
+- don't let main code files have any logic related to test cases. all test related logic should be in the test files and testutils and test_helpers and mocks package and test_main.
+- common fixtures and test data should be placed in a common testutils package to avoid duplication across test files and domains.
 
 **General Instructions**
 
