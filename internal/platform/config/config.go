@@ -4,6 +4,8 @@ package config
 
 import (
 	"log"
+	"os"
+	"path/filepath"
 
 	"github.com/spf13/viper"
 )
@@ -62,9 +64,26 @@ const (
 )
 
 func init() {
-	viper.SetConfigName(".kyora") // name of config file (without extension
+	viper.SetConfigName(".kyora") // name of config file (without extension)
 	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
+	// Add current directory first
 	viper.AddConfigPath(".")
+	// Attempt to discover project root (where .kyora.yaml resides) by walking parent dirs
+	if wd, err := os.Getwd(); err == nil {
+		dir := wd
+		for i := 0; i < 6; i++ { // limit depth to avoid infinite loops
+			candidate := filepath.Join(dir, ".kyora.yaml")
+			if _, statErr := os.Stat(candidate); statErr == nil {
+				viper.AddConfigPath(dir)
+				break
+			}
+			parent := filepath.Dir(dir)
+			if parent == dir { // reached filesystem root
+				break
+			}
+			dir = parent
+		}
+	}
 	viper.AutomaticEnv() // read in environment variables that match
 	if err := viper.ReadInConfig(); err != nil {
 		log.Fatalf("Error reading config file, %s", err)

@@ -36,25 +36,97 @@ type Server struct {
 	httpSrv *http.Server
 }
 
-func New() (*Server, error) {
-	// Initialize Stripe with API key
-	stripeAPIKey := viper.GetString(config.StripeAPIKey)
-	if stripeAPIKey != "" {
-		stripe.Key = stripeAPIKey
-		stripe.SetAppInfo(&stripe.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
-		// Configure limited network retries (stripe-go exposes DefaultLeveledConfig; fall back to backend config if available)
-		if b := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{}); b != nil {
-			// No direct mutable global in this version; logging initialization only
-			slog.Info("Stripe client initialized", "network_retries", "default")
-		} else {
-			slog.Info("Stripe client initialized")
+type ServerConfig struct {
+	Address       string
+	DSN           string
+	LogLevel      string
+	DBLogLevel    string
+	CacheHosts    []string
+	StripeKey     string
+	StripeBaseURL string
+}
+
+func WithDatabaseDSN(dsn string) func(*ServerConfig) {
+	return func(cfg *ServerConfig) {
+		cfg.DSN = dsn
+	}
+}
+
+func WithServerAddress(addr string) func(*ServerConfig) {
+	return func(cfg *ServerConfig) {
+		cfg.Address = addr
+	}
+}
+
+func WithCacheHosts(hosts []string) func(*ServerConfig) {
+	return func(cfg *ServerConfig) {
+		cfg.CacheHosts = hosts
+	}
+}
+
+func WithStripeKey(key string) func(*ServerConfig) {
+	return func(cfg *ServerConfig) {
+		cfg.StripeKey = key
+	}
+}
+
+func WithStripeBaseURL(url string) func(*ServerConfig) {
+	return func(cfg *ServerConfig) {
+		cfg.StripeBaseURL = url
+	}
+}
+
+func New(opts ...func(*ServerConfig)) (*Server, error) {
+	// apply options and set config values and override env variables
+	conf := &ServerConfig{}
+	for _, opt := range opts {
+		opt(conf)
+	}
+	// apply address override if provided (port only or host:port)
+	if conf.Address != "" {
+		// Accept forms ":8081" or "8081"; strip host if present for port key simplicity
+		addr := conf.Address
+		// normalize to just port without leading host/protocol
+		if len(addr) > 0 && addr[0] == ':' { // already :port
+			addr = addr[1:]
 		}
-	} else {
-		slog.Warn("Stripe API key not configured - billing functionality will be limited")
+		viper.Set(config.HTTPPort, addr)
+	}
+	if conf.DSN != "" {
+		viper.Set(config.DatabaseDSN, conf.DSN)
+	}
+	if conf.CacheHosts != nil {
+		viper.Set(config.CacheHosts, conf.CacheHosts)
+	}
+	if conf.LogLevel != "" {
+		viper.Set(config.LogLevel, conf.LogLevel)
+	}
+	if conf.DBLogLevel != "" {
+		viper.Set(config.DatabaseLogLevel, conf.DBLogLevel)
+	}
+	if conf.StripeKey != "" {
+		viper.Set(config.StripeAPIKey, conf.StripeKey)
 	}
 
-	db := database.NewConnection()
-	cacheDB := cache.NewConnection()
+	// initialize stripe client
+	stripeAPIKey := viper.GetString(config.StripeAPIKey)
+	stripe.Key = stripeAPIKey
+	stripe.SetAppInfo(&stripe.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
+	if conf.StripeBaseURL != "" {
+		backend := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
+			URL: &conf.StripeBaseURL, // optional custom base URL for testing if not provided it will automatically use the default
+		})
+		stripe.SetBackend(stripe.APIBackend, backend)
+	}
+	slog.Info("Stripe client initialized")
+
+	// initialize database and cache connections
+	dsn := viper.GetString(config.DatabaseDSN)
+	logLevel := viper.GetString(config.DatabaseLogLevel)
+
+	db := database.NewConnection(dsn, logLevel)
+	servers := viper.GetStringSlice(config.CacheHosts)
+	cacheDB := cache.NewConnection(servers)
 	atomicProcessor := database.NewAtomicProcess(db)
 	bus := bus.New()
 	emailClient, err := email.New()

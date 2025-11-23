@@ -1,0 +1,63 @@
+package e2e_test
+
+import (
+	"context"
+	"fmt"
+	"log"
+	"os"
+	"testing"
+
+	"github.com/abdelrahman146/kyora/internal/platform/config"
+	"github.com/abdelrahman146/kyora/internal/server"
+	"github.com/abdelrahman146/kyora/internal/tests/testutils"
+	"github.com/spf13/viper"
+)
+
+var (
+	testEnv    *testutils.Environment
+	testServer *server.Server
+)
+
+func TestMain(m *testing.M) {
+	fmt.Println("Setting up e2e test environment...")
+	ctx := context.Background()
+
+	// Override email provider to use mock for tests
+	viper.Set(config.EmailProvider, "mock")
+
+	env, cleanup, err := testutils.InitEnvironment(ctx)
+	if err != nil {
+		log.Fatalf("environment init failed: %v", err)
+	}
+	testEnv = env
+
+	// Create server with container-provided dependencies (DB, cache, stripe-mock)
+	testServer, err = server.New(
+		server.WithDatabaseDSN(env.DatabaseDSN),
+		server.WithCacheHosts([]string{env.CacheAddr}),
+		server.WithStripeBaseURL(env.StripeMockBase),
+		server.WithServerAddress(":18080"), // isolate test port
+	)
+	if err != nil {
+		cleanup()
+		log.Fatalf("failed to create server: %v", err)
+	}
+	if err := testServer.Start(); err != nil {
+		cleanup()
+		log.Fatalf("failed to start server: %v", err)
+	}
+
+	// Run tests
+	exitCode := m.Run()
+
+	fmt.Println("Tearing down e2e test environment...")
+	// Graceful server stop then cleanup containers
+	if testServer != nil {
+		if err := testServer.Stop(); err != nil {
+			log.Printf("server stop error: %v", err)
+		}
+	}
+	cleanup()
+
+	os.Exit(exitCode)
+}

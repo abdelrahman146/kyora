@@ -38,5 +38,10 @@ billing:
     webhook_secret: "whsec_your_webhook_secret"
 email:
   provider: "resend" # options: resend, mock
-  resend_api_key: "re_your_resend_api_key"
-  resend_base_url: "https://api.resend.com"
+  resend:
+    api_key: "re_your_resend_api_key"
+    base_url: "https://api.resend.com"
+  from_email: "noreply@kyora.io"
+  from_name: "Kyora"
+  support_email: "support@kyora.io"
+  help_url: "https://kyora.io/help"

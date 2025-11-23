@@ -7,17 +7,14 @@ import (
 	"errors"
 	"strconv"
 
-	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/bradfitz/gomemcache/memcache"
-	"github.com/spf13/viper"
 )
 
 type Cache struct {
 	mc *memcache.Client
 }
 
-func NewConnection() *Cache {
-	servers := viper.GetStringSlice(config.CacheHosts)
+func NewConnection(servers []string) *Cache {
 	mc := memcache.New(servers...)
 	return &Cache{mc: mc}
 }

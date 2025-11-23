@@ -20,9 +20,7 @@ type Database struct {
 
 var TxKey = ctxkey.New("transaction")
 
-func NewConnection() *Database {
-	dsn := viper.GetString(config.DatabaseDSN)
-	logLevel := viper.GetString(config.DatabaseLogLevel)
+func NewConnection(dsn string, logLevel string) *Database {
 	maxAttempts := 5
 	var db *gorm.DB
 	var err error
