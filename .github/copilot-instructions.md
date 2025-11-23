@@ -332,45 +332,125 @@ Events & integrations
 - domains should be independent and self contained and should not depend on other domains to function.
 - domains should never access other domain storages directly. if you need to access another domain storage you should always use the other domain service to access the data.
 
-  **Test cases**
+**Test cases**
 
-- In this Project, we should always reach 80%+ test coverage for any new code we add. the code currently doesn't have any test cases so we should start adding them as we go.
+- In this Project, we should always reach 80%+ test coverage for any new code we add. the code currently doesn't have comprehensive test coverage so we should add tests as we develop new features.
 - we should always use `github.com/stretchr/testify` for structuring our test cases and assertions with testify suite.
-- every domain should have its own test files for service, storage, handler, and any other significant components.
-- we should use test containers for setting up temporary databases for running our test cases to ensure isolation and consistency.
-- we should mock external dependencies like email providers, payment gateways, and any other third-party services to avoid making real calls during tests.
-- mocks should be shared across domains and placed in a common mocks package to avoid duplication.
-- we should always run our test cases in CI to ensure that new changes don't break existing functionality.
-- test cases should cover both positive and negative scenarios to ensure robustness and should validate edge cases as well and should ensure that error handling works as expected.
-- we should use table-driven tests for functions with multiple input scenarios to keep the test code clean and maintainable.
-- we should always aim for fast-running tests to ensure quick feedback during development and CI.
-- we should use code coverage tools to monitor our test coverage and identify areas that need more tests.
-- we should document our test cases to explain the purpose of each test and any setup required to run them.
-- we should have integration tests that cover end-to-end scenarios to ensure that different components work together as expected.
-- we should review and update our test cases regularly to ensure they remain relevant as the codebase evolves.
-- we should strive for high-quality tests that are reliable and maintainable.
-- test files should have `_test.go` suffix and should be placed in the same package as the code they are testing and they should have the package name suffixed with `_test` to avoid circular dependencies.
-- reusable test helpers and setup functions should be placed in a common testutils package to avoid duplication across test files and domains.
-- we should always use descriptive names for our test functions to clearly indicate what is being tested.
-- test cases should be independent and should not rely on the state of other tests to ensure reliability and consistency.
-- test cases should clean up any resources they create to avoid side effects on other tests.
-- test cases should be written in a way that they can be run in parallel to speed up the test suite execution.
-- test cases should use assertions to validate expected outcomes and should avoid using print statements for validation.
+
+**Test Organization:**
+
+- **Unit tests**: Domain-specific unit tests can be placed within the domain folder (e.g., `internal/domain/order/service_test.go`) or platform folder for testing individual components in isolation. Currently, we don't have unit tests but they should follow this pattern when added.
+- **Integration/E2E tests**: All integration and end-to-end tests are located in `internal/tests/e2e/` directory, separate from domain code. This ensures clean separation between production code and integration tests.
+- **Test file structure**: Tests are organized by domain with each API route/endpoint having its own testify suite within domain-specific test files (e.g., `internal/tests/e2e/account_login_test.go`, `internal/tests/e2e/account_workspace_test.go`, `internal/tests/e2e/order_create_test.go`). This provides granular test isolation and clear organization.
+- **Test utilities**: Common test helpers, fixtures, and setup functions are in `internal/tests/testutils/` package for reuse across all test suites.
+- **Mocks**: All mocks for external dependencies are placed in `internal/tests/mocks/` package to keep them centralized and avoid duplication.
+
+**E2E Test Infrastructure:**
+
+- E2E tests use testcontainers to spin up ephemeral Docker containers (Postgres, Memcached, Stripe-mock) for complete isolation.
+- `internal/tests/e2e/main_test.go` contains `TestMain` which sets up the global test environment, starts containers, initializes the server, and tears down after all tests complete.
+- Each API route/endpoint has its own testify suite grouped by domain (e.g., `LoginSuite` in `account_login_test.go`, `CreateOrderSuite` in `order_create_test.go`). Suite names should clearly indicate the functionality being tested.
+- Test suites access shared resources via global variables: `testEnv` (containers) and `testServer` (HTTP server instance).
+- Server runs on isolated port (18080) with mock email provider and test configuration.
+- Testutils provides context-based container initialization functions (`CreateDatabaseCtx`, `CreateCacheCtx`, `CreateStripeMockCtx`) and aggregated `InitEnvironment` for TestMain.
+- Each test suite MUST clean database tables in `SetupTest()` and `TearDownTest()` hooks to ensure complete isolation between tests. Use testutils helper functions like `ClearTable(db, "users", "workspaces", "orders")` for consistent cleanup.
+
+**Test Best Practices:**
+
+- test cases should cover both positive and negative scenarios to ensure robustness and should validate edge cases as well and ensure error handling works as expected.
+- use **table-driven tests** extensively for testing multiple scenarios, input variations, and edge cases. Each table entry should represent a complete test case with inputs, expected outputs, and validation logic.
+- always aim for fast-running tests to ensure quick feedback during development and CI.
+- use **fuzzing tests** (Go's native fuzzing with `testing.F`) for functions that process user input, parse data, or handle untrusted inputs to discover edge cases and potential bugs.
+- monitor **test coverage** using `go test -cover` and aim for 80%+ coverage. Use `go test -coverprofile=coverage.out` to generate detailed coverage reports.
+- document test cases to explain the purpose of each test and any setup required to run them.
+- review and update test cases regularly to ensure they remain relevant as the codebase evolves.
+- strive for high-quality tests that are reliable and maintainable.
+- test files should have `_test.go` suffix and use package name suffixed with `_test` to avoid circular dependencies (e.g., `package e2e_test`).
+- use descriptive names for test functions to clearly indicate what is being tested.
+- **test isolation is critical**: Each test MUST be completely independent and not rely on the state of other tests. Use `SetupTest()` to clear database tables and set up fresh fixtures, and `TearDownTest()` to clean up after each test.
+- **database cleanup pattern**: In `SetupTest()`, truncate all relevant tables before setting up test data. In `TearDownTest()`, truncate tables again to ensure clean state. Use testutils helpers like `testutils.TruncateTables(testEnv.Database, "users", "workspaces", "orders")`.
+- use assertions to validate expected outcomes and avoid using print statements for validation.
 - test cases should be reviewed as part of code reviews to ensure quality and coverage.
-- test cases should be included in the definition of done for any new feature or bug fix to ensure that new code is properly tested before merging.
-- test cases should be written with the mindset of future maintainers to ensure that they are easy to understand and maintain over time.
-- we should be able to run test cases by running `make test` command which should set up the necessary environment and dependencies to run the tests smoothly.
-- for running test coverage we should run `make test.coverage` command which should generate a coverage report and show the coverage percentage for the codebase.
-- for running profiling tests we should run `make test.profile` command which should generate a profiling report to help identify performance bottlenecks in the codebase.
-- for running specific domain test cases we should run `make test.domain DOMAIN=domain_name` command which should run the test cases for the specified domain only.
-- for running specific test file we should run `make test.file FILE=path/to/test_file.go` command which should run the test cases in the specified test file only.
-- we should always try to write randomized test cases using go fuzzing techniques to ensure that our code can handle unexpected inputs and edge cases.
-- for each domain we might have a `test_helper.go` file which should contain some domain specific test helpers but in general reusable test helpers should be placed in a common testutils package to avoid duplication across domains.
-- test files should be organized in a way that makes it easy to find and run tests for specific domains or components. and they should follow the same structure and patterns across domains for consistency. but if you find yourself duplicating test code across domains you should always move the shared test code to a common testutils package to avoid duplication.
-- test filess should not be very very long maximum 500 lines per test file to keep them maintainable and easy to navigate. if you find yourself having a very long test file you should always split it into smaller test files based on functionality or components being tested.
-- every domain should have a `main_test.go` file which should contain the main test setup and teardown logic for the domain tests. but in general reusable test setup and teardown logic should be placed in a common testutils package to avoid duplication across domains.
-- don't let main code files have any logic related to test cases. all test related logic should be in the test files and testutils and test_helpers and mocks package and main_test.
-- common fixtures and test data should be placed in a common testutils package to avoid duplication across test files and domains.
+- test cases should be included in the definition of done for any new feature or bug fix.
+- test cases should be written with the mindset of future maintainers to ensure they are easy to understand and maintain over time.
+- test files should not be very long (maximum 500 lines) to keep them maintainable. Split into smaller files based on functionality if needed (e.g., separate files per API endpoint).
+- don't let main code files have any logic related to test cases. All test logic belongs in test files, testutils, and mocks.
+
+**Running Tests:**
+
+- run all tests: `make test` or `go test ./...`
+- run e2e tests: `go test ./internal/tests/e2e -v`
+- run with coverage: `make test.coverage` or `go test ./... -cover -coverprofile=coverage.out`
+- run specific suite: `go test ./internal/tests/e2e -v -run TestLoginSuite`
+- run specific test file: `go test ./internal/tests/e2e/account_login_test.go -v`
+- run with race detection: `go test ./internal/tests/e2e -race`
+- run fuzzing tests: `go test -fuzz=FuzzFunctionName -fuzztime=30s`
+- tests require Docker Desktop running for testcontainers.
+
+**Test Suite Example:**
+
+Each API endpoint should have its own suite following this pattern:
+
+```go
+// File: internal/tests/e2e/account_login_test.go
+package e2e_test
+
+import (
+    "testing"
+    "github.com/stretchr/testify/suite"
+    "github.com/abdelrahman146/kyora/internal/tests/testutils"
+)
+
+// LoginSuite tests the POST /v1/auth/login endpoint
+type LoginSuite struct {
+    suite.Suite
+    baseURL    string
+    httpClient *http.Client
+}
+
+func (s *LoginSuite) SetupSuite() {
+    s.baseURL = "http://localhost:18080"
+    s.httpClient = &http.Client{}
+}
+
+func (s *LoginSuite) SetupTest() {
+    // Clear database tables before each test for isolation
+    testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
+    // Set up test fixtures
+}
+
+func (s *LoginSuite) TearDownTest() {
+    // Clean up after each test
+    testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
+}
+
+func (s *LoginSuite) TestLogin_Success() {
+    // Table-driven test for multiple scenarios
+    tests := []struct {
+        name           string
+        email          string
+        password       string
+        expectedStatus int
+    }{
+        {"valid credentials", "user@example.com", "ValidPass123!", 200},
+        {"wrong password", "user@example.com", "WrongPass!", 401},
+        {"non-existent user", "nobody@example.com", "Pass123!", 404},
+    }
+
+    for _, tt := range tests {
+        s.Run(tt.name, func() {
+            // Test implementation
+        })
+    }
+}
+
+func TestLoginSuite(t *testing.T) {
+    if testServer == nil {
+        t.Skip("Test server not initialized")
+    }
+    suite.Run(t, new(LoginSuite))
+}
+```
 
 **General Instructions**
 
