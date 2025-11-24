@@ -146,6 +146,3 @@ func (h *HttpHandler) Complete(c *gin.Context) {
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"user": user, "token": token})
 }
-
-// StripeWebhook listens to checkout.session.completed and marks session as paid
-// Stripe webhook removed; onboarding now hooks into existing billing webhook internally.
