@@ -46,7 +46,14 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_Success() {
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	// Verify session stage updated
+	// Verify response structure
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	s.Equal("identity_verified", result["stage"])
+	s.Len(result, 1, "response should have exactly 1 field")
+	s.Contains(result, "stage")
+
+	// Verify session stage updated in database
 	session, err := s.helper.GetSession(token)
 	s.NoError(err)
 	s.Equal("identity_verified", session["stage"])

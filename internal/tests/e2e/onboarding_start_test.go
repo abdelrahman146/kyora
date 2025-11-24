@@ -47,6 +47,11 @@ func (s *OnboardingStartSuite) TestStart_ValidFreePlan() {
 				s.NotEmpty(body["sessionToken"], "should return session token")
 				s.Equal("plan_selected", body["stage"], "stage should be plan_selected")
 				s.Equal(false, body["isPaid"], "should not be paid plan")
+				// Verify response has exactly the expected fields
+				s.Len(body, 3, "response should have exactly 3 fields")
+				s.Contains(body, "sessionToken")
+				s.Contains(body, "stage")
+				s.Contains(body, "isPaid")
 			},
 		},
 		{
@@ -57,6 +62,8 @@ func (s *OnboardingStartSuite) TestStart_ValidFreePlan() {
 			checkResponse: func(body map[string]interface{}) {
 				s.NotEmpty(body["sessionToken"])
 				s.Equal("plan_selected", body["stage"])
+				s.Equal(false, body["isPaid"])
+				s.Len(body, 3, "response should have exactly 3 fields")
 			},
 		},
 	}
@@ -98,6 +105,11 @@ func (s *OnboardingStartSuite) TestStart_ValidPaidPlan() {
 	s.NotEmpty(result["sessionToken"])
 	s.Equal("plan_selected", result["stage"])
 	s.Equal(true, result["isPaid"], "should be paid plan")
+	// Verify all expected fields are present
+	s.Len(result, 3, "response should have exactly 3 fields")
+	s.Contains(result, "sessionToken")
+	s.Contains(result, "stage")
+	s.Contains(result, "isPaid")
 }
 
 func (s *OnboardingStartSuite) TestStart_ResumeExistingSession() {

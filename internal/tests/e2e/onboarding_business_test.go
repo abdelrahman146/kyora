@@ -49,6 +49,9 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_Success() {
 	var result map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp, &result))
 	s.Equal("ready_to_commit", result["stage"], "free plan should go to ready_to_commit")
+	// Verify response structure
+	s.Len(result, 1, "response should have exactly 1 field")
+	s.Contains(result, "stage")
 }
 
 func (s *OnboardingBusinessSuite) TestSetBusiness_PaidPlan() {
@@ -73,6 +76,9 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_PaidPlan() {
 	var result map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp, &result))
 	s.Equal("payment_pending", result["stage"], "paid plan should go to payment_pending")
+	// Verify response structure
+	s.Len(result, 1, "response should have exactly 1 field")
+	s.Contains(result, "stage")
 }
 
 func (s *OnboardingBusinessSuite) TestSetBusiness_InvalidStage() {

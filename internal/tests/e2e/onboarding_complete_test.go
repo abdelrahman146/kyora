@@ -47,12 +47,24 @@ func (s *OnboardingCompleteSuite) TestComplete_Success() {
 
 	s.NotNil(result["user"], "should return user")
 	s.NotEmpty(result["token"], "should return JWT token")
+	// Verify response structure
+	s.Len(result, 2, "response should have exactly 2 fields")
+	s.Contains(result, "user")
+	s.Contains(result, "token")
 
 	user := result["user"].(map[string]interface{})
 	s.Equal("complete@example.com", user["email"])
 	s.Equal("Test", user["firstName"])
 	s.Equal("User", user["lastName"])
 	s.Equal(true, user["isEmailVerified"])
+	// Verify all user fields are present
+	s.NotEmpty(user["id"], "user should have id")
+	s.NotEmpty(user["workspaceId"], "user should have workspaceId")
+	s.NotEmpty(user["role"], "user should have role")
+	s.Contains(user, "email")
+	s.Contains(user, "firstName")
+	s.Contains(user, "lastName")
+	s.Contains(user, "isEmailVerified")
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_CreatesWorkspace() {
@@ -167,6 +179,11 @@ func (s *OnboardingCompleteSuite) TestComplete_ValidJWTToken() {
 
 	// Token should be usable for authenticated requests
 	s.Greater(len(jwtToken), 20, "JWT token should be reasonable length")
+
+	// Verify response structure
+	s.Len(result, 2, "response should have exactly 2 fields")
+	s.Contains(result, "user")
+	s.Contains(result, "token")
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_IdempotencySafety() {
