@@ -378,14 +378,32 @@ Events & integrations
 
 **Running Tests:**
 
-- run all tests: `make test` or `go test ./...`
-- run e2e tests: `go test ./internal/tests/e2e -v`
-- run with coverage: `make test.coverage` or `go test ./... -cover -coverprofile=coverage.out`
-- run specific suite: `go test ./internal/tests/e2e -v -run TestLoginSuite`
-- run specific test file: `go test ./internal/tests/e2e/account_login_test.go -v`
-- run with race detection: `go test ./internal/tests/e2e -race`
-- run fuzzing tests: `go test -fuzz=FuzzFunctionName -fuzztime=30s`
-- tests require Docker Desktop running for testcontainers.
+**Make commands (recommended):**
+
+- `make test` - run all tests with verbose output
+- `make test.unit` - run only unit tests (domain and platform packages)
+- `make test.e2e` - run E2E tests with 120s timeout
+- `make test.quick` - run all tests without verbose output (faster feedback)
+- `make test.coverage` - run tests with coverage report and summary
+- `make test.coverage.html` - generate HTML coverage report (`coverage.html`)
+- `make test.coverage.view` - generate and open HTML coverage report in browser
+- `make test.e2e.coverage` - run E2E tests with coverage reporting
+- `make clean.coverage` - remove all coverage report files
+- `make help` - display all available Makefile commands
+
+**Go test commands (alternative):**
+
+- `go test ./...` - run all tests
+- `go test ./internal/tests/e2e -v` - run e2e tests
+- `go test ./... -cover -coverprofile=coverage.out` - run with coverage
+- `go test ./internal/tests/e2e -v -run TestLoginSuite` - run specific suite
+- `go test ./internal/tests/e2e/account_login_test.go -v` - run specific test file
+- `go test ./internal/tests/e2e -race` - run with race detection
+- `go test -fuzz=FuzzFunctionName -fuzztime=30s` - run fuzzing tests
+
+**Requirements:**
+
+- tests require Docker Desktop running for testcontainers
 
 **Test Suite Example:**
 
