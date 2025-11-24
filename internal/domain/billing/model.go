@@ -1,6 +1,9 @@
 package billing
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
@@ -54,6 +57,23 @@ type PlanFeature struct {
 	AIBusinessAssistant      bool `json:"aiBusinessAssistant"` // Up to here premium plan
 }
 
+// Scan implements the Scanner interface for JSONB deserialization
+func (pf *PlanFeature) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan PlanFeature: value is not []byte")
+	}
+	return json.Unmarshal(bytes, pf)
+}
+
+// Value implements the Valuer interface for JSONB serialization
+func (pf PlanFeature) Value() (driver.Value, error) {
+	return json.Marshal(pf)
+}
+
 // CanUseFeature checks boolean (on/off) features.
 func (pf *PlanFeature) CanUseFeature(feature schema.Field) error {
 	// A map defines all boolean features and their current values.
@@ -89,6 +109,23 @@ type PlanLimit struct {
 	MaxOrdersPerMonth int64 `json:"maxOrdersPerMonth"`
 	MaxTeamMembers    int64 `json:"maxTeamMembers"`
 	MaxBusinesses     int64 `json:"maxBusinesses"`
+}
+
+// Scan implements the Scanner interface for JSONB deserialization
+func (pl *PlanLimit) Scan(value interface{}) error {
+	if value == nil {
+		return nil
+	}
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New("failed to scan PlanLimit: value is not []byte")
+	}
+	return json.Unmarshal(bytes, pl)
+}
+
+// Value implements the Valuer interface for JSONB serialization
+func (pl PlanLimit) Value() (driver.Value, error) {
+	return json.Marshal(pl)
 }
 
 func (pl *PlanLimit) CheckUsageLimit(feature schema.Field, currentUsage int64) error {

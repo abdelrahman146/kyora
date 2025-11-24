@@ -1,83 +1,266 @@
 package e2e_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
+	"github.com/abdelrahman146/kyora/internal/tests/e2e"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
-)
-
-// OnboardingStartSuite tests the POST /api/onboarding/start endpoint
+) // OnboardingStartSuite tests POST /api/onboarding/start endpoint
 type OnboardingStartSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
+	helper *e2e.OnboardingTestHelper
 }
 
 func (s *OnboardingStartSuite) SetupSuite() {
 	s.client = testutils.NewHTTPClient("http://localhost:18080")
+	s.helper = e2e.NewOnboardingTestHelper(testEnv.Database, "http://localhost:18080")
 }
 
 func (s *OnboardingStartSuite) SetupTest() {
-	// Clear relevant tables before each test
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions", "plans", "businesses")
 }
 
 func (s *OnboardingStartSuite) TearDownTest() {
-	// Clean up after each test
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions", "plans", "businesses")
 }
 
-func (s *OnboardingStartSuite) TestOnboardingStart_ValidEmail() {
-	// Table-driven test for multiple scenarios
+func (s *OnboardingStartSuite) TestStart_ValidFreePlan() {
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
 	tests := []struct {
 		name           string
-		payload        map[string]interface{}
+		email          string
+		planDescriptor string
 		expectedStatus int
-		expectedError  string
+		checkResponse  func(body map[string]interface{})
 	}{
 		{
-			name: "valid email",
-			payload: map[string]interface{}{
-				"email": "test@example.com",
-			},
+			name:           "new user with free plan",
+			email:          "newuser@example.com",
+			planDescriptor: "starter",
 			expectedStatus: http.StatusOK,
-		},
-		{
-			name: "invalid email format",
-			payload: map[string]interface{}{
-				"email": "invalid-email",
+			checkResponse: func(body map[string]interface{}) {
+				s.NotEmpty(body["sessionToken"], "should return session token")
+				s.Equal("plan_selected", body["stage"], "stage should be plan_selected")
+				s.Equal(false, body["isPaid"], "should not be paid plan")
 			},
-			expectedStatus: http.StatusBadRequest,
 		},
 		{
-			name: "missing email",
-			payload: map[string]interface{}{
-				"name": "Test User",
+			name:           "different email with free plan",
+			email:          "another@example.com",
+			planDescriptor: "starter",
+			expectedStatus: http.StatusOK,
+			checkResponse: func(body map[string]interface{}) {
+				s.NotEmpty(body["sessionToken"])
+				s.Equal("plan_selected", body["stage"])
 			},
-			expectedStatus: http.StatusBadRequest,
-		},
-		{
-			name:           "empty payload",
-			payload:        map[string]interface{}{},
-			expectedStatus: http.StatusBadRequest,
 		},
 	}
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/start", tt.payload)
-			s.NoError(err, "request should not error")
-			s.Equal(tt.expectedStatus, resp.StatusCode, "status code should match")
+			payload := map[string]interface{}{
+				"email":          tt.email,
+				"planDescriptor": tt.planDescriptor,
+			}
+			resp, err := s.client.Post("/api/onboarding/start", payload)
+			s.NoError(err)
 			defer resp.Body.Close()
+			s.Equal(tt.expectedStatus, resp.StatusCode)
 
-			if tt.expectedStatus == http.StatusOK {
-				var result map[string]interface{}
-				err = testutils.DecodeJSON(resp, &result)
-				s.NoError(err, "should decode response")
-				s.NotEmpty(result, "response should not be empty")
+			var result map[string]interface{}
+			s.NoError(testutils.DecodeJSON(resp, &result))
+			if tt.checkResponse != nil {
+				tt.checkResponse(result)
 			}
 		})
+	}
+}
+
+func (s *OnboardingStartSuite) TestStart_ValidPaidPlan() {
+	s.helper.EnsureTestPlan("professional", "Professional Plan", 99.0)
+
+	payload := map[string]interface{}{
+		"email":          "paiduser@example.com",
+		"planDescriptor": "professional",
+	}
+	resp, err := s.client.Post("/api/onboarding/start", payload)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	s.NotEmpty(result["sessionToken"])
+	s.Equal("plan_selected", result["stage"])
+	s.Equal(true, result["isPaid"], "should be paid plan")
+}
+
+func (s *OnboardingStartSuite) TestStart_ResumeExistingSession() {
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
+	// Create first session
+	payload := map[string]interface{}{
+		"email":          "resume@example.com",
+		"planDescriptor": "starter",
+	}
+	resp1, err := s.client.Post("/api/onboarding/start", payload)
+	s.NoError(err)
+	defer resp1.Body.Close()
+	s.Equal(http.StatusOK, resp1.StatusCode)
+
+	var result1 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp1, &result1))
+	token1 := result1["sessionToken"].(string)
+
+	// Create another session with same email - should resume
+	resp2, err := s.client.Post("/api/onboarding/start", payload)
+	s.NoError(err)
+	defer resp2.Body.Close()
+	s.Equal(http.StatusOK, resp2.StatusCode)
+
+	var result2 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp2, &result2))
+	token2 := result2["sessionToken"].(string)
+
+	// Tokens should be the same (resumed session)
+	s.Equal(token1, token2, "should resume existing session")
+}
+
+func (s *OnboardingStartSuite) TestStart_EmailAlreadyRegistered() {
+	// Create a registered user first
+	err := s.helper.CreateTestUser("existing@example.com", "Password123!", "John", "Doe")
+	s.NoError(err, "should create test user")
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
+	payload := map[string]interface{}{
+		"email":          "existing@example.com",
+		"planDescriptor": "starter",
+	}
+	resp, err := s.client.Post("/api/onboarding/start", payload)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusConflict, resp.StatusCode, "should reject already registered email")
+}
+
+func (s *OnboardingStartSuite) TestStart_InvalidEmail() {
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
+	tests := []struct {
+		name  string
+		email string
+	}{
+		{"invalid format", "notanemail"},
+		{"missing @", "user.com"},
+		{"missing domain", "user@"},
+		{"empty", ""},
+		{"spaces", "user @example.com"},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			payload := map[string]interface{}{
+				"email":          tt.email,
+				"planDescriptor": "starter",
+			}
+			resp, err := s.client.Post("/api/onboarding/start", payload)
+			s.NoError(err)
+			defer resp.Body.Close()
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+		})
+	}
+}
+
+func (s *OnboardingStartSuite) TestStart_InvalidPlan() {
+	tests := []struct {
+		name           string
+		planDescriptor string
+	}{
+		{"nonexistent plan", "nonexistent"},
+		{"empty plan", ""},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			payload := map[string]interface{}{
+				"email":          "test@example.com",
+				"planDescriptor": tt.planDescriptor,
+			}
+			resp, err := s.client.Post("/api/onboarding/start", payload)
+			s.NoError(err)
+			defer resp.Body.Close()
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+		})
+	}
+}
+
+func (s *OnboardingStartSuite) TestStart_MissingFields() {
+	tests := []struct {
+		name    string
+		payload map[string]interface{}
+	}{
+		{"missing email", map[string]interface{}{"planDescriptor": "starter"}},
+		{"missing plan", map[string]interface{}{"email": "test@example.com"}},
+		{"empty payload", map[string]interface{}{}},
+	}
+
+	for _, tt := range tests {
+		s.Run(tt.name, func() {
+			resp, err := s.client.Post("/api/onboarding/start", tt.payload)
+			s.NoError(err)
+			defer resp.Body.Close()
+			s.Equal(http.StatusBadRequest, resp.StatusCode)
+		})
+	}
+}
+
+func (s *OnboardingStartSuite) TestStart_SQLInjectionAttempts() {
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
+	sqlInjections := []string{
+		"'; DROP TABLE users; --",
+		"admin'--",
+		"' OR '1'='1",
+		"'; DELETE FROM users WHERE 1=1; --",
+	}
+
+	for i, injection := range sqlInjections {
+		s.Run(fmt.Sprintf("injection %d", i), func() {
+			payload := map[string]interface{}{
+				"email":          injection,
+				"planDescriptor": "starter",
+			}
+			resp, err := s.client.Post("/api/onboarding/start", payload)
+			s.NoError(err)
+			defer resp.Body.Close()
+			// Should reject as invalid email or handle safely
+			s.True(resp.StatusCode >= 400, "should reject SQL injection")
+		})
+	}
+}
+
+func (s *OnboardingStartSuite) TestStart_XSSAttempts() {
+	s.helper.EnsureTestPlan("starter", "Starter Plan", 0.0)
+
+	xssPayloads := []string{
+		"<script>alert('xss')</script>@example.com",
+		"user<img src=x>@example.com",
+	}
+
+	for _, xss := range xssPayloads {
+		payload := map[string]interface{}{
+			"email":          xss,
+			"planDescriptor": "starter",
+		}
+		resp, err := s.client.Post("/api/onboarding/start", payload)
+		s.NoError(err)
+		defer resp.Body.Close()
+		// Should reject as invalid email or sanitize
+		s.True(resp.StatusCode >= 400, "should reject XSS attempt")
 	}
 }
 

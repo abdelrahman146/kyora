@@ -1,7 +1,6 @@
 package response
 
 import (
-	"encoding/json"
 	"errors"
 
 	"github.com/abdelrahman146/kyora/internal/platform/database"
@@ -27,12 +26,7 @@ func Error(c *gin.Context, err error) {
 }
 
 func SuccessJSON(c *gin.Context, status int, data any) {
-	b, err := json.Marshal(data)
-	if err != nil {
-		Error(c, err)
-		return
-	}
-	c.JSON(status, b)
+	c.JSON(status, data)
 }
 
 func SuccessEmpty(c *gin.Context, status int) {
