@@ -1,9 +1,13 @@
 package e2e
 
 import (
+	"context"
 	"time"
 
+	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
+	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
+	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
@@ -12,15 +16,24 @@ import (
 
 // OnboardingTestHelper provides reusable helpers for onboarding tests
 type OnboardingTestHelper struct {
-	db     *database.Database
-	client *testutils.HTTPClient
+	db                *database.Database
+	client            *testutils.HTTPClient
+	onboardingStorage *onboarding.Storage
+	accountStorage    *account.Storage
+	billingStorage    *billing.Storage
 }
 
 // NewOnboardingTestHelper creates a new onboarding test helper
 func NewOnboardingTestHelper(db *database.Database, baseURL string) *OnboardingTestHelper {
+	// Initialize cache for storage layers
+	cacheClient := cache.NewConnection([]string{"localhost:11211"})
+
 	return &OnboardingTestHelper{
-		db:     db,
-		client: testutils.NewHTTPClient(baseURL),
+		db:                db,
+		client:            testutils.NewHTTPClient(baseURL),
+		onboardingStorage: onboarding.NewStorage(db, cacheClient),
+		accountStorage:    account.NewStorage(db, cacheClient),
+		billingStorage:    billing.NewStorage(db, cacheClient),
 	}
 }
 
@@ -83,12 +96,14 @@ func (h *OnboardingTestHelper) EnsureTestPlan(descriptor, name string, price flo
 		Limits:       limits,
 	}
 
-	// Insert using GORM - it will handle JSONB serialization
+	// Use direct database access for test plan creation
+	// Production plans are managed by billing storage init, but test plans need manual creation
 	h.db.GetDB().Create(&plan)
 }
 
 // CreateTestUser creates a user and workspace for testing email already registered scenarios
 func (h *OnboardingTestHelper) CreateTestUser(email, password, firstName, lastName string) error {
+	ctx := context.Background()
 	workspaceID := "ws_test_" + email
 	userID := "user_test_" + email
 
@@ -98,27 +113,27 @@ func (h *OnboardingTestHelper) CreateTestUser(email, password, firstName, lastNa
 		return err
 	}
 
-	// Create workspace using GORM (workspace table only has id and owner_id)
-	workspace := map[string]interface{}{
-		"id":       workspaceID,
-		"owner_id": userID,
+	// Create workspace using onboarding storage (which has access to workspace repo)
+	workspace := &account.Workspace{
+		ID:      workspaceID,
+		OwnerID: userID,
 	}
-	if err := h.db.GetDB().Table("workspaces").Create(workspace).Error; err != nil {
+	if err := h.onboardingStorage.CreateWorkspace(ctx, workspace); err != nil {
 		return err
 	}
 
-	// Create user using GORM
-	user := map[string]interface{}{
-		"id":                userID,
-		"workspace_id":      workspaceID,
-		"email":             email,
-		"password":          hashedPass,
-		"first_name":        firstName,
-		"last_name":         lastName,
-		"is_email_verified": true,
-		"role":              "admin",
+	// Create user using onboarding storage (which has access to user repo)
+	user := &account.User{
+		ID:              userID,
+		WorkspaceID:     workspaceID,
+		Email:           email,
+		Password:        hashedPass,
+		FirstName:       firstName,
+		LastName:        lastName,
+		IsEmailVerified: true,
+		Role:            "admin",
 	}
-	return h.db.GetDB().Table("users").Create(user).Error
+	return h.onboardingStorage.CreateUser(ctx, user)
 } // CreateOnboardingSession creates a session via API and returns token
 func (h *OnboardingTestHelper) CreateOnboardingSession(email, planDescriptor string) (string, error) {
 	h.EnsureTestPlan(planDescriptor, "Test Plan", 0.0)
@@ -148,47 +163,97 @@ func (h *OnboardingTestHelper) CreateOnboardingSession(email, planDescriptor str
 
 // SetSessionOTP sets OTP for a session
 func (h *OnboardingTestHelper) SetSessionOTP(token, otp string, expiresIn time.Duration) error {
+	ctx := context.Background()
+
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Hash OTP
 	hashedOTP, err := hash.Password(otp)
 	if err != nil {
 		return err
 	}
 
+	// Update session fields
 	expiry := time.Now().Add(expiresIn)
-	return h.db.GetDB().Exec(`UPDATE onboarding_sessions 
-		SET otp_hash = ?, otp_expiry = ?, stage = 'identity_pending' 
-		WHERE token = ?`, hashedOTP, expiry, token).Error
+	sess.OTPHash = hashedOTP
+	sess.OTPExpiry = &expiry
+	sess.Stage = onboarding.StageIdentityPending
+
+	// Update using storage
+	return h.onboardingStorage.UpdateSession(ctx, sess)
 }
 
 // SetExpiredOTP sets an expired OTP for testing
 func (h *OnboardingTestHelper) SetExpiredOTP(token string) error {
+	ctx := context.Background()
+
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Set expired time
 	expiredTime := time.Now().UTC().Add(-20 * time.Minute)
-	return h.db.GetDB().Exec(`UPDATE onboarding_sessions SET otp_expiry = ? WHERE token = ?`, expiredTime, token).Error
+	sess.OTPExpiry = &expiredTime
+
+	// Update using storage
+	return h.onboardingStorage.UpdateSession(ctx, sess)
 } // UpdateSessionStage updates session stage
 func (h *OnboardingTestHelper) UpdateSessionStage(token, stage string) error {
-	return h.db.GetDB().Exec("UPDATE onboarding_sessions SET stage = ? WHERE token = ?", stage, token).Error
+	ctx := context.Background()
+
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Update stage (convert string to SessionStage type)
+	sess.Stage = onboarding.SessionStage(stage)
+
+	// Update using storage
+	return h.onboardingStorage.UpdateSession(ctx, sess)
 }
 
 // ExpireSession sets session to expired
 func (h *OnboardingTestHelper) ExpireSession(token string) error {
-	return h.db.GetDB().Exec("UPDATE onboarding_sessions SET expires_at = NOW() - INTERVAL '1 hour' WHERE token = ?", token).Error
+	ctx := context.Background()
+
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return err
+	}
+
+	// Set expired time in UTC (1 hour in the past)
+	expiredTime := time.Now().UTC().Add(-1 * time.Hour)
+	sess.ExpiresAt = expiredTime
+
+	// Update using storage
+	return h.onboardingStorage.UpdateSession(ctx, sess)
 }
 
 // GetSession retrieves session data
 func (h *OnboardingTestHelper) GetSession(token string) (map[string]interface{}, error) {
-	result := make(map[string]interface{})
-	row := h.db.GetDB().Raw("SELECT stage, email, email_verified, otp_expiry FROM onboarding_sessions WHERE token = ?", token).Row()
+	ctx := context.Background()
 
-	var stage, email string
-	var emailVerified bool
-	var otpExpiry *time.Time
-	if err := row.Scan(&stage, &email, &emailVerified, &otpExpiry); err != nil {
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
 		return nil, err
 	}
 
-	result["stage"] = stage
-	result["email"] = email
-	result["emailVerified"] = emailVerified
-	result["otpExpiry"] = otpExpiry
+	// Convert to map for compatibility with existing tests
+	result := make(map[string]interface{})
+	result["stage"] = string(sess.Stage)
+	result["email"] = sess.Email
+	result["emailVerified"] = sess.EmailVerified
+	result["otpExpiry"] = sess.OTPExpiry
 	return result, nil
 }
 
@@ -208,37 +273,60 @@ func (h *OnboardingTestHelper) CreateSessionWithOTP(email, planDescriptor, otp s
 
 // CreateVerifiedSession creates a session at identity_verified stage
 func (h *OnboardingTestHelper) CreateVerifiedSession(email, planDescriptor string) (string, error) {
+	ctx := context.Background()
+
 	token, err := h.CreateOnboardingSession(email, planDescriptor)
 	if err != nil || token == "" {
 		return "", err
 	}
 
-	hashedPass, _ := hash.Password("TestPassword123!")
-	err = h.db.GetDB().Exec(`UPDATE onboarding_sessions 
-		SET stage = 'identity_verified', 
-			email_verified = true,
-			first_name = 'Test',
-			last_name = 'User',
-			password_hash = ?,
-			method = 'email'
-		WHERE token = ?`, hashedPass, token).Error
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return "", err
+	}
 
+	// Hash password
+	hashedPass, err := hash.Password("TestPassword123!")
+	if err != nil {
+		return "", err
+	}
+
+	// Update session fields
+	sess.Stage = onboarding.StageIdentityVerified
+	sess.EmailVerified = true
+	sess.FirstName = "Test"
+	sess.LastName = "User"
+	sess.PasswordHash = hashedPass
+	sess.Method = onboarding.IdentityEmail
+
+	// Update using storage
+	err = h.onboardingStorage.UpdateSession(ctx, sess)
 	return token, err
 } // CreateBusinessStagedSession creates session at ready_to_commit stage
 func (h *OnboardingTestHelper) CreateBusinessStagedSession(email, planDescriptor string) (string, error) {
+	ctx := context.Background()
+
 	token, err := h.CreateVerifiedSession(email, planDescriptor)
 	if err != nil || token == "" {
 		return "", err
 	}
 
-	err = h.db.GetDB().Exec(`UPDATE onboarding_sessions 
-SET stage = 'ready_to_commit',
-business_name = 'Test Business',
-business_descriptor = 'test-business',
-business_country = 'AE',
-business_currency = 'AED',
-payment_status = 'skipped'
-WHERE token = ?`, token).Error
+	// Get session using storage
+	sess, err := h.onboardingStorage.GetByToken(ctx, token)
+	if err != nil {
+		return "", err
+	}
 
+	// Update session fields for business stage
+	sess.Stage = onboarding.StageReadyToCommit
+	sess.BusinessName = "Test Business"
+	sess.BusinessDescriptor = "test-business"
+	sess.BusinessCountry = "AE"
+	sess.BusinessCurrency = "AED"
+	sess.PaymentStatus = onboarding.PaymentStatusSkipped
+
+	// Update using storage
+	err = h.onboardingStorage.UpdateSession(ctx, sess)
 	return token, err
 }

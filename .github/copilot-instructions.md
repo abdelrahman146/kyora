@@ -405,6 +405,71 @@ Events & integrations
 
 - tests require Docker Desktop running for testcontainers
 
+**Test Best Practices:**
+
+1. **Use Domain Storage Layers - NEVER Raw SQL**
+
+   - ALWAYS use domain storage repositories for database operations in tests
+   - Initialize storage layers properly: `onboarding.NewStorage(db, cache)`, `account.NewStorage(db, cache)`, etc.
+   - Follow the same CRUD patterns as production code: `storage.GetByToken(ctx, token)`, `storage.UpdateSession(ctx, sess)`
+   - Use proper domain models (structs) instead of maps or raw SQL
+   - Example:
+
+     ```go
+     // ❌ BAD - Raw SQL
+     db.Exec("UPDATE onboarding_sessions SET stage = ? WHERE token = ?", stage, token)
+
+     // ✅ GOOD - Domain storage
+     sess, _ := onboardingStorage.GetByToken(ctx, token)
+     sess.Stage = onboarding.SessionStage(stage)
+     onboardingStorage.UpdateSession(ctx, sess)
+     ```
+
+2. **Assert ALL Expected Response Fields**
+
+   - Verify EVERY field in API responses matches expected values
+   - Assert exact field count to catch unexpected additions/removals: `s.Len(response, 3, "response should have exactly 3 fields")`
+   - Use `s.Contains()` to verify field presence: `s.Contains(response, "sessionToken")`
+   - Assert exact values, not just presence: `s.Equal("plan_selected", response["stage"])`
+   - For nested objects (like user in complete response), validate all nested fields
+   - Example:
+
+     ```go
+     // Assert response structure
+     s.Len(result, 2, "response should have exactly 2 fields")
+     s.Contains(result, "user")
+     s.Contains(result, "token")
+
+     // Assert all user fields
+     user := result["user"].(map[string]interface{})
+     s.Equal("test@example.com", user["email"])
+     s.Equal("John", user["firstName"])
+     s.Equal("Doe", user["lastName"])
+     s.Equal(true, user["isEmailVerified"])
+     s.NotEmpty(user["id"])
+     s.NotEmpty(user["workspaceId"])
+     s.NotEmpty(user["role"])
+     ```
+
+3. **Test Isolation is Critical**
+
+   - Each test MUST be completely independent
+   - Use `SetupTest()` to clear database tables and set up fresh fixtures
+   - Use `TearDownTest()` to clean up after each test
+   - Never reuse session tokens, users, or data across tests
+   - For table-driven tests with loops, create new session/user per iteration to avoid state conflicts
+   - Use indexed emails for unique test data: `fmt.Sprintf("user%d@example.com", i)`
+
+4. **Proper Time Handling**
+
+   - Always use UTC for database timestamps: `time.Now().UTC()`
+   - Be aware of timezone differences between local time and database storage
+   - When setting expired times, use UTC: `time.Now().UTC().Add(-20 * time.Minute)`
+
+5. **Context Usage**
+   - Always use `context.Background()` for test operations
+   - Pass context to all storage layer methods for consistency with production code
+
 **Test Suite Example:**
 
 Each API endpoint should have its own suite following this pattern:
@@ -414,27 +479,31 @@ Each API endpoint should have its own suite following this pattern:
 package e2e_test
 
 import (
+    "context"
+    "net/http"
     "testing"
     "github.com/stretchr/testify/suite"
     "github.com/abdelrahman146/kyora/internal/tests/testutils"
+    "github.com/abdelrahman146/kyora/internal/domain/account"
 )
 
 // LoginSuite tests the POST /v1/auth/login endpoint
 type LoginSuite struct {
     suite.Suite
-    baseURL    string
-    httpClient *http.Client
+    client         *testutils.HTTPClient
+    accountStorage *account.Storage
 }
 
 func (s *LoginSuite) SetupSuite() {
-    s.baseURL = "http://localhost:18080"
-    s.httpClient = &http.Client{}
+    s.client = testutils.NewHTTPClient("http://localhost:18080")
+    // Initialize storage for test data setup
+    cache := cache.NewConnection([]string{"localhost:11211"})
+    s.accountStorage = account.NewStorage(testEnv.Database, cache)
 }
 
 func (s *LoginSuite) SetupTest() {
     // Clear database tables before each test for isolation
     testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
-    // Set up test fixtures
 }
 
 func (s *LoginSuite) TearDownTest() {
@@ -443,7 +512,43 @@ func (s *LoginSuite) TearDownTest() {
 }
 
 func (s *LoginSuite) TestLogin_Success() {
-    // Table-driven test for multiple scenarios
+    ctx := context.Background()
+
+    // Create test user using storage layer (not raw SQL)
+    user := &account.User{
+        Email:    "user@example.com",
+        Password: "hashedPassword",
+        // ... other fields
+    }
+    s.NoError(s.accountStorage.CreateUser(ctx, user))
+
+    // Make API request
+    payload := map[string]interface{}{
+        "email":    "user@example.com",
+        "password": "ValidPass123!",
+    }
+    resp, err := s.client.Post("/v1/auth/login", payload)
+    s.NoError(err)
+    defer resp.Body.Close()
+    s.Equal(http.StatusOK, resp.StatusCode)
+
+    // Assert ALL response fields
+    var result map[string]interface{}
+    s.NoError(testutils.DecodeJSON(resp, &result))
+
+    // Verify exact structure
+    s.Len(result, 2, "response should have exactly 2 fields")
+    s.Contains(result, "user")
+    s.Contains(result, "token")
+
+    // Verify all values
+    s.NotEmpty(result["token"])
+    user := result["user"].(map[string]interface{})
+    s.Equal("user@example.com", user["email"])
+    s.NotEmpty(user["id"])
+}
+
+func (s *LoginSuite) TestLogin_TableDriven() {
     tests := []struct {
         name           string
         email          string
