@@ -490,8 +490,50 @@ Events & integrations
    - When setting expired times, use UTC: `time.Now().UTC().Add(-20 * time.Minute)`
 
 5. **Context Usage**
+
    - Always use `context.Background()` for test operations
    - Pass context to all storage layer methods for consistency with production code
+
+6. **Testing External Dependencies (OAuth, Stripe, etc.)**
+
+   - External dependencies may not be configured in test environment
+   - Tests should gracefully handle missing configuration by skipping or using flexible assertions
+   - Example: Google OAuth tests skip when OAuth returns 500 (missing config)
+   - Use flexible status code assertions (>= 400) when testing with external dependencies
+   - Consider mocking external services for more reliable test execution
+
+7. **Domain-Specific Helper Pattern**
+
+   - Create `<domain>_helpers_test.go` for domain-specific test utilities
+   - Keep generic helpers in `backend/internal/tests/testutils/` package
+   - Domain helpers should provide: CreateTestEntity, GetEntity, UpdateEntity, specialized setup functions
+   - Example: `AccountTestHelper` provides CreateTestUser, CreateInvitation, CreatePasswordResetToken, etc.
+   - Initialize helpers in `SetupSuite()` and reuse across all tests in that domain
+
+8. **Security Testing Checklist**
+
+   - **Authentication**: Test missing/invalid/expired tokens
+   - **Authorization**: Test permission boundaries (admin vs member)
+   - **Workspace Isolation**: Verify users can't access other workspace data
+   - **Input Validation**: Test SQL injection, XSS, malformed input
+   - **Rate Limiting**: Test token reuse, expired tokens, multiple requests
+   - **CSRF Protection**: Test state tokens in OAuth flows
+   - **Enumeration Prevention**: Ensure consistent error messages for existing/non-existing resources
+
+9. **Table-Driven Test Organization**
+
+   - Use sub-tests with `s.Run()` for clear test output
+   - Group related scenarios together (e.g., all invalid email formats)
+   - Create fresh data per iteration to avoid state conflicts
+   - Use descriptive test case names: `"missing email field"`, `"invalid email format"`, etc.
+
+10. **Response Validation Best Practices**
+    - Always assert exact field count to catch unexpected changes
+    - Verify presence of all expected fields with `s.Contains()`
+    - Assert exact values where possible, not just presence
+    - For IDs/UUIDs: use `s.NotEmpty()` to verify generation
+    - For timestamps: verify non-nil and reasonable ranges
+    - For nested objects: validate all nested fields recursively
 
 **Test Suite Example:**
 

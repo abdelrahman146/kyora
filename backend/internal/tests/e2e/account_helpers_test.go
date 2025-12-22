@@ -14,19 +14,22 @@ import (
 
 // AccountTestHelper provides reusable helpers for account tests
 type AccountTestHelper struct {
-	db      *database.Database
-	Client  *testutils.HTTPClient
-	storage *account.Storage
+	db             *database.Database
+	Client         *testutils.HTTPClient
+	storage        *account.Storage
+	AccountStorage *account.Storage // Expose storage for direct access in tests
 }
 
 // NewAccountTestHelper creates a new account test helper
 func NewAccountTestHelper(db *database.Database, cacheAddr, baseURL string) *AccountTestHelper {
 	cacheClient := cache.NewConnection([]string{cacheAddr})
+	storage := account.NewStorage(db, cacheClient)
 
 	return &AccountTestHelper{
-		db:      db,
-		Client:  testutils.NewHTTPClient(baseURL),
-		storage: account.NewStorage(db, cacheClient),
+		db:             db,
+		Client:         testutils.NewHTTPClient(baseURL),
+		storage:        storage,
+		AccountStorage: storage, // Expose same instance
 	}
 }
 
@@ -66,6 +69,16 @@ func (h *AccountTestHelper) CreateInvitationWithToken(ctx context.Context, works
 	}
 
 	return invitation, token, nil
+}
+
+// CreateInvitationToken generates a token for an existing invitation
+func (h *AccountTestHelper) CreateInvitationToken(ctx context.Context, invitationID string) (string, error) {
+	invitation, err := h.GetInvitation(ctx, invitationID)
+	if err != nil {
+		return "", err
+	}
+
+	return testutils.CreateInvitationToken(ctx, h.storage, invitation, invitation.InviterID)
 }
 
 // SetInvitationStatus updates invitation status using repository
