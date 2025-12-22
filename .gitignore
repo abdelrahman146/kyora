@@ -106,9 +106,20 @@ desktop.ini
 # --------------------------------------------------
 # Air / Fresh / Reflex / CompileDaemon reload tools
 tmp/
+backend/tmp/
 
 # Docker
 docker-compose.override.yml
+
+# --------------------------------------------------
+# Backend specific
+# --------------------------------------------------
+backend/.kyora.yaml
+!backend/.kyora.yaml.example
+backend/coverage.out
+backend/coverage.html
+backend/e2e_coverage.out
+backend/build-errors.log
 
 # --------------------------------------------------
 # Archives / packaged releases

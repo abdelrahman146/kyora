@@ -1,82 +1,94 @@
-# Development
+# Backend Development
 .PHONY: dev.server
 dev.server:
-	@rm -rf tmp
-	@air server
+	@echo "Starting backend development server..."
+	@cd backend && rm -rf tmp && air server
 
-# Testing
+# Backend Testing
 .PHONY: test
 test:
-	@echo "Running all tests..."
-	@go test ./... -v
+	@echo "Running all backend tests..."
+	@cd backend && go test ./... -v
 
 .PHONY: test.unit
 test.unit:
-	@echo "Running unit tests..."
-	@go test ./internal/domain/... ./internal/platform/... -v
+	@echo "Running backend unit tests..."
+	@cd backend && go test ./internal/domain/... ./internal/platform/... -v
 
 .PHONY: test.e2e
 test.e2e:
-	@echo "Running E2E tests..."
-	@go test ./internal/tests/e2e -v -timeout=120s
+	@echo "Running backend E2E tests..."
+	@cd backend && go test ./internal/tests/e2e -v -timeout=120s
 
 .PHONY: test.quick
 test.quick:
-	@echo "Running tests (no verbose)..."
-	@go test ./...
+	@echo "Running backend tests (no verbose)..."
+	@cd backend && go test ./...
 
-# Coverage
+# Backend Coverage
 .PHONY: test.coverage
 test.coverage:
-	@echo "Running tests with coverage..."
-	@go test ./... -cover -coverprofile=coverage.out
+	@echo "Running backend tests with coverage..."
+	@cd backend && go test ./... -cover -coverprofile=coverage.out
 	@echo "\nCoverage summary:"
-	@go tool cover -func=coverage.out | tail -1
+	@cd backend && go tool cover -func=coverage.out | tail -1
 
 .PHONY: test.coverage.html
 test.coverage.html:
 	@echo "Generating HTML coverage report..."
-	@go test ./... -cover -coverprofile=coverage.out
-	@go tool cover -html=coverage.out -o coverage.html
-	@echo "Coverage report generated: coverage.html"
-	@echo "Open coverage.html in your browser to view the report"
+	@cd backend && go test ./... -cover -coverprofile=coverage.out
+	@cd backend && go tool cover -html=coverage.out -o coverage.html
+	@echo "Coverage report generated: backend/coverage.html"
+	@echo "Open backend/coverage.html in your browser to view the report"
 
 .PHONY: test.coverage.view
 test.coverage.view: test.coverage.html
 	@echo "Opening coverage report in browser..."
-	@open coverage.html 2>/dev/null || xdg-open coverage.html 2>/dev/null || echo "Please open coverage.html manually"
+	@open backend/coverage.html 2>/dev/null || xdg-open backend/coverage.html 2>/dev/null || echo "Please open backend/coverage.html manually"
 
 .PHONY: test.e2e.coverage
 test.e2e.coverage:
-	@echo "Running E2E tests with coverage..."
-	@go test ./internal/tests/e2e -v -timeout=120s -cover -coverprofile=e2e_coverage.out
+	@echo "Running backend E2E tests with coverage..."
+	@cd backend && go test ./internal/tests/e2e -v -timeout=120s -cover -coverprofile=e2e_coverage.out
 	@echo "\nE2E Coverage summary:"
-	@go tool cover -func=e2e_coverage.out | tail -1
+	@cd backend && go tool cover -func=e2e_coverage.out | tail -1
 
-# Clean
+# Backend Clean
 .PHONY: clean.coverage
 clean.coverage:
-	@echo "Cleaning coverage reports..."
-	@rm -f coverage.out coverage.html e2e_coverage.out
+	@echo "Cleaning backend coverage reports..."
+	@cd backend && rm -f coverage.out coverage.html e2e_coverage.out
 	@echo "Coverage reports cleaned"
+
+.PHONY: clean.backend
+clean.backend:
+	@echo "Cleaning backend build artifacts..."
+	@cd backend && rm -rf tmp build-errors.log
+	@echo "Backend artifacts cleaned"
 
 # Help
 .PHONY: help
 help:
-	@echo "Available targets:"
-	@echo "  dev.server           - Run development server with live reload"
+	@echo "Kyora Monorepo - Available targets:"
 	@echo ""
-	@echo "Testing:"
-	@echo "  test                 - Run all tests (verbose)"
-	@echo "  test.unit            - Run unit tests only"
-	@echo "  test.e2e             - Run E2E tests only"
-	@echo "  test.quick           - Run all tests (no verbose)"
+	@echo "Backend Development:"
+	@echo "  dev.server           - Run backend development server with live reload"
 	@echo ""
-	@echo "Coverage:"
-	@echo "  test.coverage        - Run tests with coverage report"
+	@echo "Backend Testing:"
+	@echo "  test                 - Run all backend tests (verbose)"
+	@echo "  test.unit            - Run backend unit tests only"
+	@echo "  test.e2e             - Run backend E2E tests only"
+	@echo "  test.quick           - Run all backend tests (no verbose)"
+	@echo ""
+	@echo "Backend Coverage:"
+	@echo "  test.coverage        - Run backend tests with coverage report"
 	@echo "  test.coverage.html   - Generate HTML coverage report"
 	@echo "  test.coverage.view   - Generate and open HTML coverage in browser"
-	@echo "  test.e2e.coverage    - Run E2E tests with coverage"
+	@echo "  test.e2e.coverage    - Run backend E2E tests with coverage"
 	@echo ""
 	@echo "Clean:"
-	@echo "  clean.coverage       - Remove coverage report files"
+	@echo "  clean.coverage       - Remove backend coverage report files"
+	@echo "  clean.backend        - Remove backend build artifacts"
+	@echo ""
+	@echo "General:"
+	@echo "  help                 - Show this help message"

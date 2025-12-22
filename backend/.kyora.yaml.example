@@ -11,7 +11,7 @@ http:
   base_url: "http://localhost:8080"
   trace_id_header: "X-Trace-ID"
 database:
-  dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=Asia/Dubai"
+  dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=UTC"
   max_open_conns: 25
   max_idle_conns: 25
   conn_max_lifetime_minutes: 5
@@ -21,7 +21,7 @@ cache:
     - "localhost:11211"
 auth:
   jwt:
-    secret: "your_jwt_secret_key"
+    secret: "your_jwt_secret_key_change_this_in_production"
     expiry_seconds: 3600
     issuer: "kyora"
     audience: "kyora_users"
@@ -37,7 +37,7 @@ billing:
     api_key: "sk_test_your_stripe_api_key"
     webhook_secret: "whsec_your_webhook_secret"
 email:
-  provider: "resend" # options: resend, mock
+  provider: "mock" # options: resend, mock
   resend:
     api_key: "re_your_resend_api_key"
     base_url: "https://api.resend.com"
