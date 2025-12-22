@@ -100,6 +100,13 @@ type CreateUserInput struct {
 	Password  string `form:"password" json:"password" binding:"required,min=8"`
 }
 
+// AcceptInvitationInput represents the request body for accepting an invitation
+type AcceptInvitationInput struct {
+	FirstName string `form:"firstName" json:"firstName" binding:"required"`
+	LastName  string `form:"lastName" json:"lastName" binding:"required"`
+	Password  string `form:"password" json:"password" binding:"required,min=8"`
+}
+
 type UpdateUserInput struct {
 	FirstName *string `form:"firstName" json:"firstName"`
 	LastName  *string `form:"lastName" json:"lastName"`

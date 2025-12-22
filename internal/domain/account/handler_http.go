@@ -576,7 +576,7 @@ func (h *HttpHandler) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	var input CreateUserInput
+	var input AcceptInvitationInput
 	if err := request.ValidBody(c, &input); err != nil {
 		return
 	}

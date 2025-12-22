@@ -18,20 +18,20 @@ type Storage struct {
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
-	s := &Storage{
+	return &Storage{
 		cache:        cache,
 		db:           db,
 		plan:         database.NewRepository[Plan](db),
 		subscription: database.NewRepository[Subscription](db),
 		event:        database.NewRepository[StripeEvent](db),
 	}
-	s.init()
-	return s
 }
 
-func (s *Storage) init() {
-	// upsert plans into the database
-	ctx := context.Background()
+// SyncPlans upserts all defined plans into the database
+// This can be called manually via CLI command or automatically on startup
+func (s *Storage) SyncPlans(ctx context.Context) error {
+	logger.FromContext(ctx).Info("Syncing plans to database", "planCount", len(plans))
+
 	for _, plan := range plans {
 		existing, err := s.plan.FindOne(ctx, s.plan.ScopeEquals(PlanSchema.Descriptor, plan.Descriptor))
 		if err != nil && !database.IsRecordNotFound(err) {
@@ -43,14 +43,19 @@ func (s *Storage) init() {
 				logger.FromContext(ctx).Error("failed to create plan", "error", err, "descriptor", plan.Descriptor)
 				continue
 			}
+			logger.FromContext(ctx).Info("Plan created", "descriptor", plan.Descriptor, "id", plan.ID)
 		} else {
 			plan.ID = existing.ID
 			if err := s.plan.UpdateOne(ctx, &plan); err != nil {
 				logger.FromContext(ctx).Error("failed to update plan", "error", err, "descriptor", plan.Descriptor)
 				continue
 			}
+			logger.FromContext(ctx).Info("Plan updated", "descriptor", plan.Descriptor, "id", plan.ID)
 		}
 	}
+
+	logger.FromContext(ctx).Info("Plan sync completed")
+	return nil
 }
 
 // CountBusinessesByWorkspace returns count of businesses for a workspace

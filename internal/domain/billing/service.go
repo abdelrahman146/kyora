@@ -332,6 +332,36 @@ func (s *Service) GetWorkspaceSubscriptionInfo(ctx context.Context, workspaceID 
 	return info, nil
 }
 
+// SyncPlans manually syncs all defined plans to the database only
+// This is useful for test setup where Stripe sync is not needed
+func (s *Service) SyncPlans(ctx context.Context) error {
+	return s.storage.SyncPlans(ctx)
+}
+
+// SyncPlansComplete syncs plans to both database and Stripe
+// This is the recommended method for production use and CLI commands
+func (s *Service) SyncPlansComplete(ctx context.Context) error {
+	logger := logger.FromContext(ctx)
+
+	// First sync to database
+	logger.Info("Syncing plans to database...")
+	if err := s.storage.SyncPlans(ctx); err != nil {
+		logger.Error("Failed to sync plans to database", "error", err)
+		return fmt.Errorf("database sync failed: %w", err)
+	}
+	logger.Info("Plans synced to database successfully")
+
+	// Then sync to Stripe
+	logger.Info("Syncing plans to Stripe...")
+	if err := s.SyncPlansToStripe(ctx); err != nil {
+		logger.Error("Failed to sync plans to Stripe", "error", err)
+		return fmt.Errorf("stripe sync failed: %w", err)
+	}
+	logger.Info("Plans synced to Stripe successfully")
+
+	return nil
+}
+
 // WorkspaceSubscriptionInfo contains comprehensive subscription information
 type WorkspaceSubscriptionInfo struct {
 	HasSubscription  bool        `json:"hasSubscription"`

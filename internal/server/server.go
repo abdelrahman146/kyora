@@ -30,10 +30,11 @@ import (
 )
 
 type Server struct {
-	db      *database.Database
-	cacheDB *cache.Cache
-	r       *gin.Engine
-	httpSrv *http.Server
+	db         *database.Database
+	cacheDB    *cache.Cache
+	r          *gin.Engine
+	httpSrv    *http.Server
+	billingSvc *billing.Service
 }
 
 type ServerConfig struct {
@@ -143,6 +144,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	billingSvc := billing.NewService(billingStorage, atomicProcessor, bus, accountSvc, emailClient)
 
+	// Note: Plan auto-sync is now handled in the server command (cmd/server.go)
+	// This keeps server initialization clean and allows sync to run asynchronously
+
 	businessStorage := business.NewStorage(db, cacheDB)
 	businessSvc := business.NewService(businessStorage, atomicProcessor, bus)
 	_ = businessSvc // to avoid unused variable warning
@@ -188,7 +192,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// Register onboarding routes
 	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
 
-	return &Server{r: r, db: db, cacheDB: cacheDB}, nil
+	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }
 
 func (s *Server) Start() error {
@@ -256,4 +260,13 @@ func (s *Server) Stop() error {
 	}
 
 	return retErr
+}
+
+// SyncPlansComplete syncs billing plans to both database and Stripe
+// This method is exposed for use in the server command's auto-sync goroutine
+func (s *Server) SyncPlansComplete(ctx context.Context) error {
+	if s.billingSvc == nil {
+		return fmt.Errorf("billing service not initialized")
+	}
+	return s.billingSvc.SyncPlansComplete(ctx)
 }

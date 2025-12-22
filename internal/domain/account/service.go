@@ -40,7 +40,7 @@ func (s *Service) GetUserByID(ctx context.Context, id string) (*User, error) {
 }
 
 func (s *Service) GetWorkspaceByID(ctx context.Context, id string) (*Workspace, error) {
-	return s.storage.workspace.FindByID(ctx, id, s.storage.workspace.WithPreload(UserStruct))
+	return s.storage.workspace.FindByID(ctx, id, s.storage.workspace.WithPreload("Users"))
 }
 
 // SetWorkspaceStripeCustomer sets the Stripe customer ID for a workspace
@@ -550,7 +550,7 @@ func (s *Service) UpdateUserRole(ctx context.Context, actor *User, workspace *Wo
 func (s *Service) GetWorkspaceInvitations(ctx context.Context, workspaceID string, status InvitationStatus) ([]*UserInvitation, error) {
 	var scopes []func(db *gorm.DB) *gorm.DB
 	scopes = append(scopes, s.storage.invitation.ScopeWorkspaceID(workspaceID))
-	scopes = append(scopes, s.storage.invitation.WithPreload(UserStruct))
+	scopes = append(scopes, s.storage.invitation.WithPreload("Inviter"))
 
 	if status != "" {
 		scopes = append(scopes, s.storage.invitation.ScopeEquals(UserInvitationSchema.Status, string(status)))

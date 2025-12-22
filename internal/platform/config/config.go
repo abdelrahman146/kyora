@@ -52,6 +52,8 @@ const (
 	// stripe configuration
 	StripeAPIKey        = "billing.stripe.api_key"
 	StripeWebhookSecret = "billing.stripe.webhook_secret"
+	// billing configuration
+	BillingAutoSyncPlans = "billing.auto_sync_plans" // bool - automatically sync plans on startup (default: true)
 	// email configuration
 	EmailProvider     = "email.provider"        // values: resend, mock
 	EmailMockEnabled  = "email.mock.enabled"    // bool toggle to force mock

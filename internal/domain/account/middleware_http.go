@@ -66,6 +66,9 @@ func ActorFromContext(c *gin.Context) (*User, error) {
 
 var WorkspaceKey = ctxkey.New("workspace")
 
+// EnforceWorkspaceMembership loads the workspace based on the authenticated user's workspace ID from JWT token.
+// This is secure because it uses the workspace ID from the verified JWT token, not from URL parameters.
+// The user's workspace membership was already verified when the JWT was issued.
 func EnforceWorkspaceMembership(service *Service) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		user, err := ActorFromContext(c)
@@ -73,13 +76,9 @@ func EnforceWorkspaceMembership(service *Service) gin.HandlerFunc {
 			response.Error(c, err)
 			return
 		}
-		workspaceID := c.Param("workspaceId")
-
-		if user.WorkspaceID != workspaceID {
-			response.Error(c, problem.Forbidden("user is not a member of the workspace"))
-			return
-		}
-		workspace, err := service.GetWorkspaceByID(c.Request.Context(), workspaceID)
+		// Use workspace ID from the authenticated user (which comes from JWT token)
+		// This is secure - we never trust workspace IDs from URL parameters
+		workspace, err := service.GetWorkspaceByID(c.Request.Context(), user.WorkspaceID)
 		if err != nil {
 			response.Error(c, err)
 			return

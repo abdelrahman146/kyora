@@ -5,8 +5,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/abdelrahman146/kyora/internal/tests/e2e"
-
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -15,12 +13,12 @@ import (
 type OnboardingEmailOTPSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
-	helper *e2e.OnboardingTestHelper
+	helper *OnboardingTestHelper
 }
 
 func (s *OnboardingEmailOTPSuite) SetupSuite() {
 	s.client = testutils.NewHTTPClient("http://localhost:18080")
-	s.helper = e2e.NewOnboardingTestHelper(testEnv.Database, "http://localhost:18080")
+	s.helper = NewOnboardingTestHelper(testEnv.Database, "http://localhost:18080")
 }
 
 func (s *OnboardingEmailOTPSuite) SetupTest() {

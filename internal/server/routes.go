@@ -50,7 +50,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 
 	// Protected workspace endpoints
 	workspaceGroup := r.Group("/v1/workspaces")
-	workspaceGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService))
+	workspaceGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 	{
 		// Workspace info (all authenticated users)
 		workspaceGroup.GET("/me", h.GetCurrentWorkspace)

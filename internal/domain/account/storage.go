@@ -7,6 +7,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/spf13/viper"
 )
 
@@ -40,7 +41,11 @@ type PasswordResetPayload struct {
 }
 
 func (s *Storage) CreatePasswordResetToken(payload *PasswordResetPayload) (string, time.Time, error) {
-	key := resetPasswordTokenPrefix + payload.UserID
+	token, err := id.RandomString(32) // Generate random token
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	key := resetPasswordTokenPrefix + token
 	ttl := viper.GetInt32(config.PasswordResetTokenExpirySeconds)
 	payload.ExpAt = time.Now().Add(time.Duration(ttl) * time.Second)
 	payloadBytes, err := json.Marshal(payload)
@@ -51,7 +56,7 @@ func (s *Storage) CreatePasswordResetToken(payload *PasswordResetPayload) (strin
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	return key, payload.ExpAt, nil
+	return token, payload.ExpAt, nil
 }
 
 func (s *Storage) GetPasswordResetToken(token string) (*PasswordResetPayload, error) {
@@ -79,7 +84,11 @@ type VerifyEmailPayload struct {
 }
 
 func (s *Storage) CreateVerifyEmailToken(payload *VerifyEmailPayload) (string, time.Time, error) {
-	key := verifyEmailTokenPrefix + payload.UserID
+	token, err := id.RandomString(32) // Generate random token
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	key := verifyEmailTokenPrefix + token
 	payloadBytes, err := json.Marshal(payload)
 	if err != nil {
 		return "", time.Time{}, err
@@ -90,7 +99,7 @@ func (s *Storage) CreateVerifyEmailToken(payload *VerifyEmailPayload) (string, t
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	return key, payload.ExpAt, nil
+	return token, payload.ExpAt, nil
 }
 
 func (s *Storage) GetVerifyEmailToken(token string) (*VerifyEmailPayload, error) {
@@ -120,7 +129,11 @@ type WorkspaceInvitationPayload struct {
 }
 
 func (s *Storage) CreateWorkspaceInvitationToken(payload *WorkspaceInvitationPayload) (string, time.Time, error) {
-	key := workspaceInvitationTokenPrefix + payload.InvitationID
+	token, err := id.RandomString(32) // Generate random token
+	if err != nil {
+		return "", time.Time{}, err
+	}
+	key := workspaceInvitationTokenPrefix + token
 	ttl := viper.GetInt32(config.WorkspaceInvitationTokenExpirySeconds)
 	payload.ExpAt = time.Now().Add(time.Duration(ttl) * time.Second)
 	payloadBytes, err := json.Marshal(payload)
@@ -131,7 +144,7 @@ func (s *Storage) CreateWorkspaceInvitationToken(payload *WorkspaceInvitationPay
 	if err != nil {
 		return "", time.Time{}, err
 	}
-	return key, payload.ExpAt, nil
+	return token, payload.ExpAt, nil
 }
 
 func (s *Storage) GetWorkspaceInvitationToken(token string) (*WorkspaceInvitationPayload, error) {

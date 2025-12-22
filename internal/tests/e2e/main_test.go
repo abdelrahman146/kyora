@@ -25,6 +25,10 @@ func TestMain(m *testing.M) {
 	// Override email provider to use mock for tests
 	viper.Set(config.EmailProvider, "mock")
 
+	// Disable automatic plan sync for test isolation
+	// Tests will create their own plans as needed
+	viper.Set(config.BillingAutoSyncPlans, false)
+
 	env, cleanup, err := testutils.InitEnvironment(ctx)
 	if err != nil {
 		log.Fatalf("environment init failed: %v", err)
