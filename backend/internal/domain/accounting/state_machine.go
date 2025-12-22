@@ -28,7 +28,7 @@ func (sm *RecurringExpenseStateMachine) CanTransitionTo(newStatus RecurringExpen
 
 func (sm *RecurringExpenseStateMachine) TransitionTo(newStatus RecurringExpenseStatus) error {
 	if !sm.CanTransitionTo(newStatus) {
-		return nil
+		return ErrRecurringExpenseInvalidTransition(string(sm.recurringExpense.Status), string(newStatus))
 	}
 	sm.recurringExpense.Status = newStatus
 	return nil

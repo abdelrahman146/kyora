@@ -293,7 +293,7 @@ func ExpenseCategoriesList() []ExpenseCategory {
 type Expense struct {
 	gorm.Model
 	ID                 string             `gorm:"column:id;primaryKey;type:text" json:"id"`
-	BusinessID         string             `gorm:"column:business_id;type:text;not null;index" json:"business_id"`
+	BusinessID         string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
 	Business           *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	RecurringExpenseID sql.NullString     `gorm:"column:recurring_expense_id;type:text;index" json:"recurringExpenseId"`
 	RecurringExpense   *RecurringExpense  `gorm:"foreignKey:RecurringExpenseID;references:ID" json:"recurringExpense,omitempty"`
@@ -445,7 +445,7 @@ type CreateRecurringExpenseRequest struct {
 	Frequency                    RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"required,oneof=daily weekly monthly yearly"`
 	RecurringEndDate             time.Time                 `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty,gtfield=RecurringStartDate"`
 	RecurringStartDate           time.Time                 `form:"recurringStartDate" json:"recurringStartDate" binding:"required"`
-	Amount                       decimal.Decimal           `form:"amount" json:"amount" binding:"required,gt=0"`
+	Amount                       decimal.Decimal           `form:"amount" json:"amount" binding:"required"`
 	Category                     ExpenseCategory           `form:"category" json:"category" binding:"required,oneof=office travel supplies utilities payroll marketing rent software maintenance insurance taxes training consulting miscellaneous legal research equipment shipping other"`
 	Note                         string                    `form:"note" json:"note" binding:"omitempty"`
 	AutoCreateHistoricalExpenses bool                      `form:"autoCreateHistoricalExpenses" json:"autoCreateHistoricalExpenses" binding:"omitempty"`
@@ -455,7 +455,7 @@ type UpdateRecurringExpenseRequest struct {
 	Frequency          RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"omitempty,oneof=daily weekly monthly yearly"`
 	RecurringEndDate   time.Time                 `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty,gtfield=RecurringStartDate"`
 	RecurringStartDate time.Time                 `form:"recurringStartDate" json:"recurringStartDate" binding:"omitempty"`
-	Amount             decimal.Decimal           `form:"amount" json:"amount" binding:"omitempty,gt=0"`
+	Amount             decimal.Decimal           `form:"amount" json:"amount" binding:"omitempty"`
 	Category           ExpenseCategory           `form:"category" json:"category" binding:"omitempty"`
 	Note               string                    `form:"note" json:"note" binding:"omitempty"`
 }

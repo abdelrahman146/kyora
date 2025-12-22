@@ -24,9 +24,9 @@ type OnboardingTestHelper struct {
 }
 
 // NewOnboardingTestHelper creates a new onboarding test helper
-func NewOnboardingTestHelper(db *database.Database, baseURL string) *OnboardingTestHelper {
+func NewOnboardingTestHelper(db *database.Database, cacheAddr, baseURL string) *OnboardingTestHelper {
 	// Initialize cache for storage layers
-	cacheClient := cache.NewConnection([]string{"localhost:11211"})
+	cacheClient := cache.NewConnection([]string{cacheAddr})
 
 	return &OnboardingTestHelper{
 		db:                db,

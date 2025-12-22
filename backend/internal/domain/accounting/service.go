@@ -403,7 +403,7 @@ func (s *Service) GetRecurringExpenseByID(ctx context.Context, actor *account.Us
 	return s.storage.recurringExpense.FindOne(ctx,
 		s.storage.recurringExpense.ScopeID(id),
 		s.storage.recurringExpense.ScopeBusinessID(biz.ID),
-		s.storage.expense.WithPreload(ExpenseStruct),
+		s.storage.recurringExpense.WithPreload("Expenses"),
 	)
 }
 
@@ -422,8 +422,12 @@ func (s *Service) CountRecurringExpenses(ctx context.Context, actor *account.Use
 }
 
 func (s *Service) CreateRecurringExpense(ctx context.Context, actor *account.User, biz *business.Business, req *CreateRecurringExpenseRequest) (*RecurringExpense, error) {
+	if !req.Amount.GreaterThan(decimal.Zero) {
+		return nil, ErrRecurringExpenseInvalidAmount()
+	}
+
 	var recurringExpense *RecurringExpense
-	s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+	if err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
 		recurringExpense = &RecurringExpense{
 			BusinessID:         biz.ID,
 			Frequency:          req.Frequency,
@@ -434,7 +438,7 @@ func (s *Service) CreateRecurringExpense(ctx context.Context, actor *account.Use
 			RecurringEndDate:   transformer.ToNullTime(req.RecurringEndDate),
 			Note:               transformer.ToNullString(req.Note),
 		}
-		if err := s.storage.recurringExpense.CreateOne(ctx, recurringExpense); err != nil {
+		if err := s.storage.recurringExpense.CreateOne(tctx, recurringExpense); err != nil {
 			return err
 		}
 		if req.AutoCreateHistoricalExpenses {
@@ -444,7 +448,9 @@ func (s *Service) CreateRecurringExpense(ctx context.Context, actor *account.Use
 			}
 		}
 		return nil
-	})
+	}); err != nil {
+		return nil, err
+	}
 
 	return recurringExpense, nil
 }
@@ -461,6 +467,9 @@ func (s *Service) UpdateRecurringExpense(ctx context.Context, actor *account.Use
 		recurringExpense.RecurringStartDate = req.RecurringStartDate
 	}
 	if !req.Amount.IsZero() {
+		if !req.Amount.GreaterThan(decimal.Zero) {
+			return nil, ErrRecurringExpenseInvalidAmount()
+		}
 		recurringExpense.Amount = req.Amount
 	}
 	if req.Category != "" {

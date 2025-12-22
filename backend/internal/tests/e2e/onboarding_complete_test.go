@@ -17,7 +17,7 @@ type OnboardingCompleteSuite struct {
 
 func (s *OnboardingCompleteSuite) SetupSuite() {
 	s.client = testutils.NewHTTPClient("http://localhost:18080")
-	s.helper = NewOnboardingTestHelper(testEnv.Database, "http://localhost:18080")
+	s.helper = NewOnboardingTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
 }
 
 func (s *OnboardingCompleteSuite) SetupTest() {

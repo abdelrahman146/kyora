@@ -290,14 +290,20 @@ func (r *Repository[T]) Count(ctx context.Context, opts ...func(db *gorm.DB) *go
 
 func (r *Repository[T]) Sum(ctx context.Context, column schema.Field, opts ...func(db *gorm.DB) *gorm.DB) (decimal.Decimal, error) {
 	var sum decimal.Decimal
-	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select("SUM(" + column.Column() + ")").Scan(&sum).Error
-	return sum, err
+	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select("COALESCE(SUM(" + column.Column() + "),0)::decimal").Scan(&sum).Error
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return sum, nil
 }
 
 func (r *Repository[T]) Avg(ctx context.Context, column schema.Field, opts ...func(db *gorm.DB) *gorm.DB) (decimal.Decimal, error) {
 	var avg decimal.Decimal
-	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select("AVG(" + column.Column() + ")").Scan(&avg).Error
-	return avg, err
+	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select("COALESCE(AVG(" + column.Column() + "),0)::decimal").Scan(&avg).Error
+	if err != nil {
+		return decimal.Zero, err
+	}
+	return avg, nil
 }
 
 func (r *Repository[T]) TimeSeriesSum(ctx context.Context, valueColumn schema.Field, timeColumn schema.Field, granularity timeseries.Granularity, opts ...func(db *gorm.DB) *gorm.DB) (*timeseries.TimeSeries, error) {

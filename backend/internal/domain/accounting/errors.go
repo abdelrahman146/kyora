@@ -94,6 +94,11 @@ func ErrRecurringExpenseInvalidDateRange() *problem.Problem {
 	return problem.BadRequest("recurring end date must be after start date")
 }
 
+// ErrRecurringExpenseInvalidAmount returns a validation error for invalid recurring expense amount.
+func ErrRecurringExpenseInvalidAmount() *problem.Problem {
+	return problem.BadRequest("recurring expense amount must be greater than zero")
+}
+
 // ErrRecurringExpenseInvalidTransition returns a conflict error for invalid status transition
 func ErrRecurringExpenseInvalidTransition(from, to string) *problem.Problem {
 	return problem.Conflict("invalid status transition").

@@ -12,6 +12,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
+	"github.com/shopspring/decimal"
 )
 
 // HttpHandler handles HTTP requests for accounting domain operations
@@ -1160,7 +1161,7 @@ func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 
 	recurringExpense, err := h.service.CreateRecurringExpense(c.Request.Context(), actor, biz, &req)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, err)
 		return
 	}
 
@@ -1213,7 +1214,7 @@ func (h *HttpHandler) UpdateRecurringExpense(c *gin.Context) {
 			response.Error(c, ErrRecurringExpenseNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, err)
 		return
 	}
 
@@ -1468,9 +1469,9 @@ func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 		return
 	}
 
-	// For safe to draw, we need total income and COGS - placeholder zeros for now
-	// In a real scenario, this would come from order/revenue data
-	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, totalInvestments, totalExpenses)
+	// For safe to draw, we need total income and COGS.
+	// For now, we treat investments as income and assume COGS = 0 (until orders/COGS are wired in).
+	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, totalInvestments, decimal.Zero)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return
