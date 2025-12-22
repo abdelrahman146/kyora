@@ -74,7 +74,7 @@ func (s *Service) ComputeDashboardMetrics(ctx context.Context, actor *account.Us
 	if err != nil {
 		return nil, err
 	}
-	dashboard.SafeToDrawAmount, err = s.accounting.ComputeSafeToDrawAmount(ctx, actor, biz, dashboard.AllTimeRevenue, cogs)
+	dashboard.SafeToDrawAmount, err = s.accounting.ComputeSafeToDrawAmount(ctx, actor, biz, dashboard.AllTimeRevenue, cogs, time.Time{}, time.Time{})
 	if err != nil {
 		return nil, err
 	}

@@ -300,19 +300,34 @@ func (s *Service) SumWithdrawalAmountByWithdrawer(ctx context.Context, actor *ac
 	)
 }
 
-func (s *Service) ComputeSafeToDrawAmount(ctx context.Context, actor *account.User, biz *business.Business, totalIncome, totalCOGS decimal.Decimal) (decimal.Decimal, error) {
-	totalWithdrawals, err := s.SumWithdrawalsAmount(ctx, actor, biz, time.Time{}, time.Time{})
+// ComputeSafeToDrawAmount computes how much money can be withdrawn safely without jeopardizing operations.
+//
+// The computation is intentionally deterministic:
+// safeToDraw = totalIncome - totalCOGS - totalExpenses - totalWithdrawals - businessSafetyBuffer
+//
+// Important:
+// - The calculation respects the provided date range by using expenses/withdrawals within [from,to].
+// - SafetyBuffer is treated as an explicit business setting; a value of 0 means no buffer.
+func (s *Service) ComputeSafeToDrawAmount(ctx context.Context, actor *account.User, biz *business.Business, totalIncome, totalCOGS decimal.Decimal, from, to time.Time) (decimal.Decimal, error) {
+	totalWithdrawals, err := s.SumWithdrawalsAmount(ctx, actor, biz, from, to)
 	if err != nil {
 		return decimal.Zero, err
 	}
-	totalExpenses, err := s.SumExpensesAmount(ctx, actor, biz, time.Time{}, time.Time{})
+	totalExpenses, err := s.SumExpensesAmount(ctx, actor, biz, from, to)
 	if err != nil {
 		return decimal.Zero, err
 	}
+
 	safetyBuffer := biz.SafetyBuffer
 	if safetyBuffer.IsZero() {
-		last30Days := time.Now().AddDate(0, 0, -30)
-		expenseLast30Days, err := s.SumExpensesAmount(ctx, actor, biz, last30Days, time.Now())
+		referenceEnd := to
+		if referenceEnd.IsZero() {
+			referenceEnd = time.Now().UTC()
+		} else {
+			referenceEnd = referenceEnd.UTC()
+		}
+		last30Days := referenceEnd.AddDate(0, 0, -30)
+		expenseLast30Days, err := s.SumExpensesAmount(ctx, actor, biz, last30Days, referenceEnd)
 		if err != nil {
 			return decimal.Zero, err
 		}

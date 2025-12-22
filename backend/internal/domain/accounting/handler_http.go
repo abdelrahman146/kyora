@@ -1471,7 +1471,7 @@ func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 
 	// For safe to draw, we need total income and COGS.
 	// For now, we treat investments as income and assume COGS = 0 (until orders/COGS are wired in).
-	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, totalInvestments, decimal.Zero)
+	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, totalInvestments, decimal.Zero, from, to)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return
