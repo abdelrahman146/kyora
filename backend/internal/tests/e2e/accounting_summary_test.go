@@ -2,11 +2,16 @@ package e2e_test
 
 import (
 	"context"
+	"database/sql"
 	"net/http"
 	"testing"
 	"time"
 
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
+	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
 )
 
@@ -21,11 +26,11 @@ func (s *SummarySuite) SetupSuite() {
 }
 
 func (s *SummarySuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "investments", "withdrawals", "expenses")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "orders", "order_items", "order_notes", "investments", "withdrawals", "expenses")
 }
 
 func (s *SummarySuite) TearDownTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "investments", "withdrawals", "expenses")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "orders", "order_items", "order_notes", "investments", "withdrawals", "expenses")
 }
 
 func (s *SummarySuite) TestSummary_EmptyWorkspace() {
@@ -54,6 +59,48 @@ func (s *SummarySuite) TestSummary_ComputedFields_WithInvestmentsWithdrawalsExpe
 	s.NoError(err)
 
 	now := time.Now().UTC()
+	// Orders require a valid customer_id (empty string violates FK constraints), so create a customer first.
+	customerRepo := database.NewRepository[customer.Customer](testEnv.Database)
+	cus := &customer.Customer{
+		BusinessID:  ws.Business.ID,
+		Name:        "Test Customer",
+		CountryCode: "US",
+		Gender:      customer.GenderOther,
+		Email:       sql.NullString{String: "customer@example.com", Valid: true},
+		JoinedAt:    now,
+	}
+	s.NoError(customerRepo.CreateOne(ctx, cus))
+
+	addressRepo := database.NewRepository[customer.CustomerAddress](testEnv.Database)
+	addr := &customer.CustomerAddress{
+		CustomerID:  cus.ID,
+		CountryCode: "US",
+		State:       "CA",
+		City:        "San Francisco",
+		PhoneCode:   "+1",
+		PhoneNumber: "5551234",
+		Street:      sql.NullString{String: "1 Market St", Valid: true},
+	}
+	s.NoError(addressRepo.CreateOne(ctx, addr))
+
+	// SafeToDrawAmount is based on order revenue/COGS (not investments), so seed at least one order.
+	orderRepo := database.NewRepository[order.Order](testEnv.Database)
+	ord := &order.Order{
+		OrderNumber:       "ord-1",
+		BusinessID:        ws.Business.ID,
+		CustomerID:        cus.ID,
+		ShippingAddressID: addr.ID,
+		Channel:           "instagram",
+		Currency:          ws.Business.Currency,
+		OrderedAt:         now,
+		Total:             decimal.RequireFromString("1000"),
+		COGS:              decimal.RequireFromString("200"),
+		Status:            order.OrderStatusFulfilled,
+		PaymentStatus:     order.OrderPaymentStatusPaid,
+		PaymentMethod:     order.OrderPaymentMethodBankTransfer,
+	}
+	s.NoError(orderRepo.CreateOne(ctx, ord))
+
 	inv := map[string]interface{}{"investorId": ws.Admin.ID, "amount": "1000.00", "investedAt": now}
 	exp := map[string]interface{}{"category": "software", "type": "one_time", "amount": "100.00", "occurredOn": now}
 	wd := map[string]interface{}{"withdrawerId": ws.Admin.ID, "amount": "50.00", "withdrawnAt": now}
@@ -80,7 +127,8 @@ func (s *SummarySuite) TestSummary_ComputedFields_WithInvestmentsWithdrawalsExpe
 	s.Equal("50", body["totalWithdrawals"])
 	s.Equal("100", body["totalExpenses"])
 	// If SafetyBuffer is not set, it defaults to last-30-days expenses
-	s.Equal("750", body["safeToDrawAmount"])
+	// 1000 - 200 - 100 - 50 - 100 = 550
+	s.Equal("550", body["safeToDrawAmount"])
 }
 
 func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
@@ -90,6 +138,61 @@ func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
 
 	within := time.Date(2025, 12, 10, 12, 0, 0, 0, time.UTC)
 	outside := time.Date(2025, 10, 10, 12, 0, 0, 0, time.UTC)
+
+	customerRepo := database.NewRepository[customer.Customer](testEnv.Database)
+	cus := &customer.Customer{
+		BusinessID:  ws.Business.ID,
+		Name:        "Test Customer",
+		CountryCode: "US",
+		Gender:      customer.GenderOther,
+		Email:       sql.NullString{String: "customer-range@example.com", Valid: true},
+		JoinedAt:    within,
+	}
+	s.NoError(customerRepo.CreateOne(ctx, cus))
+
+	addressRepo := database.NewRepository[customer.CustomerAddress](testEnv.Database)
+	addr := &customer.CustomerAddress{
+		CustomerID:  cus.ID,
+		CountryCode: "US",
+		State:       "CA",
+		City:        "San Francisco",
+		PhoneCode:   "+1",
+		PhoneNumber: "5551234",
+		Street:      sql.NullString{String: "1 Market St", Valid: true},
+	}
+	s.NoError(addressRepo.CreateOne(ctx, addr))
+
+	orderRepo := database.NewRepository[order.Order](testEnv.Database)
+	ordWithin := &order.Order{
+		OrderNumber:       "ord-within",
+		BusinessID:        ws.Business.ID,
+		CustomerID:        cus.ID,
+		ShippingAddressID: addr.ID,
+		Channel:           "instagram",
+		Currency:          ws.Business.Currency,
+		OrderedAt:         within,
+		Total:             decimal.RequireFromString("1000"),
+		COGS:              decimal.RequireFromString("200"),
+		Status:            order.OrderStatusFulfilled,
+		PaymentStatus:     order.OrderPaymentStatusPaid,
+		PaymentMethod:     order.OrderPaymentMethodBankTransfer,
+	}
+	ordOutside := &order.Order{
+		OrderNumber:       "ord-outside",
+		BusinessID:        ws.Business.ID,
+		CustomerID:        cus.ID,
+		ShippingAddressID: addr.ID,
+		Channel:           "instagram",
+		Currency:          ws.Business.Currency,
+		OrderedAt:         outside,
+		Total:             decimal.RequireFromString("999"),
+		COGS:              decimal.RequireFromString("111"),
+		Status:            order.OrderStatusFulfilled,
+		PaymentStatus:     order.OrderPaymentStatusPaid,
+		PaymentMethod:     order.OrderPaymentMethodBankTransfer,
+	}
+	s.NoError(orderRepo.CreateOne(ctx, ordWithin))
+	s.NoError(orderRepo.CreateOne(ctx, ordOutside))
 
 	invWithin := map[string]interface{}{"investorId": ws.Admin.ID, "amount": "1000.00", "investedAt": within}
 	expWithin := map[string]interface{}{"category": "software", "type": "one_time", "amount": "100.00", "occurredOn": within}
@@ -128,7 +231,8 @@ func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
 	s.Equal("50", body["totalWithdrawals"])
 	s.Equal("100", body["totalExpenses"])
 	// SafetyBuffer defaults to last-30-days expenses anchored to `to`
-	s.Equal("750", body["safeToDrawAmount"])
+	// (1000 - 200) - 100 - 50 - 100 = 550
+	s.Equal("550", body["safeToDrawAmount"])
 	s.Equal(from, body["from"])
 	s.Equal(to, body["to"])
 }

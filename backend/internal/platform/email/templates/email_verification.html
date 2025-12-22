@@ -111,6 +111,30 @@
             text-align: center;
             margin: 32px 0;
         }
+
+        .otp-container {
+            text-align: center;
+            margin: 20px 0;
+        }
+
+        .otp-label {
+            font-size: 14px;
+            color: #374151;
+            margin-bottom: 8px;
+            font-weight: 600;
+        }
+
+        .otp-code {
+            display: inline-block;
+            font-family: 'SF Mono', Monaco, 'Cascadia Code', 'Roboto Mono', Consolas, 'Courier New', monospace;
+            font-size: 24px;
+            letter-spacing: 0.2em;
+            padding: 12px 16px;
+            border-radius: 8px;
+            background-color: #f3f4f6;
+            border: 1px solid #e5e7eb;
+            color: #111827;
+        }
         
         .button {
             display: inline-block;
@@ -255,6 +279,13 @@
                 <p class="email-text greeting">Hi {{default "there" .userName}},</p>
                 
                 <div class="welcome-notice">
+
+                    {{if .otpCode}}
+                    <div class="otp-container">
+                        <div class="otp-label">Your verification code</div>
+                        <div class="otp-code">{{.otpCode}}</div>
+                    </div>
+                    {{end}}
                     <div class="welcome-notice-title">🎉 Welcome to {{default "Kyora" .productName}}!</div>
                     <div class="welcome-notice-text">
                         Thanks for joining us! To complete your account setup and ensure the security of your account, 

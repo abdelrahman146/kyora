@@ -31,7 +31,7 @@ func (n *Notification) SendForgotPasswordEmail(ctx context.Context, user *User, 
 	logger.InfoContext(ctx, "Sending forgot password email")
 
 	resetURL := fmt.Sprintf("%s/reset-password?token=%s", n.info.BaseURL, token)
-	expiryHours := int(time.Until(expiryTime).Hours())
+	expiryHours := helpers.CeilPositiveHoursUntil(expiryTime)
 	if expiryHours < 1 {
 		expiryHours = 1
 	}
@@ -94,7 +94,7 @@ func (n *Notification) SendEmailVerificationEmail(ctx context.Context, user *Use
 	logger.InfoContext(ctx, "Sending email verification email")
 
 	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", n.info.BaseURL, token)
-	expiryHours := int(time.Until(expiryTime).Hours())
+	expiryHours := helpers.CeilPositiveHoursUntil(expiryTime)
 	if expiryHours < 1 {
 		expiryHours = 1
 	}
@@ -113,6 +113,39 @@ func (n *Notification) SendEmailVerificationEmail(ctx context.Context, user *Use
 		return fmt.Errorf("failed to send email: %w", err)
 	}
 	logger.InfoContext(ctx, "Email verification email sent successfully")
+	return nil
+}
+
+// SendEmailVerificationOTPEmail sends an email verification email that includes an OTP code.
+// This is used by onboarding flows where the user needs a short code in addition to the token link.
+func (n *Notification) SendEmailVerificationOTPEmail(ctx context.Context, user *User, token string, otpCode string, expiryTime time.Time) error {
+	if n.client == nil {
+		return fmt.Errorf("email client not available")
+	}
+	logger := slog.With("action", "send_email_verification_otp", "user_id", user.ID, "email", user.Email)
+	logger.InfoContext(ctx, "Sending email verification OTP email")
+
+	verifyURL := fmt.Sprintf("%s/verify-email?token=%s", n.info.BaseURL, token)
+	expiryHours := helpers.CeilPositiveHoursUntil(expiryTime)
+	if expiryHours < 1 {
+		expiryHours = 1
+	}
+	data := map[string]any{
+		"userName":     n.getUserDisplayName(user),
+		"verifyURL":    verifyURL,
+		"otpCode":      otpCode,
+		"productName":  n.info.ProductName,
+		"supportEmail": n.info.SupportEmail,
+		"helpURL":      n.info.HelpURL,
+		"expiryTime":   fmt.Sprintf("%d hours", expiryHours),
+		"currentYear":  fmt.Sprintf("%d", time.Now().Year()),
+	}
+	from := n.info.FormattedFrom()
+	if _, err := n.client.SendTemplate(ctx, email.TemplateEmailVerification, []string{user.Email}, from, "", data); err != nil {
+		logger.ErrorContext(ctx, "Failed to send email verification OTP email", "error", err)
+		return fmt.Errorf("failed to send email: %w", err)
+	}
+	logger.InfoContext(ctx, "Email verification OTP email sent successfully")
 	return nil
 }
 
@@ -203,7 +236,7 @@ func (n *Notification) SendWorkspaceInvitationEmail(ctx context.Context, invitee
 	logger.InfoContext(ctx, "Sending workspace invitation email")
 
 	acceptURL := fmt.Sprintf("%s/accept-invitation?token=%s", n.info.BaseURL, token)
-	expiryDays := int(time.Until(expiryTime).Hours() / 24)
+	expiryDays := helpers.CeilPositiveDaysUntil(expiryTime)
 	if expiryDays < 1 {
 		expiryDays = 1
 	}

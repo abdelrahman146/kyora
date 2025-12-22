@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"net"
 	"net/http"
 	"time"
 
@@ -193,7 +194,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
 
 	// Register accounting routes
-	registerAccountingRoutes(r, accounting.NewHttpHandler(accountingSvc, businessSvc), accountSvc)
+	registerAccountingRoutes(r, accounting.NewHttpHandler(accountingSvc, businessSvc, orderSvc), accountSvc)
 
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }
@@ -221,9 +222,15 @@ func (s *Server) Start() error {
 		IdleTimeout:  60 * time.Second,
 	}
 
+	// Bind synchronously so callers can reliably detect startup failures
+	listener, err := net.Listen("tcp", addr)
+	if err != nil {
+		return err
+	}
+
 	// start server in background; Stop() will gracefully shut it down
 	go func() {
-		if err := s.httpSrv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
+		if err := s.httpSrv.Serve(listener); err != nil && !errors.Is(err, http.ErrServerClosed) {
 			slog.Error("HTTP server error", "error", err)
 		}
 	}()

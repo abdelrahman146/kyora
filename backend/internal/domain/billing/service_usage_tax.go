@@ -7,6 +7,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/helpers"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	stripelib "github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/subscription"
@@ -204,8 +205,7 @@ func (s *Service) CheckTrialStatus(ctx context.Context, ws *account.Workspace) (
 	}
 	trialInfo := &TrialInfo{IsInTrial: stripeSub.Status == "trialing", TrialEnd: time.Unix(stripeSub.TrialEnd, 0), DaysRemaining: 0}
 	if trialInfo.IsInTrial {
-		daysRemaining := time.Until(trialInfo.TrialEnd).Hours() / 24
-		trialInfo.DaysRemaining = int(daysRemaining)
+		trialInfo.DaysRemaining = helpers.CeilPositiveDaysUntil(trialInfo.TrialEnd)
 	}
 	logger.FromContext(ctx).Info("trial status checked", "subscriptionId", sub.StripeSubID, "isInTrial", trialInfo.IsInTrial, "daysRemaining", trialInfo.DaysRemaining)
 	return trialInfo, nil

@@ -6,26 +6,28 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
-	"github.com/shopspring/decimal"
 )
 
 // HttpHandler handles HTTP requests for accounting domain operations
 type HttpHandler struct {
 	service         *Service
 	businessService *business.Service
+	orderService    *order.Service
 }
 
 // NewHttpHandler creates a new HTTP handler for accounting operations
-func NewHttpHandler(service *Service, businessService *business.Service) *HttpHandler {
+func NewHttpHandler(service *Service, businessService *business.Service, orderService *order.Service) *HttpHandler {
 	return &HttpHandler{
 		service:         service,
 		businessService: businessService,
+		orderService:    orderService,
 	}
 }
 
@@ -1469,9 +1471,19 @@ func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 		return
 	}
 
-	// For safe to draw, we need total income and COGS.
-	// For now, we treat investments as income and assume COGS = 0 (until orders/COGS are wired in).
-	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, totalInvestments, decimal.Zero, from, to)
+	// For safe to draw, we need revenue and COGS from orders.
+	// Investments are tracked separately and do not count as revenue.
+	revenue, err := h.orderService.SumOrdersTotal(c.Request.Context(), actor, biz, from, to)
+	if err != nil {
+		response.Error(c, problem.InternalError().WithError(err))
+		return
+	}
+	cogs, err := h.orderService.SumOrdersCOGS(c.Request.Context(), actor, biz, from, to)
+	if err != nil {
+		response.Error(c, problem.InternalError().WithError(err))
+		return
+	}
+	safeToDrawAmount, err := h.service.ComputeSafeToDrawAmount(c.Request.Context(), actor, biz, revenue, cogs, from, to)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return

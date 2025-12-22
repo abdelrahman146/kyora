@@ -16,6 +16,7 @@ const (
 	TemplateForgotPassword       TemplateID = "forgot_password"
 	TemplatePasswordResetConfirm TemplateID = "password_reset_confirmation"
 	TemplateEmailVerification    TemplateID = "email_verification"
+	TemplateOnboardingEmailOTP   TemplateID = "onboarding_email_otp"
 	TemplateWelcome              TemplateID = "welcome"
 	TemplateLoginNotification    TemplateID = "login_notification"
 	TemplateWorkspaceInvitation  TemplateID = "workspace_invitation"
@@ -37,6 +38,7 @@ var templateFiles = map[TemplateID]string{
 	TemplateForgotPassword:       "templates/forgot_password.html",
 	TemplatePasswordResetConfirm: "templates/password_reset_confirmation.html",
 	TemplateEmailVerification:    "templates/email_verification.html",
+	TemplateOnboardingEmailOTP:   "templates/onboarding_email_otp.html",
 	TemplateWelcome:              "templates/welcome.html",
 	TemplateLoginNotification:    "templates/login_notification.html",
 	TemplateWorkspaceInvitation:  "templates/workspace_invitation.html",
@@ -56,6 +58,7 @@ var subjects = map[TemplateID]string{
 	TemplateForgotPassword:       "Reset your password",
 	TemplatePasswordResetConfirm: "Password successfully reset",
 	TemplateEmailVerification:    "Verify your email address",
+	TemplateOnboardingEmailOTP:   "Your verification code",
 	TemplateWelcome:              "Welcome to Kyora!",
 	TemplateLoginNotification:    "New login to your account",
 	TemplateWorkspaceInvitation:  "You've been invited to join a workspace",

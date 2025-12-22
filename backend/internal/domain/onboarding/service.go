@@ -3,6 +3,7 @@ package onboarding
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -26,13 +27,24 @@ type Service struct {
 	account         *account.Service
 	billing         *billing.Service
 	emailNotif      *account.Notification
+	emailClient     email.Client
+	emailInfo       email.EmailInfo
 	business        *business.Service
 }
 
 func NewService(storage *Storage, atomic pactomic.AtomicProcessor, accountSvc *account.Service, billingSvc *billing.Service, businessSvc *business.Service, emailClient email.Client) *Service {
 	emailInfo := email.NewEmail()
 	notif := account.NewNotification(emailClient, emailInfo)
-	return &Service{storage: storage, atomicProcessor: atomic, account: accountSvc, billing: billingSvc, business: businessSvc, emailNotif: notif}
+	return &Service{
+		storage:         storage,
+		atomicProcessor: atomic,
+		account:         accountSvc,
+		billing:         billingSvc,
+		business:        businessSvc,
+		emailNotif:      notif,
+		emailClient:     emailClient,
+		emailInfo:       emailInfo,
+	}
 }
 
 // StartSession initializes or resumes a session for an email and plan.
@@ -113,15 +125,32 @@ func (s *Service) GenerateEmailOTP(ctx context.Context, token string) error {
 	if err := s.storage.UpdateSession(ctx, sess); err != nil {
 		return err
 	}
-	// Send verification email using account notification with minimal user stub
-	stub := &account.User{ID: "temp", FirstName: sess.FirstName, LastName: sess.LastName, Email: sess.Email}
-	// Reuse TemplateEmailVerification; embed code into URL as one-time code-like link (frontend will prompt code)
-	// We pass token and code separately for flexibility.
-	// Best-effort send using existing notification which expects full template; reuse token emission logic
-	// We can't call unexported helpers; fallback to SendEmailVerificationEmail without code embedding.
-	if s.emailNotif != nil {
-		// We overload token with session token so frontend can match.
-		_ = s.emailNotif.SendEmailVerificationEmail(ctx, stub, sess.Token, *sess.OTPExpiry)
+	// Send OTP code email for onboarding. This must include the OTP code.
+	// We intentionally avoid linking to the account /verify-email flow because onboarding uses a different API.
+	if s.emailClient == nil {
+		return fmt.Errorf("email client not available")
+	}
+	userName := strings.TrimSpace(strings.Join([]string{sess.FirstName, sess.LastName}, " "))
+	if userName == "" {
+		parts := strings.Split(sess.Email, "@")
+		if len(parts) > 0 && strings.TrimSpace(parts[0]) != "" {
+			userName = parts[0]
+		} else {
+			userName = "there"
+		}
+	}
+	from := s.emailInfo.FormattedFrom()
+	_, err = s.emailClient.SendTemplate(ctx, email.TemplateOnboardingEmailOTP, []string{sess.Email}, from, "", map[string]any{
+		"userName":     userName,
+		"otpCode":      code,
+		"expiryTime":   "15 minutes",
+		"productName":  s.emailInfo.ProductName,
+		"supportEmail": s.emailInfo.SupportEmail,
+		"helpURL":      s.emailInfo.HelpURL,
+		"currentYear":  fmt.Sprintf("%d", time.Now().Year()),
+	})
+	if err != nil {
+		return err
 	}
 	logger.FromContext(ctx).Info("onboarding email OTP generated", "session", sess.ID)
 	return nil

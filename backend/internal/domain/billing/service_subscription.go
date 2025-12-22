@@ -10,6 +10,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	atomic "github.com/abdelrahman146/kyora/internal/platform/types/atomic"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/helpers"
 	stripelib "github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/creditnote"
 	"github.com/stripe/stripe-go/v83/invoice"
@@ -539,7 +540,7 @@ func (s *Service) EstimateProrationAmount(ctx context.Context, ws *account.Works
 	}
 	currentPricePerMonth := currentPlan.Price.IntPart()
 	newPricePerMonth := newPlan.Price.IntPart()
-	daysRemaining := int64(time.Until(currentSub.CurrentPeriodEnd).Hours() / 24)
+	daysRemaining := int64(helpers.CeilPositiveDaysUntil(currentSub.CurrentPeriodEnd))
 	daysInMonth := int64(30)
 	prorationAmount := ((newPricePerMonth - currentPricePerMonth) * daysRemaining) / daysInMonth
 	l.Info("proration amount estimated", "amount", prorationAmount)
