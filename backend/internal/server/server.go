@@ -192,6 +192,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// Register onboarding routes
 	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
 
+	// Register accounting routes
+	registerAccountingRoutes(r, accounting.NewHttpHandler(accountingSvc, businessSvc), accountSvc)
+
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }
 

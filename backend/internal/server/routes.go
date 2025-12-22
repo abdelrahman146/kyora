@@ -2,6 +2,7 @@ package server
 
 import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
@@ -150,4 +151,64 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 
 	// Webhook endpoint (public - no auth required)
 	r.POST("/webhooks/stripe", h.HandleWebhook)
+}
+
+func registerAccountingRoutes(r *gin.Engine, h *accounting.HttpHandler, accountService *account.Service) {
+	group := r.Group("/v1/accounting")
+	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+
+	// Asset Operations
+	assetGroup := group.Group("/assets")
+	{
+		assetGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.ListAssets)
+		assetGroup.GET("/:assetId", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetAsset)
+		assetGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.CreateAsset)
+		assetGroup.PATCH("/:assetId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateAsset)
+		assetGroup.DELETE("/:assetId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.DeleteAsset)
+	}
+
+	// Investment Operations
+	investmentGroup := group.Group("/investments")
+	{
+		investmentGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.ListInvestments)
+		investmentGroup.GET("/:investmentId", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetInvestment)
+		investmentGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.CreateInvestment)
+		investmentGroup.PATCH("/:investmentId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateInvestment)
+		investmentGroup.DELETE("/:investmentId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.DeleteInvestment)
+	}
+
+	// Withdrawal Operations
+	withdrawalGroup := group.Group("/withdrawals")
+	{
+		withdrawalGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.ListWithdrawals)
+		withdrawalGroup.GET("/:withdrawalId", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetWithdrawal)
+		withdrawalGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.CreateWithdrawal)
+		withdrawalGroup.PATCH("/:withdrawalId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateWithdrawal)
+		withdrawalGroup.DELETE("/:withdrawalId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.DeleteWithdrawal)
+	}
+
+	// Expense Operations
+	expenseGroup := group.Group("/expenses")
+	{
+		expenseGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.ListExpenses)
+		expenseGroup.GET("/:expenseId", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetExpense)
+		expenseGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.CreateExpense)
+		expenseGroup.PATCH("/:expenseId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateExpense)
+		expenseGroup.DELETE("/:expenseId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.DeleteExpense)
+	}
+
+	// Recurring Expense Operations
+	recurringExpenseGroup := group.Group("/recurring-expenses")
+	{
+		recurringExpenseGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.ListRecurringExpenses)
+		recurringExpenseGroup.GET("/:recurringExpenseId", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetRecurringExpense)
+		recurringExpenseGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.CreateRecurringExpense)
+		recurringExpenseGroup.PATCH("/:recurringExpenseId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateRecurringExpense)
+		recurringExpenseGroup.DELETE("/:recurringExpenseId", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.DeleteRecurringExpense)
+		recurringExpenseGroup.PATCH("/:recurringExpenseId/status", account.EnforceActorPermissions(role.ActionManage, role.ResourceAccounting), h.UpdateRecurringExpenseStatus)
+		recurringExpenseGroup.GET("/:recurringExpenseId/occurrences", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetRecurringExpenseOccurrences)
+	}
+
+	// Summary Operations
+	group.GET("/summary", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetAccountingSummary)
 }
