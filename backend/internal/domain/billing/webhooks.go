@@ -2,7 +2,15 @@ package billing
 
 import (
 	"context"
+	"crypto/hmac"
+	"crypto/sha256"
+	"crypto/subtle"
 	"encoding/json"
+	"encoding/hex"
+	"errors"
+	"fmt"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -17,8 +25,71 @@ import (
 	"github.com/stripe/stripe-go/v83/customer"
 	"github.com/stripe/stripe-go/v83/paymentmethod"
 	"github.com/stripe/stripe-go/v83/setupintent"
-	"github.com/stripe/stripe-go/v83/webhook"
 )
+
+type webhookEvent struct {
+	ID   string `json:"id"`
+	Type string `json:"type"`
+	Data struct {
+		Object json.RawMessage `json:"object"`
+	} `json:"data"`
+}
+
+func verifyStripeSignature(payload []byte, signatureHeader, secret string, tolerance time.Duration) error {
+	if strings.TrimSpace(signatureHeader) == "" {
+		return errors.New("webhook has no Stripe-Signature header")
+	}
+	if secret == "" {
+		return errors.New("webhook secret is not configured")
+	}
+
+	var tsStr string
+	var sigHex string
+	for _, part := range strings.Split(signatureHeader, ",") {
+		p := strings.TrimSpace(part)
+		if strings.HasPrefix(p, "t=") {
+			tsStr = strings.TrimPrefix(p, "t=")
+			continue
+		}
+		if strings.HasPrefix(p, "v1=") {
+			sigHex = strings.TrimPrefix(p, "v1=")
+			continue
+		}
+	}
+	if tsStr == "" || sigHex == "" {
+		return errors.New("invalid Stripe-Signature header format")
+	}
+
+	ts, err := strconv.ParseInt(tsStr, 10, 64)
+	if err != nil {
+		return fmt.Errorf("invalid Stripe-Signature timestamp: %w", err)
+	}
+	now := time.Now().Unix()
+	if tolerance > 0 {
+		delta := now - ts
+		if delta < 0 {
+			delta = -delta
+		}
+		if time.Duration(delta)*time.Second > tolerance {
+			return errors.New("timestamp wasn't within tolerance")
+		}
+	}
+
+	signedPayload := append([]byte(tsStr+"."), payload...)
+	mac := hmac.New(sha256.New, []byte(secret))
+	mac.Write(signedPayload)
+	expected := mac.Sum(nil)
+
+	given, err := hex.DecodeString(sigHex)
+	if err != nil {
+		return fmt.Errorf("invalid Stripe-Signature v1 value: %w", err)
+	}
+	if subtle.ConstantTimeCompare(expected, given) != 1 {
+		return errors.New("no signatures found matching the expected signature")
+	}
+
+	return nil
+}
 
 // ProcessWebhook verifies signature, ensures idempotency, and dispatches typed handlers
 func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature string) error {
@@ -28,12 +99,15 @@ func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature 
 		log.Warn("Stripe webhook secret not configured; rejecting webhook for security")
 		return ErrWebhookProcessingFailed(nil, "missing_webhook_secret")
 	}
-
-	// Verify signature and construct event
-	evt, err := webhook.ConstructEvent(payload, signature, secret)
-	if err != nil {
+	if err := verifyStripeSignature(payload, signature, secret, 5*time.Minute); err != nil {
 		log.Error("webhook signature verification failed", "error", err)
-		return ErrWebhookProcessingFailed(err, "verify_signature")
+		return ErrWebhookSignatureInvalid(err)
+	}
+
+	var evt webhookEvent
+	if err := json.Unmarshal(payload, &evt); err != nil {
+		log.Error("failed to parse webhook payload", "error", err)
+		return ErrWebhookPayloadInvalid(err)
 	}
 
 	// Idempotency: skip already processed events
@@ -47,47 +121,47 @@ func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature 
 	// Dispatch by type
 	switch evt.Type {
 	case "customer.subscription.created":
-		if err := s.handleSubscriptionCreated(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleSubscriptionCreated(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "customer.subscription.updated":
-		if err := s.handleSubscriptionUpdated(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleSubscriptionUpdated(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "customer.subscription.deleted":
-		if err := s.handleSubscriptionDeleted(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleSubscriptionDeleted(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "invoice.payment_succeeded":
-		if err := s.handleInvoicePaymentSucceeded(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleInvoicePaymentSucceeded(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "invoice.payment_failed":
-		if err := s.handleInvoicePaymentFailed(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleInvoicePaymentFailed(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "invoice.finalized":
-		if err := s.handleInvoiceFinalized(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleInvoiceFinalized(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "invoice.marked_uncollectible":
-		if err := s.handleInvoiceMarkedUncollectible(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleInvoiceMarkedUncollectible(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "invoice.voided":
-		if err := s.handleInvoiceVoided(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleInvoiceVoided(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "customer.subscription.trial_will_end":
-		if err := s.handleTrialWillEnd(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleTrialWillEnd(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "payment_method.automatically_updated":
-		if err := s.handlePaymentMethodAutomaticallyUpdated(ctx, evt.Data.Raw); err != nil {
+		if err := s.handlePaymentMethodAutomaticallyUpdated(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	case "checkout.session.completed":
-		if err := s.handleCheckoutSessionCompleted(ctx, evt.Data.Raw); err != nil {
+		if err := s.handleCheckoutSessionCompleted(ctx, evt.Data.Object); err != nil {
 			return err
 		}
 	default:
@@ -96,7 +170,7 @@ func (s *Service) ProcessWebhook(ctx context.Context, payload []byte, signature 
 
 	// Mark processed
 	if evt.ID != "" {
-		se := &StripeEvent{EventID: evt.ID, Type: string(evt.Type), ProcessedAt: time.Now()}
+		se := &StripeEvent{EventID: evt.ID, Type: evt.Type, ProcessedAt: time.Now()}
 		if err := s.storage.event.CreateOne(ctx, se); err != nil && !database.IsUniqueViolation(err) {
 			// Log but continue
 			logger.FromContext(ctx).Warn("failed to persist webhook event id", "error", err, "eventId", evt.ID)

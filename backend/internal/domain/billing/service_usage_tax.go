@@ -164,7 +164,7 @@ func (s *Service) ExtendTrialPeriod(ctx context.Context, ws *account.Workspace, 
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 	if sub.Status != SubscriptionStatusTrialing {
-		return fmt.Errorf("subscription is not in trial period, current status: %s", sub.Status)
+		return ErrSubscriptionNotInTrial(nil, string(sub.Status))
 	}
 	stripeSub, err := subscription.Get(sub.StripeSubID, nil)
 	if err != nil {
@@ -192,7 +192,7 @@ func (s *Service) HandleGracePeriod(ctx context.Context, ws *account.Workspace, 
 		return fmt.Errorf("failed to get subscription: %w", err)
 	}
 	if sub.Status != SubscriptionStatusPastDue {
-		return fmt.Errorf("subscription is not past due, current status: %s", sub.Status)
+		return ErrSubscriptionNotPastDue(nil, string(sub.Status))
 	}
 	gracePeriodEnd := time.Now().AddDate(0, 0, graceDays).Unix()
 	params := &stripelib.SubscriptionParams{CollectionMethod: stripelib.String("charge_automatically")}
@@ -256,8 +256,8 @@ func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspac
 	}
 	usage := map[string]int64{
 		"ordersPerMonth": ordersUsed,
-		"teamMembers":   usersUsed,
-		"businesses":    businessesUsed,
+		"teamMembers":    usersUsed,
+		"businesses":     businessesUsed,
 	}
 	l.Info("usage retrieved successfully")
 	return usage, nil

@@ -19,23 +19,10 @@ func (s *BillingPlansSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
-func (s *BillingPlansSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database,
-		"stripe_events",
-		"subscriptions",
-		"plans",
-		"users",
-		"workspaces",
-	)
-}
-
-func (s *BillingPlansSuite) TearDownTest() {
-	s.SetupTest()
-}
-
 func (s *BillingPlansSuite) TestPlans_ListAndGet() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "starter", decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("starter")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
 	resp, err := s.helper.Client().Get("/v1/billing/plans")
@@ -47,15 +34,42 @@ func (s *BillingPlansSuite) TestPlans_ListAndGet() {
 	s.NoError(testutils.DecodeJSON(resp, &plans))
 	s.NotEmpty(plans)
 
-	resp2, err := s.helper.Client().Get("/v1/billing/plans/starter")
+	// Assert our plan is present and shaped correctly.
+	found := false
+	for _, p := range plans {
+		if p["descriptor"] == descriptor {
+			found = true
+			s.Contains(p, "id")
+			s.Contains(p, "descriptor")
+			s.Contains(p, "name")
+			s.Contains(p, "description")
+			s.Contains(p, "stripePlanId")
+			s.Contains(p, "price")
+			s.Contains(p, "currency")
+			s.Contains(p, "billingCycle")
+			s.Contains(p, "features")
+			s.Contains(p, "limits")
+			break
+		}
+	}
+	s.True(found, "expected plan to be present in list")
+
+	resp2, err := s.helper.Client().Get("/v1/billing/plans/" + descriptor)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusOK, resp2.StatusCode)
 
 	var plan map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp2, &plan))
+	s.Contains(plan, "id")
 	s.Contains(plan, "descriptor")
-	s.Equal("starter", plan["descriptor"])
+	s.Equal(descriptor, plan["descriptor"])
+	s.Contains(plan, "stripePlanId")
+	s.Contains(plan, "price")
+	s.Contains(plan, "currency")
+	s.Contains(plan, "billingCycle")
+	s.Contains(plan, "features")
+	s.Contains(plan, "limits")
 }
 
 func (s *BillingPlansSuite) TestPlans_Get_NotFound() {

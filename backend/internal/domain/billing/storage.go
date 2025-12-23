@@ -10,21 +10,31 @@ import (
 )
 
 type Storage struct {
-	cache        *cache.Cache
-	db           *database.Database
-	plan         *database.Repository[Plan]
-	subscription *database.Repository[Subscription]
-	event        *database.Repository[StripeEvent]
+	cache         *cache.Cache
+	db            *database.Database
+	plan          *database.Repository[Plan]
+	subscription  *database.Repository[Subscription]
+	invoiceRecord *database.Repository[InvoiceRecord]
+	event         *database.Repository[StripeEvent]
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	return &Storage{
-		cache:        cache,
-		db:           db,
-		plan:         database.NewRepository[Plan](db),
-		subscription: database.NewRepository[Subscription](db),
-		event:        database.NewRepository[StripeEvent](db),
+		cache:         cache,
+		db:            db,
+		plan:          database.NewRepository[Plan](db),
+		subscription:  database.NewRepository[Subscription](db),
+		invoiceRecord: database.NewRepository[InvoiceRecord](db),
+		event:         database.NewRepository[StripeEvent](db),
 	}
+}
+
+func (s *Storage) FindInvoiceRecordByWorkspaceAndStripeID(ctx context.Context, workspaceID, stripeInvoiceID string) (*InvoiceRecord, error) {
+	return s.invoiceRecord.FindOne(
+		ctx,
+		s.invoiceRecord.ScopeEquals(InvoiceRecordSchema.WorkspaceID, workspaceID),
+		s.invoiceRecord.ScopeEquals(InvoiceRecordSchema.StripeInvoiceID, stripeInvoiceID),
+	)
 }
 
 // SyncPlans upserts all defined plans into the database

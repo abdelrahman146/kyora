@@ -55,6 +55,22 @@ func ErrStripeOperationFailed(err error, operation string) error {
 	return problem.InternalError().With("detail", "billing operation failed").With("operation", operation).WithError(err)
 }
 
+func ErrInvalidEffectiveDate(err error, effectiveDate string) error {
+	return problem.BadRequest("invalid effective date").With("effectiveDate", effectiveDate).WithError(err)
+}
+
+func ErrInvalidProrationMode(err error, prorationMode string) error {
+	return problem.BadRequest("invalid proration mode").With("prorationMode", prorationMode).WithError(err)
+}
+
+func ErrSubscriptionNotInTrial(err error, status string) error {
+	return problem.BadRequest("subscription is not in trial").With("status", status).WithError(err)
+}
+
+func ErrSubscriptionNotPastDue(err error, status string) error {
+	return problem.BadRequest("subscription is not past due").With("status", status).WithError(err)
+}
+
 // ErrCustomerCreationFailed indicates a failure creating a Stripe customer
 func ErrCustomerCreationFailed(customerID string, err error) *problem.Problem {
 	return problem.InternalError().With("detail",
@@ -71,12 +87,24 @@ func ErrWebhookProcessingFailed(err error, eventType string) error {
 	return problem.InternalError().With("detail", "failed to process billing webhook").With("eventType", eventType).WithError(err)
 }
 
+func ErrWebhookSignatureInvalid(err error) error {
+	return problem.BadRequest("invalid webhook signature").WithError(err)
+}
+
+func ErrWebhookPayloadInvalid(err error) error {
+	return problem.BadRequest("invalid webhook payload").WithError(err)
+}
+
 func ErrCheckoutSessionFailed(err error) error {
 	return problem.BadRequest("failed to create checkout session").WithError(err)
 }
 
 func ErrBillingPortalFailed(err error) error {
 	return problem.BadRequest("failed to create billing portal session").WithError(err)
+}
+
+func ErrInvoiceNotReady(err error) error {
+	return problem.Conflict("invoice is not ready for download").WithError(err)
 }
 
 func ErrUsageLimitExceeded(err error, feature string, current, limit int64) error {

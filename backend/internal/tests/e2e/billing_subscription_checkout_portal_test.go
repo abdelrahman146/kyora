@@ -20,38 +20,31 @@ func (s *BillingSubscriptionCheckoutPortalSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
-func (s *BillingSubscriptionCheckoutPortalSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database,
-		"stripe_events",
-		"order_items",
-		"orders",
-		"customer_addresses",
-		"customers",
-		"businesses",
-		"subscriptions",
-		"plans",
-		"users",
-		"workspaces",
-	)
-}
-
-func (s *BillingSubscriptionCheckoutPortalSuite) TearDownTest() {
-	s.SetupTest()
-}
-
 func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_AuthzAndFreePlan() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "free", decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("free")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
-	_, _, memberToken := s.helper.CreateTestUser(ctx, "member@example.com", role.RoleUser)
+	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
 
 	payload := map[string]interface{}{
-		"planDescriptor": "free",
+		"planDescriptor": descriptor,
 		"successUrl":     "https://example.com/success",
 		"cancelUrl":      "https://example.com/cancel",
 	}
+
+	// Validation: missing fields
+	respBad, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/checkout/session", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
+	s.NoError(err)
+	defer respBad.Body.Close()
+	s.Equal(http.StatusBadRequest, respBad.StatusCode)
+
+	respBadURL, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/checkout/session", map[string]interface{}{"planDescriptor": descriptor, "successUrl": "not-a-url", "cancelUrl": "not-a-url"}, adminToken)
+	s.NoError(err)
+	defer respBadURL.Body.Close()
+	s.Equal(http.StatusBadRequest, respBadURL.StatusCode)
 
 	respUnauthed, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/checkout/session", payload, "")
 	s.NoError(err)
@@ -89,13 +82,14 @@ func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_AuthzAndFre
 
 func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_PaidPlan_ReturnsURL() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "paid", decimal.NewFromInt(10), billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("paid")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.NewFromInt(10), billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
+	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
 
 	payload := map[string]interface{}{
-		"planDescriptor": "paid",
+		"planDescriptor": descriptor,
 		"successUrl":     "https://example.com/success",
 		"cancelUrl":      "https://example.com/cancel",
 	}
@@ -120,11 +114,16 @@ func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_PaidPlan_Re
 
 func (s *BillingSubscriptionCheckoutPortalSuite) TestBillingPortalSession_ReturnsURL() {
 	ctx := s.T().Context()
-	_, _, adminToken := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
+	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
 
 	payload := map[string]interface{}{
 		"returnUrl": "https://example.com/return",
 	}
+
+	respBad, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/portal/session", map[string]interface{}{"returnUrl": "not-a-url"}, adminToken)
+	s.NoError(err)
+	defer respBad.Body.Close()
+	s.Equal(http.StatusBadRequest, respBad.StatusCode)
 
 	resp, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/portal/session", payload, adminToken)
 	s.NoError(err)

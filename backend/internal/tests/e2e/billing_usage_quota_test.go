@@ -20,36 +20,18 @@ func (s *BillingUsageQuotaSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
-func (s *BillingUsageQuotaSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database,
-		"stripe_events",
-		"order_items",
-		"orders",
-		"customer_addresses",
-		"customers",
-		"businesses",
-		"subscriptions",
-		"plans",
-		"users",
-		"workspaces",
-	)
-}
-
-func (s *BillingUsageQuotaSuite) TearDownTest() {
-	s.SetupTest()
-}
-
 func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 	ctx := s.T().Context()
 	limits := billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5}
-	_, err := s.helper.CreatePlan(ctx, "starter", decimal.Zero, limits)
+	descriptor := s.helper.UniqueSlug("starter")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, limits)
 	s.NoError(err)
 
-	_, ws, token := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
-	_, err = s.helper.AddWorkspaceUser(ctx, ws.ID, "member@example.com", role.RoleUser)
+	_, ws, token := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, err = s.helper.AddWorkspaceUser(ctx, ws.ID, s.helper.UniqueEmail("member"), role.RoleUser)
 	s.NoError(err)
 
-	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": "starter"}, token)
+	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, token)
 	s.NoError(err)
 	defer respSub.Body.Close()
 	s.Equal(http.StatusOK, respSub.StatusCode)
@@ -68,6 +50,9 @@ func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 
 	var usage map[string]interface{}
 	s.NoError(testutils.DecodeJSON(respUsage, &usage))
+	s.Contains(usage, "ordersPerMonth")
+	s.Contains(usage, "teamMembers")
+	s.Contains(usage, "businesses")
 	s.Equal(float64(1), usage["ordersPerMonth"])
 	s.Equal(float64(2), usage["teamMembers"])
 	s.Equal(float64(1), usage["businesses"])
@@ -79,6 +64,9 @@ func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 
 	var quota map[string]interface{}
 	s.NoError(testutils.DecodeJSON(respQuota, &quota))
+	s.Contains(quota, "type")
+	s.Contains(quota, "used")
+	s.Contains(quota, "limit")
 	s.Equal("team_members", quota["type"])
 	s.Equal(float64(2), quota["used"])
 	s.Equal(float64(limits.MaxTeamMembers), quota["limit"])
@@ -86,12 +74,13 @@ func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 
 func (s *BillingUsageQuotaSuite) TestUsageQuota_ValidationErrors() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "starter", decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("starter")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
-	_, _, token := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
+	_, _, token := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
 
 	// needs subscription to avoid 500 on quota read
-	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": "starter"}, token)
+	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, token)
 	s.NoError(err)
 	defer respSub.Body.Close()
 	s.Equal(http.StatusOK, respSub.StatusCode)

@@ -2,6 +2,7 @@ package billing
 
 import (
 	"context"
+	"fmt"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -121,6 +122,47 @@ func (s *Service) ListInvoices(ctx context.Context, ws *account.Workspace, statu
 
 // DownloadInvoiceURL returns the downloadable PDF URL for an invoice if it belongs to the customer's workspace
 func (s *Service) DownloadInvoiceURL(ctx context.Context, ws *account.Workspace, invoiceID string) (string, error) {
+	// First: allow access for manual invoices created by this workspace.
+	if rec, err := s.storage.FindInvoiceRecordByWorkspaceAndStripeID(ctx, ws.ID, invoiceID); err == nil && rec != nil {
+		inv, err := invoice.Get(invoiceID, nil)
+		if err != nil {
+			return "", err
+		}
+		if inv.Status == stripelib.InvoiceStatusDraft {
+			if _, err := withStripeRetry[*stripelib.Invoice](ctx, 3, func() (*stripelib.Invoice, error) {
+				return invoice.FinalizeInvoice(invoiceID, nil)
+			}); err != nil {
+				return "", err
+			}
+			inv, err = invoice.Get(invoiceID, nil)
+			if err != nil {
+				return "", err
+			}
+		}
+
+		// Persist URLs if they become available.
+		if (inv.InvoicePDF != "" && rec.InvoicePDF == "") || (inv.HostedInvoiceURL != "" && rec.HostedInvoiceURL == "") {
+			rec.InvoicePDF = inv.InvoicePDF
+			rec.HostedInvoiceURL = inv.HostedInvoiceURL
+			_ = s.storage.invoiceRecord.UpdateOne(ctx, rec)
+		}
+
+		// Prefer stored values if available.
+		if rec.InvoicePDF != "" {
+			return rec.InvoicePDF, nil
+		}
+		if rec.HostedInvoiceURL != "" {
+			return rec.HostedInvoiceURL, nil
+		}
+		if inv.InvoicePDF != "" {
+			return inv.InvoicePDF, nil
+		}
+		if inv.HostedInvoiceURL != "" {
+			return inv.HostedInvoiceURL, nil
+		}
+		return "", ErrInvoiceNotReady(fmt.Errorf("invoice has no hosted/pdf url"))
+	}
+
 	custID, err := s.EnsureCustomer(ctx, ws)
 	if err != nil {
 		return "", err
@@ -129,20 +171,61 @@ func (s *Service) DownloadInvoiceURL(ctx context.Context, ws *account.Workspace,
 	if err != nil {
 		return "", err
 	}
-	if inv.Customer == nil || inv.Customer.ID != custID {
-		return "", ErrSubscriptionNotFound(err, ws.ID)
+	belongsToWorkspace := false
+	if inv.Metadata != nil {
+		if wid, ok := inv.Metadata["workspace_id"]; ok && wid == ws.ID {
+			belongsToWorkspace = true
+		}
 	}
-	if inv.InvoicePDF == "" && inv.HostedInvoiceURL == "" {
-		return "", ErrSubscriptionNotFound(err, invoiceID)
+	if !belongsToWorkspace {
+		if inv.Customer != nil && inv.Customer.ID == custID {
+			belongsToWorkspace = true
+		}
+	}
+	if !belongsToWorkspace {
+		return "", ErrSubscriptionNotFound(fmt.Errorf("invoice does not belong to workspace"), ws.ID)
+	}
+	if inv.Status == stripelib.InvoiceStatusDraft {
+		if _, err := withStripeRetry[*stripelib.Invoice](ctx, 3, func() (*stripelib.Invoice, error) {
+			return invoice.FinalizeInvoice(invoiceID, nil)
+		}); err != nil {
+			return "", err
+		}
+		inv, err = invoice.Get(invoiceID, nil)
+		if err != nil {
+			return "", err
+		}
 	}
 	if inv.InvoicePDF != "" {
 		return inv.InvoicePDF, nil
 	}
-	return inv.HostedInvoiceURL, nil
+	if inv.HostedInvoiceURL != "" {
+		return inv.HostedInvoiceURL, nil
+	}
+	return "", ErrInvoiceNotReady(fmt.Errorf("invoice has no hosted/pdf url"))
 }
 
 // PayInvoice attempts to pay an open invoice for the workspace's customer
 func (s *Service) PayInvoice(ctx context.Context, ws *account.Workspace, invoiceID string) error {
+	// First: allow paying manual invoices created by this workspace.
+	if rec, err := s.storage.FindInvoiceRecordByWorkspaceAndStripeID(ctx, ws.ID, invoiceID); err == nil && rec != nil {
+		inv, err := invoice.Get(invoiceID, nil)
+		if err != nil {
+			return err
+		}
+		if inv.Status == stripelib.InvoiceStatusDraft {
+			if _, err := withStripeRetry[*stripelib.Invoice](ctx, 3, func() (*stripelib.Invoice, error) {
+				return invoice.FinalizeInvoice(invoiceID, nil)
+			}); err != nil {
+				return err
+			}
+		}
+		_, err = withStripeRetry[*stripelib.Invoice](ctx, 3, func() (*stripelib.Invoice, error) {
+			return invoice.Pay(invoiceID, &stripelib.InvoicePayParams{})
+		})
+		return err
+	}
+
 	custID, err := s.EnsureCustomer(ctx, ws)
 	if err != nil {
 		return err
@@ -151,8 +234,19 @@ func (s *Service) PayInvoice(ctx context.Context, ws *account.Workspace, invoice
 	if err != nil {
 		return err
 	}
-	if inv.Customer == nil || inv.Customer.ID != custID {
-		return ErrSubscriptionNotFound(err, ws.ID)
+	belongsToWorkspace := false
+	if inv.Metadata != nil {
+		if wid, ok := inv.Metadata["workspace_id"]; ok && wid == ws.ID {
+			belongsToWorkspace = true
+		}
+	}
+	if !belongsToWorkspace {
+		if inv.Customer != nil && inv.Customer.ID == custID {
+			belongsToWorkspace = true
+		}
+	}
+	if !belongsToWorkspace {
+		return ErrSubscriptionNotFound(fmt.Errorf("invoice does not belong to workspace"), ws.ID)
 	}
 	// If invoice is draft, finalize first
 	if inv.Status == stripelib.InvoiceStatusDraft {
@@ -184,6 +278,10 @@ func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, desc
 		Currency:    stripelib.String(currency),
 		Description: stripelib.String(description),
 		AutoAdvance: stripelib.Bool(true),
+		CollectionMethod: stripelib.String(string(stripelib.InvoiceCollectionMethodSendInvoice)),
+		Metadata: map[string]string{
+			"workspace_id": ws.ID,
+		},
 	}
 
 	if dueDate != nil {
@@ -191,6 +289,10 @@ func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, desc
 		if dueTime, err := time.Parse("2006-01-02", *dueDate); err == nil {
 			params.DueDate = stripelib.Int64(dueTime.Unix())
 		}
+	} else {
+		// For send_invoice invoices, Stripe expects a due date. If not provided,
+		// default to 7 days to ensure hosted invoice URLs are generated.
+		params.DaysUntilDue = stripelib.Int64(7)
 	}
 
 	// Create invoice item first
@@ -216,6 +318,32 @@ func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, desc
 	if err != nil {
 		l.Error("failed to create invoice", "error", err)
 		return nil, ErrStripeOperationFailed(err, "create_invoice")
+	}
+
+	// Ensure the invoice is finalized so hosted URLs are available for download.
+	// This also makes the invoice immediately payable/downloadable after creation.
+	if inv.Status == stripelib.InvoiceStatusDraft {
+		finalized, err := withStripeRetry[*stripelib.Invoice](ctx, 3, func() (*stripelib.Invoice, error) {
+			return invoice.FinalizeInvoice(inv.ID, nil)
+		})
+		if err != nil {
+			l.Error("failed to finalize invoice", "error", err, "invoiceId", inv.ID)
+			return nil, ErrStripeOperationFailed(err, "finalize_invoice")
+		}
+		if finalized != nil {
+			inv = finalized
+		}
+	}
+
+	// Persist ownership mapping for manual invoices (used for BOLA-safe access checks).
+	if err := s.storage.invoiceRecord.CreateOne(ctx, &InvoiceRecord{
+		WorkspaceID:      ws.ID,
+		StripeInvoiceID:  inv.ID,
+		HostedInvoiceURL: inv.HostedInvoiceURL,
+		InvoicePDF:       inv.InvoicePDF,
+	}); err != nil {
+		l.Error("failed to persist invoice record", "error", err, "invoiceId", inv.ID)
+		return nil, ErrStripeOperationFailed(err, "persist_invoice_record")
 	}
 
 	l.Info("invoice created successfully", "invoiceId", inv.ID)

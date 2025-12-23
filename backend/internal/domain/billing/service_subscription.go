@@ -494,11 +494,19 @@ func (s *Service) ScheduleSubscriptionChange(ctx context.Context, ws *account.Wo
 		l.Error("failed to get current subscription", "error", err)
 		return nil, err
 	}
+	if prorationMode != "" {
+		switch prorationMode {
+		case "none", "create_prorations", "always_invoice":
+			// ok
+		default:
+			return nil, ErrInvalidProrationMode(nil, prorationMode)
+		}
+	}
 	effectiveTime, err := time.Parse("2006-01-02T15:04:05Z", effectiveDate)
 	if err != nil {
 		if effectiveTime, err = time.Parse("2006-01-02", effectiveDate); err != nil {
 			l.Error("invalid effective date format", "error", err)
-			return nil, ErrStripeOperationFailed(err, "parse_date")
+			return nil, ErrInvalidEffectiveDate(err, effectiveDate)
 		}
 	}
 	if err := s.ensurePlanSynced(ctx, plan); err != nil {

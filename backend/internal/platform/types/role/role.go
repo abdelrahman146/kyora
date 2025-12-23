@@ -18,6 +18,7 @@ const (
 var RolePermissions = map[Role][]string{
 	RoleUser: {
 		"view:account",
+		"view:billing",
 		"view:business",
 		"view:customer",
 		"view:order",

@@ -17,7 +17,14 @@ type HTTPClient struct {
 func NewHTTPClient(baseURL string) *HTTPClient {
 	return &HTTPClient{
 		BaseURL: baseURL,
-		Client:  &http.Client{},
+		// E2E tests often assert redirect responses (e.g., invoice download).
+		// Disable automatic redirect following to keep tests deterministic and
+		// avoid making external HTTP requests (e.g., to Stripe hosted invoice pages).
+		Client: &http.Client{
+			CheckRedirect: func(req *http.Request, via []*http.Request) error {
+				return http.ErrUseLastResponse
+			},
+		},
 	}
 }
 
@@ -116,6 +123,19 @@ func (h *HTTPClient) AuthenticatedRequest(method, path string, payload interface
 	}
 	if token != "" {
 		req.AddCookie(&http.Cookie{Name: "jwt", Value: token})
+	}
+	return h.Client.Do(req)
+}
+
+// PostRaw makes a POST request with raw body bytes.
+// Useful for webhook tests where payload and signature must match exactly.
+func (h *HTTPClient) PostRaw(path string, body []byte, headers map[string]string) (*http.Response, error) {
+	req, err := http.NewRequest("POST", h.BaseURL+path, bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
 	}
 	return h.Client.Do(req)
 }

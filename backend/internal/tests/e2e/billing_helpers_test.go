@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -15,8 +16,11 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/shopspring/decimal"
+	stripelib "github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/paymentmethod"
 )
 
 const e2eBaseURL = "http://localhost:18080"
@@ -33,12 +37,41 @@ func NewBillingTestHelper(db *database.Database, cacheAddr, baseURL string) *Bil
 
 func (h *BillingTestHelper) Client() *testutils.HTTPClient { return h.client }
 
+func (h *BillingTestHelper) UniqueSlug(prefix string) string {
+	prefix = strings.TrimSpace(prefix)
+	if prefix == "" {
+		prefix = "t"
+	}
+	return fmt.Sprintf("%s_%s", prefix, id.Base62(10))
+}
+
+func (h *BillingTestHelper) UniqueEmail(prefix string) string {
+	return fmt.Sprintf("%s_%s@example.com", h.UniqueSlug(prefix), id.Base62(6))
+}
+
 func (h *BillingTestHelper) CreateTestUser(ctx context.Context, email string, userRole role.Role) (*account.User, *account.Workspace, string) {
 	user, ws, token, err := testutils.CreateAuthenticatedUser(ctx, h.db, email, "Pass123!", "Test", "User", userRole)
 	if err != nil {
 		panic(err)
 	}
 	return user, ws, token
+}
+
+func (h *BillingTestHelper) CreateStripeCardPaymentMethod() (string, error) {
+	params := &stripelib.PaymentMethodParams{
+		Type: stripelib.String(string(stripelib.PaymentMethodTypeCard)),
+		Card: &stripelib.PaymentMethodCardParams{
+			Number:   stripelib.String("4242424242424242"),
+			ExpMonth: stripelib.Int64(12),
+			ExpYear:  stripelib.Int64(2030),
+			CVC:      stripelib.String("123"),
+		},
+	}
+	pm, err := paymentmethod.New(params)
+	if err != nil {
+		return "", err
+	}
+	return pm.ID, nil
 }
 
 func (h *BillingTestHelper) CreatePlan(ctx context.Context, descriptor string, price decimal.Decimal, limits billing.PlanLimit) (*billing.Plan, error) {

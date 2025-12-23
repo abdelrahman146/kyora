@@ -20,43 +20,42 @@ func (s *BillingSubscriptionSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
-func (s *BillingSubscriptionSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database,
-		"stripe_events",
-		"subscriptions",
-		"plans",
-		"users",
-		"workspaces",
-	)
-}
-
-func (s *BillingSubscriptionSuite) TearDownTest() {
-	s.SetupTest()
-}
-
 func (s *BillingSubscriptionSuite) TestSubscription_CreateGetCancel() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "starter", decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("starter")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, "admin@example.com", role.RoleAdmin)
+	_, ws, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
 
-	respCreate, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": "starter"}, adminToken)
+	respCreate, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
 	s.NoError(err)
 	defer respCreate.Body.Close()
 	s.Require().Equal(http.StatusOK, respCreate.StatusCode)
 
 	var created map[string]interface{}
 	s.NoError(testutils.DecodeJSON(respCreate, &created))
+	s.Require().Contains(created, "id")
 	s.Require().Contains(created, "workspaceId")
 	s.Require().Contains(created, "planId")
 	s.Require().Contains(created, "stripeSubId")
 	s.Require().Contains(created, "status")
+	if gotWs, ok := created["workspaceId"].(string); ok {
+		s.Equal(ws.ID, gotWs)
+	}
 
 	respGet, err := s.helper.Client().AuthenticatedRequest("GET", "/v1/billing/subscription", nil, adminToken)
 	s.NoError(err)
 	defer respGet.Body.Close()
 	s.Require().Equal(http.StatusOK, respGet.StatusCode)
+
+	var got map[string]interface{}
+	s.NoError(testutils.DecodeJSON(respGet, &got))
+	s.Require().Contains(got, "id")
+	s.Require().Contains(got, "workspaceId")
+	s.Require().Contains(got, "planId")
+	s.Require().Contains(got, "stripeSubId")
+	s.Require().Contains(got, "status")
 
 	respCancel, err := s.helper.Client().AuthenticatedRequest("DELETE", "/v1/billing/subscription", nil, adminToken)
 	s.NoError(err)
@@ -77,12 +76,13 @@ func (s *BillingSubscriptionSuite) TestSubscription_CreateGetCancel() {
 
 func (s *BillingSubscriptionSuite) TestSubscription_Create_ForbiddenForMember() {
 	ctx := s.T().Context()
-	_, err := s.helper.CreatePlan(ctx, "starter", decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
+	descriptor := s.helper.UniqueSlug("starter")
+	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, memberToken := s.helper.CreateTestUser(ctx, "member@example.com", role.RoleUser)
+	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
 
-	resp, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": "starter"}, memberToken)
+	resp, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, memberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
