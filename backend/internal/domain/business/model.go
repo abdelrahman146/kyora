@@ -4,6 +4,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/types/date"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/shopspring/decimal"
@@ -77,9 +78,9 @@ type CreateBusinessInput struct {
 	Descriptor    string          `form:"descriptor" json:"descriptor" binding:"required"`
 	CountryCode   string          `form:"countryCode" json:"countryCode" binding:"required,len=2"`
 	Currency      string          `form:"currency" json:"currency" binding:"required,len=3"`
-	VatRate       decimal.Decimal `form:"vatRate" json:"vatRate" binding:"omitempty,decimal"`
-	SafetyBuffer  decimal.Decimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty,decimal"`
-	EstablishedAt time.Time       `form:"establishedAt" json:"establishedAt" binding:"omitempty,date"`
+	VatRate       decimal.Decimal `form:"vatRate" json:"vatRate" binding:"omitempty"`
+	SafetyBuffer  decimal.Decimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
+	EstablishedAt date.Date       `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
 }
 
 type UpdateBusinessInput struct {
@@ -87,7 +88,7 @@ type UpdateBusinessInput struct {
 	Descriptor    *string             `form:"descriptor" json:"descriptor" binding:"omitempty"`
 	CountryCode   *string             `form:"countryCode" json:"countryCode" binding:"omitempty,len=2"`
 	Currency      *string             `form:"currency" json:"currency" binding:"omitempty,len=3"`
-	VatRate       decimal.NullDecimal `form:"vatRate" json:"vatRate" binding:"omitempty,decimal"`
-	SafetyBuffer  decimal.NullDecimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty,decimal"`
-	EstablishedAt *time.Time          `form:"establishedAt" json:"establishedAt" binding:"omitempty,date"`
+	VatRate       decimal.NullDecimal `form:"vatRate" json:"vatRate" binding:"omitempty"`
+	SafetyBuffer  decimal.NullDecimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
+	EstablishedAt *date.Date          `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
 }

@@ -146,9 +146,10 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_SameEmailDifferentBusiness() {
 	_, err = s.customerHelper.CreateTestCustomer(ctx, biz1.ID, "shared@example.com", "Customer 1")
 	s.NoError(err)
 
-	// Should fail - same email not allowed even across different businesses (due to global unique constraint)
-	_, err = s.customerHelper.CreateTestCustomer(ctx, biz2.ID, "shared@example.com", "Customer 2")
-	s.Error(err, "should not allow duplicate email across businesses due to global constraint")
+	// Should succeed - email uniqueness is scoped per business
+	customer2, err := s.customerHelper.CreateTestCustomer(ctx, biz2.ID, "shared@example.com", "Customer 2")
+	s.NoError(err)
+	s.Equal(biz2.ID, customer2.BusinessID)
 }
 
 func (s *CustomerCRUDSuite) TestCreateCustomer_UnauthorizedUser() {

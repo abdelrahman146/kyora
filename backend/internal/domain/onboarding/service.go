@@ -3,6 +3,7 @@ package onboarding
 import (
 	"context"
 	"fmt"
+	"regexp"
 	"strings"
 	"time"
 
@@ -13,6 +14,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	pactomic "github.com/abdelrahman146/kyora/internal/platform/types/atomic"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
@@ -165,25 +167,68 @@ func (s *Service) VerifyEmailOTP(ctx context.Context, token, code, firstName, la
 	if time.Now().After(sess.ExpiresAt) {
 		return nil, ErrSessionExpired(nil)
 	}
+	if sess.Stage != StageIdentityPending {
+		return nil, ErrInvalidStage(nil, string(StageIdentityPending))
+	}
 	if sess.OTPExpiry == nil || time.Now().After(*sess.OTPExpiry) {
 		return nil, ErrInvalidOTP(nil)
 	}
 	if !hash.ValidatePassword(code, sess.OTPHash) {
 		return nil, ErrInvalidOTP(nil)
 	}
+	nFirst, err := normalizeHumanName("firstName", firstName)
+	if err != nil {
+		return nil, err
+	}
+	nLast, err := normalizeHumanName("lastName", lastName)
+	if err != nil {
+		return nil, err
+	}
+	if password == "" {
+		return nil, schemaValidationError("password", "is required")
+	}
+	if len([]rune(password)) < 8 {
+		return nil, schemaValidationError("password", "must be at least 8 characters")
+	}
 	passHash, err := hash.Password(password)
 	if err != nil {
 		return nil, err
 	}
 	sess.EmailVerified = true
-	sess.FirstName = firstName
-	sess.LastName = lastName
+	sess.FirstName = nFirst
+	sess.LastName = nLast
 	sess.PasswordHash = passHash
 	sess.Stage = StageIdentityVerified
 	if err := s.storage.UpdateSession(ctx, sess); err != nil {
 		return nil, err
 	}
 	return sess, nil
+}
+
+var humanNameRegex = regexp.MustCompile(`^[\p{L}\p{M}][\p{L}\p{M} '\-]{0,99}$`)
+
+func normalizeHumanName(field, v string) (string, error) {
+	v = strings.TrimSpace(v)
+	if v == "" {
+		return "", schemaValidationError(field, "is required")
+	}
+	// Disallow NUL/control characters. Postgres TEXT cannot store NUL bytes.
+	for _, r := range v {
+		if r == 0 || r < 32 || r == 127 {
+			return "", schemaValidationError(field, "contains invalid characters")
+		}
+	}
+	if len([]rune(v)) > 100 {
+		return "", schemaValidationError(field, "is too long")
+	}
+	if !humanNameRegex.MatchString(v) {
+		return "", schemaValidationError(field, "contains invalid characters")
+	}
+	return v, nil
+}
+
+func schemaValidationError(field, msg string) error {
+	return problem.BadRequest(msg).With("field", field)
 }
 
 // SetOAuthIdentity stages identity from Google and generates a random password
@@ -359,6 +404,14 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 				return err
 			}
 		}
+
+		now := time.Now()
+		sess.CommittedAt = &now
+		sess.Stage = StageCommitted
+		if err := s.storage.UpdateSession(txCtx, sess); err != nil {
+			return err
+		}
+
 		return nil
 	}, pactomic.WithRetries(2))
 	if err != nil {
@@ -366,11 +419,6 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 	}
 	// Send welcome email (best effort)
 	go func() { _ = s.emailNotif.SendWelcomeEmail(context.Background(), createdUser) }()
-	// Invalidate session by deleting it
-	now := time.Now()
-	sess.CommittedAt = &now
-	sess.Stage = StageCommitted
-	_ = s.storage.UpdateSession(context.Background(), sess)
 	// Generate JWT
 	jwtToken, jwtErr := auth.NewJwtToken(createdUser.ID, createdUser.WorkspaceID)
 	if jwtErr != nil {

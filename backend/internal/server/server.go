@@ -177,6 +177,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// server initialization logic
 	r := gin.New()
 	r.Use(logger.Middleware())
+	r.Use(gin.Recovery())
 
 	// health endpoint
 	r.GET("/healthz", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })

@@ -6,7 +6,11 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/auth"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -307,8 +311,21 @@ func (s *CustomerNoteSuite) TestNoteOperations_UnauthorizedUser() {
 	note, err := s.customerHelper.CreateTestNote(ctx, customer.ID, "Test note")
 	s.NoError(err)
 
-	// Regular user (non-admin) tries to perform operations
-	_, _, userToken, err := s.accountHelper.CreateTestUser(ctx, "user@example.com", "Password123!", "User", "User", role.RoleUser)
+	// Regular user (non-admin) in the SAME workspace tries to perform operations
+	userPassword, err := hash.Password("Password123!")
+	s.NoError(err)
+	member := &account.User{
+		WorkspaceID:     ws.ID,
+		Role:            role.RoleUser,
+		FirstName:       "User",
+		LastName:        "User",
+		Email:           "user@example.com",
+		Password:        userPassword,
+		IsEmailVerified: true,
+	}
+	userRepo := database.NewRepository[account.User](testEnv.Database)
+	s.NoError(userRepo.CreateOne(ctx, member))
+	userToken, err := auth.NewJwtToken(member.ID, member.WorkspaceID)
 	s.NoError(err)
 
 	// User can view notes (has view permission)

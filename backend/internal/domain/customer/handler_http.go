@@ -2,6 +2,7 @@ package customer
 
 import (
 	"net/http"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
@@ -17,6 +18,24 @@ import (
 type HttpHandler struct {
 	service         *Service
 	businessService *business.Service
+}
+
+type customerNoteResponse struct {
+	ID         string    `json:"id"`
+	CustomerID string    `json:"customerId"`
+	Content    string    `json:"content"`
+	CreatedAt  time.Time `json:"createdAt"`
+	UpdatedAt  time.Time `json:"updatedAt"`
+}
+
+func toCustomerNoteResponse(n *CustomerNote) customerNoteResponse {
+	return customerNoteResponse{
+		ID:         n.ID,
+		CustomerID: n.CustomerID,
+		Content:    n.Content,
+		CreatedAt:  n.CreatedAt,
+		UpdatedAt:  n.UpdatedAt,
+	}
 }
 
 // NewHttpHandler creates a new HTTP handler for customer operations
@@ -547,7 +566,11 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, notes)
+	resp := make([]customerNoteResponse, 0, len(notes))
+	for _, n := range notes {
+		resp = append(resp, toCustomerNoteResponse(n))
+	}
+	response.SuccessJSON(c, http.StatusOK, resp)
 }
 
 // CreateCustomerNote creates a new note for a customer
@@ -601,7 +624,7 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, note)
+	response.SuccessJSON(c, http.StatusCreated, toCustomerNoteResponse(note))
 }
 
 // DeleteCustomerNote deletes a note

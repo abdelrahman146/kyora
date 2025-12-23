@@ -257,6 +257,30 @@ func (h *OnboardingTestHelper) GetSession(token string) (map[string]interface{},
 	return result, nil
 }
 
+func (h *OnboardingTestHelper) GetSessionModel(token string) (*onboarding.OnboardingSession, error) {
+	return h.onboardingStorage.GetByToken(context.Background(), token)
+}
+
+func (h *OnboardingTestHelper) CountWorkspacesByID(workspaceID string) (int64, error) {
+	return h.onboardingStorage.CountWorkspacesByID(context.Background(), workspaceID)
+}
+
+func (h *OnboardingTestHelper) CountUsersByEmail(email string) (int64, error) {
+	return h.onboardingStorage.CountUsersByEmail(context.Background(), email)
+}
+
+func (h *OnboardingTestHelper) CountBusinessesByName(name string) (int64, error) {
+	return h.onboardingStorage.CountBusinessesByName(context.Background(), name)
+}
+
+func (h *OnboardingTestHelper) CountAllWorkspaces() (int64, error) {
+	return h.onboardingStorage.CountAllWorkspaces(context.Background())
+}
+
+func (h *OnboardingTestHelper) CountAllBusinesses() (int64, error) {
+	return h.onboardingStorage.CountAllBusinesses(context.Background())
+}
+
 // CreateSessionWithOTP creates session with OTP set
 func (h *OnboardingTestHelper) CreateSessionWithOTP(email, planDescriptor, otp string) (string, error) {
 	token, err := h.CreateOnboardingSession(email, planDescriptor)

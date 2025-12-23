@@ -8,6 +8,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -120,7 +121,7 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 		business.SafetyBuffer = input.SafetyBuffer
 	}
 	if !input.EstablishedAt.IsZero() {
-		business.EstablishedAt = input.EstablishedAt
+		business.EstablishedAt = input.EstablishedAt.Time
 	}
 	err = s.storage.business.CreateOne(ctx, business)
 	if err != nil {
@@ -216,7 +217,7 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 		business.SafetyBuffer = transformer.FromNullDecimal(input.SafetyBuffer)
 	}
 	if input.EstablishedAt != nil {
-		business.EstablishedAt = *input.EstablishedAt
+		business.EstablishedAt = input.EstablishedAt.Time
 	}
 	err = s.storage.business.UpdateOne(ctx, business)
 	if err != nil {
@@ -249,6 +250,9 @@ func (s *Service) IsBusinessDescriptorAvailable(ctx context.Context, actor *acco
 		s.storage.business.ScopeEquals(BusinessSchema.Descriptor, norm),
 	)
 	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return true, nil
+		}
 		return false, err
 	}
 	return business == nil, nil

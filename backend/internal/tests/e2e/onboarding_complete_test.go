@@ -84,10 +84,8 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesWorkspace() {
 	workspaceID := user["workspaceId"].(string)
 	s.NotEmpty(workspaceID, "user should have workspaceId")
 
-	// Verify workspace exists in database
-	db := testEnv.Database.GetDB()
-	var count int64
-	db.Raw("SELECT COUNT(*) FROM workspaces WHERE id = ?", workspaceID).Scan(&count)
+	count, err := s.helper.CountWorkspacesByID(workspaceID)
+	s.NoError(err)
 	s.Equal(int64(1), count, "workspace should exist in database")
 }
 
@@ -103,10 +101,8 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesBusiness() {
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	// Verify business exists in database
-	db := testEnv.Database.GetDB()
-	var count int64
-	db.Raw("SELECT COUNT(*) FROM businesses WHERE name = ?", "Test Business").Scan(&count)
+	count, err := s.helper.CountBusinessesByName("Test Business")
+	s.NoError(err)
 	s.Equal(int64(1), count, "business should exist in database")
 }
 
@@ -217,17 +213,16 @@ func (s *OnboardingCompleteSuite) TestComplete_DatabaseConsistency() {
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	// Verify all related records were created properly
-	db := testEnv.Database.GetDB()
-
-	var userCount, workspaceCount, businessCount int64
-	db.Raw("SELECT COUNT(*) FROM users WHERE email = ?", "consistency@example.com").Scan(&userCount)
+	userCount, err := s.helper.CountUsersByEmail("consistency@example.com")
+	s.NoError(err)
 	s.Equal(int64(1), userCount, "exactly one user should be created")
 
-	db.Raw("SELECT COUNT(*) FROM workspaces").Scan(&workspaceCount)
+	workspaceCount, err := s.helper.CountAllWorkspaces()
+	s.NoError(err)
 	s.Equal(int64(1), workspaceCount, "exactly one workspace should be created")
 
-	db.Raw("SELECT COUNT(*) FROM businesses").Scan(&businessCount)
+	businessCount, err := s.helper.CountAllBusinesses()
+	s.NoError(err)
 	s.Equal(int64(1), businessCount, "exactly one business should be created")
 }
 
@@ -243,13 +238,10 @@ func (s *OnboardingCompleteSuite) TestComplete_SessionCleanedUp() {
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 
-	// Verify session is marked as committed
-	db := testEnv.Database.GetDB()
-	var stage string
-	var committedAt *string
-	db.Raw("SELECT stage, committed_at FROM onboarding_sessions WHERE token = ?", token).Row().Scan(&stage, &committedAt)
-	s.Equal("committed", stage)
-	s.NotNil(committedAt, "committed_at should be set")
+	sess, err := s.helper.GetSessionModel(token)
+	s.NoError(err)
+	s.Equal("committed", string(sess.Stage))
+	s.NotNil(sess.CommittedAt, "committed_at should be set")
 }
 
 func TestOnboardingCompleteSuite(t *testing.T) {

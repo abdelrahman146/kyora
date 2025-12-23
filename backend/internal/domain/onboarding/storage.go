@@ -72,6 +72,26 @@ func (s *Storage) CreateBusiness(ctx context.Context, b *biz.Business, opts ...f
 	return s.business.CreateOne(ctx, b, opts...)
 }
 
+func (s *Storage) CountWorkspacesByID(ctx context.Context, id string) (int64, error) {
+	return s.workspace.Count(ctx, s.workspace.ScopeID(id))
+}
+
+func (s *Storage) CountUsersByEmail(ctx context.Context, email string) (int64, error) {
+	return s.user.Count(ctx, s.user.ScopeEquals(acc.UserSchema.Email, email))
+}
+
+func (s *Storage) CountBusinessesByName(ctx context.Context, name string) (int64, error) {
+	return s.business.Count(ctx, s.business.ScopeEquals(biz.BusinessSchema.Name, name))
+}
+
+func (s *Storage) CountAllWorkspaces(ctx context.Context) (int64, error) {
+	return s.workspace.Count(ctx)
+}
+
+func (s *Storage) CountAllBusinesses(ctx context.Context) (int64, error) {
+	return s.business.Count(ctx)
+}
+
 // Cleanup helpers
 func (s *Storage) DeleteExpiredSessionsByEmail(ctx context.Context, email string) error {
 	return s.session.DeleteMany(ctx, func(db *gorm.DB) *gorm.DB { return db.Where("email = ? AND expires_at <= now()", email) })

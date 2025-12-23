@@ -49,7 +49,7 @@ func toBusinessResponse(b *Business) businessResponse {
 		CountryCode:   b.CountryCode,
 		Currency:      b.Currency,
 		VatRate:       b.VatRate.String(),
-		SafetyBuffer:  b.SafetyBuffer.String(),
+		SafetyBuffer:  b.SafetyBuffer.StringFixed(2),
 		EstablishedAt: b.EstablishedAt,
 		ArchivedAt:    b.ArchivedAt,
 		CreatedAt:     b.CreatedAt,

@@ -7,6 +7,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
@@ -237,16 +238,19 @@ func (s *Service) ExchangeGoogleCodeAndFetchUser(ctx context.Context, code strin
 // BootstrapWorkspaceAndOwner creates a new workspace and an owner user atomically.
 // It avoids exposing storage details to callers that need to initialize a tenant.
 func (s *Service) BootstrapWorkspaceAndOwner(ctx context.Context, firstName, lastName, email, passwordHash string, emailVerified bool, stripeCustomerID string) (*User, *Workspace, error) {
-	var createdUser *User
-	var createdWs *Workspace
-	err := s.atomicProcessor.Exec(ctx, func(txCtx context.Context) error {
+	bootstrap := func(txCtx context.Context) (*User, *Workspace, error) {
 		// Guard against existing user
-		if u, err := s.GetUserByEmail(txCtx, email); err == nil && u != nil {
-			return ErrInvalidCredentials(nil)
+		u, err := s.GetUserByEmail(txCtx, email)
+		if err == nil && u != nil {
+			return nil, nil, ErrInvalidCredentials(nil)
 		}
+		if err != nil && !database.IsRecordNotFound(err) {
+			return nil, nil, err
+		}
+
 		ws := &Workspace{}
 		if err := s.storage.workspace.CreateOne(txCtx, ws); err != nil {
-			return err
+			return nil, nil, err
 		}
 		user := &User{
 			WorkspaceID:     ws.ID,
@@ -258,7 +262,7 @@ func (s *Service) BootstrapWorkspaceAndOwner(ctx context.Context, firstName, las
 			IsEmailVerified: emailVerified,
 		}
 		if err := s.storage.user.CreateOne(txCtx, user); err != nil {
-			return err
+			return nil, nil, err
 		}
 		ws.OwnerID = user.ID
 		if stripeCustomerID != "" {
@@ -266,9 +270,25 @@ func (s *Service) BootstrapWorkspaceAndOwner(ctx context.Context, firstName, las
 			ws.StripeCustomerID.Valid = true
 		}
 		if err := s.storage.workspace.UpdateOne(txCtx, ws); err != nil {
+			return nil, nil, err
+		}
+		return user, ws, nil
+	}
+
+	// If we are already inside a DB transaction, reuse it to avoid nested transactions.
+	// This is important for flows like onboarding completion that must be a single atomic commit.
+	if ctx.Value(database.TxKey) != nil {
+		return bootstrap(ctx)
+	}
+
+	var createdUser *User
+	var createdWs *Workspace
+	err := s.atomicProcessor.Exec(ctx, func(txCtx context.Context) error {
+		u, ws, err := bootstrap(txCtx)
+		if err != nil {
 			return err
 		}
-		createdUser = user
+		createdUser = u
 		createdWs = ws
 		return nil
 	})

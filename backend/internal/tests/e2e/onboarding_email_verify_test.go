@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"fmt"
 	"net/http"
 	"testing"
 
@@ -116,9 +117,6 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_ExpiredOTP() {
 
 func (s *OnboardingEmailVerifySuite) TestVerifyEmail_WeakPasswords() {
 	otp := "123456"
-	token, err := s.helper.CreateSessionWithOTP("weak@example.com", "starter", otp)
-	s.NoError(err)
-
 	tests := []struct {
 		name       string
 		password   string
@@ -133,8 +131,12 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_WeakPasswords() {
 		{"exactly 8 chars", "Pass123!", false},  // Valid - meets minimum
 	}
 
-	for _, tt := range tests {
+	for i, tt := range tests {
 		s.Run(tt.name, func() {
+			email := fmt.Sprintf("weak_%d@example.com", i)
+			token, err := s.helper.CreateSessionWithOTP(email, "starter", otp)
+			s.NoError(err)
+
 			payload := map[string]interface{}{
 				"sessionToken": token,
 				"code":         otp,

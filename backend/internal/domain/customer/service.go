@@ -2,6 +2,7 @@ package customer
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -34,11 +35,15 @@ func (s *Service) GetCustomerByID(ctx context.Context, actor *account.User, biz 
 }
 
 func (s *Service) CreateCustomer(ctx context.Context, actor *account.User, biz *business.Business, req *CreateCustomerRequest) (*Customer, error) {
+	countryCode := strings.ToUpper(strings.TrimSpace(req.CountryCode))
+	if countryCode == "" {
+		countryCode = req.CountryCode
+	}
 	customer := &Customer{
 		BusinessID:        biz.ID,
 		Name:              req.Name,
 		Email:             transformer.ToNullableString(req.Email),
-		CountryCode:       req.CountryCode,
+		CountryCode:       countryCode,
 		Gender:            req.Gender,
 		PhoneNumber:       transformer.ToNullableString(req.PhoneNumber),
 		PhoneCode:         transformer.ToNullableString(req.PhoneCode),
@@ -65,7 +70,7 @@ func (s *Service) UpdateCustomer(ctx context.Context, actor *account.User, biz *
 		customer.Name = req.Name
 	}
 	if req.CountryCode != "" {
-		customer.CountryCode = req.CountryCode
+		customer.CountryCode = strings.ToUpper(strings.TrimSpace(req.CountryCode))
 	}
 	if req.Gender != "" {
 		customer.Gender = req.Gender
@@ -230,13 +235,17 @@ func (s *Service) CreateCustomerAddress(ctx context.Context, actor *account.User
 	if err != nil {
 		return nil, err
 	}
+	countryCode := strings.ToUpper(strings.TrimSpace(req.CountryCode))
+	if countryCode == "" {
+		countryCode = req.CountryCode
+	}
 	address := &CustomerAddress{
 		CustomerID:  customerID,
 		Street:      transformer.ToNullableString(req.Street),
 		City:        req.City,
 		State:       req.State,
 		ZipCode:     transformer.ToNullableString(req.ZipCode),
-		CountryCode: req.CountryCode,
+		CountryCode: countryCode,
 		PhoneCode:   req.PhoneCode,
 		PhoneNumber: req.Phone,
 	}
@@ -274,7 +283,7 @@ func (s *Service) UpdateCustomerAddress(ctx context.Context, actor *account.User
 		address.ZipCode = transformer.ToNullableString(req.ZipCode)
 	}
 	if req.CountryCode != "" {
-		address.CountryCode = req.CountryCode
+		address.CountryCode = strings.ToUpper(strings.TrimSpace(req.CountryCode))
 	}
 	err = s.storage.customerAddress.UpdateOne(ctx, address)
 	if err != nil {
