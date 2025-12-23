@@ -204,6 +204,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// Register customer routes
 	registerCustomerRoutes(r, customer.NewHttpHandler(customerSvc, businessSvc), accountSvc)
 
+	// Register inventory routes
+	registerInventoryRoutes(r, inventory.NewHttpHandler(inventorySvc, businessSvc), accountSvc)
+
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }
 

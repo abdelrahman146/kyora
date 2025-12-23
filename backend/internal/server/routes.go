@@ -7,6 +7,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
+	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -286,5 +287,42 @@ func registerCustomerRoutes(r *gin.Engine, h *customer.HttpHandler, accountServi
 		noteGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceCustomer), h.ListCustomerNotes)
 		noteGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.CreateCustomerNote)
 		noteGroup.DELETE("/:noteId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.DeleteCustomerNote)
+	}
+}
+
+func registerInventoryRoutes(r *gin.Engine, h *inventory.HttpHandler, accountService *account.Service) {
+	group := r.Group("/v1/inventory")
+	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+
+	group.GET("/summary", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.GetInventorySummary)
+	group.GET("/top-products", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.GetTopProductsByInventoryValue)
+
+	products := group.Group("/products")
+	{
+		products.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.ListProducts)
+		products.GET("/:productId", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.GetProduct)
+		products.GET("/:productId/variants", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.ListProductVariants)
+		products.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.CreateProduct)
+		products.POST("/with-variants", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.CreateProductWithVariants)
+		products.PATCH("/:productId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.UpdateProduct)
+		products.DELETE("/:productId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.DeleteProduct)
+	}
+
+	variants := group.Group("/variants")
+	{
+		variants.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.ListVariants)
+		variants.GET("/:variantId", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.GetVariant)
+		variants.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.CreateVariant)
+		variants.PATCH("/:variantId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.UpdateVariant)
+		variants.DELETE("/:variantId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.DeleteVariant)
+	}
+
+	categories := group.Group("/categories")
+	{
+		categories.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.ListCategories)
+		categories.GET("/:categoryId", account.EnforceActorPermissions(role.ActionView, role.ResourceInventory), h.GetCategory)
+		categories.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.CreateCategory)
+		categories.PATCH("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.UpdateCategory)
+		categories.DELETE("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), h.DeleteCategory)
 	}
 }

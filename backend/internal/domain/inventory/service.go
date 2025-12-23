@@ -4,14 +4,21 @@ import (
 	"context"
 	"fmt"
 	"sort"
+	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
+
+func normalizeCategoryDescriptor(v string) string {
+	return strings.TrimSpace(strings.ToLower(v))
+}
 
 type Service struct {
 	storage         *Storage
@@ -73,6 +80,28 @@ func (s *Service) GetProductVariants(ctx context.Context, actor *account.User, b
 	)
 }
 
+func (s *Service) ListProductVariants(ctx context.Context, actor *account.User, biz *business.Business, productID string, req *list.ListRequest) ([]*Variant, int64, error) {
+	scopes := []func(db *gorm.DB) *gorm.DB{
+		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeEquals(VariantSchema.ProductID, productID),
+	}
+	items, err := s.storage.variants.FindMany(ctx,
+		append(scopes,
+			s.storage.variants.WithPagination(req.Offset(), req.Limit()),
+			s.storage.ScopeSearchTermByName(req.SearchTerm()),
+			s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)),
+		)...,
+	)
+	if err != nil {
+		return nil, 0, err
+	}
+	total, err := s.storage.variants.Count(ctx, scopes...)
+	if err != nil {
+		return nil, 0, err
+	}
+	return items, total, nil
+}
+
 func (s *Service) ListCategories(ctx context.Context, actor *account.User, biz *business.Business) ([]*Category, error) {
 	return s.storage.categories.FindMany(ctx,
 		s.storage.categories.ScopeBusinessID(biz.ID),
@@ -106,6 +135,10 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 	var product *Product
 	err := s.atomicProcessor.Exec(ctx, func(txCtx context.Context) error {
 		var err error
+		// Validate category ownership to prevent cross-tenant reference.
+		if _, err := s.GetCategoryByID(txCtx, actor, biz, req.Product.CategoryID); err != nil {
+			return err
+		}
 		product = &Product{
 			BusinessID:  biz.ID,
 			Name:        req.Product.Name,
@@ -116,22 +149,23 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 		if err != nil {
 			return err
 		}
-		variants := make([]*Variant, 0, len(req.Variants))
+		variants := make([]*Variant, len(req.Variants))
 		for i, variantReq := range req.Variants {
+			sku := strings.TrimSpace(variantReq.SKU)
+			if sku == "" {
+				sku = CreateProductSKU(biz.Descriptor, product.Name, variantReq.Code)
+			}
 			variants[i] = &Variant{
 				BusinessID:         biz.ID,
 				ProductID:          product.ID,
 				Code:               variantReq.Code,
 				Name:               fmt.Sprintf("%s - %s", product.Name, variantReq.Code),
-				SKU:                variantReq.SKU,
+				SKU:                sku,
 				SalePrice:          variantReq.SalePrice,
 				CostPrice:          variantReq.CostPrice,
 				Currency:           biz.Currency,
 				StockQuantity:      variantReq.StockQuantity,
 				StockQuantityAlert: variantReq.StockQuantityAlert,
-			}
-			if variantReq.SKU == "" {
-				variantReq.SKU = CreateProductSKU(biz.Descriptor, product.Name, variantReq.Code)
 			}
 		}
 		err = s.storage.variants.CreateMany(txCtx, variants)
@@ -148,9 +182,14 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 }
 
 func (s *Service) CreateCategory(ctx context.Context, actor *account.User, biz *business.Business, req *CreateCategoryRequest) (*Category, error) {
+	descriptor := normalizeCategoryDescriptor(req.Descriptor)
+	if descriptor == "" {
+		return nil, problem.BadRequest("descriptor is required").With("field", "descriptor")
+	}
 	category := &Category{
 		BusinessID: biz.ID,
 		Name:       req.Name,
+		Descriptor: descriptor,
 	}
 	err := s.storage.categories.CreateOne(ctx, category)
 	if err != nil {
@@ -160,6 +199,10 @@ func (s *Service) CreateCategory(ctx context.Context, actor *account.User, biz *
 }
 
 func (s *Service) CreateProduct(ctx context.Context, actor *account.User, biz *business.Business, req *CreateProductRequest) (*Product, error) {
+	// Validate category ownership to prevent cross-tenant reference.
+	if _, err := s.GetCategoryByID(ctx, actor, biz, req.CategoryID); err != nil {
+		return nil, err
+	}
 	product := &Product{
 		BusinessID:  biz.ID,
 		Name:        req.Name,
@@ -174,20 +217,27 @@ func (s *Service) CreateProduct(ctx context.Context, actor *account.User, biz *b
 }
 
 func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *business.Business, req *CreateVariantRequest) (*Variant, error) {
+	product, err := s.GetProductByID(ctx, actor, biz, req.ProductID)
+	if err != nil {
+		return nil, err
+	}
+	sku := strings.TrimSpace(req.SKU)
+	if sku == "" {
+		sku = CreateProductSKU(biz.Descriptor, product.Name, req.Code)
+	}
 	variant := &Variant{
 		BusinessID:         biz.ID,
+		ProductID:          product.ID,
 		Code:               req.Code,
-		SKU:                req.SKU,
+		Name:               fmt.Sprintf("%s - %s", product.Name, req.Code),
+		SKU:                sku,
 		CostPrice:          req.CostPrice,
 		SalePrice:          req.SalePrice,
 		Currency:           biz.Currency,
 		StockQuantity:      req.StockQuantity,
 		StockQuantityAlert: req.StockQuantityAlert,
 	}
-	if req.SKU == "" {
-		variant.SKU = CreateProductSKU(biz.Descriptor, "", req.Code)
-	}
-	err := s.storage.variants.CreateOne(ctx, variant)
+	err = s.storage.variants.CreateOne(ctx, variant)
 	if err != nil {
 		return nil, err
 	}
@@ -214,42 +264,45 @@ func (s *Service) UpdateProduct(ctx context.Context, actor *account.User, biz *b
 			product.Description = req.Description
 		}
 		if req.CategoryID != "" {
+			if _, err := s.GetCategoryByID(tctx, actor, biz, req.CategoryID); err != nil {
+				return err
+			}
 			product.CategoryID = req.CategoryID
 		}
-		return s.storage.products.UpdateOne(ctx, product)
+		return s.storage.products.UpdateOne(tctx, product)
 	})
 }
 
 func (s *Service) UpdateVariant(ctx context.Context, actor *account.User, biz *business.Business, variantID string, req *UpdateVariantRequest) error {
-	variant, err := s.storage.variants.FindByID(ctx, variantID)
+	variant, err := s.GetVariantByID(ctx, actor, biz, variantID)
 	if err != nil {
 		return err
 	}
-	if req.Code != "" {
-		variant.Code = req.Code
-		product, err := s.storage.products.FindByID(ctx, variant.ProductID)
+	if req.Code != nil {
+		variant.Code = strings.TrimSpace(*req.Code)
+		product, err := s.GetProductByID(ctx, actor, biz, variant.ProductID)
 		if err != nil {
 			return err
 		}
 		variant.Name = fmt.Sprintf("%s - %s", product.Name, variant.Code)
 	}
-	if req.SKU != "" {
-		variant.SKU = req.SKU
+	if req.SKU != nil {
+		variant.SKU = strings.TrimSpace(*req.SKU)
 	}
-	if !req.CostPrice.IsZero() {
-		variant.CostPrice = req.CostPrice
+	if req.CostPrice != nil {
+		variant.CostPrice = *req.CostPrice
 	}
-	if !req.SalePrice.IsZero() {
-		variant.SalePrice = req.SalePrice
+	if req.SalePrice != nil {
+		variant.SalePrice = *req.SalePrice
 	}
-	if req.Currency != "" {
-		variant.Currency = req.Currency
+	if req.Currency != nil {
+		variant.Currency = strings.TrimSpace(strings.ToUpper(*req.Currency))
 	}
-	if req.StockQuantity != 0 {
-		variant.StockQuantity = req.StockQuantity
+	if req.StockQuantity != nil {
+		variant.StockQuantity = *req.StockQuantity
 	}
-	if req.StockQuantityAlert != 0 {
-		variant.StockQuantityAlert = req.StockQuantityAlert
+	if req.StockQuantityAlert != nil {
+		variant.StockQuantityAlert = *req.StockQuantityAlert
 	}
 	return s.storage.variants.UpdateOne(ctx, variant)
 }
@@ -257,6 +310,9 @@ func (s *Service) UpdateVariant(ctx context.Context, actor *account.User, biz *b
 func (s *Service) UpdateCategory(ctx context.Context, actor *account.User, biz *business.Business, category *Category, req *UpdateCategoryRequest) error {
 	if req.Name != "" {
 		category.Name = req.Name
+	}
+	if req.Descriptor != "" {
+		category.Descriptor = normalizeCategoryDescriptor(req.Descriptor)
 	}
 	return s.storage.categories.UpdateOne(ctx, category)
 }
@@ -326,8 +382,14 @@ func (s *Service) SumInventoryValue(ctx context.Context, actor *account.User, bi
 	return total, nil
 }
 
-// ComputeTopProductsByInventoryValue returns the top N products by their on-hand inventory value (sum of variant cost * qty).
-func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]*Product, error) {
+type TopProductByInventoryValue struct {
+	Product        *Product        `json:"product"`
+	InventoryValue decimal.Decimal `json:"inventoryValue"`
+}
+
+// ComputeTopProductsByInventoryValueDetailed returns the top N products by their on-hand inventory value
+// and includes the computed inventory value per product.
+func (s *Service) ComputeTopProductsByInventoryValueDetailed(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]*TopProductByInventoryValue, error) {
 	if limit <= 0 {
 		limit = 5
 	}
@@ -338,7 +400,6 @@ func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor 
 	if err != nil {
 		return nil, err
 	}
-	// aggregate by product id
 	byProduct := map[string]decimal.Decimal{}
 	productRef := map[string]*Product{}
 	for _, v := range variants {
@@ -347,7 +408,6 @@ func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor 
 		}
 		byProduct[v.ProductID] = byProduct[v.ProductID].Add(v.CostPrice.Mul(decimal.NewFromInt(int64(v.StockQuantity))))
 	}
-	// rank product ids by value
 	type kv struct {
 		id    string
 		value decimal.Decimal
@@ -358,13 +418,27 @@ func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor 
 	}
 	sort.Slice(arr, func(i, j int) bool { return arr[i].value.GreaterThan(arr[j].value) })
 
-	// pick top N and return products in that order
 	n := min(len(arr), limit)
-	out := make([]*Product, 0, n)
+	out := make([]*TopProductByInventoryValue, 0, n)
 	for i := range n {
-		if p, ok := productRef[arr[i].id]; ok {
-			out = append(out, p)
+		p, ok := productRef[arr[i].id]
+		if !ok {
+			continue
 		}
+		out = append(out, &TopProductByInventoryValue{Product: p, InventoryValue: arr[i].value})
+	}
+	return out, nil
+}
+
+// ComputeTopProductsByInventoryValue returns the top N products by their on-hand inventory value (sum of variant cost * qty).
+func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]*Product, error) {
+	detailed, err := s.ComputeTopProductsByInventoryValueDetailed(ctx, actor, biz, limit)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]*Product, 0, len(detailed))
+	for _, d := range detailed {
+		out = append(out, d.Product)
 	}
 	return out, nil
 }

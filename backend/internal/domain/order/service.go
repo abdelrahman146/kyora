@@ -224,8 +224,9 @@ func (s *Service) applyInventoryAdjustments(ctx context.Context, actor *account.
 			return ErrInsufficientStock(adj.variant, adj.qty)
 		}
 		adj.variant.StockQuantity = newStock
+		stock := newStock
 		if err := s.inventory.UpdateVariant(ctx, actor, biz, adj.variant.ID, &inventory.UpdateVariantRequest{
-			StockQuantity: newStock,
+			StockQuantity: &stock,
 		}); err != nil {
 			return err
 		}
