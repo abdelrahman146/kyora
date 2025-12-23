@@ -150,7 +150,6 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	businessStorage := business.NewStorage(db, cacheDB)
 	businessSvc := business.NewService(businessStorage, atomicProcessor, bus)
-	_ = businessSvc // to avoid unused variable warning
 
 	inventoryStorage := inventory.NewStorage(db, cacheDB)
 	inventorySvc := inventory.NewService(inventoryStorage, atomicProcessor, bus)
@@ -197,6 +196,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	// Register analytics routes
 	registerAnalyticsRoutes(r, analytics.NewHttpHandler(analyticsSvc, businessSvc), accountSvc)
+
+	// Register business routes
+	registerBusinessRoutes(r, business.NewHttpHandler(businessSvc), accountSvc, billingSvc, businessSvc)
 
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }

@@ -83,11 +83,11 @@ type CreateBusinessInput struct {
 }
 
 type UpdateBusinessInput struct {
-	Name          string              `form:"name" json:"name" binding:"required"`
-	Descriptor    string              `form:"descriptor" json:"descriptor" binding:"required"`
-	CountryCode   string              `form:"countryCode" json:"countryCode" binding:"required,len=2"`
-	Currency      string              `form:"currency" json:"currency" binding:"required,len=3"`
+	Name          *string             `form:"name" json:"name" binding:"omitempty"`
+	Descriptor    *string             `form:"descriptor" json:"descriptor" binding:"omitempty"`
+	CountryCode   *string             `form:"countryCode" json:"countryCode" binding:"omitempty,len=2"`
+	Currency      *string             `form:"currency" json:"currency" binding:"omitempty,len=3"`
 	VatRate       decimal.NullDecimal `form:"vatRate" json:"vatRate" binding:"omitempty,decimal"`
 	SafetyBuffer  decimal.NullDecimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty,decimal"`
-	EstablishedAt time.Time           `form:"establishedAt" json:"establishedAt" binding:"omitempty,date"`
+	EstablishedAt *time.Time          `form:"establishedAt" json:"establishedAt" binding:"omitempty,date"`
 }

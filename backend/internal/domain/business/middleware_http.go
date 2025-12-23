@@ -17,7 +17,7 @@ var (
 )
 
 type businessRequiredBusinessService interface {
-	GetBusinessByDescriptor(ctx context.Context, workspaceID string, descriptor string) (*Business, error)
+	GetBusinessByDescriptor(ctx context.Context, actor *account.User, descriptor string) (*Business, error)
 }
 
 func EnforceBusinessValidity(businessService businessRequiredBusinessService) gin.HandlerFunc {
@@ -28,7 +28,7 @@ func EnforceBusinessValidity(businessService businessRequiredBusinessService) gi
 			return
 		}
 		descriptor := c.Param("businessDescriptor")
-		biz, err := businessService.GetBusinessByDescriptor(c.Request.Context(), user.WorkspaceID, descriptor)
+		biz, err := businessService.GetBusinessByDescriptor(c.Request.Context(), user, descriptor)
 		if err != nil || biz == nil {
 			response.Error(c, problem.NotFound("business not found"))
 			return

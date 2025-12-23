@@ -5,6 +5,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
+	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -235,4 +236,25 @@ func registerAnalyticsRoutes(r *gin.Engine, h *analytics.HttpHandler, accountSer
 		reports.GET("/profit-and-loss", h.GetProfitAndLoss)
 		reports.GET("/cash-flow", h.GetCashFlow)
 	}
+}
+
+func registerBusinessRoutes(r *gin.Engine, h *business.HttpHandler, accountService *account.Service, billingService *billing.Service, businessService *business.Service) {
+	group := r.Group("/v1/businesses")
+	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+
+	group.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.ListBusinesses)
+	group.GET("/descriptor/availability", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.CheckDescriptorAvailability)
+	group.GET("/descriptor/:businessDescriptor", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.GetBusinessByDescriptor)
+	group.GET("/:businessId", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.GetBusiness)
+
+	group.POST("",
+		account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness),
+		billing.EnforceActiveSubscription(billingService),
+		billing.EnforcePlanWorkspaceLimits(billing.PlanSchema.MaxBusinesses, businessService.MaxBusinessesEnforceFunc),
+		h.CreateBusiness,
+	)
+	group.PATCH("/:businessId", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.UpdateBusiness)
+	group.POST("/:businessId/archive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.ArchiveBusiness)
+	group.POST("/:businessId/unarchive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.UnarchiveBusiness)
+	group.DELETE("/:businessId", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.DeleteBusiness)
 }
