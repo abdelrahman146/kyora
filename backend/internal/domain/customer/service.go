@@ -115,15 +115,35 @@ func (s *Service) DeleteCustomer(ctx context.Context, actor *account.User, biz *
 }
 
 func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Customer, int64, error) {
-	customers, err := s.storage.customer.FindMany(ctx,
+	scopes := []func(*gorm.DB) *gorm.DB{
 		s.storage.customer.ScopeBusinessID(biz.ID),
-		s.storage.customer.WithPagination(req.Offset(), req.Limit()),
-		s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
+	}
+
+	// Apply search if provided
+	if req.SearchTerm != "" {
+		searchScopes := []func(*gorm.DB) *gorm.DB{
+			s.storage.customer.ScopeSearchTerm(req.SearchTerm, CustomerSchema.Name, CustomerSchema.Email),
+		}
+		scopes = append(scopes, searchScopes...)
+	}
+
+	customers, err := s.storage.customer.FindMany(ctx,
+		append(scopes,
+			s.storage.customer.WithPagination(req.Offset(), req.Limit()),
+			s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
+		)...,
 	)
 	if err != nil {
 		return nil, 0, err
 	}
-	return customers, int64(len(customers)), nil
+
+	// Count with same filters (excluding pagination)
+	totalCount, err := s.storage.customer.Count(ctx, scopes...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return customers, totalCount, nil
 }
 
 func (s *Service) CountCustomers(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
@@ -219,6 +239,8 @@ func (s *Service) CreateCustomerAddress(ctx context.Context, actor *account.User
 		State:       req.State,
 		ZipCode:     transformer.ToNullString(req.ZipCode),
 		CountryCode: req.CountryCode,
+		PhoneCode:   req.PhoneCode,
+		PhoneNumber: req.Phone,
 	}
 	err = s.storage.customerAddress.CreateOne(ctx, address)
 	if err != nil {
@@ -270,7 +292,7 @@ func (s *Service) ListCustomerAddresses(ctx context.Context, actor *account.User
 		return nil, err
 	}
 	return s.storage.customerAddress.FindMany(ctx,
-		s.storage.customerAddress.ScopeID(customerID),
+		s.storage.customerAddress.ScopeEquals(CustomerAddressSchema.CustomerID, customerID),
 	)
 }
 

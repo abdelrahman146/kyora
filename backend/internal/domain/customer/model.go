@@ -30,12 +30,12 @@ const (
 type Customer struct {
 	gorm.Model
 	ID                string             `gorm:"column:id;primaryKey;type:text" json:"id"`
-	BusinessID        string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
+	BusinessID        string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:idx_business_email" json:"businessId"`
 	Business          *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	Name              string             `gorm:"column:name;type:text;not null" json:"name"`
 	CountryCode       string             `gorm:"column:country_code;type:text;not null" json:"countryCode"`
 	Gender            CustomerGender     `gorm:"column:gender;type:text;not null" json:"gender"`
-	Email             sql.NullString     `gorm:"column:email;type:text;not null;uniqueIndex" json:"email"`
+	Email             sql.NullString     `gorm:"column:email;type:text;not null;uniqueIndex:idx_business_email" json:"email"`
 	PhoneNumber       sql.NullString     `gorm:"column:phone_number;type:text" json:"phoneNumber,omitempty"`
 	PhoneCode         sql.NullString     `gorm:"column:phone_code;type:text" json:"phoneCode,omitempty"`
 	TikTokUsername    sql.NullString     `gorm:"column:tiktok_username;type:text" json:"tiktokUsername,omitempty"`

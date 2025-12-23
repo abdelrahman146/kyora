@@ -6,6 +6,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -257,4 +258,33 @@ func registerBusinessRoutes(r *gin.Engine, h *business.HttpHandler, accountServi
 	group.POST("/:businessId/archive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.ArchiveBusiness)
 	group.POST("/:businessId/unarchive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.UnarchiveBusiness)
 	group.DELETE("/:businessId", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.DeleteBusiness)
+}
+
+func registerCustomerRoutes(r *gin.Engine, h *customer.HttpHandler, accountService *account.Service) {
+	group := r.Group("/v1/customers")
+	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+
+	// Customer CRUD operations
+	group.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceCustomer), h.ListCustomers)
+	group.GET("/:customerId", account.EnforceActorPermissions(role.ActionView, role.ResourceCustomer), h.GetCustomer)
+	group.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.CreateCustomer)
+	group.PATCH("/:customerId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.UpdateCustomer)
+	group.DELETE("/:customerId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.DeleteCustomer)
+
+	// Customer address operations
+	addressGroup := group.Group("/:customerId/addresses")
+	{
+		addressGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceCustomer), h.ListCustomerAddresses)
+		addressGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.CreateCustomerAddress)
+		addressGroup.PATCH("/:addressId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.UpdateCustomerAddress)
+		addressGroup.DELETE("/:addressId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.DeleteCustomerAddress)
+	}
+
+	// Customer note operations
+	noteGroup := group.Group("/:customerId/notes")
+	{
+		noteGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceCustomer), h.ListCustomerNotes)
+		noteGroup.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.CreateCustomerNote)
+		noteGroup.DELETE("/:noteId", account.EnforceActorPermissions(role.ActionManage, role.ResourceCustomer), h.DeleteCustomerNote)
+	}
 }
