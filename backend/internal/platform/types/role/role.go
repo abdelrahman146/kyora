@@ -24,6 +24,8 @@ var RolePermissions = map[Role][]string{
 		"view:inventory",
 		"view:expense",
 		"view:accounting",
+		"view:basic_analytics",
+		"view:basic_financial_reports",
 	},
 	RoleAdmin: {
 		"view:account",
@@ -42,6 +44,8 @@ var RolePermissions = map[Role][]string{
 		"manage:expense",
 		"view:accounting",
 		"manage:accounting",
+		"view:basic_analytics",
+		"view:basic_financial_reports",
 	},
 }
 

@@ -3,6 +3,7 @@ package server
 import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
+	"github.com/abdelrahman146/kyora/internal/domain/analytics"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
@@ -211,4 +212,22 @@ func registerAccountingRoutes(r *gin.Engine, h *accounting.HttpHandler, accountS
 
 	// Summary Operations
 	group.GET("/summary", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), h.GetAccountingSummary)
+}
+
+func registerAnalyticsRoutes(r *gin.Engine, h *analytics.HttpHandler, accountService *account.Service) {
+	group := r.Group("/v1/analytics")
+	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+
+	group.GET("/dashboard", account.EnforceActorPermissions(role.ActionView, role.ResourceBasicAnalytics), h.GetDashboardMetrics)
+	group.GET("/sales", account.EnforceActorPermissions(role.ActionView, role.ResourceBasicAnalytics), h.GetSalesAnalytics)
+	group.GET("/inventory", account.EnforceActorPermissions(role.ActionView, role.ResourceBasicAnalytics), h.GetInventoryAnalytics)
+	group.GET("/customers", account.EnforceActorPermissions(role.ActionView, role.ResourceBasicAnalytics), h.GetCustomerAnalytics)
+
+	reports := group.Group("/reports")
+	reports.Use(account.EnforceActorPermissions(role.ActionView, role.ResourceFinancialReports))
+	{
+		reports.GET("/financial-position", h.GetFinancialPosition)
+		reports.GET("/profit-and-loss", h.GetProfitAndLoss)
+		reports.GET("/cash-flow", h.GetCashFlow)
+	}
 }

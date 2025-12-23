@@ -22,7 +22,7 @@ type Product struct {
 	ID          string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID  string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
 	Business    *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
-	Name        string             `gorm:"column:name;type:text;not null;index:product_trgm_idx,type:gin,option:gin_trgm_ops" json:"name"`
+	Name        string             `gorm:"column:name;type:text;not null" json:"name"`
 	Description string             `gorm:"column:description;type:text" json:"description"`
 	CategoryID  string             `gorm:"column:category_id;type:text;index" json:"categoryId"`
 	Category    *Category          `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
@@ -88,7 +88,7 @@ type Variant struct {
 	ID                 string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID         string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:sku_business_idx" json:"businessId"`
 	Business           *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
-	Name               string             `gorm:"column:name;type:text;not null;index:variant_trgm_idx,type:gin,option:gin_trgm_ops" json:"name"`
+	Name               string             `gorm:"column:name;type:text;not null" json:"name"`
 	Code               string             `gorm:"column:code;type:text;not null;uniqueIndex:code_product_idx" json:"code"`
 	ProductID          string             `gorm:"column:product_id;type:text;not null;index;uniqueIndex:code_product_idx" json:"productId"`
 	Product            *Product           `gorm:"foreignKey:ProductID;references:ID;OnDelete:CASCADE;" json:"product,omitempty"`
@@ -172,7 +172,7 @@ type Category struct {
 	ID         string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
 	Business   *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
-	Name       string             `gorm:"column:name;type:text;not null;index:category_trgm_idx,type:gin,option:gin_trgm_ops" json:"name"`
+	Name       string             `gorm:"column:name;type:text;not null" json:"name"`
 	Descriptor string             `gorm:"column:descriptor;type:text;not null;uniqueIndex:descriptor_business_idx" json:"descriptor"`
 }
 

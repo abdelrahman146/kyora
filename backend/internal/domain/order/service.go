@@ -17,6 +17,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
 
 type Service struct {
@@ -510,9 +511,27 @@ func (s *Service) ComputeLiveOrdersFunnel(ctx context.Context, actor *account.Us
 }
 
 func (s *Service) ComputeTopSellingProducts(ctx context.Context, actor *account.User, biz *business.Business, limit int, from, to time.Time) ([]*inventory.Product, error) {
+	joinOrders := s.storage.orderItem.WithJoins("JOIN orders ON orders.id = order_items.order_id")
+	scopeOrdersBusiness := func(db *gorm.DB) *gorm.DB {
+		return db.Where("orders.business_id = ?", biz.ID)
+	}
+	scopeOrdersTime := func(db *gorm.DB) *gorm.DB {
+		if !from.IsZero() && !to.IsZero() {
+			return db.Where("orders.ordered_at BETWEEN ? AND ?", from, to)
+		}
+		if !from.IsZero() {
+			return db.Where("orders.ordered_at >= ?", from)
+		}
+		if !to.IsZero() {
+			return db.Where("orders.ordered_at <= ?", to)
+		}
+		return db
+	}
+
 	res, err := s.storage.orderItem.SumBy(ctx, OrderItemSchema.ProductID, OrderItemSchema.Quantity,
-		s.storage.orderItem.ScopeBusinessID(biz.ID),
-		s.storage.orderItem.ScopeTime(OrderItemSchema.CreatedAt, from, to),
+		joinOrders,
+		scopeOrdersBusiness,
+		scopeOrdersTime,
 		s.storage.orderItem.WithLimit(limit),
 		s.storage.orderItem.WithOrderBy([]string{fmt.Sprintf("%s DESC", keyvalue.Schema.Value.Column())}),
 		s.storage.orderItem.WithPreload(inventory.ProductStruct),

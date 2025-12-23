@@ -170,7 +170,6 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 		Accounting: accountingSvc,
 		Customer:   customerSvc,
 	})
-	_ = analyticsSvc // to avoid unused variable warning
 
 	// onboarding routes
 	onboardingStorage := onboarding.NewStorage(db, cacheDB)
@@ -195,6 +194,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	// Register accounting routes
 	registerAccountingRoutes(r, accounting.NewHttpHandler(accountingSvc, businessSvc, orderSvc), accountSvc)
+
+	// Register analytics routes
+	registerAnalyticsRoutes(r, analytics.NewHttpHandler(analyticsSvc, businessSvc), accountSvc)
 
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }

@@ -44,6 +44,11 @@ func NewConnection(dsn string, logLevel string) *Database {
 		slog.Error("Could not get database instance", "error", err)
 		panic(err)
 	}
+	// Ensure required Postgres extensions exist (used by search scopes and indexes).
+	// This is safe to run multiple times and avoids test/dev failures on fresh databases.
+	if err := db.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm").Error; err != nil {
+		slog.Warn("Failed to ensure pg_trgm extension", "error", err)
+	}
 	maxOpenConns := viper.GetInt(config.DatabaseMaxOpenConns)
 	maxIdleConns := viper.GetInt(config.DatabaseMaxIdleConns)
 	maxIdleTime := viper.GetDuration(config.DatabaseMaxIdleTime)
