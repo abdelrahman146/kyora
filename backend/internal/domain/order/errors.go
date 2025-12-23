@@ -99,3 +99,8 @@ func ErrUpdateOrderItemNotAllowed(orderID, itemID string, status OrderStatus) er
 func ErrOrderNoteNotFound(orderNoteID string, err error) error {
 	return problem.NotFound("order note not found").WithError(err).With("orderNoteId", orderNoteID)
 }
+
+// ErrOrderRateLimited indicates the client exceeded rate limits.
+func ErrOrderRateLimited() error {
+	return problem.TooManyRequests("too many requests")
+}

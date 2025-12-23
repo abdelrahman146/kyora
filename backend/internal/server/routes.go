@@ -9,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
+	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/gin-gonic/gin"
@@ -201,11 +202,13 @@ func registerInventoryRoutes(r *gin.Engine, h *inventory.HttpHandler, accountSer
 func registerBusinessScopedRoutes(
 	r *gin.Engine,
 	accountService *account.Service,
+	billingService *billing.Service,
 	businessService *business.Service,
 	accountingHandler *accounting.HttpHandler,
 	analyticsHandler *analytics.HttpHandler,
 	customerHandler *customer.HttpHandler,
 	inventoryHandler *inventory.HttpHandler,
+	orderHandler *order.HttpHandler,
 ) {
 	group := r.Group("/v1/businesses/:businessDescriptor")
 	group.Use(
@@ -273,6 +276,39 @@ func registerBusinessScopedRoutes(
 			categories.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.CreateCategory)
 			categories.PATCH("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.UpdateCategory)
 			categories.DELETE("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.DeleteCategory)
+		}
+	}
+
+	// Order routes
+	orders := group.Group("/orders")
+	{
+		orders.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceOrder), orderHandler.ListOrders)
+		orders.GET("/by-number/:orderNumber", account.EnforceActorPermissions(role.ActionView, role.ResourceOrder), orderHandler.GetOrderByNumber)
+		orders.GET("/:orderId", account.EnforceActorPermissions(role.ActionView, role.ResourceOrder), orderHandler.GetOrder)
+
+		manageOrders := orders.Group("")
+		manageOrders.Use(
+			account.EnforceActorPermissions(role.ActionManage, role.ResourceOrder),
+			billing.EnforceActiveSubscription(billingService),
+			billing.EnforcePlanFeatureRestriction(billing.PlanSchema.OrderManagement),
+		)
+		{
+			manageOrders.POST("",
+				billing.EnforcePlanWorkspaceLimits(billing.PlanSchema.MaxOrdersPerMonth, billingService.CountMonthlyOrdersForPlanLimit),
+				orderHandler.CreateOrder,
+			)
+			manageOrders.PATCH("/:orderId", orderHandler.UpdateOrder)
+			manageOrders.DELETE("/:orderId", orderHandler.DeleteOrder)
+			manageOrders.PATCH("/:orderId/status", orderHandler.UpdateOrderStatus)
+			manageOrders.PATCH("/:orderId/payment-status", orderHandler.UpdateOrderPaymentStatus)
+			manageOrders.PATCH("/:orderId/payment-details", orderHandler.AddOrderPaymentDetails)
+
+			notes := manageOrders.Group("/:orderId/notes")
+			{
+				notes.POST("", orderHandler.CreateOrderNote)
+				notes.PATCH("/:noteId", orderHandler.UpdateOrderNote)
+				notes.DELETE("/:noteId", orderHandler.DeleteOrderNote)
+			}
 		}
 	}
 

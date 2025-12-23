@@ -34,6 +34,26 @@ func (s *Service) GetCustomerByID(ctx context.Context, actor *account.User, biz 
 	)
 }
 
+// GetCustomerAddressByID returns a customer address by ID after enforcing:
+// - customer exists in this business
+// - address belongs to that customer
+//
+// This helper is used by other domains (e.g., orders) to prevent cross-customer or cross-business reference attacks.
+func (s *Service) GetCustomerAddressByID(ctx context.Context, actor *account.User, biz *business.Business, customerID string, addressID string) (*CustomerAddress, error) {
+	_, err := s.GetCustomerByID(ctx, actor, biz, customerID)
+	if err != nil {
+		return nil, err
+	}
+	address, err := s.storage.customerAddress.FindByID(ctx, addressID)
+	if err != nil {
+		return nil, err
+	}
+	if address.CustomerID != customerID {
+		return nil, ErrCustomerAddressNotFound(nil)
+	}
+	return address, nil
+}
+
 func (s *Service) CreateCustomer(ctx context.Context, actor *account.User, biz *business.Business, req *CreateCustomerRequest) (*Customer, error) {
 	countryCode := strings.ToUpper(strings.TrimSpace(req.CountryCode))
 	if countryCode == "" {

@@ -7,12 +7,14 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/keyvalue"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/timeseries"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
@@ -25,23 +27,37 @@ type Service struct {
 	atomicProcessor atomic.AtomicProcessor
 	bus             *bus.Bus
 	inventory       *inventory.Service
+	customer        *customer.Service
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, inventory *inventory.Service) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, inventory *inventory.Service, customer *customer.Service) *Service {
 	return &Service{
 		storage:         storage,
 		atomicProcessor: atomicProcessor,
 		bus:             bus,
 		inventory:       inventory,
+		customer:        customer,
 	}
 }
 
 func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*Order, error) {
+	// Basic abuse/double-submit protection (best-effort, cache-backed).
+	if err := s.throttle(fmt.Sprintf("rl:order:create:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second); err != nil {
+		return nil, err
+	}
+
 	var order *Order
 	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
 		// basic validation
 		if req == nil || len(req.Items) == 0 {
 			return ErrEmptyOrderItems()
+		}
+		// ownership validation: ensure customer + address belong to this business
+		if _, err := s.customer.GetCustomerByID(tctx, actor, biz, req.CustomerID); err != nil {
+			return err
+		}
+		if _, err := s.customer.GetCustomerAddressByID(tctx, actor, biz, req.CustomerID, req.ShippingAddressID); err != nil {
+			return err
 		}
 
 		orderItems, adjustments, err := s.prepareOrderItems(tctx, actor, biz, req.Items)
@@ -187,6 +203,44 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 
 		}
 
+		if err := s.storage.order.UpdateOne(tctx, ord); err != nil {
+			return err
+		}
+
+		updated = ord
+		return nil
+	}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
+	if err != nil {
+		return nil, err
+	}
+	return updated, nil
+}
+
+// AddOrderPaymentDetails updates payment method/reference without changing payment status.
+// This is intentionally separate from UpdateOrderPaymentStatus to avoid accidental status changes.
+func (s *Service) AddOrderPaymentDetails(ctx context.Context, actor *account.User, biz *business.Business, id string, req *AddOrderPaymentDetailsRequest) (*Order, error) {
+	if req == nil {
+		return nil, problem.BadRequest("payment details are required")
+	}
+	var updated *Order
+	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		ord, err := s.storage.order.FindByID(tctx, id,
+			s.storage.order.ScopeBusinessID(biz.ID),
+			s.storage.order.WithLockingStrength(database.LockingStrengthUpdate),
+		)
+		if err != nil {
+			return ErrOrderNotFound(id, err)
+		}
+		// Prevent changing payment details for finalized states
+		switch ord.Status {
+		case OrderStatusCancelled, OrderStatusReturned:
+			return ErrOrderPaymentStatusUpdateNotAllowedForOrderStatus(ord.ID, ord.Status, ord.PaymentStatus)
+		}
+		ord.PaymentMethod = req.PaymentMethod
+		ord.PaymentReference = req.PaymentReference
+		if err := s.storage.order.UpdateOne(tctx, ord); err != nil {
+			return err
+		}
 		updated = ord
 		return nil
 	}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
@@ -364,12 +418,91 @@ func (s *Service) GetOrderByOrderNumber(ctx context.Context, actor *account.User
 	)
 }
 
-func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Order, error) {
-	return s.storage.order.FindMany(ctx,
+type ListOrdersFilters struct {
+	Statuses        []OrderStatus
+	PaymentStatuses []OrderPaymentStatus
+	CustomerID      string
+	OrderNumber     string
+	From            time.Time
+	To              time.Time
+}
+
+func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListOrdersFilters) ([]*Order, int64, error) {
+	opts := []func(db *gorm.DB) *gorm.DB{
 		s.storage.order.ScopeBusinessID(biz.ID),
 		s.storage.order.WithPagination(req.Offset(), req.Limit()),
 		s.storage.order.WithOrderBy(req.ParsedOrderBy(OrderSchema)),
-	)
+	}
+	if req.SearchTerm() != "" {
+		opts = append(opts, s.storage.order.ScopeSearchTerm(req.SearchTerm(), OrderSchema.OrderNumber, OrderSchema.Channel))
+	}
+	if filters != nil {
+		if len(filters.Statuses) > 0 {
+			vals := make([]any, 0, len(filters.Statuses))
+			for _, st := range filters.Statuses {
+				vals = append(vals, st)
+			}
+			opts = append(opts, s.storage.order.ScopeIn(OrderSchema.Status, vals))
+		}
+		if len(filters.PaymentStatuses) > 0 {
+			vals := make([]any, 0, len(filters.PaymentStatuses))
+			for _, st := range filters.PaymentStatuses {
+				vals = append(vals, st)
+			}
+			opts = append(opts, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
+		}
+		if filters.CustomerID != "" {
+			opts = append(opts, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
+		}
+		if filters.OrderNumber != "" {
+			opts = append(opts, s.storage.order.ScopeEquals(OrderSchema.OrderNumber, filters.OrderNumber))
+		}
+		if !filters.From.IsZero() || !filters.To.IsZero() {
+			opts = append(opts, s.storage.order.ScopeTime(OrderSchema.OrderedAt, filters.From, filters.To))
+		}
+	}
+
+	items, err := s.storage.order.FindMany(ctx, opts...)
+	if err != nil {
+		return nil, 0, err
+	}
+	// Count without pagination/order
+	countOpts := []func(db *gorm.DB) *gorm.DB{
+		s.storage.order.ScopeBusinessID(biz.ID),
+	}
+	if req.SearchTerm() != "" {
+		countOpts = append(countOpts, s.storage.order.ScopeSearchTerm(req.SearchTerm(), OrderSchema.OrderNumber, OrderSchema.Channel))
+	}
+	if filters != nil {
+		if len(filters.Statuses) > 0 {
+			vals := make([]any, 0, len(filters.Statuses))
+			for _, st := range filters.Statuses {
+				vals = append(vals, st)
+			}
+			countOpts = append(countOpts, s.storage.order.ScopeIn(OrderSchema.Status, vals))
+		}
+		if len(filters.PaymentStatuses) > 0 {
+			vals := make([]any, 0, len(filters.PaymentStatuses))
+			for _, st := range filters.PaymentStatuses {
+				vals = append(vals, st)
+			}
+			countOpts = append(countOpts, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
+		}
+		if filters.CustomerID != "" {
+			countOpts = append(countOpts, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
+		}
+		if filters.OrderNumber != "" {
+			countOpts = append(countOpts, s.storage.order.ScopeEquals(OrderSchema.OrderNumber, filters.OrderNumber))
+		}
+		if !filters.From.IsZero() || !filters.To.IsZero() {
+			countOpts = append(countOpts, s.storage.order.ScopeTime(OrderSchema.OrderedAt, filters.From, filters.To))
+		}
+	}
+	count, err := s.storage.order.Count(ctx, countOpts...)
+	if err != nil {
+		return nil, 0, err
+	}
+	return items, count, nil
 }
 
 func (s *Service) CountOrders(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
@@ -396,6 +529,10 @@ func (s *Service) DeleteOrder(ctx context.Context, actor *account.User, biz *bus
 		if err != nil {
 			return ErrOrderNotFound(id, err)
 		}
+		// Deletion is a destructive action; restrict to safe states only.
+		if order.Status != OrderStatusPending && order.Status != OrderStatusCancelled {
+			return ErrOrderCannotBeDeleted(order.ID, order.Status)
+		}
 		// delete order items and restock inventory
 		if err := s.deleteOrderItems(tctx, actor, biz, order.ID); err != nil {
 			return err
@@ -406,6 +543,14 @@ func (s *Service) DeleteOrder(ctx context.Context, actor *account.User, biz *bus
 }
 
 func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, req *CreateOrderNoteRequest) (*OrderNote, error) {
+	// Basic abuse protection for note creation.
+	if err := s.throttle(fmt.Sprintf("rl:order:note:create:%s:%s:%s", biz.ID, actor.ID, orderID), 5*time.Minute, 60, 1*time.Second); err != nil {
+		return nil, err
+	}
+
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+		return nil, ErrOrderNotFound(orderID, err)
+	}
 	note := &OrderNote{
 		OrderID: orderID,
 		Content: req.Content,
@@ -416,12 +561,54 @@ func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz 
 	return note, nil
 }
 
-func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, id string, req *UpdateOrderNoteRequest) (*OrderNote, error) {
-	note, err := s.storage.orderNote.FindByID(ctx, id,
-		s.storage.orderNote.ScopeEquals(OrderNoteSchema.OrderID, id),
-	)
+// throttle implements a simple token bucket using cache with JSON state.
+// This is best-effort and becomes a no-op when cache isn't configured.
+type throttleState struct {
+	Count int   `json:"count"`
+	Last  int64 `json:"last"` // unix seconds
+}
+
+func (s *Service) throttle(key string, window time.Duration, max int, minInterval time.Duration) error {
+	if s.storage.cache == nil {
+		return nil
+	}
+	now := time.Now()
+	// read state
+	var st throttleState
+	if data, err := s.storage.cache.Get(key); err == nil && len(data) > 0 {
+		_ = s.storage.cache.Unmarshal(data, &st)
+	}
+	// enforce min interval
+	if st.Last != 0 && now.Sub(time.Unix(st.Last, 0)) < minInterval {
+		return ErrOrderRateLimited()
+	}
+	// increment and cap
+	st.Count++
+	st.Last = now.Unix()
+	if st.Count > max {
+		// write back to ensure TTL stays
+		if b, err := s.storage.cache.Marshal(st); err == nil {
+			_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
+		}
+		return ErrOrderRateLimited()
+	}
+	// persist with TTL window
+	if b, err := s.storage.cache.Marshal(st); err == nil {
+		_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
+	}
+	return nil
+}
+
+func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, noteID string, req *UpdateOrderNoteRequest) (*OrderNote, error) {
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+		return nil, ErrOrderNotFound(orderID, err)
+	}
+	note, err := s.storage.orderNote.FindByID(ctx, noteID)
 	if err != nil {
-		return nil, ErrOrderNoteNotFound(id, err)
+		return nil, ErrOrderNoteNotFound(noteID, err)
+	}
+	if note.OrderID != orderID {
+		return nil, ErrOrderNoteNotFound(noteID, gorm.ErrRecordNotFound)
 	}
 	if req.Content != "" {
 		note.Content = req.Content
@@ -433,10 +620,16 @@ func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz 
 	return note, nil
 }
 
-func (s *Service) DeleteOrderNote(ctx context.Context, actor *account.User, biz *business.Business, id string) error {
-	note, err := s.storage.orderNote.FindOne(ctx, s.storage.order.ScopeBusinessID(biz.ID), s.storage.orderNote.ScopeID(id))
+func (s *Service) DeleteOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, noteID string) error {
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+		return ErrOrderNotFound(orderID, err)
+	}
+	note, err := s.storage.orderNote.FindByID(ctx, noteID)
 	if err != nil {
-		return ErrOrderNoteNotFound(id, err)
+		return ErrOrderNoteNotFound(noteID, err)
+	}
+	if note.OrderID != orderID {
+		return ErrOrderNoteNotFound(noteID, gorm.ErrRecordNotFound)
 	}
 	return s.storage.orderNote.DeleteOne(ctx, note)
 }

@@ -45,6 +45,16 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 	return s
 }
 
+// CountMonthlyOrdersForPlanLimit matches EnforcePlanLimitFunc signature.
+// The id parameter is the workspaceID.
+func (s *Service) CountMonthlyOrdersForPlanLimit(ctx context.Context, actor *account.User, id string) (int64, error) {
+	_ = actor
+	now := time.Now().UTC()
+	monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+	monthEnd := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC).Add(-time.Nanosecond)
+	return s.storage.CountMonthlyOrdersByWorkspace(ctx, id, monthStart, monthEnd)
+}
+
 // CreateCheckoutSession creates a Stripe Checkout Session for subscription signup or changes
 // This is the recommended approach for payment collection as per Stripe best practices
 func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspace, plan *Plan, successURL, cancelURL string) (string, error) {

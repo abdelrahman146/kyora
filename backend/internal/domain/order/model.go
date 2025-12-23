@@ -310,14 +310,14 @@ type UpdateOrderNoteRequest struct {
 var OrderNoteSchema = struct {
 	ID        schema.Field
 	OrderID   schema.Field
-	Note      schema.Field
+	Content   schema.Field
 	CreatedAt schema.Field
 	UpdatedAt schema.Field
 	DeletedAt schema.Field
 }{
 	ID:        schema.NewField("id", "id"),
 	OrderID:   schema.NewField("order_id", "orderId"),
-	Note:      schema.NewField("note", "note"),
+	Content:   schema.NewField("content", "content"),
 	CreatedAt: schema.NewField("created_at", "createdAt"),
 	UpdatedAt: schema.NewField("updated_at", "updatedAt"),
 	DeletedAt: schema.NewField("deleted_at", "deletedAt"),

@@ -14,11 +14,15 @@ func newOrderStateMachine(order *Order) *orderStateMachine {
 
 func (sm *orderStateMachine) canTransitionStateTo(newState OrderStatus) bool {
 	allowedTransitions := map[OrderStatus][]OrderStatus{
-		OrderStatusPending:   {OrderStatusPlaced, OrderStatusCancelled},
-		OrderStatusPlaced:    {OrderStatusShipped, OrderStatusCancelled},
-		OrderStatusShipped:   {OrderStatusFulfilled},
-		OrderStatusFulfilled: {OrderStatusReturned},
-		OrderStatusCancelled: {},
+		OrderStatusPending: {OrderStatusPlaced, OrderStatusCancelled},
+		// ReadyForShipment is an optional intermediate state between placed and shipped.
+		// We keep placed->shipped for backward compatibility.
+		OrderStatusPlaced:           {OrderStatusReadyForShipment, OrderStatusShipped, OrderStatusCancelled},
+		OrderStatusReadyForShipment: {OrderStatusShipped, OrderStatusCancelled},
+		OrderStatusShipped:          {OrderStatusFulfilled},
+		OrderStatusFulfilled:        {OrderStatusReturned},
+		OrderStatusCancelled:        {},
+		OrderStatusReturned:         {},
 	}
 	if allowed, ok := allowedTransitions[sm.order.Status]; ok {
 		if slices.Contains(allowed, newState) {
