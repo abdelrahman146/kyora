@@ -52,8 +52,12 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		return nil, fmt.Errorf("plan cannot be nil")
 	}
 	existing, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
-	if err != nil && !database.IsRecordNotFound(err) {
-		return nil, fmt.Errorf("failed to check existing subscription: %w", err)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			existing = nil
+		} else {
+			return nil, fmt.Errorf("failed to check existing subscription: %w", err)
+		}
 	}
 	if existing != nil && existing.PlanID == plan.ID && existing.Status == SubscriptionStatusActive {
 		return existing, nil

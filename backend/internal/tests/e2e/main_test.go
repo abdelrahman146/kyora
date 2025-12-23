@@ -25,6 +25,12 @@ func TestMain(m *testing.M) {
 	// Override email provider to use mock for tests
 	viper.Set(config.EmailProvider, "mock")
 
+	// Configure Stripe for stripe-mock.
+	// stripe-mock accepts a limited set of test keys; use the canonical one.
+	viper.Set(config.StripeAPIKey, "sk_test_123")
+	// Webhook secret isn't required for most E2E flows, but keep it non-empty.
+	viper.Set(config.StripeWebhookSecret, "whsec_test")
+
 	// Disable automatic plan sync for test isolation
 	// Tests will create their own plans as needed
 	viper.Set(config.BillingAutoSyncPlans, false)
