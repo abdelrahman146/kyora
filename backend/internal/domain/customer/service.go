@@ -29,9 +29,7 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 func (s *Service) GetCustomerByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*Customer, error) {
 	return s.storage.customer.FindOne(ctx,
 		s.storage.customer.ScopeBusinessID(biz.ID),
-		s.storage.customer.ScopeID(id), s.storage.customer.WithPreload(CustomerAddressStruct),
-		s.storage.customer.WithPreload(CustomerAddressStruct),
-		s.storage.customer.WithPreload(CustomerNoteStruct),
+		s.storage.customer.ScopeID(id),
 	)
 }
 
@@ -39,17 +37,17 @@ func (s *Service) CreateCustomer(ctx context.Context, actor *account.User, biz *
 	customer := &Customer{
 		BusinessID:        biz.ID,
 		Name:              req.Name,
-		Email:             transformer.ToNullString(req.Email),
+		Email:             transformer.ToNullableString(req.Email),
 		CountryCode:       req.CountryCode,
 		Gender:            req.Gender,
-		PhoneNumber:       transformer.ToNullString(req.PhoneNumber),
-		PhoneCode:         transformer.ToNullString(req.PhoneCode),
-		TikTokUsername:    transformer.ToNullString(req.TikTokUsername),
-		InstagramUsername: transformer.ToNullString(req.InstagramUsername),
-		FacebookUsername:  transformer.ToNullString(req.FacebookUsername),
-		XUsername:         transformer.ToNullString(req.XUsername),
-		SnapchatUsername:  transformer.ToNullString(req.SnapchatUsername),
-		WhatsappNumber:    transformer.ToNullString(req.WhatsappNumber),
+		PhoneNumber:       transformer.ToNullableString(req.PhoneNumber),
+		PhoneCode:         transformer.ToNullableString(req.PhoneCode),
+		TikTokUsername:    transformer.ToNullableString(req.TikTokUsername),
+		InstagramUsername: transformer.ToNullableString(req.InstagramUsername),
+		FacebookUsername:  transformer.ToNullableString(req.FacebookUsername),
+		XUsername:         transformer.ToNullableString(req.XUsername),
+		SnapchatUsername:  transformer.ToNullableString(req.SnapchatUsername),
+		WhatsappNumber:    transformer.ToNullableString(req.WhatsappNumber),
 	}
 	err := s.storage.customer.CreateOne(ctx, customer)
 	if err != nil {
@@ -73,31 +71,31 @@ func (s *Service) UpdateCustomer(ctx context.Context, actor *account.User, biz *
 		customer.Gender = req.Gender
 	}
 	if req.Email != "" {
-		customer.Email = transformer.ToNullString(req.Email)
+		customer.Email = transformer.ToNullableString(req.Email)
 	}
 	if req.PhoneNumber != "" {
-		customer.PhoneNumber = transformer.ToNullString(req.PhoneNumber)
+		customer.PhoneNumber = transformer.ToNullableString(req.PhoneNumber)
 	}
 	if req.PhoneCode != "" {
-		customer.PhoneCode = transformer.ToNullString(req.PhoneCode)
+		customer.PhoneCode = transformer.ToNullableString(req.PhoneCode)
 	}
 	if req.TikTokUsername != "" {
-		customer.TikTokUsername = transformer.ToNullString(req.TikTokUsername)
+		customer.TikTokUsername = transformer.ToNullableString(req.TikTokUsername)
 	}
 	if req.InstagramUsername != "" {
-		customer.InstagramUsername = transformer.ToNullString(req.InstagramUsername)
+		customer.InstagramUsername = transformer.ToNullableString(req.InstagramUsername)
 	}
 	if req.FacebookUsername != "" {
-		customer.FacebookUsername = transformer.ToNullString(req.FacebookUsername)
+		customer.FacebookUsername = transformer.ToNullableString(req.FacebookUsername)
 	}
 	if req.XUsername != "" {
-		customer.XUsername = transformer.ToNullString(req.XUsername)
+		customer.XUsername = transformer.ToNullableString(req.XUsername)
 	}
 	if req.SnapchatUsername != "" {
-		customer.SnapchatUsername = transformer.ToNullString(req.SnapchatUsername)
+		customer.SnapchatUsername = transformer.ToNullableString(req.SnapchatUsername)
 	}
 	if req.WhatsappNumber != "" {
-		customer.WhatsappNumber = transformer.ToNullString(req.WhatsappNumber)
+		customer.WhatsappNumber = transformer.ToNullableString(req.WhatsappNumber)
 	}
 	err = s.storage.customer.UpdateOne(ctx, customer)
 	if err != nil {
@@ -120,9 +118,9 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 	}
 
 	// Apply search if provided
-	if req.SearchTerm != "" {
+	if req.SearchTerm() != "" {
 		searchScopes := []func(*gorm.DB) *gorm.DB{
-			s.storage.customer.ScopeSearchTerm(req.SearchTerm, CustomerSchema.Name, CustomerSchema.Email),
+			s.storage.customer.ScopeSearchTerm(req.SearchTerm(), CustomerSchema.Name, CustomerSchema.Email),
 		}
 		scopes = append(scopes, searchScopes...)
 	}
@@ -234,10 +232,10 @@ func (s *Service) CreateCustomerAddress(ctx context.Context, actor *account.User
 	}
 	address := &CustomerAddress{
 		CustomerID:  customerID,
-		Street:      transformer.ToNullString(req.Street),
+		Street:      transformer.ToNullableString(req.Street),
 		City:        req.City,
 		State:       req.State,
-		ZipCode:     transformer.ToNullString(req.ZipCode),
+		ZipCode:     transformer.ToNullableString(req.ZipCode),
 		CountryCode: req.CountryCode,
 		PhoneCode:   req.PhoneCode,
 		PhoneNumber: req.Phone,
@@ -264,7 +262,7 @@ func (s *Service) UpdateCustomerAddress(ctx context.Context, actor *account.User
 		return nil, gorm.ErrRecordNotFound
 	}
 	if req.Street != "" {
-		address.Street = transformer.ToNullString(req.Street)
+		address.Street = transformer.ToNullableString(req.Street)
 	}
 	if req.City != "" {
 		address.City = req.City
@@ -273,7 +271,7 @@ func (s *Service) UpdateCustomerAddress(ctx context.Context, actor *account.User
 		address.State = req.State
 	}
 	if req.ZipCode != "" {
-		address.ZipCode = transformer.ToNullString(req.ZipCode)
+		address.ZipCode = transformer.ToNullableString(req.ZipCode)
 	}
 	if req.CountryCode != "" {
 		address.CountryCode = req.CountryCode

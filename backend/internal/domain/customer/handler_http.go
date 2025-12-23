@@ -90,13 +90,7 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 	}
 
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
-	customers, err := h.service.ListCustomers(c.Request.Context(), actor, biz, listReq)
-	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
-		return
-	}
-
-	totalCount, err := h.service.CountCustomers(c.Request.Context(), actor, biz)
+	customers, totalCount, err := h.service.ListCustomers(c.Request.Context(), actor, biz, listReq)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return

@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"context"
-	"database/sql"
 	"net/http"
 	"testing"
 	"time"
@@ -10,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/types/nullable"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/shopspring/decimal"
 	"github.com/stretchr/testify/suite"
@@ -66,7 +66,7 @@ func (s *SummarySuite) TestSummary_ComputedFields_WithInvestmentsWithdrawalsExpe
 		Name:        "Test Customer",
 		CountryCode: "US",
 		Gender:      customer.GenderOther,
-		Email:       sql.NullString{String: "customer@example.com", Valid: true},
+		Email:       nullable.NewString("customer@example.com"),
 		JoinedAt:    now,
 	}
 	s.NoError(customerRepo.CreateOne(ctx, cus))
@@ -79,7 +79,7 @@ func (s *SummarySuite) TestSummary_ComputedFields_WithInvestmentsWithdrawalsExpe
 		City:        "San Francisco",
 		PhoneCode:   "+1",
 		PhoneNumber: "5551234",
-		Street:      sql.NullString{String: "1 Market St", Valid: true},
+		Street:      nullable.NewString("1 Market St"),
 	}
 	s.NoError(addressRepo.CreateOne(ctx, addr))
 
@@ -145,7 +145,7 @@ func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
 		Name:        "Test Customer",
 		CountryCode: "US",
 		Gender:      customer.GenderOther,
-		Email:       sql.NullString{String: "customer-range@example.com", Valid: true},
+		Email:       nullable.NewString("customer-range@example.com"),
 		JoinedAt:    within,
 	}
 	s.NoError(customerRepo.CreateOne(ctx, cus))
@@ -158,7 +158,7 @@ func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
 		City:        "San Francisco",
 		PhoneCode:   "+1",
 		PhoneNumber: "5551234",
-		Street:      sql.NullString{String: "1 Market St", Valid: true},
+		Street:      nullable.NewString("1 Market St"),
 	}
 	s.NoError(addressRepo.CreateOne(ctx, addr))
 

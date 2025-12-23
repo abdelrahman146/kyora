@@ -4,8 +4,21 @@ import (
 	"database/sql"
 	"time"
 
+	"github.com/abdelrahman146/kyora/internal/platform/types/nullable"
 	"github.com/shopspring/decimal"
 )
+
+// ToNullableString converts a string to nullable.String.
+// Empty strings are converted to invalid (null) values.
+func ToNullableString(s string) nullable.String {
+	return nullable.NewString(s)
+}
+
+// FromNullableString extracts the string value from nullable.String.
+// Invalid (null) values return empty string.
+func FromNullableString(ns nullable.String) string {
+	return ns.ValueOrDefault("")
+}
 
 func ToNullString(s string) sql.NullString {
 	if s == "" {

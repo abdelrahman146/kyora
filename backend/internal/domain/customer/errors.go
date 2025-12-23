@@ -16,7 +16,7 @@ func ErrCustomerDuplicateEmail(err error) *problem.Problem {
 
 // ErrCustomerInvalidData returns a validation error for invalid customer data
 func ErrCustomerInvalidData(message string) *problem.Problem {
-	return problem.ValidationError(message)
+	return problem.BadRequest(message)
 }
 
 // Customer address errors
@@ -28,7 +28,7 @@ func ErrCustomerAddressNotFound(err error) *problem.Problem {
 
 // ErrCustomerAddressInvalidData returns a validation error for invalid address data
 func ErrCustomerAddressInvalidData(message string) *problem.Problem {
-	return problem.ValidationError(message)
+	return problem.BadRequest(message)
 }
 
 // Customer note errors
@@ -40,7 +40,7 @@ func ErrCustomerNoteNotFound(err error) *problem.Problem {
 
 // ErrCustomerNoteInvalidData returns a validation error for invalid note data
 func ErrCustomerNoteInvalidData(message string) *problem.Problem {
-	return problem.ValidationError(message)
+	return problem.BadRequest(message)
 }
 
 // Authorization errors

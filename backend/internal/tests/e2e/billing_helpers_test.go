@@ -2,7 +2,6 @@ package e2e_test
 
 import (
 	"context"
-	"database/sql"
 	"fmt"
 	"strings"
 	"time"
@@ -14,6 +13,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/types/nullable"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
@@ -163,7 +163,7 @@ func (h *BillingTestHelper) CreateCustomerWithAddress(ctx context.Context, busin
 		Name:        "John Doe",
 		CountryCode: "US",
 		Gender:      customer.GenderOther,
-		Email:       sql.NullString{String: fmt.Sprintf("cust_%d@example.com", time.Now().UnixNano()), Valid: true},
+		Email:       nullable.NewString(fmt.Sprintf("cust_%d@example.com", time.Now().UnixNano())),
 	}
 	if err := custRepo.CreateOne(ctx, cust); err != nil {
 		return nil, nil, err
@@ -174,7 +174,7 @@ func (h *BillingTestHelper) CreateCustomerWithAddress(ctx context.Context, busin
 		CountryCode: "US",
 		State:       "CA",
 		City:        "SF",
-		Street:      sql.NullString{String: "Market", Valid: true},
+		Street:      nullable.NewString("Market"),
 		PhoneCode:   "+1",
 		PhoneNumber: "5551234",
 	}
