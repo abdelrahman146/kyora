@@ -20,6 +20,30 @@ func (s *BillingSubscriptionAdvancedSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingSubscriptionAdvancedSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingSubscriptionAdvancedSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingSubscriptionAdvancedSuite) TestEstimateProration_AndScheduleChange() {
 	ctx := s.T().Context()
 

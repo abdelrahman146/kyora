@@ -20,6 +20,40 @@ func (s *BillingUsageQuotaSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingUsageQuotaSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"order_items",
+		"orders",
+		"customer_addresses",
+		"customers",
+		"businesses",
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingUsageQuotaSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"order_items",
+		"orders",
+		"customer_addresses",
+		"customers",
+		"businesses",
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 	ctx := s.T().Context()
 	limits := billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5}

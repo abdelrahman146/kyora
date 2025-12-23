@@ -20,6 +20,30 @@ func (s *BillingInvoicesSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingInvoicesSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingInvoicesSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingInvoicesSuite) TestInvoices_CreateAndList_AndBOLAOnPay() {
 	ctx := s.T().Context()
 	_, _, token1 := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin1"), role.RoleAdmin)

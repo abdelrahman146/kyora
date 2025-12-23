@@ -20,6 +20,30 @@ func (s *BillingSubscriptionCheckoutPortalSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingSubscriptionCheckoutPortalSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingSubscriptionCheckoutPortalSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_AuthzAndFreePlan() {
 	ctx := s.T().Context()
 	descriptor := s.helper.UniqueSlug("free")

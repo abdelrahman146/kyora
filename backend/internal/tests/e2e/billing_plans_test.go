@@ -19,6 +19,30 @@ func (s *BillingPlansSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingPlansSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingPlansSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingPlansSuite) TestPlans_ListAndGet() {
 	ctx := s.T().Context()
 	descriptor := s.helper.UniqueSlug("starter")

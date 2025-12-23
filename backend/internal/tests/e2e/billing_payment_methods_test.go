@@ -20,6 +20,30 @@ func (s *BillingPaymentMethodsSuite) SetupSuite() {
 	s.helper = NewBillingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
+func (s *BillingPaymentMethodsSuite) SetupTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
+func (s *BillingPaymentMethodsSuite) TearDownTest() {
+	err := testutils.TruncateTables(testEnv.Database,
+		"plans",
+		"subscriptions",
+		"billing_invoice_records",
+		"stripe_events",
+		"users",
+		"workspaces",
+	)
+	s.NoError(err)
+}
+
 func (s *BillingPaymentMethodsSuite) TestSetupIntent_Authz() {
 	ctx := s.T().Context()
 	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
