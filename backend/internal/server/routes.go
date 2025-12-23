@@ -105,7 +105,9 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 		subscriptionGroup.POST("/resume", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ResumeSubscription)
 		subscriptionGroup.POST("/schedule-change", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ScheduleSubscriptionChange)
 		subscriptionGroup.POST("/estimate-proration", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.EstimateProration)
+		subscriptionGroup.GET("/trial", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetTrialStatus)
 		subscriptionGroup.POST("/trial/extend", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.ExtendTrial)
+		subscriptionGroup.POST("/grace-period", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.SetGracePeriod)
 	}
 
 	// Payment Method Operations
@@ -128,13 +130,15 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 
 	// Checkout and Portal Operations
 	checkoutGroup := group.Group("/checkout")
+	checkoutGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 	{
-		checkoutGroup.POST("/session", h.CreateCheckoutSession)
+		checkoutGroup.POST("/session", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CreateCheckoutSession)
 	}
 
 	portalGroup := group.Group("/portal")
+	portalGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 	{
-		portalGroup.POST("/session", h.CreateBillingPortalSession)
+		portalGroup.POST("/session", account.EnforceActorPermissions(role.ActionManage, role.ResourceBilling), h.CreateBillingPortalSession)
 	}
 
 	// Tax and Usage
@@ -142,6 +146,7 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 	usageGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 	{
 		usageGroup.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetUsage)
+		usageGroup.GET("/quota", account.EnforceActorPermissions(role.ActionView, role.ResourceBilling), h.GetUsageQuota)
 	}
 
 	taxGroup := group.Group("/tax")

@@ -77,17 +77,32 @@ func (s *Service) GetUsageQuota(ctx context.Context, ws *account.Workspace, usag
 		return 0, 0, fmt.Errorf("failed to get plan for quota check: %w", err)
 	}
 	var quotaLimit int64
+	var currentUsage int64
 	switch usageType {
 	case "orders_per_month":
 		quotaLimit = plan.Limits.MaxOrdersPerMonth
+		now := time.Now().UTC()
+		monthStart := time.Date(now.Year(), now.Month(), 1, 0, 0, 0, 0, time.UTC)
+		monthEnd := monthStart.AddDate(0, 1, 0).Add(-time.Nanosecond)
+		currentUsage, err = s.storage.CountMonthlyOrdersByWorkspace(ctx, ws.ID, monthStart, monthEnd)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to count monthly orders: %w", err)
+		}
 	case "team_members":
 		quotaLimit = plan.Limits.MaxTeamMembers
+		currentUsage, err = s.account.CountWorkspaceUsers(ctx, ws.ID)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to count workspace users: %w", err)
+		}
 	case "businesses":
 		quotaLimit = plan.Limits.MaxBusinesses
+		currentUsage, err = s.storage.CountBusinessesByWorkspace(ctx, ws.ID)
+		if err != nil {
+			return 0, 0, fmt.Errorf("failed to count workspace businesses: %w", err)
+		}
 	default:
 		return 0, 0, fmt.Errorf("unsupported usage type: %s", usageType)
 	}
-	currentUsage := int64(0)
 	logger.FromContext(ctx).Info("usage quota retrieved", "workspaceId", ws.ID, "usageType", usageType, "currentUsage", currentUsage, "quotaLimit", quotaLimit)
 	return currentUsage, quotaLimit, nil
 }
@@ -222,13 +237,29 @@ type TrialInfo struct {
 func (s *Service) GetSubscriptionUsage(ctx context.Context, ws *account.Workspace) (map[string]int64, error) {
 	l := logger.FromContext(ctx).With("workspaceId", ws.ID)
 	l.Info("retrieving subscription usage")
-	sub, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
+	_, err := s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
 	if err != nil {
 		l.Error("failed to get subscription", "error", err)
 		return nil, err
 	}
-	usage := map[string]int64{"api_calls": 1250, "storage_gb": 15, "users": 5, "projects": 3, "integrations": 2}
-	l.Info("usage retrieved successfully", "subscriptionId", sub.ID)
+	ordersUsed, _, err := s.GetUsageQuota(ctx, ws, "orders_per_month")
+	if err != nil {
+		return nil, err
+	}
+	usersUsed, _, err := s.GetUsageQuota(ctx, ws, "team_members")
+	if err != nil {
+		return nil, err
+	}
+	businessesUsed, _, err := s.GetUsageQuota(ctx, ws, "businesses")
+	if err != nil {
+		return nil, err
+	}
+	usage := map[string]int64{
+		"ordersPerMonth": ordersUsed,
+		"teamMembers":   usersUsed,
+		"businesses":    businessesUsed,
+	}
+	l.Info("usage retrieved successfully")
 	return usage, nil
 }
 

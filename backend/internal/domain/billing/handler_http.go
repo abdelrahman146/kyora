@@ -6,8 +6,10 @@ import (
 	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
 
@@ -27,6 +29,15 @@ func NewHttpHandler(service *Service, accountSvc *account.Service) *HttpHandler 
 }
 
 // Plan Operations
+
+// ListPlans returns all available billing plans.
+//
+// @Summary      List billing plans
+// @Tags         billing
+// @Produce      json
+// @Success      200 {array} Plan
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/plans [get]
 func (h *HttpHandler) ListPlans(c *gin.Context) {
 	plans, err := h.service.ListPlans(c.Request.Context())
 	if err != nil {
@@ -36,6 +47,16 @@ func (h *HttpHandler) ListPlans(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, plans)
 }
 
+// GetPlan returns a plan by descriptor.
+//
+// @Summary      Get billing plan
+// @Tags         billing
+// @Produce      json
+// @Param        descriptor path string true "Plan descriptor"
+// @Success      200 {object} Plan
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/plans/{descriptor} [get]
 func (h *HttpHandler) GetPlan(c *gin.Context) {
 	descriptor := c.Param("descriptor")
 	plan, err := h.service.GetPlanByDescriptor(c.Request.Context(), descriptor)
@@ -47,6 +68,17 @@ func (h *HttpHandler) GetPlan(c *gin.Context) {
 }
 
 // Subscription Operations
+
+// GetSubscription returns the workspace subscription.
+//
+// @Summary      Get current subscription
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} Subscription
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Router       /v1/billing/subscription [get]
 func (h *HttpHandler) GetSubscription(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -62,10 +94,23 @@ func (h *HttpHandler) GetSubscription(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, subscription)
 }
 
+// CreateSubscription creates or updates the workspace subscription.
+//
+// @Summary      Create or update subscription
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body subRequest true "Subscription request"
+// @Success      200 {object} Subscription
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription [post]
 func (h *HttpHandler) CreateSubscription(c *gin.Context) {
 	var req subRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 
@@ -89,6 +134,16 @@ func (h *HttpHandler) CreateSubscription(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, subscription)
 }
 
+// CancelSubscription cancels the workspace subscription immediately.
+//
+// @Summary      Cancel subscription
+// @Tags         billing
+// @Success      204
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription [delete]
 func (h *HttpHandler) CancelSubscription(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -103,6 +158,16 @@ func (h *HttpHandler) CancelSubscription(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
+// GetSubscriptionDetails returns subscription + plan + default payment method.
+//
+// @Summary      Get subscription details
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} SubscriptionDetails
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/details [get]
 func (h *HttpHandler) GetSubscriptionDetails(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -117,6 +182,17 @@ func (h *HttpHandler) GetSubscriptionDetails(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, details)
 }
 
+// ResumeSubscription resumes a canceled/past_due/unpaid subscription when possible.
+//
+// @Summary      Resume subscription
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} Subscription
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/resume [post]
 func (h *HttpHandler) ResumeSubscription(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -131,10 +207,22 @@ func (h *HttpHandler) ResumeSubscription(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, sub)
 }
 
+// ScheduleSubscriptionChange schedules a plan change.
+//
+// @Summary      Schedule subscription change
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body scheduleChangeRequest true "Schedule change"
+// @Success      200 {object} stripe.SubscriptionSchedule
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/schedule-change [post]
 func (h *HttpHandler) ScheduleSubscriptionChange(c *gin.Context) {
 	var req scheduleChangeRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 	ws, err := account.WorkspaceFromContext(c)
@@ -155,10 +243,22 @@ func (h *HttpHandler) ScheduleSubscriptionChange(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, schedule)
 }
 
+// EstimateProration estimates proration amount when changing plans.
+//
+// @Summary      Estimate proration
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body prorationEstimateRequest true "Proration request"
+// @Success      200 {object} map[string]int64
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/estimate-proration [post]
 func (h *HttpHandler) EstimateProration(c *gin.Context) {
 	var req prorationEstimateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 	ws, err := account.WorkspaceFromContext(c)
@@ -175,10 +275,23 @@ func (h *HttpHandler) EstimateProration(c *gin.Context) {
 }
 
 // Payment Method Operations
+
+// AttachPaymentMethod attaches and sets a default payment method.
+//
+// @Summary      Attach payment method
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body attachPMRequest true "Attach payment method"
+// @Success      200
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/payment-methods/attach [post]
 func (h *HttpHandler) AttachPaymentMethod(c *gin.Context) {
 	var req attachPMRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 
@@ -195,6 +308,16 @@ func (h *HttpHandler) AttachPaymentMethod(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusOK)
 }
 
+// CreateSetupIntent returns a Stripe SetupIntent client secret.
+//
+// @Summary      Create setup intent
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} map[string]string
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/payment-methods/setup-intent [post]
 func (h *HttpHandler) CreateSetupIntent(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -210,6 +333,21 @@ func (h *HttpHandler) CreateSetupIntent(c *gin.Context) {
 }
 
 // Invoice Operations
+
+// ListInvoices lists Stripe invoices for the workspace.
+//
+// @Summary      List invoices
+// @Tags         billing
+// @Produce      json
+// @Param        page query int false "Page" default(1)
+// @Param        pageSize query int false "Page size" default(30)
+// @Param        orderBy query string false "Order by (comma separated)"
+// @Param        status query string false "Invoice status"
+// @Success      200 {object} list.ListResponse[billing.InvoiceSummary]
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/invoices [get]
 func (h *HttpHandler) ListInvoices(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -239,6 +377,17 @@ func (h *HttpHandler) ListInvoices(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, resp)
 }
 
+// DownloadInvoice redirects to an invoice PDF/url if invoice belongs to workspace.
+//
+// @Summary      Download invoice
+// @Tags         billing
+// @Param        id path string true "Invoice ID"
+// @Success      302
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/invoices/{id}/download [get]
 func (h *HttpHandler) DownloadInvoice(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -254,6 +403,17 @@ func (h *HttpHandler) DownloadInvoice(c *gin.Context) {
 	c.Redirect(http.StatusFound, url)
 }
 
+// PayInvoice attempts to pay an open invoice.
+//
+// @Summary      Pay invoice
+// @Tags         billing
+// @Param        id path string true "Invoice ID"
+// @Success      204
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/invoices/{id}/pay [post]
 func (h *HttpHandler) PayInvoice(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -268,10 +428,22 @@ func (h *HttpHandler) PayInvoice(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
+// CreateInvoice creates a manual invoice for the workspace.
+//
+// @Summary      Create invoice
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body manualInvoiceRequest true "Invoice request"
+// @Success      201
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/invoices [post]
 func (h *HttpHandler) CreateInvoice(c *gin.Context) {
 	var req manualInvoiceRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 	ws, err := account.WorkspaceFromContext(c)
@@ -288,10 +460,23 @@ func (h *HttpHandler) CreateInvoice(c *gin.Context) {
 }
 
 // Checkout and Portal Operations
+
+// CreateCheckoutSession creates a Stripe Checkout session.
+//
+// @Summary      Create checkout session
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body checkoutRequest true "Checkout request"
+// @Success      200 {object} map[string]string
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/checkout/session [post]
 func (h *HttpHandler) CreateCheckoutSession(c *gin.Context) {
 	var req checkoutRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 
@@ -312,13 +497,25 @@ func (h *HttpHandler) CreateCheckoutSession(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"checkoutUrl": url})
+	response.SuccessJSON(c, http.StatusOK, gin.H{"url": url, "checkoutUrl": url})
 }
 
+// CreateBillingPortalSession creates a Stripe customer portal session.
+//
+// @Summary      Create billing portal session
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body billingPortalRequest true "Portal request"
+// @Success      200 {object} map[string]string
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/portal/session [post]
 func (h *HttpHandler) CreateBillingPortalSession(c *gin.Context) {
 	var req billingPortalRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 
@@ -333,9 +530,19 @@ func (h *HttpHandler) CreateBillingPortalSession(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"portalUrl": url})
+	response.SuccessJSON(c, http.StatusOK, gin.H{"url": url, "portalUrl": url})
 }
 
+// GetUsage returns current usage (best-effort).
+//
+// @Summary      Get usage
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} map[string]int64
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/usage [get]
 func (h *HttpHandler) GetUsage(c *gin.Context) {
 	ws, err := account.WorkspaceFromContext(c)
 	if err != nil {
@@ -350,10 +557,60 @@ func (h *HttpHandler) GetUsage(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, usage)
 }
 
+// GetUsageQuota returns used and limit for a specific quota type.
+//
+// @Summary      Get usage quota
+// @Tags         billing
+// @Produce      json
+// @Param        type query string true "Quota type" Enums(orders_per_month,team_members,businesses)
+// @Success      200 {object} map[string]any
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/usage/quota [get]
+func (h *HttpHandler) GetUsageQuota(c *gin.Context) {
+	quotaType := c.Query("type")
+	if quotaType == "" {
+		response.Error(c, problem.BadRequest("missing required query parameter: type"))
+		return
+	}
+
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	used, limit, err := h.service.GetUsageQuota(c.Request.Context(), ws, quotaType)
+	if err != nil {
+		response.Error(c, problem.BadRequest("invalid quota type").With("type", quotaType).WithError(err))
+		return
+	}
+
+	response.SuccessJSON(c, http.StatusOK, gin.H{
+		"type":  quotaType,
+		"used":  used,
+		"limit": limit,
+	})
+}
+
+// CalculateTax calculates tax for the given amount.
+//
+// @Summary      Calculate tax
+// @Tags         billing
+// @Accept       json
+// @Produce      json
+// @Param        request body taxCalculateRequest true "Tax calculation request"
+// @Success      200
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/tax/calculate [post]
 func (h *HttpHandler) CalculateTax(c *gin.Context) {
 	var req taxCalculateRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 	ws, err := account.WorkspaceFromContext(c)
@@ -370,10 +627,21 @@ func (h *HttpHandler) CalculateTax(c *gin.Context) {
 }
 
 // Trial Operations
+
+// ExtendTrial extends the Stripe trial for a trialing subscription.
+//
+// @Summary      Extend trial
+// @Tags         billing
+// @Accept       json
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/trial/extend [post]
 func (h *HttpHandler) ExtendTrial(c *gin.Context) {
 	var req trialExtendRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		response.Error(c, err)
+	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
 	ws, err := account.WorkspaceFromContext(c)
@@ -388,14 +656,80 @@ func (h *HttpHandler) ExtendTrial(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
+// GetTrialStatus returns trial status details for the current workspace.
+//
+// @Summary      Get trial status
+// @Tags         billing
+// @Produce      json
+// @Success      200 {object} TrialInfo
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/trial [get]
+func (h *HttpHandler) GetTrialStatus(c *gin.Context) {
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	info, err := h.service.CheckTrialStatus(c.Request.Context(), ws)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, info)
+}
+
+type gracePeriodRequest struct {
+	GraceDays int `json:"graceDays" binding:"required,min=1,max=30"`
+}
+
+// SetGracePeriod marks a grace period for past_due subscriptions.
+//
+// @Summary      Set grace period
+// @Tags         billing
+// @Accept       json
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/billing/subscription/grace-period [post]
+func (h *HttpHandler) SetGracePeriod(c *gin.Context) {
+	var req gracePeriodRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	ws, err := account.WorkspaceFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if err := h.service.HandleGracePeriod(c.Request.Context(), ws, req.GraceDays); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
+}
+
 // Webhook handler
+
+// HandleWebhook receives Stripe webhook events.
+//
+// @Summary      Stripe webhook
+// @Tags         billing
+// @Accept       json
+// @Success      200
+// @Failure      400 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /webhooks/stripe [post]
 func (h *HttpHandler) HandleWebhook(c *gin.Context) {
 	// This is a public endpoint that doesn't require authentication
 	// Stripe will call this directly
 
 	body, err := c.GetRawData()
 	if err != nil {
-		response.Error(c, err)
+		response.Error(c, problem.BadRequest("invalid webhook payload").WithError(err))
 		return
 	}
 
