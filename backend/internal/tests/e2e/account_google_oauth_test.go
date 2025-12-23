@@ -24,7 +24,7 @@ type GoogleOAuthSuite struct {
 
 func (s *GoogleOAuthSuite) SetupSuite() {
 	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
-	s.accountStorage = s.helper.AccountStorage
+	s.accountStorage = s.helper.Storage
 }
 
 func (s *GoogleOAuthSuite) SetupTest() {
@@ -377,7 +377,7 @@ type GoogleInvitationAcceptanceSuite struct {
 
 func (s *GoogleInvitationAcceptanceSuite) SetupSuite() {
 	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
-	s.accountStorage = s.helper.AccountStorage
+	s.accountStorage = s.helper.Storage
 }
 
 func (s *GoogleInvitationAcceptanceSuite) SetupTest() {

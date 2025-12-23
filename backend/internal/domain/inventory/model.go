@@ -26,7 +26,7 @@ type Product struct {
 	Description string             `gorm:"column:description;type:text" json:"description"`
 	CategoryID  string             `gorm:"column:category_id;type:text;index" json:"categoryId"`
 	Category    *Category          `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
-	Variants    []*Variant         `gorm:"foreignKey:ProductID;references:ID" json:"variants,omitempty"`
+	Variants    []*Variant         `gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE;" json:"variants,omitempty"`
 }
 
 func (m *Product) BeforeCreate(tx *gorm.DB) (err error) {
@@ -91,7 +91,7 @@ type Variant struct {
 	Name               string             `gorm:"column:name;type:text;not null" json:"name"`
 	Code               string             `gorm:"column:code;type:text;not null;uniqueIndex:code_product_idx" json:"code"`
 	ProductID          string             `gorm:"column:product_id;type:text;not null;index;uniqueIndex:code_product_idx" json:"productId"`
-	Product            *Product           `gorm:"foreignKey:ProductID;references:ID;OnDelete:CASCADE;" json:"product,omitempty"`
+	Product            *Product           `gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE;" json:"product,omitempty"`
 	SKU                string             `gorm:"column:sku;type:text;not null;uniqueIndex:sku_business_idx" json:"sku"`
 	CostPrice          decimal.Decimal    `gorm:"column:cost_price;type:numeric;not null;default:0" json:"costPrice"`
 	SalePrice          decimal.Decimal    `gorm:"column:sale_price;type:numeric;not null;default:0" json:"salePrice"`
@@ -108,20 +108,20 @@ func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateVariantRequest struct {
-	ProductID          string          `form:"productId" json:"productId" binding:"required"`
-	Code               string          `form:"code" json:"code" binding:"required"`
-	SKU                string          `form:"sku" json:"sku" binding:"omitempty"`
-	CostPrice          decimal.Decimal `form:"costPrice" json:"costPrice" binding:"required,gte=0"`
-	SalePrice          decimal.Decimal `form:"salePrice" json:"salePrice" binding:"required,gte=0"`
-	StockQuantity      int             `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
-	StockQuantityAlert int             `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"required,gte=0"`
+	ProductID          string           `form:"productId" json:"productId" binding:"required"`
+	Code               string           `form:"code" json:"code" binding:"required"`
+	SKU                string           `form:"sku" json:"sku" binding:"omitempty"`
+	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"required"`
+	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"required"`
+	StockQuantity      *int             `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
+	StockQuantityAlert *int             `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"required,gte=0"`
 }
 
 type UpdateVariantRequest struct {
 	Code               *string          `form:"code" json:"code" binding:"omitempty"`
 	SKU                *string          `form:"sku" json:"sku" binding:"omitempty"`
-	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"omitempty,gte=0"`
-	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"omitempty,gte=0"`
+	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"omitempty"`
+	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"omitempty"`
 	Currency           *string          `form:"currency" json:"currency" binding:"omitempty,len=3"`
 	StockQuantity      *int             `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
 	StockQuantityAlert *int             `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"omitempty,gte=0"`

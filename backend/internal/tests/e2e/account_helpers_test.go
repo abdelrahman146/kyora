@@ -14,10 +14,9 @@ import (
 
 // AccountTestHelper provides reusable helpers for account tests
 type AccountTestHelper struct {
-	db             *database.Database
-	Client         *testutils.HTTPClient
-	storage        *account.Storage
-	AccountStorage *account.Storage // Expose storage for direct access in tests
+	db      *database.Database
+	Client  *testutils.HTTPClient
+	Storage *account.Storage
 }
 
 // NewAccountTestHelper creates a new account test helper
@@ -26,10 +25,9 @@ func NewAccountTestHelper(db *database.Database, cacheAddr, baseURL string) *Acc
 	storage := account.NewStorage(db, cacheClient)
 
 	return &AccountTestHelper{
-		db:             db,
-		Client:         testutils.NewHTTPClient(baseURL),
-		storage:        storage,
-		AccountStorage: storage, // Expose same instance
+		db:      db,
+		Client:  testutils.NewHTTPClient(baseURL),
+		Storage: storage,
 	}
 }
 
@@ -63,7 +61,7 @@ func (h *AccountTestHelper) CreateInvitationWithToken(ctx context.Context, works
 		return nil, "", err
 	}
 
-	token, err := testutils.CreateInvitationToken(ctx, h.storage, invitation, inviterID)
+	token, err := testutils.CreateInvitationToken(ctx, h.Storage, invitation, inviterID)
 	if err != nil {
 		return nil, "", err
 	}
@@ -78,7 +76,7 @@ func (h *AccountTestHelper) CreateInvitationToken(ctx context.Context, invitatio
 		return "", err
 	}
 
-	return testutils.CreateInvitationToken(ctx, h.storage, invitation, invitation.InviterID)
+	return testutils.CreateInvitationToken(ctx, h.Storage, invitation, invitation.InviterID)
 }
 
 // SetInvitationStatus updates invitation status using repository
@@ -118,12 +116,12 @@ func (h *AccountTestHelper) GetInvitation(ctx context.Context, invitationID stri
 
 // CreatePasswordResetToken creates a password reset token
 func (h *AccountTestHelper) CreatePasswordResetToken(ctx context.Context, user *account.User) (string, error) {
-	return testutils.CreatePasswordResetToken(ctx, h.storage, user)
+	return testutils.CreatePasswordResetToken(ctx, h.Storage, user)
 }
 
 // CreateEmailVerificationToken creates an email verification token
 func (h *AccountTestHelper) CreateEmailVerificationToken(ctx context.Context, user *account.User) (string, error) {
-	return testutils.CreateEmailVerificationToken(ctx, h.storage, user)
+	return testutils.CreateEmailVerificationToken(ctx, h.Storage, user)
 }
 
 // MarkEmailUnverified marks a user's email as unverified

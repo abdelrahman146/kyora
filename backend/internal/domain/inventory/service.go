@@ -127,8 +127,19 @@ func (s *Service) CountCategories(ctx context.Context, actor *account.User, biz 
 }
 
 type CreateProductWithVariantsRequest struct {
-	Product  CreateProductRequest   `json:"product" binding:"required"`
-	Variants []CreateVariantRequest `json:"variants" binding:"required,dive,required"`
+	Product  CreateProductRequest          `json:"product" binding:"required"`
+	Variants []CreateProductVariantRequest `json:"variants" binding:"required,min=1,dive"`
+}
+
+// CreateProductVariantRequest is used when creating a product with variants in a single request.
+// It intentionally does not include ProductID because the product is created atomically.
+type CreateProductVariantRequest struct {
+	Code               string           `json:"code" binding:"required"`
+	SKU                string           `json:"sku" binding:"omitempty"`
+	CostPrice          *decimal.Decimal `json:"costPrice" binding:"required"`
+	SalePrice          *decimal.Decimal `json:"salePrice" binding:"required"`
+	StockQuantity      *int             `json:"stockQuantity" binding:"required,gte=0"`
+	StockQuantityAlert *int             `json:"stockQuantityAlert" binding:"required,gte=0"`
 }
 
 func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.User, biz *business.Business, req *CreateProductWithVariantsRequest) (*Product, error) {
@@ -151,6 +162,24 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 		}
 		variants := make([]*Variant, len(req.Variants))
 		for i, variantReq := range req.Variants {
+			if variantReq.CostPrice == nil {
+				return problem.BadRequest("costPrice is required").With("field", "costPrice")
+			}
+			if variantReq.SalePrice == nil {
+				return problem.BadRequest("salePrice is required").With("field", "salePrice")
+			}
+			if variantReq.StockQuantity == nil {
+				return problem.BadRequest("stockQuantity is required").With("field", "stockQuantity")
+			}
+			if variantReq.StockQuantityAlert == nil {
+				return problem.BadRequest("stockQuantityAlert is required").With("field", "stockQuantityAlert")
+			}
+			if variantReq.CostPrice.IsNegative() {
+				return problem.BadRequest("costPrice must be >= 0").With("field", "costPrice")
+			}
+			if variantReq.SalePrice.IsNegative() {
+				return problem.BadRequest("salePrice must be >= 0").With("field", "salePrice")
+			}
 			sku := strings.TrimSpace(variantReq.SKU)
 			if sku == "" {
 				sku = CreateProductSKU(biz.Descriptor, product.Name, variantReq.Code)
@@ -161,11 +190,11 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 				Code:               variantReq.Code,
 				Name:               fmt.Sprintf("%s - %s", product.Name, variantReq.Code),
 				SKU:                sku,
-				SalePrice:          variantReq.SalePrice,
-				CostPrice:          variantReq.CostPrice,
+				SalePrice:          *variantReq.SalePrice,
+				CostPrice:          *variantReq.CostPrice,
 				Currency:           biz.Currency,
-				StockQuantity:      variantReq.StockQuantity,
-				StockQuantityAlert: variantReq.StockQuantityAlert,
+				StockQuantity:      *variantReq.StockQuantity,
+				StockQuantityAlert: *variantReq.StockQuantityAlert,
 			}
 		}
 		err = s.storage.variants.CreateMany(txCtx, variants)
@@ -221,6 +250,24 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 	if err != nil {
 		return nil, err
 	}
+	if req.CostPrice == nil {
+		return nil, problem.BadRequest("costPrice is required").With("field", "costPrice")
+	}
+	if req.SalePrice == nil {
+		return nil, problem.BadRequest("salePrice is required").With("field", "salePrice")
+	}
+	if req.StockQuantity == nil {
+		return nil, problem.BadRequest("stockQuantity is required").With("field", "stockQuantity")
+	}
+	if req.StockQuantityAlert == nil {
+		return nil, problem.BadRequest("stockQuantityAlert is required").With("field", "stockQuantityAlert")
+	}
+	if req.CostPrice.IsNegative() {
+		return nil, problem.BadRequest("costPrice must be >= 0").With("field", "costPrice")
+	}
+	if req.SalePrice.IsNegative() {
+		return nil, problem.BadRequest("salePrice must be >= 0").With("field", "salePrice")
+	}
 	sku := strings.TrimSpace(req.SKU)
 	if sku == "" {
 		sku = CreateProductSKU(biz.Descriptor, product.Name, req.Code)
@@ -231,11 +278,11 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 		Code:               req.Code,
 		Name:               fmt.Sprintf("%s - %s", product.Name, req.Code),
 		SKU:                sku,
-		CostPrice:          req.CostPrice,
-		SalePrice:          req.SalePrice,
+		CostPrice:          *req.CostPrice,
+		SalePrice:          *req.SalePrice,
 		Currency:           biz.Currency,
-		StockQuantity:      req.StockQuantity,
-		StockQuantityAlert: req.StockQuantityAlert,
+		StockQuantity:      *req.StockQuantity,
+		StockQuantityAlert: *req.StockQuantityAlert,
 	}
 	err = s.storage.variants.CreateOne(ctx, variant)
 	if err != nil {
@@ -290,9 +337,15 @@ func (s *Service) UpdateVariant(ctx context.Context, actor *account.User, biz *b
 		variant.SKU = strings.TrimSpace(*req.SKU)
 	}
 	if req.CostPrice != nil {
+		if req.CostPrice.IsNegative() {
+			return problem.BadRequest("costPrice must be >= 0").With("field", "costPrice")
+		}
 		variant.CostPrice = *req.CostPrice
 	}
 	if req.SalePrice != nil {
+		if req.SalePrice.IsNegative() {
+			return problem.BadRequest("salePrice must be >= 0").With("field", "salePrice")
+		}
 		variant.SalePrice = *req.SalePrice
 	}
 	if req.Currency != nil {
@@ -318,11 +371,19 @@ func (s *Service) UpdateCategory(ctx context.Context, actor *account.User, biz *
 }
 
 func (s *Service) DeleteProduct(ctx context.Context, actor *account.User, biz *business.Business, id string) error {
-	product, err := s.GetProductByID(ctx, actor, biz, id)
-	if err != nil {
-		return err
-	}
-	return s.storage.products.DeleteOne(ctx, product)
+	return s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		product, err := s.GetProductByID(tctx, actor, biz, id)
+		if err != nil {
+			return err
+		}
+		if err := s.storage.variants.DeleteMany(tctx,
+			s.storage.variants.ScopeBusinessID(biz.ID),
+			s.storage.variants.ScopeEquals(VariantSchema.ProductID, product.ID),
+		); err != nil {
+			return err
+		}
+		return s.storage.products.DeleteOne(tctx, product)
+	})
 }
 
 func (s *Service) DeleteVariant(ctx context.Context, actor *account.User, biz *business.Business, id string) error {
