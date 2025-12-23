@@ -89,47 +89,9 @@ func (h *HttpHandler) ListBusinesses(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, gin.H{"businesses": resp})
 }
 
-// GetBusiness returns a business by ID (scoped to workspace).
-//
-// @Summary      Get business
-// @Description  Returns a business by ID for the authenticated workspace
-// @Tags         business
-// @Produce      json
-// @Param        businessId path string true "Business ID"
-// @Success      200 {object} map[string]business.businessResponse
-// @Failure      401 {object} problem.Problem
-// @Failure      403 {object} problem.Problem
-// @Failure      404 {object} problem.Problem
-// @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/{businessId} [get]
-// @Security     BearerAuth
-func (h *HttpHandler) GetBusiness(c *gin.Context) {
-	actor, err := account.ActorFromContext(c)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	businessID := strings.TrimSpace(c.Param("businessId"))
-	if businessID == "" {
-		response.Error(c, problem.BadRequest("businessId is required"))
-		return
-	}
-
-	biz, err := h.svc.GetBusinessByID(c.Request.Context(), actor, businessID)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	if biz == nil {
-		response.Error(c, ErrBusinessNotFound(businessID, nil))
-		return
-	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"business": toBusinessResponse(biz)})
-}
-
 // GetBusinessByDescriptor returns a business by descriptor (scoped to workspace).
 //
-// @Summary      Get business by descriptor
+// @Summary      Get business
 // @Description  Returns a business by descriptor for the authenticated workspace
 // @Tags         business
 // @Produce      json
@@ -140,7 +102,7 @@ func (h *HttpHandler) GetBusiness(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/descriptor/{businessDescriptor} [get]
+// @Router       /v1/businesses/{businessDescriptor} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetBusinessByDescriptor(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -160,7 +122,7 @@ func (h *HttpHandler) GetBusinessByDescriptor(c *gin.Context) {
 		return
 	}
 	if biz == nil {
-		response.Error(c, problem.NotFound("business not found"))
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"business": toBusinessResponse(biz)})
@@ -211,11 +173,11 @@ func (h *HttpHandler) CreateBusiness(c *gin.Context) {
 // UpdateBusiness updates a business (scoped to workspace).
 //
 // @Summary      Update business
-// @Description  Updates a business by ID in the authenticated workspace
+// @Description  Updates a business by descriptor in the authenticated workspace
 // @Tags         business
 // @Accept       json
 // @Produce      json
-// @Param        businessId path string true "Business ID"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body business.UpdateBusinessInput true "Update business"
 // @Success      200 {object} map[string]business.businessResponse
 // @Failure      400 {object} problem.Problem
@@ -224,7 +186,7 @@ func (h *HttpHandler) CreateBusiness(c *gin.Context) {
 // @Failure      404 {object} problem.Problem
 // @Failure      409 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/{businessId} [patch]
+// @Router       /v1/businesses/{businessDescriptor} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -232,9 +194,9 @@ func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	businessID := strings.TrimSpace(c.Param("businessId"))
-	if businessID == "" {
-		response.Error(c, problem.BadRequest("businessId is required"))
+	descriptor := strings.TrimSpace(c.Param("businessDescriptor"))
+	if descriptor == "" {
+		response.Error(c, problem.BadRequest("businessDescriptor is required"))
 		return
 	}
 
@@ -243,7 +205,18 @@ func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.svc.UpdateBusiness(c.Request.Context(), actor, businessID, &input)
+	ctx := c.Request.Context()
+	current, err := h.svc.GetBusinessByDescriptor(ctx, actor, descriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if current == nil {
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
+		return
+	}
+
+	biz, err := h.svc.UpdateBusiness(ctx, actor, current.ID, &input)
 	if err != nil {
 		if database.IsUniqueViolation(err) {
 			// descriptor uniqueness
@@ -258,7 +231,7 @@ func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 		return
 	}
 	if biz == nil {
-		response.Error(c, ErrBusinessNotFound(businessID, nil))
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"business": toBusinessResponse(biz)})
@@ -267,16 +240,16 @@ func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 // ArchiveBusiness marks a business as archived.
 //
 // @Summary      Archive business
-// @Description  Archives a business by ID in the authenticated workspace
+// @Description  Archives a business by descriptor in the authenticated workspace
 // @Tags         business
 // @Produce      json
-// @Param        businessId path string true "Business ID"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/{businessId}/archive [post]
+// @Router       /v1/businesses/{businessDescriptor}/archive [post]
 // @Security     BearerAuth
 func (h *HttpHandler) ArchiveBusiness(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -284,12 +257,24 @@ func (h *HttpHandler) ArchiveBusiness(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	businessID := strings.TrimSpace(c.Param("businessId"))
-	if businessID == "" {
-		response.Error(c, problem.BadRequest("businessId is required"))
+	descriptor := strings.TrimSpace(c.Param("businessDescriptor"))
+	if descriptor == "" {
+		response.Error(c, problem.BadRequest("businessDescriptor is required"))
 		return
 	}
-	if err := h.svc.ArchiveBusiness(c.Request.Context(), actor, businessID); err != nil {
+
+	ctx := c.Request.Context()
+	current, err := h.svc.GetBusinessByDescriptor(ctx, actor, descriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if current == nil {
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
+		return
+	}
+
+	if err := h.svc.ArchiveBusiness(ctx, actor, current.ID); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -299,16 +284,16 @@ func (h *HttpHandler) ArchiveBusiness(c *gin.Context) {
 // UnarchiveBusiness removes archive mark for a business.
 //
 // @Summary      Unarchive business
-// @Description  Unarchives a business by ID in the authenticated workspace
+// @Description  Unarchives a business by descriptor in the authenticated workspace
 // @Tags         business
 // @Produce      json
-// @Param        businessId path string true "Business ID"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/{businessId}/unarchive [post]
+// @Router       /v1/businesses/{businessDescriptor}/unarchive [post]
 // @Security     BearerAuth
 func (h *HttpHandler) UnarchiveBusiness(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -316,12 +301,24 @@ func (h *HttpHandler) UnarchiveBusiness(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	businessID := strings.TrimSpace(c.Param("businessId"))
-	if businessID == "" {
-		response.Error(c, problem.BadRequest("businessId is required"))
+	descriptor := strings.TrimSpace(c.Param("businessDescriptor"))
+	if descriptor == "" {
+		response.Error(c, problem.BadRequest("businessDescriptor is required"))
 		return
 	}
-	if err := h.svc.UnarchiveBusiness(c.Request.Context(), actor, businessID); err != nil {
+
+	ctx := c.Request.Context()
+	current, err := h.svc.GetBusinessByDescriptor(ctx, actor, descriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if current == nil {
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
+		return
+	}
+
+	if err := h.svc.UnarchiveBusiness(ctx, actor, current.ID); err != nil {
 		response.Error(c, err)
 		return
 	}
@@ -331,16 +328,16 @@ func (h *HttpHandler) UnarchiveBusiness(c *gin.Context) {
 // DeleteBusiness deletes a business by ID (scoped to workspace).
 //
 // @Summary      Delete business
-// @Description  Deletes a business by ID in the authenticated workspace
+// @Description  Deletes a business by descriptor in the authenticated workspace
 // @Tags         business
 // @Produce      json
-// @Param        businessId path string true "Business ID"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/businesses/{businessId} [delete]
+// @Router       /v1/businesses/{businessDescriptor} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteBusiness(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -348,12 +345,24 @@ func (h *HttpHandler) DeleteBusiness(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	businessID := strings.TrimSpace(c.Param("businessId"))
-	if businessID == "" {
-		response.Error(c, problem.BadRequest("businessId is required"))
+	descriptor := strings.TrimSpace(c.Param("businessDescriptor"))
+	if descriptor == "" {
+		response.Error(c, problem.BadRequest("businessDescriptor is required"))
 		return
 	}
-	if err := h.svc.DeleteBusiness(c.Request.Context(), actor, businessID); err != nil {
+
+	ctx := c.Request.Context()
+	current, err := h.svc.GetBusinessByDescriptor(ctx, actor, descriptor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	if current == nil {
+		response.Error(c, ErrBusinessNotFound(descriptor, nil))
+		return
+	}
+
+	if err := h.svc.DeleteBusiness(ctx, actor, current.ID); err != nil {
 		response.Error(c, err)
 		return
 	}

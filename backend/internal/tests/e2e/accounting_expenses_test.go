@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// ExpensesSuite tests /v1/accounting/expenses endpoints.
+// ExpensesSuite tests /v1/businesses/:businessDescriptor/accounting/expenses endpoints.
 type ExpensesSuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -42,7 +42,7 @@ func (s *ExpensesSuite) TestExpenses_CRUD_Admin() {
 		"note":       "<img src=x onerror=alert(1)>",
 	}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", createPayload, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
@@ -53,23 +53,23 @@ func (s *ExpensesSuite) TestExpenses_CRUD_Admin() {
 	s.True(ok)
 	s.Equal(ws.Business.ID, created["businessId"])
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/expenses/"+expenseID, nil, ws.AdminToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses/"+expenseID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/expenses?page=1&pageSize=10", nil, ws.AdminToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses?page=1&pageSize=10", nil, ws.AdminToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
 	updatePayload := map[string]interface{}{"note": "updated", "amount": "30.00"}
-	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/expenses/"+expenseID, updatePayload, ws.AdminToken)
+	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses/"+expenseID, updatePayload, ws.AdminToken)
 	s.NoError(err)
 	defer updResp.Body.Close()
 	s.Equal(http.StatusOK, updResp.StatusCode)
 
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/expenses/"+expenseID, nil, ws.AdminToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses/"+expenseID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusNoContent, delResp.StatusCode)
@@ -83,12 +83,12 @@ func (s *ExpensesSuite) TestExpenses_Permissions_MemberCanViewButCannotManage() 
 	date := time.Date(2025, 4, 10, 0, 0, 0, 0, time.UTC)
 	createPayload := map[string]interface{}{"category": "shipping", "type": "one_time", "amount": "10.00", "occurredOn": date}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", createPayload, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", createPayload, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", createPayload, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp2.StatusCode)
@@ -98,17 +98,17 @@ func (s *ExpensesSuite) TestExpenses_Permissions_MemberCanViewButCannotManage() 
 	expenseID, ok := created["id"].(string)
 	s.True(ok)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/expenses", nil, ws.MemberToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", nil, ws.MemberToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/expenses/"+expenseID, nil, ws.MemberToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses/"+expenseID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
 
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/expenses/"+expenseID, nil, ws.MemberToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses/"+expenseID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusForbidden, delResp.StatusCode)

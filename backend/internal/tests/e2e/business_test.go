@@ -192,7 +192,7 @@ func (s *BusinessSuite) TestCreateBusiness_DescriptorAvailableAcrossWorkspaces()
 	s.NoError(s.helper.CreateTestSubscription(ctx, ws2.ID))
 
 	payload := map[string]interface{}{"name": "Test Business", "descriptor": "shared", "countryCode": "eg", "currency": "usd"}
-	
+
 	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses", payload, token1)
 	s.NoError(err)
 	resp1.Body.Close()
@@ -234,11 +234,11 @@ func (s *BusinessSuite) TestCreateBusiness_EnforcesPlanLimit() {
 	plan, err := testutils.CreateTestPlan(ctx, testEnv.Database, "limited-plan")
 	s.NoError(err)
 	plan.Limits.MaxBusinesses = 1
-	
+
 	// Update plan limits
 	planRepo := database.NewRepository[billing.Plan](testEnv.Database)
 	s.NoError(planRepo.UpdateOne(ctx, plan))
-	
+
 	// Create subscription with limited plan
 	subRepo := database.NewRepository[billing.Subscription](testEnv.Database)
 	sub := &billing.Subscription{
@@ -263,14 +263,14 @@ func (s *BusinessSuite) TestCreateBusiness_EnforcesPlanLimit() {
 	s.GreaterOrEqual(resp2.StatusCode, 400)
 }
 
-func (s *BusinessSuite) TestGetBusiness_ById() {
+func (s *BusinessSuite) TestGetBusiness_ByDescriptor() {
 	ctx := context.Background()
 	_, ws, token, err := s.helper.CreateTestUser(ctx, "admin@example.com", "ValidPassword123!", "Admin", "User", role.RoleAdmin)
 	s.NoError(err)
 
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+bizID, nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-business", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -287,7 +287,7 @@ func (s *BusinessSuite) TestGetBusiness_NotFound() {
 	_, _, token, err := s.helper.CreateTestUser(ctx, "admin@example.com", "ValidPassword123!", "Admin", "User", role.RoleAdmin)
 	s.NoError(err)
 
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/bus_nonexistent", nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/bus-nonexistent", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -297,32 +297,15 @@ func (s *BusinessSuite) TestGetBusiness_CrossWorkspaceIsolation() {
 	ctx := context.Background()
 	_, ws1, _, err := s.helper.CreateTestUser(ctx, "admin1@example.com", "ValidPassword123!", "Admin", "One", role.RoleAdmin)
 	s.NoError(err)
-	bizID := s.createBusiness(ctx, ws1.ID, "business-1")
+	s.createBusiness(ctx, ws1.ID, "business-1")
 
 	_, _, token2, err := s.helper.CreateTestUser(ctx, "admin2@example.com", "ValidPassword123!", "Admin", "Two", role.RoleAdmin)
 	s.NoError(err)
 
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+bizID, nil, token2)
+	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/business-1", nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
-}
-
-func (s *BusinessSuite) TestGetBusinessByDescriptor_Success() {
-	ctx := context.Background()
-	_, ws, token, err := s.helper.CreateTestUser(ctx, "admin@example.com", "ValidPassword123!", "Admin", "User", role.RoleAdmin)
-	s.NoError(err)
-	bizID := s.createBusiness(ctx, ws.ID, "test-business")
-
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/descriptor/test-business", nil, token)
-	s.NoError(err)
-	defer resp.Body.Close()
-	s.Equal(http.StatusOK, resp.StatusCode)
-
-	var result map[string]interface{}
-	s.NoError(testutils.DecodeJSON(resp, &result))
-	biz := result["business"].(map[string]interface{})
-	s.Equal(bizID, biz["id"])
 }
 
 func (s *BusinessSuite) TestGetBusinessByDescriptor_NormalizesQuery() {
@@ -332,8 +315,8 @@ func (s *BusinessSuite) TestGetBusinessByDescriptor_NormalizesQuery() {
 	s.createBusiness(ctx, ws.ID, "test-business")
 
 	// All variations should find the business
-	for _, desc := range []string{"TEST-BUSINESS", "Test-Business", "  test-business  "} {
-		resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/descriptor/"+desc, nil, token)
+	for _, desc := range []string{"TEST-BUSINESS", "Test-Business"} {
+		resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+desc, nil, token)
 		s.NoError(err)
 		resp.Body.Close()
 		s.Equal(http.StatusOK, resp.StatusCode)
@@ -375,7 +358,7 @@ func (s *BusinessSuite) TestUpdateBusiness_PartialUpdate() {
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
 	payload := map[string]interface{}{"name": "Updated Name"}
-	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+bizID, payload, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/test-business", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -385,6 +368,7 @@ func (s *BusinessSuite) TestUpdateBusiness_PartialUpdate() {
 	biz := result["business"].(map[string]interface{})
 	s.Equal("Updated Name", biz["name"])
 	s.Equal("test-business", biz["descriptor"]) // Unchanged
+	s.Equal(bizID, biz["id"])
 }
 
 func (s *BusinessSuite) TestUpdateBusiness_ChangesDescriptor() {
@@ -394,7 +378,7 @@ func (s *BusinessSuite) TestUpdateBusiness_ChangesDescriptor() {
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
 	payload := map[string]interface{}{"descriptor": "NEW-Descriptor"}
-	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+bizID, payload, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/test-business", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -403,6 +387,7 @@ func (s *BusinessSuite) TestUpdateBusiness_ChangesDescriptor() {
 	s.NoError(testutils.DecodeJSON(resp, &result))
 	biz := result["business"].(map[string]interface{})
 	s.Equal("new-descriptor", biz["descriptor"]) // Normalized
+	s.Equal(bizID, biz["id"])
 }
 
 func (s *BusinessSuite) TestUpdateBusiness_DescriptorConflict() {
@@ -410,10 +395,10 @@ func (s *BusinessSuite) TestUpdateBusiness_DescriptorConflict() {
 	_, ws, token, err := s.helper.CreateTestUser(ctx, "admin@example.com", "ValidPassword123!", "Admin", "User", role.RoleAdmin)
 	s.NoError(err)
 	s.createBusiness(ctx, ws.ID, "business-1")
-	bizID2 := s.createBusiness(ctx, ws.ID, "business-2")
+	s.createBusiness(ctx, ws.ID, "business-2")
 
 	payload := map[string]interface{}{"descriptor": "business-1"}
-	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+bizID2, payload, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/business-2", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusConflict, resp.StatusCode)
@@ -423,13 +408,13 @@ func (s *BusinessSuite) TestUpdateBusiness_CrossWorkspaceIsolation() {
 	ctx := context.Background()
 	_, ws1, _, err := s.helper.CreateTestUser(ctx, "admin1@example.com", "ValidPassword123!", "Admin", "One", role.RoleAdmin)
 	s.NoError(err)
-	bizID := s.createBusiness(ctx, ws1.ID, "business-1")
+	s.createBusiness(ctx, ws1.ID, "business-1")
 
 	_, _, token2, err := s.helper.CreateTestUser(ctx, "admin2@example.com", "ValidPassword123!", "Admin", "Two", role.RoleAdmin)
 	s.NoError(err)
 
 	payload := map[string]interface{}{"name": "Hacked"}
-	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+bizID, payload, token2)
+	resp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/business-1", payload, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -441,7 +426,7 @@ func (s *BusinessSuite) TestArchiveBusiness_SetsTimestamp() {
 	s.NoError(err)
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/archive", bizID), nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-business/archive", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -460,7 +445,7 @@ func (s *BusinessSuite) TestArchiveBusiness_Idempotent() {
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
 	// Archive twice
-	resp1, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/archive", bizID), nil, token)
+	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-business/archive", nil, token)
 	s.NoError(err)
 	resp1.Body.Close()
 	s.Equal(http.StatusNoContent, resp1.StatusCode)
@@ -469,7 +454,7 @@ func (s *BusinessSuite) TestArchiveBusiness_Idempotent() {
 	dbBiz1, _ := bizRepo.FindByID(ctx, bizID)
 	firstTime := dbBiz1.ArchivedAt
 
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/archive", bizID), nil, token)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-business/archive", nil, token)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusNoContent, resp2.StatusCode)
@@ -485,8 +470,8 @@ func (s *BusinessSuite) TestUnarchiveBusiness_ClearsTimestamp() {
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
 	// Archive then unarchive
-	s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/archive", bizID), nil, token)
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/unarchive", bizID), nil, token)
+	s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-business/archive", nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-business/unarchive", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -503,7 +488,7 @@ func (s *BusinessSuite) TestDeleteBusiness_RemovesPermanently() {
 	s.NoError(err)
 	bizID := s.createBusiness(ctx, ws.ID, "test-business")
 
-	resp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+bizID, nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/test-business", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)

@@ -16,30 +16,17 @@ import (
 // Analytics endpoints must never accept workspaceId from the client.
 // Workspace context is derived from the authenticated user via middleware.
 type HttpHandler struct {
-	service         *Service
-	businessService *business.Service
+	service *Service
 }
 
 // NewHttpHandler creates a new HTTP handler for analytics operations.
-func NewHttpHandler(service *Service, businessService *business.Service) *HttpHandler {
-	return &HttpHandler{
-		service:         service,
-		businessService: businessService,
-	}
+func NewHttpHandler(service *Service) *HttpHandler {
+	return &HttpHandler{service: service}
 }
 
-// getBusinessForWorkspace returns the first business for the authenticated workspace.
-//
-// Note: Multi-business support is planned; for now, Kyora assumes a single active business per workspace.
-func (h *HttpHandler) getBusinessForWorkspace(c *gin.Context, actor *account.User) (*business.Business, error) {
-	businesses, err := h.businessService.ListBusinesses(c.Request.Context(), actor)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) == 0 {
-		return nil, problem.NotFound("no business found for this workspace")
-	}
-	return businesses[0], nil
+func (h *HttpHandler) getBusinessForRequest(c *gin.Context, actor *account.User) (*business.Business, error) {
+	_ = actor
+	return business.BusinessFromContext(c)
 }
 
 const dateLayout = "2006-01-02"
@@ -74,11 +61,12 @@ func defaultDateRange(from, to time.Time) (time.Time, time.Time) {
 // @Description  Returns dashboard metrics for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Success      200 {object} analytics.DashboardMetrics
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/dashboard [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/dashboard [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetDashboardMetrics(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -87,7 +75,7 @@ func (h *HttpHandler) GetDashboardMetrics(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -115,6 +103,7 @@ type salesAnalyticsQuery struct {
 // @Description  Returns sales analytics for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        from query string false "Start date (YYYY-MM-DD)"
 // @Param        to query string false "End date (YYYY-MM-DD)"
 // @Success      200 {object} analytics.SalesAnalytics
@@ -122,7 +111,7 @@ type salesAnalyticsQuery struct {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/sales [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/sales [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetSalesAnalytics(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -137,7 +126,7 @@ func (h *HttpHandler) GetSalesAnalytics(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -181,6 +170,7 @@ type inventoryAnalyticsQuery struct {
 // @Description  Returns inventory analytics for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        from query string false "Start date (YYYY-MM-DD)"
 // @Param        to query string false "End date (YYYY-MM-DD)"
 // @Success      200 {object} analytics.InventoryAnalytics
@@ -188,7 +178,7 @@ type inventoryAnalyticsQuery struct {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/inventory [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/inventory [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetInventoryAnalytics(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -203,7 +193,7 @@ func (h *HttpHandler) GetInventoryAnalytics(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -246,6 +236,7 @@ type customerAnalyticsQuery struct {
 // @Description  Returns customer analytics for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        from query string false "Start date (YYYY-MM-DD)"
 // @Param        to query string false "End date (YYYY-MM-DD)"
 // @Success      200 {object} analytics.CustomerAnalytics
@@ -253,7 +244,7 @@ type customerAnalyticsQuery struct {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/customers [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/customers [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetCustomerAnalytics(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -268,7 +259,7 @@ func (h *HttpHandler) GetCustomerAnalytics(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -311,13 +302,14 @@ type reportAsOfQuery struct {
 // @Description  Returns a balance-sheet style snapshot as of a date for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        asOf query string false "As-of date (YYYY-MM-DD). Default: today"
 // @Success      200 {object} analytics.FinancialPosition
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/reports/financial-position [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/reports/financial-position [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetFinancialPosition(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -332,7 +324,7 @@ func (h *HttpHandler) GetFinancialPosition(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -361,13 +353,14 @@ func (h *HttpHandler) GetFinancialPosition(c *gin.Context) {
 // @Description  Returns a profit and loss statement as of a date for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        asOf query string false "As-of date (YYYY-MM-DD). Default: today"
 // @Success      200 {object} analytics.ProfitAndLossStatement
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/reports/profit-and-loss [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/reports/profit-and-loss [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetProfitAndLoss(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -382,7 +375,7 @@ func (h *HttpHandler) GetProfitAndLoss(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -411,13 +404,14 @@ func (h *HttpHandler) GetProfitAndLoss(c *gin.Context) {
 // @Description  Returns a cash flow statement as of a date for the authenticated workspace
 // @Tags         analytics
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        asOf query string false "As-of date (YYYY-MM-DD). Default: today"
 // @Success      200 {object} analytics.CashFlowStatement
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/analytics/reports/cash-flow [get]
+// @Router       /v1/businesses/{businessDescriptor}/analytics/reports/cash-flow [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetCashFlow(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -432,7 +426,7 @@ func (h *HttpHandler) GetCashFlow(c *gin.Context) {
 		return
 	}
 
-	biz, err := h.getBusinessForWorkspace(c, actor)
+	biz, err := h.getBusinessForRequest(c, actor)
 	if err != nil {
 		response.Error(c, err)
 		return

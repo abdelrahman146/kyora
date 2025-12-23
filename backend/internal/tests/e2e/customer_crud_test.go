@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"testing"
 
+	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
@@ -50,7 +51,7 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_Success() {
 		"phoneCode":   "+20",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers", payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -96,7 +97,7 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers", tt.payload, token)
+			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers", tt.payload, token)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -124,7 +125,7 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_DuplicateEmail() {
 		"countryCode": "eg",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers", payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusConflict, resp.StatusCode)
@@ -154,9 +155,24 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_SameEmailDifferentBusiness() {
 
 func (s *CustomerCRUDSuite) TestCreateCustomer_UnauthorizedUser() {
 	ctx := context.Background()
-	_, ws, _, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	ws, users, err := testutils.CreateWorkspaceWithUsers(ctx, testEnv.Database, "admin@example.com", "Password123!", []struct {
+		Email     string
+		Password  string
+		FirstName string
+		LastName  string
+		Role      role.Role
+	}{
+		{
+			Email:     "user@example.com",
+			Password:  "Password123!",
+			FirstName: "User",
+			LastName:  "User",
+			Role:      role.RoleUser,
+		},
+	})
 	s.NoError(err)
-	_, _, userToken, err := s.accountHelper.CreateTestUser(ctx, "user@example.com", "Password123!", "User", "User", role.RoleUser)
+
+	userToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
@@ -168,7 +184,7 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_UnauthorizedUser() {
 		"countryCode": "eg",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers", payload, userToken)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers", payload, userToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
@@ -186,7 +202,7 @@ func (s *CustomerCRUDSuite) TestGetCustomer_Success() {
 	customer, err := s.customerHelper.CreateTestCustomer(ctx, biz.ID, "john@example.com", "John Doe")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/test-biz/customers/%s", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -206,7 +222,7 @@ func (s *CustomerCRUDSuite) TestGetCustomer_NotFound() {
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers/cus_nonexistent", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers/cus_nonexistent", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -232,7 +248,7 @@ func (s *CustomerCRUDSuite) TestGetCustomer_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// Workspace 2 should not access Workspace 1's customer
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s", customer1.ID), nil, token2)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-1/customers/%s", customer1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -253,7 +269,7 @@ func (s *CustomerCRUDSuite) TestListCustomers_Success() {
 		s.NoError(err)
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -286,7 +302,7 @@ func (s *CustomerCRUDSuite) TestListCustomers_Pagination() {
 	}
 
 	// Page 1
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers?page=1&pageSize=10", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?page=1&pageSize=10", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -299,7 +315,7 @@ func (s *CustomerCRUDSuite) TestListCustomers_Pagination() {
 	s.Equal(true, page1["hasMore"])
 
 	// Page 2
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers?page=2&pageSize=10", nil, token)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?page=2&pageSize=10", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -333,14 +349,14 @@ func (s *CustomerCRUDSuite) TestListCustomers_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// Each workspace should only see its own customers
-	resp1, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers", nil, token1)
+	resp1, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-1/customers", nil, token1)
 	s.NoError(err)
 	defer resp1.Body.Close()
 	var result1 map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp1, &result1))
 	s.Equal(float64(1), result1["totalCount"])
 
-	resp2, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers", nil, token2)
+	resp2, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-2/customers", nil, token2)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	var result2 map[string]interface{}
@@ -365,7 +381,7 @@ func (s *CustomerCRUDSuite) TestUpdateCustomer_Success() {
 		"gender": "other",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s", customer.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/customers/%s", customer.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -392,7 +408,7 @@ func (s *CustomerCRUDSuite) TestUpdateCustomer_NotFound() {
 
 	payload := map[string]interface{}{"name": "Updated"}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", "/v1/customers/cus_nonexistent", payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/test-biz/customers/cus_nonexistent", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -420,7 +436,7 @@ func (s *CustomerCRUDSuite) TestUpdateCustomer_CrossWorkspaceIsolation() {
 	payload := map[string]interface{}{"name": "Hacked"}
 
 	// Workspace 2 should not update Workspace 1's customer
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s", customer1.ID), payload, token2)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/biz-1/customers/%s", customer1.ID), payload, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -443,7 +459,7 @@ func (s *CustomerCRUDSuite) TestDeleteCustomer_Success() {
 	customer, err := s.customerHelper.CreateTestCustomer(ctx, biz.ID, "john@example.com", "John Doe")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -462,7 +478,7 @@ func (s *CustomerCRUDSuite) TestDeleteCustomer_NotFound() {
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", "/v1/customers/cus_nonexistent", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/test-biz/customers/cus_nonexistent", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -488,7 +504,7 @@ func (s *CustomerCRUDSuite) TestDeleteCustomer_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// Workspace 2 should not delete Workspace 1's customer
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s", customer1.ID), nil, token2)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/biz-1/customers/%s", customer1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)

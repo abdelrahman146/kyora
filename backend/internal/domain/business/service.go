@@ -75,6 +75,19 @@ func (s *Service) GetBusinessByDescriptor(ctx context.Context, actor *account.Us
 	)
 }
 
+// GetBusinessByDescriptorForWorkspace returns a business by descriptor scoped to a workspace.
+// It intentionally does not enforce role permissions; callers should enforce authorization separately.
+func (s *Service) GetBusinessByDescriptorForWorkspace(ctx context.Context, workspaceID string, descriptor string) (*Business, error) {
+	norm, err := normalizeBusinessDescriptor(descriptor)
+	if err != nil {
+		return nil, err
+	}
+	return s.storage.business.FindOne(ctx,
+		s.storage.business.ScopeWorkspaceID(workspaceID),
+		s.storage.business.ScopeEquals(BusinessSchema.Descriptor, norm),
+	)
+}
+
 func (s *Service) ListBusinesses(ctx context.Context, actor *account.User) ([]*Business, error) {
 	if err := actor.Role.HasPermission(role.ActionView, role.ResourceBusiness); err != nil {
 		return nil, err

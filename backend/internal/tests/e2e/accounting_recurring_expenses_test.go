@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// RecurringExpensesSuite tests /v1/accounting/recurring-expenses endpoints.
+// RecurringExpensesSuite tests /v1/businesses/:businessDescriptor/accounting/recurring-expenses endpoints.
 type RecurringExpensesSuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -43,7 +43,7 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Create_List_StatusTransit
 		"note":               "rent",
 	}
 
-	createResp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/recurring-expenses", payload, ws.AdminToken)
+	createResp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses", payload, ws.AdminToken)
 	s.NoError(err)
 	defer createResp.Body.Close()
 	s.Require().Equal(http.StatusCreated, createResp.StatusCode)
@@ -55,14 +55,14 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Create_List_StatusTransit
 	s.Equal("active", created["status"])
 
 	// List should include it
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/recurring-expenses?page=1&pageSize=10", nil, ws.AdminToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses?page=1&pageSize=10", nil, ws.AdminToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
 	// Transition to paused
 	statusPayload := map[string]interface{}{"status": string(accounting.RecurringExpenseStatusPaused)}
-	statusResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/recurring-expenses/"+recID+"/status", statusPayload, ws.AdminToken)
+	statusResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses/"+recID+"/status", statusPayload, ws.AdminToken)
 	s.NoError(err)
 	defer statusResp.Body.Close()
 	s.Equal(http.StatusOK, statusResp.StatusCode)
@@ -73,7 +73,7 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Create_List_StatusTransit
 
 	// Invalid status value should be rejected by validation (400)
 	invalidPayload := map[string]interface{}{"status": "invalid"}
-	invalidResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/recurring-expenses/"+recID+"/status", invalidPayload, ws.AdminToken)
+	invalidResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses/"+recID+"/status", invalidPayload, ws.AdminToken)
 	s.NoError(err)
 	defer invalidResp.Body.Close()
 	s.Equal(http.StatusBadRequest, invalidResp.StatusCode)
@@ -93,7 +93,7 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Occurrences() {
 		"autoCreateHistoricalExpenses": true,
 	}
 
-	createResp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/recurring-expenses", payload, ws.AdminToken)
+	createResp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses", payload, ws.AdminToken)
 	s.NoError(err)
 	defer createResp.Body.Close()
 	s.Require().Equal(http.StatusCreated, createResp.StatusCode)
@@ -103,7 +103,7 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Occurrences() {
 	recID, ok := created["id"].(string)
 	s.True(ok)
 
-	occResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/recurring-expenses/"+recID+"/occurrences", nil, ws.AdminToken)
+	occResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses/"+recID+"/occurrences", nil, ws.AdminToken)
 	s.NoError(err)
 	defer occResp.Body.Close()
 	s.Equal(http.StatusOK, occResp.StatusCode)
@@ -121,13 +121,13 @@ func (s *RecurringExpensesSuite) TestRecurringExpenses_Permissions_MemberViewOnl
 	startDate := time.Date(2025, 1, 1, 0, 0, 0, 0, time.UTC)
 	payload := map[string]interface{}{"frequency": "monthly", "recurringStartDate": startDate, "category": "rent", "amount": "10.00"}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/recurring-expenses", payload, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses", payload, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
 	// member can list
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/recurring-expenses", nil, ws.MemberToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/recurring-expenses", nil, ws.MemberToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)

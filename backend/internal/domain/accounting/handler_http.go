@@ -17,31 +17,23 @@ import (
 
 // HttpHandler handles HTTP requests for accounting domain operations
 type HttpHandler struct {
-	service         *Service
-	businessService *business.Service
-	orderService    *order.Service
+	service      *Service
+	orderService *order.Service
 }
 
 // NewHttpHandler creates a new HTTP handler for accounting operations
-func NewHttpHandler(service *Service, businessService *business.Service, orderService *order.Service) *HttpHandler {
+func NewHttpHandler(service *Service, orderService *order.Service) *HttpHandler {
 	return &HttpHandler{
-		service:         service,
-		businessService: businessService,
-		orderService:    orderService,
+		service:      service,
+		orderService: orderService,
 	}
 }
 
 // getBusinessForWorkspace is a helper that gets the first business for a workspace
 // In future, this might need to support multiple businesses per workspace
 func (h *HttpHandler) getBusinessForWorkspace(c *gin.Context, actor *account.User) (*business.Business, error) {
-	businesses, err := h.businessService.ListBusinesses(c.Request.Context(), actor)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) == 0 {
-		return nil, problem.NotFound("no business found for this workspace")
-	}
-	return businesses[0], nil
+	_ = actor
+	return business.BusinessFromContext(c)
 }
 
 // Asset endpoints
@@ -58,13 +50,14 @@ type listAssetsQuery struct {
 // @Description  Returns a paginated list of all assets for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -value, name)"
 // @Success      200 {object} list.ListResponse[Asset]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/assets [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/assets [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListAssets(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -118,12 +111,13 @@ func (h *HttpHandler) ListAssets(c *gin.Context) {
 // @Description  Returns a specific asset by ID for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        assetId path string true "Asset ID"
 // @Success      200 {object} Asset
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/assets/{assetId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/assets/{assetId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetAsset(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -164,12 +158,13 @@ func (h *HttpHandler) GetAsset(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateAssetRequest true "Asset data"
 // @Success      201 {object} Asset
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/assets [post]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/assets [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateAsset(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -205,6 +200,7 @@ func (h *HttpHandler) CreateAsset(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        assetId path string true "Asset ID"
 // @Param        request body UpdateAssetRequest true "Asset update data"
 // @Success      200 {object} Asset
@@ -212,7 +208,7 @@ func (h *HttpHandler) CreateAsset(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/assets/{assetId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/assets/{assetId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateAsset(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -257,12 +253,13 @@ func (h *HttpHandler) UpdateAsset(c *gin.Context) {
 // @Description  Deletes an asset for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        assetId path string true "Asset ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/assets/{assetId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/assets/{assetId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteAsset(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -304,13 +301,14 @@ func (h *HttpHandler) DeleteAsset(c *gin.Context) {
 // @Description  Returns a paginated list of all investments for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, investedAt)"
 // @Success      200 {object} list.ListResponse[Investment]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/investments [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/investments [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListInvestments(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -361,12 +359,13 @@ func (h *HttpHandler) ListInvestments(c *gin.Context) {
 // @Description  Returns a specific investment by ID for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        investmentId path string true "Investment ID"
 // @Success      200 {object} Investment
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/investments/{investmentId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/investments/{investmentId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetInvestment(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -407,12 +406,13 @@ func (h *HttpHandler) GetInvestment(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateInvestmentRequest true "Investment data"
 // @Success      201 {object} Investment
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/investments [post]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/investments [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateInvestment(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -448,6 +448,7 @@ func (h *HttpHandler) CreateInvestment(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        investmentId path string true "Investment ID"
 // @Param        request body UpdateInvestmentRequest true "Investment update data"
 // @Success      200 {object} Investment
@@ -455,7 +456,7 @@ func (h *HttpHandler) CreateInvestment(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/investments/{investmentId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/investments/{investmentId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateInvestment(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -500,12 +501,13 @@ func (h *HttpHandler) UpdateInvestment(c *gin.Context) {
 // @Description  Deletes an investment for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        investmentId path string true "Investment ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/investments/{investmentId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/investments/{investmentId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteInvestment(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -547,13 +549,14 @@ func (h *HttpHandler) DeleteInvestment(c *gin.Context) {
 // @Description  Returns a paginated list of all withdrawals for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, withdrawnAt)"
 // @Success      200 {object} list.ListResponse[Withdrawal]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/withdrawals [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListWithdrawals(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -604,12 +607,13 @@ func (h *HttpHandler) ListWithdrawals(c *gin.Context) {
 // @Description  Returns a specific withdrawal by ID for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        withdrawalId path string true "Withdrawal ID"
 // @Success      200 {object} Withdrawal
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/withdrawals/{withdrawalId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals/{withdrawalId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetWithdrawal(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -650,12 +654,13 @@ func (h *HttpHandler) GetWithdrawal(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateWithdrawalRequest true "Withdrawal data"
 // @Success      201 {object} Withdrawal
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/withdrawals [post]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateWithdrawal(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -691,6 +696,7 @@ func (h *HttpHandler) CreateWithdrawal(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        withdrawalId path string true "Withdrawal ID"
 // @Param        request body UpdateWithdrawalRequest true "Withdrawal update data"
 // @Success      200 {object} Withdrawal
@@ -698,7 +704,7 @@ func (h *HttpHandler) CreateWithdrawal(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/withdrawals/{withdrawalId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals/{withdrawalId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateWithdrawal(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -743,12 +749,13 @@ func (h *HttpHandler) UpdateWithdrawal(c *gin.Context) {
 // @Description  Deletes a withdrawal for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        withdrawalId path string true "Withdrawal ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/withdrawals/{withdrawalId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals/{withdrawalId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteWithdrawal(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -790,13 +797,14 @@ func (h *HttpHandler) DeleteWithdrawal(c *gin.Context) {
 // @Description  Returns a paginated list of all expenses for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, occurredOn)"
 // @Success      200 {object} list.ListResponse[Expense]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/expenses [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/expenses [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListExpenses(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -847,12 +855,13 @@ func (h *HttpHandler) ListExpenses(c *gin.Context) {
 // @Description  Returns a specific expense by ID for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        expenseId path string true "Expense ID"
 // @Success      200 {object} Expense
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/expenses/{expenseId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/expenses/{expenseId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -893,12 +902,13 @@ func (h *HttpHandler) GetExpense(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateExpenseRequest true "Expense data"
 // @Success      201 {object} Expense
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/expenses [post]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/expenses [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -934,6 +944,7 @@ func (h *HttpHandler) CreateExpense(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        expenseId path string true "Expense ID"
 // @Param        request body UpdateExpenseRequest true "Expense update data"
 // @Success      200 {object} Expense
@@ -941,7 +952,7 @@ func (h *HttpHandler) CreateExpense(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/expenses/{expenseId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/expenses/{expenseId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -986,12 +997,13 @@ func (h *HttpHandler) UpdateExpense(c *gin.Context) {
 // @Description  Deletes an expense for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        expenseId path string true "Expense ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/expenses/{expenseId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/expenses/{expenseId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1033,13 +1045,14 @@ func (h *HttpHandler) DeleteExpense(c *gin.Context) {
 // @Description  Returns a paginated list of all recurring expenses for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, nextRecurringDate)"
 // @Success      200 {object} list.ListResponse[RecurringExpense]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListRecurringExpenses(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1090,12 +1103,13 @@ func (h *HttpHandler) ListRecurringExpenses(c *gin.Context) {
 // @Description  Returns a specific recurring expense by ID for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Success      200 {object} RecurringExpense
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses/{recurringExpenseId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses/{recurringExpenseId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetRecurringExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1136,12 +1150,13 @@ func (h *HttpHandler) GetRecurringExpense(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateRecurringExpenseRequest true "Recurring expense data"
 // @Success      201 {object} RecurringExpense
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses [post]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1177,6 +1192,7 @@ func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Param        request body UpdateRecurringExpenseRequest true "Recurring expense update data"
 // @Success      200 {object} RecurringExpense
@@ -1184,7 +1200,7 @@ func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses/{recurringExpenseId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses/{recurringExpenseId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateRecurringExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1229,12 +1245,13 @@ func (h *HttpHandler) UpdateRecurringExpense(c *gin.Context) {
 // @Description  Deletes a recurring expense for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses/{recurringExpenseId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses/{recurringExpenseId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteRecurringExpense(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1279,6 +1296,7 @@ type updateRecurringExpenseStatusRequest struct {
 // @Tags         accounting
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Param        request body updateRecurringExpenseStatusRequest true "Status update data"
 // @Success      200 {object} RecurringExpense
@@ -1287,7 +1305,7 @@ type updateRecurringExpenseStatusRequest struct {
 // @Failure      404 {object} problem.Problem
 // @Failure      409 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses/{recurringExpenseId}/status [patch]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses/{recurringExpenseId}/status [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateRecurringExpenseStatus(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1332,12 +1350,13 @@ func (h *HttpHandler) UpdateRecurringExpenseStatus(c *gin.Context) {
 // @Description  Returns all expense occurrences (instances) for a specific recurring expense
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Success      200 {array} Expense
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/recurring-expenses/{recurringExpenseId}/occurrences [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses/{recurringExpenseId}/occurrences [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetRecurringExpenseOccurrences(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -1402,13 +1421,14 @@ type summaryResponse struct {
 // @Description  Returns a summary of key accounting metrics for the authenticated workspace
 // @Tags         accounting
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        from query string false "Start date (YYYY-MM-DD)"
 // @Param        to query string false "End date (YYYY-MM-DD)"
 // @Success      200 {object} summaryResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/accounting/summary [get]
+// @Router       /v1/businesses/{businessDescriptor}/accounting/summary [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)

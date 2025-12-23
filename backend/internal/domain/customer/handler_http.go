@@ -16,8 +16,7 @@ import (
 
 // HttpHandler handles HTTP requests for customer domain operations
 type HttpHandler struct {
-	service         *Service
-	businessService *business.Service
+	service *Service
 }
 
 type customerNoteResponse struct {
@@ -38,24 +37,16 @@ func toCustomerNoteResponse(n *CustomerNote) customerNoteResponse {
 	}
 }
 
-// NewHttpHandler creates a new HTTP handler for customer operations
-func NewHttpHandler(service *Service, businessService *business.Service) *HttpHandler {
-	return &HttpHandler{
-		service:         service,
-		businessService: businessService,
-	}
+// NewHttpHandler creates a new HTTP handler for customer operations.
+// Business context is derived from the request path via middleware.
+func NewHttpHandler(service *Service) *HttpHandler {
+	return &HttpHandler{service: service}
 }
 
 // getBusinessForWorkspace retrieves the first business for a workspace
 func (h *HttpHandler) getBusinessForWorkspace(c *gin.Context, actor *account.User) (*business.Business, error) {
-	businesses, err := h.businessService.ListBusinesses(c.Request.Context(), actor)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) == 0 {
-		return nil, problem.NotFound("no business found for this workspace")
-	}
-	return businesses[0], nil
+	_ = actor
+	return business.BusinessFromContext(c)
 }
 
 // Customer endpoints
@@ -73,6 +64,7 @@ type listCustomersQuery struct {
 // @Description  Returns a paginated list of all customers for the authenticated workspace
 // @Tags         customer
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, email)"
@@ -80,7 +72,7 @@ type listCustomersQuery struct {
 // @Success      200 {object} list.ListResponse[Customer]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers [get]
+// @Router       /v1/businesses/{businessDescriptor}/customers [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListCustomers(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -126,13 +118,14 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 // @Description  Returns a specific customer by ID with addresses and notes
 // @Tags         customer
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Success      200 {object} Customer
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetCustomer(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -173,13 +166,14 @@ func (h *HttpHandler) GetCustomer(c *gin.Context) {
 // @Tags         customer
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateCustomerRequest true "Customer data"
 // @Success      201 {object} Customer
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      409 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers [post]
+// @Router       /v1/businesses/{businessDescriptor}/customers [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -219,6 +213,7 @@ func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 // @Tags         customer
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body UpdateCustomerRequest true "Updated customer data"
 // @Success      200 {object} Customer
@@ -228,7 +223,7 @@ func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 // @Failure      404 {object} problem.Problem
 // @Failure      409 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateCustomer(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -276,13 +271,14 @@ func (h *HttpHandler) UpdateCustomer(c *gin.Context) {
 // @Summary      Delete customer
 // @Description  Soft deletes a customer (can be restored later)
 // @Tags         customer
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteCustomer(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -324,13 +320,14 @@ func (h *HttpHandler) DeleteCustomer(c *gin.Context) {
 // @Description  Returns all addresses for a specific customer
 // @Tags         customer
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Success      200 {array} CustomerAddress
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/addresses [get]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/addresses [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -371,6 +368,7 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 // @Tags         customer
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body CreateCustomerAddressRequest true "Address data"
 // @Success      201 {object} CustomerAddress
@@ -379,7 +377,7 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/addresses [post]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/addresses [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -425,6 +423,7 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 // @Tags         customer
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        addressId path string true "Address ID"
 // @Param        request body UpdateCustomerAddressRequest true "Updated address data"
@@ -434,7 +433,7 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/addresses/{addressId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/addresses/{addressId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -479,6 +478,7 @@ func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 // @Summary      Delete customer address
 // @Description  Deletes an address for a customer
 // @Tags         customer
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        addressId path string true "Address ID"
 // @Success      204
@@ -486,7 +486,7 @@ func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/addresses/{addressId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/addresses/{addressId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteCustomerAddress(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -529,13 +529,14 @@ func (h *HttpHandler) DeleteCustomerAddress(c *gin.Context) {
 // @Description  Returns all notes for a specific customer
 // @Tags         customer
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Success      200 {array} CustomerNote
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/notes [get]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/notes [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -580,6 +581,7 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 // @Tags         customer
 // @Accept       json
 // @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body CreateCustomerNoteRequest true "Note data"
 // @Success      201 {object} CustomerNote
@@ -588,7 +590,7 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/notes [post]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/notes [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -632,6 +634,7 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 // @Summary      Delete customer note
 // @Description  Deletes a note for a customer
 // @Tags         customer
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        noteId path string true "Note ID"
 // @Success      204
@@ -639,7 +642,7 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/customers/{customerId}/notes/{noteId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/customers/{customerId}/notes/{noteId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteCustomerNote(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)

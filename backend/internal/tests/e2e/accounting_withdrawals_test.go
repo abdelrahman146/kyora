@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// WithdrawalsSuite tests /v1/accounting/withdrawals endpoints.
+// WithdrawalsSuite tests /v1/businesses/:businessDescriptor/accounting/withdrawals endpoints.
 type WithdrawalsSuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -41,7 +41,7 @@ func (s *WithdrawalsSuite) TestWithdrawals_CRUD_Admin() {
 		"note":         "owner draw",
 	}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", createPayload, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
@@ -51,23 +51,23 @@ func (s *WithdrawalsSuite) TestWithdrawals_CRUD_Admin() {
 	withdrawalID, ok := created["id"].(string)
 	s.True(ok)
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/withdrawals/"+withdrawalID, nil, ws.AdminToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals/"+withdrawalID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/withdrawals?page=1&pageSize=10", nil, ws.AdminToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals?page=1&pageSize=10", nil, ws.AdminToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
 	updatePayload := map[string]interface{}{"note": "updated", "amount": "250.00"}
-	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/withdrawals/"+withdrawalID, updatePayload, ws.AdminToken)
+	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals/"+withdrawalID, updatePayload, ws.AdminToken)
 	s.NoError(err)
 	defer updResp.Body.Close()
 	s.Equal(http.StatusOK, updResp.StatusCode)
 
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/withdrawals/"+withdrawalID, nil, ws.AdminToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals/"+withdrawalID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusNoContent, delResp.StatusCode)
@@ -81,12 +81,12 @@ func (s *WithdrawalsSuite) TestWithdrawals_Permissions_MemberCanViewButCannotMan
 	date := time.Date(2025, 4, 2, 0, 0, 0, 0, time.UTC)
 	createPayload := map[string]interface{}{"amount": "100.00", "withdrawerId": ws.Admin.ID, "withdrawnAt": date}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", createPayload, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", createPayload, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", createPayload, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp2.StatusCode)
@@ -96,12 +96,12 @@ func (s *WithdrawalsSuite) TestWithdrawals_Permissions_MemberCanViewButCannotMan
 	withdrawalID, ok := created["id"].(string)
 	s.True(ok)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/withdrawals", nil, ws.MemberToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", nil, ws.MemberToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/withdrawals/"+withdrawalID, nil, ws.MemberToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals/"+withdrawalID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)

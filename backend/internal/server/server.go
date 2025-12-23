@@ -192,20 +192,18 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// Register onboarding routes
 	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
 
-	// Register accounting routes
-	registerAccountingRoutes(r, accounting.NewHttpHandler(accountingSvc, businessSvc, orderSvc), accountSvc)
+	accountingHandler := accounting.NewHttpHandler(accountingSvc, orderSvc)
+	analyticsHandler := analytics.NewHttpHandler(analyticsSvc)
+	customerHandler := customer.NewHttpHandler(customerSvc)
+	inventoryHandler := inventory.NewHttpHandler(inventorySvc)
 
-	// Register analytics routes
-	registerAnalyticsRoutes(r, analytics.NewHttpHandler(analyticsSvc, businessSvc), accountSvc)
+	// Register business-scoped routes
+	registerBusinessScopedRoutes(r, accountSvc, businessSvc, accountingHandler, analyticsHandler, customerHandler, inventoryHandler)
 
 	// Register business routes
 	registerBusinessRoutes(r, business.NewHttpHandler(businessSvc), accountSvc, billingSvc, businessSvc)
 
-	// Register customer routes
-	registerCustomerRoutes(r, customer.NewHttpHandler(customerSvc, businessSvc), accountSvc)
-
-	// Register inventory routes
-	registerInventoryRoutes(r, inventory.NewHttpHandler(inventorySvc, businessSvc), accountSvc)
+	// Customer, inventory, analytics, and accounting routes are registered under business-scoped routes.
 
 	return &Server{r: r, db: db, cacheDB: cacheDB, billingSvc: billingSvc}, nil
 }

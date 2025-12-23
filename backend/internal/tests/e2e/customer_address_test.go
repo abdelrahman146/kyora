@@ -54,7 +54,7 @@ func (s *CustomerAddressSuite) TestCreateAddress_Success() {
 		"zipCode":     "12345",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/addresses", customer.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses", customer.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -103,7 +103,7 @@ func (s *CustomerAddressSuite) TestCreateAddress_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/addresses", customer.ID), tt.payload, token)
+			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses", customer.ID), tt.payload, token)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -127,7 +127,7 @@ func (s *CustomerAddressSuite) TestCreateAddress_CustomerNotFound() {
 		"phone":       "1234567890",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers/cus_nonexistent/addresses", payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers/cus_nonexistent/addresses", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -151,7 +151,7 @@ func (s *CustomerAddressSuite) TestListAddresses_Success() {
 		s.NoError(err)
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/addresses", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -169,7 +169,7 @@ func (s *CustomerAddressSuite) TestListAddresses_CustomerNotFound() {
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers/cus_nonexistent/addresses", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers/cus_nonexistent/addresses", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -195,7 +195,7 @@ func (s *CustomerAddressSuite) TestUpdateAddress_Success() {
 		"street": "456 Updated St",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer.ID, address.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/%s", customer.ID, address.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -226,7 +226,7 @@ func (s *CustomerAddressSuite) TestUpdateAddress_AddressNotFound() {
 
 	payload := map[string]interface{}{"city": "Giza"}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s/addresses/addr_nonexistent", customer.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/addr_nonexistent", customer.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -253,7 +253,7 @@ func (s *CustomerAddressSuite) TestUpdateAddress_WrongCustomer() {
 	payload := map[string]interface{}{"city": "Hacked"}
 
 	// Try to update customer1's address through customer2's endpoint
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer2.ID, address1.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/%s", customer2.ID, address1.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -279,7 +279,7 @@ func (s *CustomerAddressSuite) TestDeleteAddress_Success() {
 	address, err := s.customerHelper.CreateTestAddress(ctx, customer.ID)
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer.ID, address.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/%s", customer.ID, address.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -302,7 +302,7 @@ func (s *CustomerAddressSuite) TestDeleteAddress_AddressNotFound() {
 	customer, err := s.customerHelper.CreateTestCustomer(ctx, biz.ID, "john@example.com", "John Doe")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/addresses/addr_nonexistent", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/addr_nonexistent", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -327,7 +327,7 @@ func (s *CustomerAddressSuite) TestDeleteAddress_WrongCustomer() {
 	s.NoError(err)
 
 	// Try to delete customer1's address through customer2's endpoint
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer2.ID, address1.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/addresses/%s", customer2.ID, address1.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -360,20 +360,20 @@ func (s *CustomerAddressSuite) TestAddressOperations_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// WS2 should not list WS1's customer addresses
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/addresses", customer1.ID), nil, token2)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/addresses", customer1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 
 	// WS2 should not update WS1's address
 	payload := map[string]interface{}{"city": "Hacked"}
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer1.ID, address1.ID), payload, token2)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/addresses/%s", customer1.ID, address1.ID), payload, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 
 	// WS2 should not delete WS1's address
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/addresses/%s", customer1.ID, address1.ID), nil, token2)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/addresses/%s", customer1.ID, address1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -384,7 +384,7 @@ func (s *CustomerAddressSuite) TestAddressOperations_CrossWorkspaceIsolation() {
 	s.Equal(int64(1), count)
 
 	// WS1 can still access their own address
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/addresses", customer1.ID), nil, token1)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/addresses", customer1.ID), nil, token1)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)

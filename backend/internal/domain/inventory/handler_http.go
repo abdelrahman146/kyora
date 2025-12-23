@@ -16,44 +16,19 @@ import (
 
 // HttpHandler handles HTTP requests for inventory domain operations.
 type HttpHandler struct {
-	service         *Service
-	businessService *business.Service
+	service *Service
 }
 
 // NewHttpHandler creates a new HTTP handler for inventory operations.
-func NewHttpHandler(service *Service, businessService *business.Service) *HttpHandler {
-	return &HttpHandler{service: service, businessService: businessService}
+func NewHttpHandler(service *Service) *HttpHandler {
+	return &HttpHandler{service: service}
 }
-
-type businessQuery struct {
-	BusinessID string `form:"businessId" binding:"omitempty"`
-}
-
-// getBusinessForRequest resolves the business for the request.
-// If businessId query is provided, it must belong to the actor's workspace.
-// Otherwise, the first business in the workspace is used.
 func (h *HttpHandler) getBusinessForRequest(c *gin.Context, actor *account.User) (*business.Business, error) {
-	var q businessQuery
-	_ = c.ShouldBindQuery(&q)
-	if q.BusinessID != "" {
-		biz, err := h.businessService.GetBusinessByID(c.Request.Context(), actor, q.BusinessID)
-		if err != nil {
-			return nil, err
-		}
-		return biz, nil
-	}
-	businesses, err := h.businessService.ListBusinesses(c.Request.Context(), actor)
-	if err != nil {
-		return nil, err
-	}
-	if len(businesses) == 0 {
-		return nil, problem.NotFound("no business found for this workspace")
-	}
-	return businesses[0], nil
+	_ = actor
+	return business.BusinessFromContext(c)
 }
 
 type listInventoryQuery struct {
-	BusinessID  string   `form:"businessId" binding:"omitempty"`
 	Page        int      `form:"page" binding:"omitempty,min=1"`
 	PageSize    int      `form:"pageSize" binding:"omitempty,min=1,max=100"`
 	OrderBy     []string `form:"orderBy" binding:"omitempty"`
@@ -69,7 +44,7 @@ type listInventoryQuery struct {
 // @Description  Returns a paginated list of products for the authenticated workspace/business
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
@@ -77,7 +52,7 @@ type listInventoryQuery struct {
 // @Success      200 {object} list.ListResponse[Product]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListProducts(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -122,13 +97,13 @@ func (h *HttpHandler) ListProducts(c *gin.Context) {
 // @Description  Returns a product by ID including its variants
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
 // @Success      200 {object} Product
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products/{productId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products/{productId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetProduct(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -167,13 +142,13 @@ func (h *HttpHandler) GetProduct(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateProductRequest true "Product"
 // @Success      201 {object} Product
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products [post]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateProduct(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -206,13 +181,13 @@ func (h *HttpHandler) CreateProduct(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateProductWithVariantsRequest true "Product with variants"
 // @Success      201 {object} Product
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products/with-variants [post]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products/with-variants [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateProductWithVariants(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -245,7 +220,7 @@ func (h *HttpHandler) CreateProductWithVariants(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
 // @Param        body body UpdateProductRequest true "Updates"
 // @Success      200 {object} Product
@@ -253,7 +228,7 @@ func (h *HttpHandler) CreateProductWithVariants(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products/{productId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products/{productId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateProduct(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -305,13 +280,13 @@ func (h *HttpHandler) UpdateProduct(c *gin.Context) {
 // @Description  Deletes a product
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products/{productId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products/{productId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteProduct(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -342,7 +317,7 @@ func (h *HttpHandler) DeleteProduct(c *gin.Context) {
 // @Description  Returns a paginated list of variants for a given product
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
@@ -352,7 +327,7 @@ func (h *HttpHandler) DeleteProduct(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/products/{productId}/variants [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/products/{productId}/variants [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -401,7 +376,7 @@ func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 // @Description  Returns a paginated list of variants
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
@@ -409,7 +384,7 @@ func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 // @Success      200 {object} list.ListResponse[Variant]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/variants [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/variants [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListVariants(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -454,13 +429,13 @@ func (h *HttpHandler) ListVariants(c *gin.Context) {
 // @Description  Returns a variant by ID
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        variantId path string true "Variant ID"
 // @Success      200 {object} Variant
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/variants/{variantId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/variants/{variantId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetVariant(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -493,14 +468,14 @@ func (h *HttpHandler) GetVariant(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateVariantRequest true "Variant"
 // @Success      201 {object} Variant
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/variants [post]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/variants [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateVariant(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -537,7 +512,7 @@ func (h *HttpHandler) CreateVariant(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        variantId path string true "Variant ID"
 // @Param        body body UpdateVariantRequest true "Updates"
 // @Success      200 {object} Variant
@@ -545,7 +520,7 @@ func (h *HttpHandler) CreateVariant(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/variants/{variantId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/variants/{variantId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateVariant(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -586,13 +561,13 @@ func (h *HttpHandler) UpdateVariant(c *gin.Context) {
 // @Description  Deletes a variant
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        variantId path string true "Variant ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/variants/{variantId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/variants/{variantId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteVariant(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -623,11 +598,11 @@ func (h *HttpHandler) DeleteVariant(c *gin.Context) {
 // @Description  Returns all categories
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Success      200 {array} Category
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/categories [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/categories [get]
 // @Security     BearerAuth
 func (h *HttpHandler) ListCategories(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -654,13 +629,13 @@ func (h *HttpHandler) ListCategories(c *gin.Context) {
 // @Description  Returns a category by ID
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        categoryId path string true "Category ID"
 // @Success      200 {object} Category
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/categories/{categoryId} [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/categories/{categoryId} [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetCategory(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -693,13 +668,13 @@ func (h *HttpHandler) GetCategory(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateCategoryRequest true "Category"
 // @Success      201 {object} Category
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/categories [post]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/categories [post]
 // @Security     BearerAuth
 func (h *HttpHandler) CreateCategory(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -732,7 +707,7 @@ func (h *HttpHandler) CreateCategory(c *gin.Context) {
 // @Tags         inventory
 // @Accept       json
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        categoryId path string true "Category ID"
 // @Param        body body UpdateCategoryRequest true "Updates"
 // @Success      200 {object} Category
@@ -740,7 +715,7 @@ func (h *HttpHandler) CreateCategory(c *gin.Context) {
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/categories/{categoryId} [patch]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/categories/{categoryId} [patch]
 // @Security     BearerAuth
 func (h *HttpHandler) UpdateCategory(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -786,13 +761,13 @@ func (h *HttpHandler) UpdateCategory(c *gin.Context) {
 // @Description  Deletes a category
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        categoryId path string true "Category ID"
 // @Success      204
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/categories/{categoryId} [delete]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/categories/{categoryId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) DeleteCategory(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -834,12 +809,12 @@ type inventorySummaryResponse struct {
 // @Description  Returns inventory metrics for the current business
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        topLimit query int false "Top products limit (default: 5, max: 50)"
 // @Success      200 {object} inventorySummaryResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/summary [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/summary [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)
@@ -920,12 +895,12 @@ func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 // @Description  Returns the top products by inventory value (cost * stock)
 // @Tags         inventory
 // @Produce      json
-// @Param        businessId query string false "Business ID (optional)"
+// @Param        businessDescriptor path string true "Business descriptor"
 // @Param        limit query int false "Top limit (default: 5, max: 50)"
 // @Success      200 {array} TopProductByInventoryValue
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
-// @Router       /v1/inventory/top-products [get]
+// @Router       /v1/businesses/{businessDescriptor}/inventory/top-products [get]
 // @Security     BearerAuth
 func (h *HttpHandler) GetTopProductsByInventoryValue(c *gin.Context) {
 	actor, err := account.ActorFromContext(c)

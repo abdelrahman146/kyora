@@ -5,8 +5,8 @@ import (
 )
 
 // ErrBusinessNotFound indicates that a business could not be found in the authenticated workspace.
-func ErrBusinessNotFound(businessID string, err error) error {
-	return problem.NotFound("business not found").WithError(err).With("businessId", businessID)
+func ErrBusinessNotFound(businessDescriptor string, err error) error {
+	return problem.NotFound("business not found").WithError(err).With("businessDescriptor", businessDescriptor)
 }
 
 // ErrBusinessDescriptorAlreadyTaken indicates the requested descriptor is already used within the workspace.

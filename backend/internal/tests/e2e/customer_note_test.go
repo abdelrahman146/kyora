@@ -52,7 +52,7 @@ func (s *CustomerNoteSuite) TestCreateNote_Success() {
 		"content": "This is a test note about the customer",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/notes", customer.ID), payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes", customer.ID), payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -92,7 +92,7 @@ func (s *CustomerNoteSuite) TestCreateNote_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/notes", customer.ID), tt.payload, token)
+			resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes", customer.ID), tt.payload, token)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -112,7 +112,7 @@ func (s *CustomerNoteSuite) TestCreateNote_CustomerNotFound() {
 		"content": "Test note",
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/customers/cus_nonexistent/notes", payload, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers/cus_nonexistent/notes", payload, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -136,7 +136,7 @@ func (s *CustomerNoteSuite) TestListNotes_Success() {
 		s.NoError(err)
 	}
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/notes", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -162,7 +162,7 @@ func (s *CustomerNoteSuite) TestListNotes_CustomerNotFound() {
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/customers/cus_nonexistent/notes", nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers/cus_nonexistent/notes", nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -183,7 +183,7 @@ func (s *CustomerNoteSuite) TestDeleteNote_Success() {
 	note, err := s.customerHelper.CreateTestNote(ctx, customer.ID, "Test note")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/notes/%s", customer.ID, note.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes/%s", customer.ID, note.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -206,7 +206,7 @@ func (s *CustomerNoteSuite) TestDeleteNote_NoteNotFound() {
 	customer, err := s.customerHelper.CreateTestCustomer(ctx, biz.ID, "john@example.com", "John Doe")
 	s.NoError(err)
 
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/notes/cnote_nonexistent", customer.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes/cnote_nonexistent", customer.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -231,7 +231,7 @@ func (s *CustomerNoteSuite) TestDeleteNote_WrongCustomer() {
 	s.NoError(err)
 
 	// Try to delete customer1's note through customer2's endpoint
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/notes/%s", customer2.ID, note1.ID), nil, token)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes/%s", customer2.ID, note1.ID), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -264,20 +264,20 @@ func (s *CustomerNoteSuite) TestNoteOperations_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// WS2 should not list WS1's customer notes
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/notes", customer1.ID), nil, token2)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/notes", customer1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 
 	// WS2 should not create note for WS1's customer
 	payload := map[string]interface{}{"content": "Hacked note"}
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/notes", customer1.ID), payload, token2)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/notes", customer1.ID), payload, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 
 	// WS2 should not delete WS1's note
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/notes/%s", customer1.ID, note1.ID), nil, token2)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/notes/%s", customer1.ID, note1.ID), nil, token2)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -288,7 +288,7 @@ func (s *CustomerNoteSuite) TestNoteOperations_CrossWorkspaceIsolation() {
 	s.Equal(int64(1), count)
 
 	// WS1 can still access their own notes
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/notes", customer1.ID), nil, token1)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-1/customers/%s/notes", customer1.ID), nil, token1)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -329,20 +329,20 @@ func (s *CustomerNoteSuite) TestNoteOperations_UnauthorizedUser() {
 	s.NoError(err)
 
 	// User can view notes (has view permission)
-	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/customers/%s/notes", customer.ID), nil, userToken)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes", customer.ID), nil, userToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
 
 	// User cannot create notes (needs manage permission)
 	payload := map[string]interface{}{"content": "User note"}
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/customers/%s/notes", customer.ID), payload, userToken)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes", customer.ID), payload, userToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
 	// User cannot delete notes (needs manage permission)
-	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/customers/%s/notes/%s", customer.ID, note.ID), nil, userToken)
+	resp, err = s.customerHelper.Client.AuthenticatedRequest("DELETE", fmt.Sprintf("/v1/businesses/test-biz/customers/%s/notes/%s", customer.ID, note.ID), nil, userToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)

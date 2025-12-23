@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// AssetsSuite tests /v1/accounting/assets endpoints.
+// AssetsSuite tests /v1/businesses/:businessDescriptor/accounting/assets endpoints.
 type AssetsSuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -42,7 +42,7 @@ func (s *AssetsSuite) TestAssets_CRUD_Admin() {
 		"note":        "<script>alert('x')</script>' OR '1'='1",
 	}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/assets", createPayload, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusCreated, resp.StatusCode)
@@ -59,7 +59,7 @@ func (s *AssetsSuite) TestAssets_CRUD_Admin() {
 	assetID := created["id"].(string)
 
 	// Get
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets/"+assetID, nil, ws.AdminToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
@@ -69,7 +69,7 @@ func (s *AssetsSuite) TestAssets_CRUD_Admin() {
 	s.Equal(assetID, got["id"])
 
 	// List
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets?page=1&pageSize=10", nil, ws.AdminToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets?page=1&pageSize=10", nil, ws.AdminToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
@@ -87,7 +87,7 @@ func (s *AssetsSuite) TestAssets_CRUD_Admin() {
 		"value": "999.99",
 		"note":  "updated",
 	}
-	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/assets/"+assetID, updatePayload, ws.AdminToken)
+	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, updatePayload, ws.AdminToken)
 	s.NoError(err)
 	defer updResp.Body.Close()
 	s.Equal(http.StatusOK, updResp.StatusCode)
@@ -97,13 +97,13 @@ func (s *AssetsSuite) TestAssets_CRUD_Admin() {
 	s.Equal("MacBook Pro Updated", updated["name"])
 
 	// Delete
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/assets/"+assetID, nil, ws.AdminToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusNoContent, delResp.StatusCode)
 
 	// Get after delete => 404
-	get2Resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets/"+assetID, nil, ws.AdminToken)
+	get2Resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer get2Resp.Body.Close()
 	s.Equal(http.StatusNotFound, get2Resp.StatusCode)
@@ -123,13 +123,13 @@ func (s *AssetsSuite) TestAssets_Permissions_MemberCanViewButCannotManage() {
 	}
 
 	// member cannot create
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/assets", createPayload, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets", createPayload, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
 	// admin creates
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/assets", createPayload, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusCreated, resp2.StatusCode)
@@ -139,19 +139,19 @@ func (s *AssetsSuite) TestAssets_Permissions_MemberCanViewButCannotManage() {
 	assetID := created["id"].(string)
 
 	// member can list
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets", nil, ws.MemberToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets", nil, ws.MemberToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
 	// member can get
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets/"+assetID, nil, ws.MemberToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
 
 	// member cannot delete
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/assets/"+assetID, nil, ws.MemberToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets/"+assetID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusForbidden, delResp.StatusCode)
@@ -162,13 +162,13 @@ func (s *AssetsSuite) TestAssets_Validation() {
 	ws, err := s.helper.CreateWorkspaceWithAdminAndMemberAndBusiness(ctx)
 	s.NoError(err)
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/assets", map[string]interface{}{}, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets", map[string]interface{}{}, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
 
 	// invalid query param
-	resp2, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/assets?page=-1", nil, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/assets?page=-1", nil, ws.AdminToken)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusBadRequest, resp2.StatusCode)

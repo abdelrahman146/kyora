@@ -78,8 +78,12 @@ func (s *AnalyticsSuite) createBusiness(ctx context.Context, workspaceID string)
 	s.NoError(repo.CreateOne(ctx, biz))
 }
 
+func (s *AnalyticsSuite) analyticsPath(businessDescriptor string, path string) string {
+	return "/v1/businesses/" + businessDescriptor + "/analytics" + path
+}
+
 func (s *AnalyticsSuite) TestDashboard_Unauthorized() {
-	resp, err := s.helper.Client.Get("/v1/analytics/dashboard")
+	resp, err := s.helper.Client.Get(s.analyticsPath("main", "/dashboard"))
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
@@ -92,7 +96,7 @@ func (s *AnalyticsSuite) TestDashboard_Success() {
 
 	s.createBusiness(ctx, workspace.ID)
 
-	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, "/v1/analytics/dashboard", nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, s.analyticsPath("main", "/dashboard"), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -120,7 +124,7 @@ func (s *AnalyticsSuite) TestSalesAnalytics_InvalidDate() {
 
 	s.createBusiness(ctx, workspace.ID)
 
-	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, "/v1/analytics/sales?from=not-a-date", nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, s.analyticsPath("main", "/sales?from=not-a-date"), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -133,7 +137,7 @@ func (s *AnalyticsSuite) TestSalesAnalytics_FromAfterTo() {
 
 	s.createBusiness(ctx, workspace.ID)
 
-	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, "/v1/analytics/sales?from=2025-12-10&to=2025-12-01", nil, token)
+	resp, err := s.helper.Client.AuthenticatedRequest(http.MethodGet, s.analyticsPath("main", "/sales?from=2025-12-10&to=2025-12-01"), nil, token)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)

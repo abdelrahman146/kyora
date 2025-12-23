@@ -10,7 +10,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// InvestmentsSuite tests /v1/accounting/investments endpoints.
+// InvestmentsSuite tests /v1/businesses/:businessDescriptor/accounting/investments endpoints.
 type InvestmentsSuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -41,7 +41,7 @@ func (s *InvestmentsSuite) TestInvestments_CRUD_Admin() {
 		"note":       "seed capital ' OR '1'='1",
 	}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/investments", createPayload, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp.StatusCode)
@@ -54,12 +54,12 @@ func (s *InvestmentsSuite) TestInvestments_CRUD_Admin() {
 	investmentID, ok := created["id"].(string)
 	s.True(ok)
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/investments/"+investmentID, nil, ws.AdminToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments/"+investmentID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/investments?page=1&pageSize=10", nil, ws.AdminToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments?page=1&pageSize=10", nil, ws.AdminToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
@@ -68,12 +68,12 @@ func (s *InvestmentsSuite) TestInvestments_CRUD_Admin() {
 		"note":   "updated",
 		"amount": "600.00",
 	}
-	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/accounting/investments/"+investmentID, updatePayload, ws.AdminToken)
+	updResp, err := s.helper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments/"+investmentID, updatePayload, ws.AdminToken)
 	s.NoError(err)
 	defer updResp.Body.Close()
 	s.Equal(http.StatusOK, updResp.StatusCode)
 
-	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/accounting/investments/"+investmentID, nil, ws.AdminToken)
+	delResp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments/"+investmentID, nil, ws.AdminToken)
 	s.NoError(err)
 	defer delResp.Body.Close()
 	s.Equal(http.StatusNoContent, delResp.StatusCode)
@@ -87,12 +87,12 @@ func (s *InvestmentsSuite) TestInvestments_Permissions_MemberCanViewButCannotMan
 	date := time.Date(2025, 4, 1, 0, 0, 0, 0, time.UTC)
 	createPayload := map[string]interface{}{"investorId": ws.Admin.ID, "amount": "100.00", "investedAt": date}
 
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/investments", createPayload, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", createPayload, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
 
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/investments", createPayload, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", createPayload, ws.AdminToken)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Require().Equal(http.StatusCreated, resp2.StatusCode)
@@ -102,12 +102,12 @@ func (s *InvestmentsSuite) TestInvestments_Permissions_MemberCanViewButCannotMan
 	investmentID, ok := created["id"].(string)
 	s.True(ok)
 
-	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/investments", nil, ws.MemberToken)
+	listResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", nil, ws.MemberToken)
 	s.NoError(err)
 	defer listResp.Body.Close()
 	s.Equal(http.StatusOK, listResp.StatusCode)
 
-	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/investments/"+investmentID, nil, ws.MemberToken)
+	getResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments/"+investmentID, nil, ws.MemberToken)
 	s.NoError(err)
 	defer getResp.Body.Close()
 	s.Equal(http.StatusOK, getResp.StatusCode)

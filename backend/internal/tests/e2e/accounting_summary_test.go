@@ -15,7 +15,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// SummarySuite tests /v1/accounting/summary endpoint.
+// SummarySuite tests /v1/businesses/:businessDescriptor/accounting/summary endpoint.
 type SummarySuite struct {
 	suite.Suite
 	helper *AccountingTestHelper
@@ -38,7 +38,7 @@ func (s *SummarySuite) TestSummary_EmptyWorkspace() {
 	ws, err := s.helper.CreateWorkspaceWithAdminAndMemberAndBusiness(ctx)
 	s.NoError(err)
 
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/summary", nil, ws.AdminToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/summary", nil, ws.AdminToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -105,17 +105,17 @@ func (s *SummarySuite) TestSummary_ComputedFields_WithInvestmentsWithdrawalsExpe
 	exp := map[string]interface{}{"category": "software", "type": "one_time", "amount": "100.00", "occurredOn": now}
 	wd := map[string]interface{}{"withdrawerId": ws.Admin.ID, "amount": "50.00", "withdrawnAt": now}
 
-	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/investments", inv, ws.AdminToken)
+	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", inv, ws.AdminToken)
 	s.NoError(err)
 	resp1.Body.Close()
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", exp, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", exp, ws.AdminToken)
 	s.NoError(err)
 	resp2.Body.Close()
-	resp3, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", wd, ws.AdminToken)
+	resp3, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", wd, ws.AdminToken)
 	s.NoError(err)
 	resp3.Body.Close()
 
-	summaryResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/summary", nil, ws.AdminToken)
+	summaryResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/summary", nil, ws.AdminToken)
 	s.NoError(err)
 	defer summaryResp.Body.Close()
 	s.Equal(http.StatusOK, summaryResp.StatusCode)
@@ -201,25 +201,25 @@ func (s *SummarySuite) TestSummary_DateRange_AppliesToSafeToDrawAndTotals() {
 	expOutside := map[string]interface{}{"category": "software", "type": "one_time", "amount": "999.00", "occurredOn": outside}
 	wdOutside := map[string]interface{}{"withdrawerId": ws.Admin.ID, "amount": "999.00", "withdrawnAt": outside}
 
-	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/investments", invWithin, ws.AdminToken)
+	resp1, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/investments", invWithin, ws.AdminToken)
 	s.NoError(err)
 	resp1.Body.Close()
-	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", expWithin, ws.AdminToken)
+	resp2, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", expWithin, ws.AdminToken)
 	s.NoError(err)
 	resp2.Body.Close()
-	resp3, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", wdWithin, ws.AdminToken)
+	resp3, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", wdWithin, ws.AdminToken)
 	s.NoError(err)
 	resp3.Body.Close()
-	resp4, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/expenses", expOutside, ws.AdminToken)
+	resp4, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/expenses", expOutside, ws.AdminToken)
 	s.NoError(err)
 	resp4.Body.Close()
-	resp5, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/accounting/withdrawals", wdOutside, ws.AdminToken)
+	resp5, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/withdrawals", wdOutside, ws.AdminToken)
 	s.NoError(err)
 	resp5.Body.Close()
 
 	from := "2025-12-01"
 	to := "2025-12-31"
-	summaryResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/summary?from="+from+"&to="+to, nil, ws.AdminToken)
+	summaryResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/summary?from="+from+"&to="+to, nil, ws.AdminToken)
 	s.NoError(err)
 	defer summaryResp.Body.Close()
 	s.Equal(http.StatusOK, summaryResp.StatusCode)
@@ -242,7 +242,7 @@ func (s *SummarySuite) TestSummary_Permissions_MemberCanView() {
 	ws, err := s.helper.CreateWorkspaceWithAdminAndMemberAndBusiness(ctx)
 	s.NoError(err)
 
-	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/accounting/summary", nil, ws.MemberToken)
+	resp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/businesses/"+ws.Business.Descriptor+"/accounting/summary", nil, ws.MemberToken)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
