@@ -168,7 +168,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	customerSvc := customer.NewService(customerStorage, atomicProcessor, bus)
 
 	orderStorage := order.NewStorage(db, cacheDB)
-	orderSvc := order.NewService(orderStorage, atomicProcessor, bus, inventorySvc, customerSvc)
+	orderSvc := order.NewService(orderStorage, atomicProcessor, bus, inventorySvc, customerSvc, businessSvc)
 
 	analyticsSvc := analytics.NewService(&analytics.ServiceParams{
 		Inventory:  inventorySvc,
@@ -205,12 +205,13 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	customerHandler := customer.NewHttpHandler(customerSvc)
 	inventoryHandler := inventory.NewHttpHandler(inventorySvc)
 	orderHandler := order.NewHttpHandler(orderSvc)
+	businessHandler := business.NewHttpHandler(businessSvc)
 
 	// Register business-scoped routes
-	registerBusinessScopedRoutes(r, accountSvc, billingSvc, businessSvc, accountingHandler, analyticsHandler, customerHandler, inventoryHandler, orderHandler)
+	registerBusinessScopedRoutes(r, accountSvc, billingSvc, businessSvc, businessHandler, accountingHandler, analyticsHandler, customerHandler, inventoryHandler, orderHandler)
 
 	// Register business routes
-	registerBusinessRoutes(r, business.NewHttpHandler(businessSvc), accountSvc, billingSvc, businessSvc)
+	registerBusinessRoutes(r, businessHandler, accountSvc, billingSvc, businessSvc)
 
 	// Customer, inventory, analytics, and accounting routes are registered under business-scoped routes.
 

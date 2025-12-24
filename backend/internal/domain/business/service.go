@@ -2,6 +2,7 @@ package business
 
 import (
 	"context"
+	"fmt"
 	"regexp"
 	"strings"
 	"time"
@@ -12,7 +13,9 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
+	"github.com/shopspring/decimal"
 )
 
 type Service struct {
@@ -122,25 +125,200 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 		return nil, ErrBusinessDescriptorAlreadyTaken(normDescriptor, nil)
 	}
 
-	business := &Business{
-		WorkspaceID: actor.WorkspaceID,
-		Descriptor:  normDescriptor,
-		Name:        input.Name,
-		CountryCode: country,
-		VatRate:     input.VatRate,
-		Currency:    currency,
-	}
-	if !input.SafetyBuffer.IsZero() {
-		business.SafetyBuffer = input.SafetyBuffer
-	}
-	if !input.EstablishedAt.IsZero() {
-		business.EstablishedAt = input.EstablishedAt.Time
-	}
-	err = s.storage.business.CreateOne(ctx, business)
+	var created *Business
+	err = s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		biz := &Business{
+			WorkspaceID: actor.WorkspaceID,
+			Descriptor:  normDescriptor,
+			Name:        input.Name,
+			CountryCode: country,
+			VatRate:     input.VatRate,
+			Currency:    currency,
+		}
+		if !input.SafetyBuffer.IsZero() {
+			biz.SafetyBuffer = input.SafetyBuffer
+		}
+		if !input.EstablishedAt.IsZero() {
+			biz.EstablishedAt = input.EstablishedAt.Time
+		}
+		if err := s.storage.business.CreateOne(tctx, biz); err != nil {
+			return err
+		}
+		// Always create a default shipping zone for ease-of-use.
+		// Name=country, countries=[country], cost=free, currency=business currency.
+		zone := &ShippingZone{
+			BusinessID:            biz.ID,
+			Name:                  biz.CountryCode,
+			Countries:             CountryCodeList{biz.CountryCode},
+			Currency:              biz.Currency,
+			ShippingCost:          decimal.Zero,
+			FreeShippingThreshold: decimal.Zero,
+		}
+		if err := s.storage.CreateShippingZone(tctx, zone); err != nil {
+			return err
+		}
+		created = biz
+		return nil
+	}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
 	if err != nil {
 		return nil, err
 	}
-	return business, nil
+	return created, nil
+}
+
+func (s *Service) normalizeZoneCountries(in []string) (CountryCodeList, error) {
+	if len(in) == 0 {
+		return nil, problem.BadRequest("countries is required").With("field", "countries")
+	}
+	seen := make(map[string]struct{}, len(in))
+	out := make([]string, 0, len(in))
+	for _, c := range in {
+		cc := normalizeCountryCode(c)
+		if len(cc) != 2 {
+			return nil, problem.BadRequest("invalid country code").With("field", "countries")
+		}
+		if _, ok := seen[cc]; ok {
+			continue
+		}
+		seen[cc] = struct{}{}
+		out = append(out, cc)
+	}
+	if len(out) == 0 {
+		return nil, problem.BadRequest("countries is required").With("field", "countries")
+	}
+	return CountryCodeList(out), nil
+}
+
+func (s *Service) ListShippingZones(ctx context.Context, actor *account.User, biz *Business) ([]*ShippingZone, error) {
+	if err := actor.Role.HasPermission(role.ActionView, role.ResourceBusiness); err != nil {
+		return nil, err
+	}
+	return s.storage.ListShippingZones(ctx, biz.ID)
+}
+
+func (s *Service) GetShippingZoneByID(ctx context.Context, actor *account.User, biz *Business, zoneID string) (*ShippingZone, error) {
+	if err := actor.Role.HasPermission(role.ActionView, role.ResourceBusiness); err != nil {
+		return nil, err
+	}
+	if zoneID == "" {
+		return nil, problem.BadRequest("zoneId is required")
+	}
+	zone, err := s.storage.GetShippingZoneByID(ctx, biz.ID, zoneID)
+	if err != nil {
+		return nil, ErrShippingZoneNotFound(zoneID, err)
+	}
+	return zone, nil
+}
+
+func (s *Service) CreateShippingZone(ctx context.Context, actor *account.User, biz *Business, req *CreateShippingZoneRequest) (*ShippingZone, error) {
+	if err := actor.Role.HasPermission(role.ActionManage, role.ResourceBusiness); err != nil {
+		return nil, err
+	}
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:shipping_zone:create:%s:%s", biz.ID, actor.ID), time.Minute, 60, 1*time.Second) {
+		return nil, ErrBusinessRateLimited()
+	}
+	if req == nil {
+		return nil, problem.BadRequest("request is required")
+	}
+	name := strings.TrimSpace(req.Name)
+	if name == "" {
+		return nil, problem.BadRequest("name is required").With("field", "name")
+	}
+	if len(name) > 80 {
+		return nil, problem.BadRequest("name is too long").With("field", "name")
+	}
+	if req.ShippingCost.LessThan(decimal.Zero) {
+		return nil, problem.BadRequest("shippingCost cannot be negative").With("field", "shippingCost")
+	}
+	if req.FreeShippingThreshold.LessThan(decimal.Zero) {
+		return nil, problem.BadRequest("freeShippingThreshold cannot be negative").With("field", "freeShippingThreshold")
+	}
+	countries, err := s.normalizeZoneCountries(req.Countries)
+	if err != nil {
+		return nil, err
+	}
+	zone := &ShippingZone{
+		BusinessID:            biz.ID,
+		Name:                  name,
+		Countries:             countries,
+		Currency:              biz.Currency,
+		ShippingCost:          req.ShippingCost,
+		FreeShippingThreshold: req.FreeShippingThreshold,
+	}
+	if err := s.storage.CreateShippingZone(ctx, zone); err != nil {
+		if database.IsUniqueViolation(err) {
+			return nil, ErrShippingZoneNameAlreadyTaken(name, err)
+		}
+		return nil, err
+	}
+	return zone, nil
+}
+
+func (s *Service) UpdateShippingZone(ctx context.Context, actor *account.User, biz *Business, zoneID string, req *UpdateShippingZoneRequest) (*ShippingZone, error) {
+	if err := actor.Role.HasPermission(role.ActionManage, role.ResourceBusiness); err != nil {
+		return nil, err
+	}
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:shipping_zone:update:%s:%s", biz.ID, actor.ID), time.Minute, 120, 1*time.Second) {
+		return nil, ErrBusinessRateLimited()
+	}
+	if req == nil {
+		return nil, problem.BadRequest("request is required")
+	}
+	zone, err := s.storage.GetShippingZoneByID(ctx, biz.ID, zoneID)
+	if err != nil {
+		return nil, ErrShippingZoneNotFound(zoneID, err)
+	}
+	if req.Name != nil {
+		name := strings.TrimSpace(*req.Name)
+		if name == "" {
+			return nil, problem.BadRequest("name cannot be empty").With("field", "name")
+		}
+		if len(name) > 80 {
+			return nil, problem.BadRequest("name is too long").With("field", "name")
+		}
+		zone.Name = name
+	}
+	if req.Countries != nil {
+		countries, err := s.normalizeZoneCountries(req.Countries)
+		if err != nil {
+			return nil, err
+		}
+		zone.Countries = countries
+	}
+	if req.ShippingCost.Valid {
+		if req.ShippingCost.Decimal.LessThan(decimal.Zero) {
+			return nil, problem.BadRequest("shippingCost cannot be negative").With("field", "shippingCost")
+		}
+		zone.ShippingCost = transformer.FromNullDecimal(req.ShippingCost)
+	}
+	if req.FreeShippingThreshold.Valid {
+		if req.FreeShippingThreshold.Decimal.LessThan(decimal.Zero) {
+			return nil, problem.BadRequest("freeShippingThreshold cannot be negative").With("field", "freeShippingThreshold")
+		}
+		zone.FreeShippingThreshold = transformer.FromNullDecimal(req.FreeShippingThreshold)
+	}
+	zone.Currency = biz.Currency
+	if err := s.storage.UpdateShippingZone(ctx, zone); err != nil {
+		if database.IsUniqueViolation(err) {
+			return nil, ErrShippingZoneNameAlreadyTaken(zone.Name, err)
+		}
+		return nil, err
+	}
+	return zone, nil
+}
+
+func (s *Service) DeleteShippingZone(ctx context.Context, actor *account.User, biz *Business, zoneID string) error {
+	if err := actor.Role.HasPermission(role.ActionManage, role.ResourceBusiness); err != nil {
+		return err
+	}
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:shipping_zone:delete:%s:%s", biz.ID, actor.ID), time.Minute, 60, 1*time.Second) {
+		return ErrBusinessRateLimited()
+	}
+	zone, err := s.storage.GetShippingZoneByID(ctx, biz.ID, zoneID)
+	if err != nil {
+		return ErrShippingZoneNotFound(zoneID, err)
+	}
+	return s.storage.DeleteShippingZone(ctx, zone)
 }
 
 func (s *Service) ArchiveBusiness(ctx context.Context, actor *account.User, id string) error {

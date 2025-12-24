@@ -121,6 +121,23 @@ func (h *OrderTestHelper) CreateTestProduct(ctx context.Context, businessID, cat
 	return product, variant, nil
 }
 
+// CreateTestShippingZone creates a shipping zone for a business.
+func (h *OrderTestHelper) CreateTestShippingZone(ctx context.Context, businessID, name string, countries []string, shippingCost, freeShippingThreshold decimal.Decimal) (*business.ShippingZone, error) {
+	zoneRepo := database.NewRepository[business.ShippingZone](h.db)
+	z := &business.ShippingZone{
+		BusinessID:            businessID,
+		Name:                  name,
+		Countries:             business.CountryCodeList(countries),
+		Currency:              "USD",
+		ShippingCost:          shippingCost,
+		FreeShippingThreshold: freeShippingThreshold,
+	}
+	if err := zoneRepo.CreateOne(ctx, z); err != nil {
+		return nil, err
+	}
+	return z, nil
+}
+
 // GetOrder retrieves an order by ID
 func (h *OrderTestHelper) GetOrder(ctx context.Context, orderID string) (*order.Order, error) {
 	orderRepo := database.NewRepository[order.Order](h.db)

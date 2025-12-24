@@ -85,6 +85,8 @@ type Order struct {
 	Customer           *customer.Customer        `gorm:"foreignKey:CustomerID;references:ID" json:"customer,omitempty"`
 	ShippingAddressID  string                    `gorm:"column:shipping_address_id;type:text" json:"shippingAddressId,omitempty"`
 	ShippingAddress    *customer.CustomerAddress `gorm:"foreignKey:ShippingAddressID;references:ID" json:"shippingAddress,omitempty"`
+	ShippingZoneID     *string                   `gorm:"column:shipping_zone_id;type:text;index" json:"shippingZoneId,omitempty"`
+	ShippingZone       *business.ShippingZone    `gorm:"foreignKey:ShippingZoneID;references:ID" json:"shippingZone,omitempty"`
 	Channel            string                    `gorm:"column:channel;type:text;not null" json:"channel"`
 	Subtotal           decimal.Decimal           `gorm:"column:subtotal;type:numeric;not null;default:0" json:"subtotal"`
 	VAT                decimal.Decimal           `gorm:"column:vat;type:numeric;not null;default:0" json:"vat"`
@@ -123,6 +125,7 @@ type CreateOrderRequest struct {
 	CustomerID        string                    `json:"customerId" binding:"required"`
 	Channel           string                    `json:"channel" binding:"required"`
 	ShippingAddressID string                    `json:"shippingAddressId" binding:"required"`
+	ShippingZoneID    *string                   `json:"shippingZoneId" binding:"omitempty"`
 	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty"`
 	Discount          decimal.Decimal           `json:"discount" binding:"omitempty"`
 	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
@@ -132,11 +135,12 @@ type CreateOrderRequest struct {
 }
 
 type UpdateOrderRequest struct {
-	ShippingFee decimal.NullDecimal       `json:"shippingFee" binding:"omitempty"`
-	Channel     string                    `json:"channel" binding:"omitempty"`
-	Discount    decimal.NullDecimal       `json:"discount" binding:"omitempty"`
-	OrderedAt   time.Time                 `json:"orderedAt" binding:"omitempty"`
-	Items       []*CreateOrderItemRequest `json:"items,omitempty" binding:"omitempty,dive,required"`
+	ShippingZoneID *string                   `json:"shippingZoneId" binding:"omitempty"`
+	ShippingFee    decimal.NullDecimal       `json:"shippingFee" binding:"omitempty"`
+	Channel        string                    `json:"channel" binding:"omitempty"`
+	Discount       decimal.NullDecimal       `json:"discount" binding:"omitempty"`
+	OrderedAt      time.Time                 `json:"orderedAt" binding:"omitempty"`
+	Items          []*CreateOrderItemRequest `json:"items,omitempty" binding:"omitempty,dive,required"`
 }
 
 type AddOrderPaymentDetailsRequest struct {
@@ -150,6 +154,7 @@ var OrderSchema = struct {
 	BusinessID         schema.Field
 	CustomerID         schema.Field
 	ShippingAddressID  schema.Field
+	ShippingZoneID     schema.Field
 	Channel            schema.Field
 	Subtotal           schema.Field
 	VAT                schema.Field
@@ -182,6 +187,7 @@ var OrderSchema = struct {
 	BusinessID:         schema.NewField("business_id", "businessId"),
 	CustomerID:         schema.NewField("customer_id", "customerId"),
 	ShippingAddressID:  schema.NewField("shipping_address_id", "shippingAddressId"),
+	ShippingZoneID:     schema.NewField("shipping_zone_id", "shippingZoneId"),
 	Channel:            schema.NewField("channel", "channel"),
 	Subtotal:           schema.NewField("subtotal", "subtotal"),
 	VAT:                schema.NewField("vat", "vat"),

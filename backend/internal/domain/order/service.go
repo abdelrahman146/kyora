@@ -3,6 +3,7 @@ package order
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -29,16 +30,30 @@ type Service struct {
 	bus             *bus.Bus
 	inventory       *inventory.Service
 	customer        *customer.Service
+	business        *business.Service
 }
 
-func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, inventory *inventory.Service, customer *customer.Service) *Service {
+func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus, inventory *inventory.Service, customer *customer.Service, businessSvc *business.Service) *Service {
 	return &Service{
 		storage:         storage,
 		atomicProcessor: atomicProcessor,
 		bus:             bus,
 		inventory:       inventory,
 		customer:        customer,
+		business:        businessSvc,
 	}
+}
+
+func (s *Service) shippingFeeFromZone(subtotal, discount decimal.Decimal, zone *business.ShippingZone) decimal.Decimal {
+	base := subtotal.Sub(discount)
+	if base.LessThan(decimal.Zero) {
+		base = decimal.Zero
+	}
+	// Threshold is only applied when > 0.
+	if zone.FreeShippingThreshold.GreaterThan(decimal.Zero) && base.GreaterThanOrEqual(zone.FreeShippingThreshold) {
+		return decimal.Zero
+	}
+	return zone.ShippingCost
 }
 
 func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*Order, error) {
@@ -49,6 +64,11 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 
 	var order *Order
 	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		tx, _ := tctx.Value(database.TxKey).(*gorm.DB)
+		if tx == nil {
+			return problem.InternalError().With("reason", "missing transaction in context")
+		}
+
 		// basic validation
 		if req == nil || len(req.Items) == 0 {
 			return ErrEmptyOrderItems()
@@ -64,7 +84,8 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 		if _, err := s.customer.GetCustomerByID(tctx, actor, biz, req.CustomerID); err != nil {
 			return err
 		}
-		if _, err := s.customer.GetCustomerAddressByID(tctx, actor, biz, req.CustomerID, req.ShippingAddressID); err != nil {
+		addr, err := s.customer.GetCustomerAddressByID(tctx, actor, biz, req.CustomerID, req.ShippingAddressID)
+		if err != nil {
 			return err
 		}
 
@@ -73,27 +94,63 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 			return err
 		}
 
+		// resolve optional shipping zone (validated and scoped)
+		var shippingZoneID *string
+		if req.ShippingZoneID != nil {
+			zoneID := strings.TrimSpace(*req.ShippingZoneID)
+			if zoneID != "" {
+				shippingZoneID = &zoneID
+			}
+		}
+		var zone *business.ShippingZone
+		if shippingZoneID != nil {
+			if s.business == nil {
+				return problem.InternalError().With("reason", "business service not configured")
+			}
+			z, err := s.business.GetShippingZoneByID(tctx, actor, biz, *shippingZoneID)
+			if err != nil {
+				return err
+			}
+			if z.Currency != biz.Currency {
+				return problem.BadRequest("shipping zone currency must match business currency")
+			}
+			addrCountry := strings.TrimSpace(strings.ToUpper(addr.CountryCode))
+			if addrCountry == "" || !z.Countries.Contains(addrCountry) {
+				return problem.BadRequest("shipping zone does not include destination country").With("countryCode", addrCountry).With("zoneId", z.ID)
+			}
+			zone = z
+		}
+
 		// calculate totals from items and fees and vat
 		vatRate := biz.VatRate
 		subtotal := s.calculateSubtotal(orderItems)
 		cogs := s.calculateCOGS(orderItems)
 		vat := s.calculateVAT(subtotal, vatRate)
-		total := s.calculateTotal(subtotal, vat, req.ShippingFee, req.Discount)
+		shippingFee := req.ShippingFee
+		if zone != nil {
+			shippingFee = s.shippingFeeFromZone(subtotal, req.Discount, zone)
+		}
+		total := s.calculateTotal(subtotal, vat, shippingFee, req.Discount)
 
 		// generate order number with retry on conflict
 		var orderNumber string
 		const maxRetries = 5
-		for range maxRetries {
+		for i := 0; i < maxRetries; i++ {
 			orderNumber = id.Base62(6)
+			sp := fmt.Sprintf("sp_order_number_%d", i)
+			if err := tx.SavePoint(sp).Error; err != nil {
+				return err
+			}
 			order = &Order{
 				BusinessID:        biz.ID,
 				CustomerID:        req.CustomerID,
 				ShippingAddressID: req.ShippingAddressID,
+				ShippingZoneID:    shippingZoneID,
 				Channel:           req.Channel,
 				Subtotal:          subtotal,
 				VAT:               vat,
 				VATRate:           vatRate,
-				ShippingFee:       req.ShippingFee,
+				ShippingFee:       shippingFee,
 				Discount:          req.Discount,
 				COGS:              cogs,
 				Total:             total,
@@ -112,7 +169,11 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 			// attempt create
 			if err := s.storage.order.CreateOne(tctx, order); err != nil {
 				if database.IsUniqueViolation(err) {
-					// retry with a new order number
+					// A failed statement aborts the transaction in Postgres.
+					// Roll back to the savepoint so we can safely retry.
+					if rbErr := tx.RollbackTo(sp).Error; rbErr != nil {
+						return rbErr
+					}
 					continue
 				}
 				return err
@@ -172,8 +233,36 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 		if req.Channel != "" {
 			ord.Channel = req.Channel
 		}
-		if req.ShippingFee.Valid {
+		// shipping zone update takes precedence over manual shippingFee
+		if req.ShippingZoneID != nil {
+			zoneID := strings.TrimSpace(*req.ShippingZoneID)
+			if zoneID != "" {
+				ord.ShippingZoneID = &zoneID
+				if s.business == nil {
+					return problem.InternalError().With("reason", "business service not configured")
+				}
+				zone, err := s.business.GetShippingZoneByID(tctx, actor, biz, zoneID)
+				if err != nil {
+					return err
+				}
+				if zone.Currency != biz.Currency {
+					return problem.BadRequest("shipping zone currency must match business currency")
+				}
+				addr, err := s.customer.GetCustomerAddressByID(tctx, actor, biz, ord.CustomerID, ord.ShippingAddressID)
+				if err != nil {
+					return err
+				}
+				addrCountry := strings.TrimSpace(strings.ToUpper(addr.CountryCode))
+				if addrCountry == "" || !zone.Countries.Contains(addrCountry) {
+					return problem.BadRequest("shipping zone does not include destination country").With("countryCode", addrCountry).With("zoneId", zone.ID)
+				}
+				ord.ShippingFee = s.shippingFeeFromZone(ord.Subtotal, ord.Discount, zone)
+			} else {
+				ord.ShippingZoneID = nil
+			}
+		} else if req.ShippingFee.Valid {
 			ord.ShippingFee = transformer.FromNullDecimal(req.ShippingFee)
+			ord.ShippingZoneID = nil
 		}
 		if req.Discount.Valid {
 			ord.Discount = transformer.FromNullDecimal(req.Discount)
@@ -215,6 +304,14 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 			ord.Subtotal = s.calculateSubtotal(orderItems)
 			ord.COGS = s.calculateCOGS(orderItems)
 			ord.VAT = s.calculateVAT(ord.Subtotal, biz.VatRate)
+			// If a shipping zone is set, recompute shipping fee from zone after recalculating subtotal/discount.
+			if ord.ShippingZoneID != nil && s.business != nil {
+				zone, err := s.business.GetShippingZoneByID(tctx, actor, biz, *ord.ShippingZoneID)
+				if err != nil {
+					return err
+				}
+				ord.ShippingFee = s.shippingFeeFromZone(ord.Subtotal, ord.Discount, zone)
+			}
 			ord.Total = s.calculateTotal(ord.Subtotal, ord.VAT, ord.ShippingFee, ord.Discount)
 
 		}

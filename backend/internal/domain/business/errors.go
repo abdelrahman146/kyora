@@ -23,3 +23,11 @@ func ErrInvalidBusinessDescriptor(descriptor string) error {
 func ErrBusinessRateLimited() error {
 	return problem.TooManyRequests("too many requests")
 }
+
+func ErrShippingZoneNotFound(zoneID string, err error) error {
+	return problem.NotFound("shipping zone not found").WithError(err).With("zoneId", zoneID)
+}
+
+func ErrShippingZoneNameAlreadyTaken(name string, err error) error {
+	return problem.Conflict("shipping zone name is already taken").WithError(err).With("name", name)
+}

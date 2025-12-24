@@ -40,6 +40,36 @@ type businessResponse struct {
 	UpdatedAt     time.Time  `json:"updatedAt"`
 }
 
+type shippingZoneResponse struct {
+	ID                    string    `json:"id"`
+	BusinessID            string    `json:"businessId"`
+	Name                  string    `json:"name"`
+	Countries             []string  `json:"countries"`
+	Currency              string    `json:"currency"`
+	ShippingCost          string    `json:"shippingCost"`
+	FreeShippingThreshold string    `json:"freeShippingThreshold"`
+	CreatedAt             time.Time `json:"createdAt"`
+	UpdatedAt             time.Time `json:"updatedAt"`
+}
+
+func toShippingZoneResponse(z *ShippingZone) shippingZoneResponse {
+	resp := shippingZoneResponse{
+		ID:                    z.ID,
+		BusinessID:            z.BusinessID,
+		Name:                  z.Name,
+		Countries:             []string(z.Countries),
+		Currency:              z.Currency,
+		ShippingCost:          z.ShippingCost.String(),
+		FreeShippingThreshold: z.FreeShippingThreshold.String(),
+		CreatedAt:             z.CreatedAt,
+		UpdatedAt:             z.UpdatedAt,
+	}
+	if resp.Countries == nil {
+		resp.Countries = []string{}
+	}
+	return resp
+}
+
 func toBusinessResponse(b *Business) businessResponse {
 	return businessResponse{
 		ID:            b.ID,
@@ -168,6 +198,212 @@ func (h *HttpHandler) CreateBusiness(c *gin.Context) {
 	}
 
 	response.SuccessJSON(c, http.StatusCreated, gin.H{"business": toBusinessResponse(biz)})
+}
+
+// ListShippingZones returns all shipping zones for a business.
+//
+// @Summary      List shipping zones
+// @Description  Returns all shipping zones for the authenticated business
+// @Tags         business
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Success      200 {array} business.shippingZoneResponse
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/shipping-zones [get]
+// @Security     BearerAuth
+func (h *HttpHandler) ListShippingZones(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	items, err := h.svc.ListShippingZones(c.Request.Context(), actor, biz)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	resp := make([]shippingZoneResponse, 0, len(items))
+	for _, z := range items {
+		resp = append(resp, toShippingZoneResponse(z))
+	}
+	response.SuccessJSON(c, http.StatusOK, resp)
+}
+
+// GetShippingZone returns a shipping zone by ID.
+//
+// @Summary      Get shipping zone
+// @Description  Returns a shipping zone by ID
+// @Tags         business
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        zoneId path string true "Shipping zone ID"
+// @Success      200 {object} business.shippingZoneResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/shipping-zones/{zoneId} [get]
+// @Security     BearerAuth
+func (h *HttpHandler) GetShippingZone(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	zoneID := strings.TrimSpace(c.Param("zoneId"))
+	if zoneID == "" {
+		response.Error(c, problem.BadRequest("zoneId is required"))
+		return
+	}
+	z, err := h.svc.GetShippingZoneByID(c.Request.Context(), actor, biz, zoneID)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toShippingZoneResponse(z))
+}
+
+// CreateShippingZone creates a shipping zone.
+//
+// @Summary      Create shipping zone
+// @Description  Creates a shipping zone for the business
+// @Tags         business
+// @Accept       json
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        request body business.CreateShippingZoneRequest true "Create shipping zone"
+// @Success      201 {object} business.shippingZoneResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      409 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/shipping-zones [post]
+// @Security     BearerAuth
+func (h *HttpHandler) CreateShippingZone(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	var req CreateShippingZoneRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	z, err := h.svc.CreateShippingZone(c.Request.Context(), actor, biz, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusCreated, toShippingZoneResponse(z))
+}
+
+// UpdateShippingZone updates a shipping zone.
+//
+// @Summary      Update shipping zone
+// @Description  Updates a shipping zone for the business
+// @Tags         business
+// @Accept       json
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        zoneId path string true "Shipping zone ID"
+// @Param        request body business.UpdateShippingZoneRequest true "Update shipping zone"
+// @Success      200 {object} business.shippingZoneResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      409 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/shipping-zones/{zoneId} [patch]
+// @Security     BearerAuth
+func (h *HttpHandler) UpdateShippingZone(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	zoneID := strings.TrimSpace(c.Param("zoneId"))
+	if zoneID == "" {
+		response.Error(c, problem.BadRequest("zoneId is required"))
+		return
+	}
+	var req UpdateShippingZoneRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	z, err := h.svc.UpdateShippingZone(c.Request.Context(), actor, biz, zoneID, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toShippingZoneResponse(z))
+}
+
+// DeleteShippingZone deletes a shipping zone.
+//
+// @Summary      Delete shipping zone
+// @Description  Deletes a shipping zone
+// @Tags         business
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        zoneId path string true "Shipping zone ID"
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/shipping-zones/{zoneId} [delete]
+// @Security     BearerAuth
+func (h *HttpHandler) DeleteShippingZone(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	zoneID := strings.TrimSpace(c.Param("zoneId"))
+	if zoneID == "" {
+		response.Error(c, problem.BadRequest("zoneId is required"))
+		return
+	}
+	if err := h.svc.DeleteShippingZone(c.Request.Context(), actor, biz, zoneID); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
 // UpdateBusiness updates a business (scoped to workspace).

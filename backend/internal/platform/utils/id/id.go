@@ -27,7 +27,26 @@ func Ulid() string {
 }
 
 func Base62(size int) string {
-	return ulid.MustNew(ulid.Now(), ulid.DefaultEntropy()).String()[0:size]
+	if size <= 0 {
+		return ""
+	}
+	// IMPORTANT: Do NOT derive this from the ULID prefix.
+	// The ULID string prefix is timestamp-only, so truncating it creates collisions.
+	const table = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, size)
+	n, err := io.ReadAtLeast(rand.Reader, b, size)
+	if err == nil && n == size {
+		for i := 0; i < len(b); i++ {
+			b[i] = table[int(b[i])%len(table)]
+		}
+		return string(b)
+	}
+	// Fallback (extremely unlikely): use ULID but take the suffix which includes randomness.
+	ul := ulid.MustNew(ulid.Now(), ulid.DefaultEntropy()).String()
+	if size >= len(ul) {
+		return ul
+	}
+	return ul[len(ul)-size:]
 }
 
 func Base62WithPrefix(prefix string, size int) string {

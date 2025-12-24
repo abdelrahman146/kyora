@@ -1,9 +1,12 @@
 package e2e_test
 
 import (
+	"context"
 	"net/http"
 	"testing"
 
+	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
 )
@@ -21,11 +24,11 @@ func (s *OnboardingCompleteSuite) SetupSuite() {
 }
 
 func (s *OnboardingCompleteSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "subscriptions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "shipping_zones", "subscriptions")
 }
 
 func (s *OnboardingCompleteSuite) TearDownTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "subscriptions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "shipping_zones", "subscriptions")
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_Success() {
@@ -106,6 +109,46 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesBusiness() {
 	count, err := s.helper.CountBusinessesByName("Test Business")
 	s.NoError(err)
 	s.Equal(int64(1), count, "business should exist in database")
+}
+
+func (s *OnboardingCompleteSuite) TestComplete_CreatesDefaultShippingZone() {
+	ctx := context.Background()
+
+	token, err := s.helper.CreateBusinessStagedSession("zones@example.com", "starter")
+	s.NoError(err)
+
+	payload := map[string]interface{}{
+		"sessionToken": token,
+	}
+	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	user := result["user"].(map[string]interface{})
+	workspaceID := user["workspaceId"].(string)
+	s.NotEmpty(workspaceID)
+
+	bizRepo := database.NewRepository[business.Business](testEnv.Database)
+	biz, err := bizRepo.FindOne(ctx,
+		bizRepo.ScopeEquals(business.BusinessSchema.WorkspaceID, workspaceID),
+		bizRepo.ScopeEquals(business.BusinessSchema.Descriptor, "test-business"),
+	)
+	s.NoError(err)
+	s.Equal("AE", biz.CountryCode)
+	s.Equal("AED", biz.Currency)
+
+	zoneRepo := database.NewRepository[business.ShippingZone](testEnv.Database)
+	zones, err := zoneRepo.FindMany(ctx, zoneRepo.ScopeBusinessID(biz.ID))
+	s.NoError(err)
+	s.Len(zones, 1, "should create exactly one default shipping zone")
+	s.Equal("AE", zones[0].Name)
+	s.Equal([]string{"AE"}, []string(zones[0].Countries))
+	s.Equal("AED", zones[0].Currency)
+	s.True(zones[0].ShippingCost.IsZero())
+	s.True(zones[0].FreeShippingThreshold.IsZero())
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_InvalidToken() {

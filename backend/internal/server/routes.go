@@ -192,6 +192,7 @@ func registerBusinessScopedRoutes(
 	accountService *account.Service,
 	billingService *billing.Service,
 	businessService *business.Service,
+	businessHandler *business.HttpHandler,
 	accountingHandler *accounting.HttpHandler,
 	analyticsHandler *analytics.HttpHandler,
 	customerHandler *customer.HttpHandler,
@@ -264,6 +265,24 @@ func registerBusinessScopedRoutes(
 			categories.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.CreateCategory)
 			categories.PATCH("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.UpdateCategory)
 			categories.DELETE("/:categoryId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), inventoryHandler.DeleteCategory)
+		}
+	}
+
+	// Shipping zones (business settings)
+	shippingZones := group.Group("/shipping-zones")
+	{
+		shippingZones.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), businessHandler.ListShippingZones)
+		shippingZones.GET("/:zoneId", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), businessHandler.GetShippingZone)
+
+		manageZones := shippingZones.Group("")
+		manageZones.Use(
+			account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness),
+			billing.EnforceActiveSubscription(billingService),
+		)
+		{
+			manageZones.POST("", businessHandler.CreateShippingZone)
+			manageZones.PATCH("/:zoneId", businessHandler.UpdateShippingZone)
+			manageZones.DELETE("/:zoneId", businessHandler.DeleteShippingZone)
 		}
 	}
 

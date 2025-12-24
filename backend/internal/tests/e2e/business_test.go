@@ -25,12 +25,12 @@ func (s *BusinessSuite) SetupSuite() {
 }
 
 func (s *BusinessSuite) SetupTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "subscriptions", "plans")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "shipping_zones", "subscriptions", "plans")
 	s.NoError(err)
 }
 
 func (s *BusinessSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "subscriptions", "plans")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "businesses", "shipping_zones", "subscriptions", "plans")
 	s.NoError(err)
 }
 
@@ -93,6 +93,18 @@ func (s *BusinessSuite) TestCreateBusiness_Success() {
 	s.Equal("test-business", dbBiz.Descriptor)
 	s.Equal("EG", dbBiz.CountryCode)
 	s.Equal("USD", dbBiz.Currency)
+
+	// Verify default shipping zone created
+	zoneRepo := database.NewRepository[business.ShippingZone](testEnv.Database)
+	zones, err := zoneRepo.FindMany(ctx, zoneRepo.ScopeBusinessID(dbBiz.ID))
+	s.NoError(err)
+	s.Len(zones, 1, "should create exactly one default shipping zone")
+	s.Equal(dbBiz.ID, zones[0].BusinessID)
+	s.Equal("EG", zones[0].Name)
+	s.Equal([]string{"EG"}, []string(zones[0].Countries))
+	s.Equal("USD", zones[0].Currency)
+	s.True(zones[0].ShippingCost.IsZero())
+	s.True(zones[0].FreeShippingThreshold.IsZero())
 }
 
 func (s *BusinessSuite) TestCreateBusiness_NormalizesInputs() {

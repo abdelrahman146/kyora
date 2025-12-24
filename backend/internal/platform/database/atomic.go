@@ -18,6 +18,15 @@ func NewAtomicProcess(db *Database) *AtomicProcess {
 }
 
 func (u *AtomicProcess) Exec(ctx context.Context, cb func(ctx context.Context) error, opts ...atomic.AtomicProcessOption) error {
+	// If we're already running inside a transaction (TxKey is set in context),
+	// reuse it instead of starting a nested transaction.
+	// This is critical for workflows that perform multiple domain operations in
+	// a single atomic unit (e.g. onboarding), and lets the outer transaction own
+	// retries/isolation settings.
+	if _, ok := ctx.Value(TxKey).(*gorm.DB); ok {
+		return cb(ctx)
+	}
+
 	options := &atomic.AtomicProcessOptions{
 		Isolation: atomic.LevelDefault,
 		Retries:   3,

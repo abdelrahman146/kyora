@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
@@ -28,14 +29,14 @@ func (s *OrderSuite) SetupSuite() {
 func (s *OrderSuite) SetupTest() {
 	err := testutils.TruncateTables(testEnv.Database, "orders", "order_items", "order_notes",
 		"customers", "customer_addresses", "products", "variants", "categories",
-		"businesses", "users", "workspaces", "subscriptions")
+		"businesses", "shipping_zones", "users", "workspaces", "subscriptions")
 	s.NoError(err)
 }
 
 func (s *OrderSuite) TearDownTest() {
 	err := testutils.TruncateTables(testEnv.Database, "orders", "order_items", "order_notes",
 		"customers", "customer_addresses", "products", "variants", "categories",
-		"businesses", "users", "workspaces", "subscriptions")
+		"businesses", "shipping_zones", "users", "workspaces", "subscriptions")
 	s.NoError(err)
 }
 
@@ -143,6 +144,188 @@ func (s *OrderSuite) TestOrderLifecycle() {
 	finalVariant, err := s.orderHelper.GetVariant(ctx, variant.ID)
 	s.NoError(err)
 	s.Equal(10, finalVariant.StockQuantity)
+}
+
+func (s *OrderSuite) TestCreateOrder_WithShippingZone_ComputesShippingFee() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	zone, err := s.orderHelper.CreateTestShippingZone(ctx, biz.ID, "EG Local", []string{"EG"}, decimal.NewFromInt(25), decimal.NewFromInt(500))
+	s.NoError(err)
+
+	// subtotal 400 => shipping fee 25
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"shippingZoneId":    zone.ID,
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  2,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	// Respect create-order rate limit (min 1s interval per actor+business).
+	// Other tests may have created an order immediately before this one.
+	time.Sleep(1100 * time.Millisecond)
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+	s.Equal(zone.ID, created["shippingZoneId"])
+	s.Equal("25", fmt.Sprint(created["shippingFee"]))
+
+	// subtotal 600 => shipping fee 0 (free shipping)
+	payload2 := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"shippingZoneId":    zone.ID,
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  3,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+	// Ensure we don't hit the same rate limit for back-to-back order creation.
+	time.Sleep(1100 * time.Millisecond)
+	resp2, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload2, token)
+	s.NoError(err)
+	defer resp2.Body.Close()
+	s.Equal(http.StatusCreated, resp2.StatusCode)
+
+	var created2 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp2, &created2))
+	s.Equal(zone.ID, created2["shippingZoneId"])
+	s.Equal("0", fmt.Sprint(created2["shippingFee"]))
+}
+
+func (s *OrderSuite) TestCreateOrder_WithShippingZone_RejectsCountryNotInZone() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Zone does not include EG, but address is EG.
+	zone, err := s.orderHelper.CreateTestShippingZone(ctx, biz.ID, "US Only", []string{"US"}, decimal.NewFromInt(25), decimal.NewFromInt(500))
+	s.NoError(err)
+
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"shippingZoneId":    zone.ID,
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusBadRequest, resp.StatusCode)
+}
+
+func (s *OrderSuite) TestUpdateOrder_SetShippingZone_RecomputesShippingFee() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	zone, err := s.orderHelper.CreateTestShippingZone(ctx, biz.ID, "EG Local", []string{"EG"}, decimal.NewFromInt(25), decimal.NewFromInt(500))
+	s.NoError(err)
+
+	createPayload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  2,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", createPayload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+	orderID := created["id"].(string)
+	s.NotEmpty(orderID)
+
+	updatePayload := map[string]interface{}{
+		"shippingZoneId": zone.ID,
+	}
+	updateResp, err := s.orderHelper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/test-biz/orders/"+orderID, updatePayload, token)
+	s.NoError(err)
+	defer updateResp.Body.Close()
+	s.Equal(http.StatusOK, updateResp.StatusCode)
+
+	var updated map[string]interface{}
+	s.NoError(testutils.DecodeJSON(updateResp, &updated))
+	s.Equal(zone.ID, updated["shippingZoneId"])
+	s.Equal("25", fmt.Sprint(updated["shippingFee"]))
 }
 
 func (s *OrderSuite) TestCreateOrderValidation() {
