@@ -133,14 +133,14 @@ Core patterns you must follow
 
 - Middleware chain: `logger.Middleware()` logs requests/responses and adds `traceId` (header: config `http.trace_id_header`, default `X-Trace-ID`).
 - Auth flow (workspace-based):
-  1. `auth.EnforceAuthentication` - validates JWT cookie (name: `jwt`), sets claims in context
+  1. `auth.EnforceAuthentication` - validates JWT token from Authorization header (format: `Bearer <token>`), sets claims in context
   2. `account.EnforceValidActor(accountService)` - loads user from claims, sets `ActorKey` in context, enriches logger
   3. `account.EnforceWorkspaceMembership(accountService)` - validates `workspaceId` param matches user's workspace, sets `WorkspaceKey` in context
   4. `account.EnforceActorPermissions(action, resource)` - validates user role has permission
   5. Optional: `billing.EnforceActiveSubscription(billingService)` - ensures workspace has active subscription
   6. Optional: `billing.EnforcePlanWorkspaceLimits(planLimit, counterFunc)` - checks plan limits before operations
 - Extract from context: `account.ActorFromContext(c)`, `account.WorkspaceFromContext(c)`, `auth.ClaimsFromContext(c)`
-- JWT helpers in `backend/internal/platform/auth/jwt.go`. Note: `JwtFromContext` reads cookie only, not `Authorization` header.
+- JWT helpers in `backend/internal/platform/auth/jwt.go`. `JwtFromContext` extracts token from Authorization header only.
 
 **Responses & errors:**
 
@@ -265,7 +265,6 @@ Events & integrations
 - Google OAuth flow in `backend/internal/platform/auth/google_oauth.go`
 - Config: `auth.google_oauth.client_id`, `auth.google_oauth.client_secret`, `auth.google_oauth.redirect_url`
 - JWT creation/parsing in `backend/internal/platform/auth/jwt.go`
-- Cookie name: `jwt`
 
 **Workspace-based multi-tenancy**
 
@@ -281,7 +280,7 @@ Events & integrations
 
 - **Multi-tenancy**: ALWAYS scope queries by `WorkspaceID` (or legacy `BusinessID`). Never return data across workspaces.
 - **Config constants**: Use constants from `backend/internal/platform/config/config.go`, never hardcode config keys.
-- **JWT source**: `JwtFromContext` reads only the cookie named `jwt`, not `Authorization` header.
+- **JWT source**: `JwtFromContext` extracts JWT token from the Authorization header (format: `Bearer <token>`).
 - **Ordering/search**: Use JSON field names (from Schema) in requests, not DB column names. Schema handles mapping.
 - **ID generation**: Prefer KSUID with prefix for external IDs (`id.KsuidWithPrefix("ord")`), Base62 for short codes (`id.Base62(6)`).
 - **Transactions**: Use atomic processor for multi-step writes. Don't manually begin/commit transactions.

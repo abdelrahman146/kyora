@@ -12,8 +12,7 @@ import (
 )
 
 var (
-	bearerPrefix  = "Bearer "
-	jwtCookieName = "jwt"
+	bearerPrefix = "Bearer "
 )
 
 type CustomClaims struct {
@@ -67,29 +66,12 @@ func ParseJwtToken(tokenString string) (*CustomClaims, error) {
 	return nil, fmt.Errorf("invalid token")
 }
 
-func SetJwtCookie(c *gin.Context, token string) {
-	jwtExpiry := viper.GetInt(config.JWTExpirySeconds) // in seconds
-	domain := viper.GetString(config.AppDomain)
-	if jwtExpiry <= 0 {
-		jwtExpiry = 3600 // default to 1 hour
-	}
-	c.SetCookie(jwtCookieName, token, jwtExpiry, "/", domain, false, true)
-}
-
-func ClearJwtCookie(c *gin.Context) {
-	domain := viper.GetString(config.AppDomain)
-	c.SetCookie(jwtCookieName, "", -1, "/", domain, false, true)
-}
-
+// JwtFromContext extracts the JWT token from the Authorization header.
+// The Authorization header must be in the format: "Bearer <token>"
 func JwtFromContext(c *gin.Context) string {
 	authHeader := c.GetHeader("Authorization")
 	if strings.HasPrefix(authHeader, bearerPrefix) {
 		return authHeader
-	}
-
-	jwtToken, err := c.Cookie(jwtCookieName)
-	if err == nil && jwtToken != "" {
-		return jwtToken
 	}
 	return ""
 }

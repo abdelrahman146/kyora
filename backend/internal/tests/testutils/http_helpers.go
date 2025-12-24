@@ -155,13 +155,3 @@ func ReadBody(resp *http.Response) (string, error) {
 	}
 	return string(body), nil
 }
-
-// ExtractJWTCookie extracts JWT token from response cookies
-func ExtractJWTCookie(resp *http.Response) string {
-	for _, cookie := range resp.Cookies() {
-		if cookie.Name == "jwt" {
-			return cookie.Value
-		}
-	}
-	return ""
-}

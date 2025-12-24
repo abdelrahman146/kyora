@@ -138,13 +138,12 @@ The `testutils.HTTPClient` provides reusable HTTP helpers:
 - `Put(path, payload)`: Make PUT requests with JSON
 - `Patch(path, payload)`: Make PATCH requests with JSON
 - `Delete(path)`: Make DELETE requests
-- `AuthenticatedRequest(method, path, payload, token)`: Make authenticated requests with JWT cookie
+- `AuthenticatedRequest(method, path, payload, token)`: Make authenticated requests with Authorization: Bearer header
 
 Helper functions:
 
 - `DecodeJSON(resp, target)`: Decode JSON response into target struct
 - `ReadBody(resp)`: Read response body as string
-- `ExtractJWTCookie(resp)`: Extract JWT token from response cookies
 
 ### 3. Database cleanup pattern
 
