@@ -800,10 +800,13 @@ func (s *Service) CountOrdersByCustomer(ctx context.Context, actor *account.User
 
 func (s *Service) CountReturningCustomers(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (int64, error) {
 	// Find customers with more than 1 order in the given date range
+	havingMoreThanOne := func(db *gorm.DB) *gorm.DB {
+		return db.Having("COUNT(*) > ?", 1)
+	}
 	results, err := s.storage.order.CountBy(ctx, OrderSchema.CustomerID,
 		s.storage.order.ScopeBusinessID(biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
-		s.storage.order.ScopeHavingGreaterThan(keyvalue.Schema.Value, 1),
+		havingMoreThanOne,
 	)
 	if err != nil {
 		return 0, err

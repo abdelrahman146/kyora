@@ -19,8 +19,8 @@ type InventorySummarySuite struct {
 }
 
 func (s *InventorySummarySuite) SetupSuite() {
-	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
-	s.inventoryHelper = NewInventoryTestHelper(testEnv.Database, "http://localhost:18080")
+	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
+	s.inventoryHelper = NewInventoryTestHelper(testEnv.Database, e2eBaseURL)
 }
 
 func (s *InventorySummarySuite) resetDB() {

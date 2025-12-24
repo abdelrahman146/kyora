@@ -18,7 +18,7 @@ type PasswordResetSuite struct {
 }
 
 func (s *PasswordResetSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *PasswordResetSuite) SetupTest() {
@@ -272,7 +272,7 @@ type EmailVerificationSuite struct {
 }
 
 func (s *EmailVerificationSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *EmailVerificationSuite) SetupTest() {

@@ -17,7 +17,7 @@ type LoginSuite struct {
 }
 
 func (s *LoginSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *LoginSuite) SetupTest() {

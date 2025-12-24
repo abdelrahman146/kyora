@@ -22,7 +22,7 @@ type SummarySuite struct {
 }
 
 func (s *SummarySuite) SetupSuite() {
-	s.helper = NewAccountingTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *SummarySuite) SetupTest() {

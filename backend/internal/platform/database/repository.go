@@ -327,19 +327,40 @@ func (r *Repository[T]) TimeSeriesCount(ctx context.Context, timeColumn schema.F
 }
 
 func (r *Repository[T]) CountBy(ctx context.Context, column schema.Field, opts ...func(db *gorm.DB) *gorm.DB) ([]keyvalue.KeyValue, error) {
-	var results []keyvalue.KeyValue
-	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(column.Column() + " AS key, COUNT(*) AS value").Group(column.Column()).Scan(&results).Error
-	return results, err
+	var rows []map[string]any
+	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(column.Column() + " AS key, COUNT(*) AS value").Group(column.Column()).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	results := make([]keyvalue.KeyValue, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, keyvalue.New(row["key"], row["value"]))
+	}
+	return results, nil
 }
 
 func (r *Repository[T]) SumBy(ctx context.Context, groupBy schema.Field, sumColumn schema.Field, opts ...func(db *gorm.DB) *gorm.DB) ([]keyvalue.KeyValue, error) {
-	var results []keyvalue.KeyValue
-	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(groupBy.Column() + " AS key, COALESCE(SUM(" + sumColumn.Column() + "),0)::decimal AS value").Group(groupBy.Column()).Scan(&results).Error
-	return results, err
+	var rows []map[string]any
+	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(groupBy.Column() + " AS key, COALESCE(SUM(" + sumColumn.Column() + "),0)::decimal AS value").Group(groupBy.Column()).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	results := make([]keyvalue.KeyValue, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, keyvalue.New(row["key"], row["value"]))
+	}
+	return results, nil
 }
 
 func (r *Repository[T]) AvgBy(ctx context.Context, groupBy schema.Field, avgColumn schema.Field, opts ...func(db *gorm.DB) *gorm.DB) ([]keyvalue.KeyValue, error) {
-	var results []keyvalue.KeyValue
-	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(groupBy.Column() + " AS key, COALESCE(AVG(" + avgColumn.Column() + "),0)::decimal AS value").Group(groupBy.Column()).Scan(&results).Error
-	return results, err
+	var rows []map[string]any
+	err := r.db.Conn(ctx).Scopes(opts...).Model(new(T)).Select(groupBy.Column() + " AS key, COALESCE(AVG(" + avgColumn.Column() + "),0)::decimal AS value").Group(groupBy.Column()).Scan(&rows).Error
+	if err != nil {
+		return nil, err
+	}
+	results := make([]keyvalue.KeyValue, 0, len(rows))
+	for _, row := range rows {
+		results = append(results, keyvalue.New(row["key"], row["value"]))
+	}
+	return results, nil
 }

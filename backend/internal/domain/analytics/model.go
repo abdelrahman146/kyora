@@ -42,52 +42,52 @@ type SalesAnalytics struct {
 }
 
 type InventoryAnalytics struct {
-	BusinessID                  string
-	From                        time.Time
-	To                          time.Time
-	TotalInventoryValue         decimal.Decimal
-	TotalInStock                int64
-	LowStockItems               int64
-	OutOfStockItems             int64
-	InventoryTurnoverRatio      decimal.Decimal
-	SellThroughRate             decimal.Decimal
-	TopProductsByInventoryValue []*inventory.Product // Bar chart
+	BusinessID                  string               `json:"businessID"`
+	From                        time.Time            `json:"from"`
+	To                          time.Time            `json:"to"`
+	TotalInventoryValue         decimal.Decimal      `json:"totalInventoryValue"`
+	TotalInStock                int64                `json:"totalInStock"`
+	LowStockItems               int64                `json:"lowStockItems"`
+	OutOfStockItems             int64                `json:"outOfStockItems"`
+	InventoryTurnoverRatio      decimal.Decimal      `json:"inventoryTurnoverRatio"`
+	SellThroughRate             decimal.Decimal      `json:"sellThroughRate"`
+	TopProductsByInventoryValue []*inventory.Product `json:"topProductsByInventoryValue"`
 }
 
 type ExpenseAnalytics struct {
-	BusinessID            string
-	From                  time.Time
-	To                    time.Time
-	TotalExpenses         decimal.Decimal
-	AveragExpenseAmount   decimal.Decimal
-	TotalNumberOfEntries  int64
-	ExpensesOverTime      *timeseries.TimeSeries // line chart
-	TopExpensesByCategory []keyvalue.KeyValue    // Bar chart
+	BusinessID            string                 `json:"businessID"`
+	From                  time.Time              `json:"from"`
+	To                    time.Time              `json:"to"`
+	TotalExpenses         decimal.Decimal        `json:"totalExpenses"`
+	AveragExpenseAmount   decimal.Decimal        `json:"averageExpenseAmount"`
+	TotalNumberOfEntries  int64                  `json:"totalNumberOfEntries"`
+	ExpensesOverTime      *timeseries.TimeSeries `json:"expensesOverTime"`
+	TopExpensesByCategory []keyvalue.KeyValue    `json:"topExpensesByCategory"`
 }
 
 type CustomerAnalytics struct {
-	BusinessID                       string
-	From                             time.Time
-	To                               time.Time
-	NewCustomers                     int64
-	ReturningCustomers               int64
-	RepeatCustomerRate               decimal.Decimal
-	AverageRevenuePerCustomer        decimal.Decimal
-	CustomerAcquisitionCost          decimal.Decimal
-	CustomerLifetimeValue            decimal.Decimal
-	AverageCustomerPurchaseFrequency decimal.Decimal
-	NewCustomersOverTime             *timeseries.TimeSeries // line chart
-	TopCustomersByRevenue            []*customer.Customer   // table 'customer id, customer name, country, total revenue
+	BusinessID                       string                 `json:"businessID"`
+	From                             time.Time              `json:"from"`
+	To                               time.Time              `json:"to"`
+	NewCustomers                     int64                  `json:"newCustomers"`
+	ReturningCustomers               int64                  `json:"returningCustomers"`
+	RepeatCustomerRate               decimal.Decimal        `json:"repeatCustomerRate"`
+	AverageRevenuePerCustomer        decimal.Decimal        `json:"averageRevenuePerCustomer"`
+	CustomerAcquisitionCost          decimal.Decimal        `json:"customerAcquisitionCost"`
+	CustomerLifetimeValue            decimal.Decimal        `json:"customerLifetimeValue"`
+	AverageCustomerPurchaseFrequency decimal.Decimal        `json:"averageCustomerPurchaseFrequency"`
+	NewCustomersOverTime             *timeseries.TimeSeries `json:"newCustomersOverTime"`
+	TopCustomersByRevenue            []*customer.Customer   `json:"topCustomersByRevenue"`
 }
 
 type AssetAnalytics struct {
-	BusinessID              string
-	From                    time.Time
-	To                      time.Time
-	TotalAssetsAquired      int64
-	TotalAssetValue         decimal.Decimal
-	AssetsByCategory        []keyvalue.KeyValue    // Bar chart
-	AssetInvestmentOverTime *timeseries.TimeSeries // line chart
+	BusinessID              string                 `json:"businessID"`
+	From                    time.Time              `json:"from"`
+	To                      time.Time              `json:"to"`
+	TotalAssetsAquired      int64                  `json:"totalAssetsAcquired"`
+	TotalAssetValue         decimal.Decimal        `json:"totalAssetValue"`
+	AssetsByCategory        []keyvalue.KeyValue    `json:"assetsByCategory"`
+	AssetInvestmentOverTime *timeseries.TimeSeries `json:"assetInvestmentOverTime"`
 }
 
 // Financial Reports Model (Balance Sheet, P&L, Cash Flow)

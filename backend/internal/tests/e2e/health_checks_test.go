@@ -15,11 +15,11 @@ type HealthCheckSuite struct {
 }
 
 func (s *HealthCheckSuite) SetupSuite() {
-	s.client = testutils.NewHTTPClient("http://localhost:18080")
+	s.client = testutils.NewHTTPClient(e2eBaseURL)
 }
 
 func (s *HealthCheckSuite) SetupTest() {
-	// No database cleanup needed for health checks
+	s.client = testutils.NewHTTPClient(e2eBaseURL)
 }
 
 func (s *HealthCheckSuite) TearDownTest() {
@@ -51,7 +51,7 @@ type LivenessCheckSuite struct {
 }
 
 func (s *LivenessCheckSuite) SetupSuite() {
-	s.client = testutils.NewHTTPClient("http://localhost:18080")
+	s.client = testutils.NewHTTPClient(e2eBaseURL)
 }
 
 func (s *LivenessCheckSuite) SetupTest() {

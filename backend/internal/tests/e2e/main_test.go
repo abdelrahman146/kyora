@@ -18,6 +18,8 @@ var (
 	testServer *server.Server
 )
 
+const e2eBaseURL = "http://localhost:18080"
+
 func TestMain(m *testing.M) {
 	fmt.Println("Setting up e2e test environment...")
 	ctx := context.Background()

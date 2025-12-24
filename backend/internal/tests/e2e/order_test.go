@@ -20,8 +20,8 @@ type OrderSuite struct {
 }
 
 func (s *OrderSuite) SetupSuite() {
-	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
-	s.orderHelper = NewOrderTestHelper(testEnv.Database, "http://localhost:18080")
+	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
+	s.orderHelper = NewOrderTestHelper(testEnv.Database, e2eBaseURL)
 }
 
 func (s *OrderSuite) SetupTest() {

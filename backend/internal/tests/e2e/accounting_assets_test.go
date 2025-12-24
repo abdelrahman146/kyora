@@ -17,7 +17,7 @@ type AssetsSuite struct {
 }
 
 func (s *AssetsSuite) SetupSuite() {
-	s.helper = NewAccountingTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountingTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *AssetsSuite) SetupTest() {

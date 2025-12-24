@@ -19,8 +19,8 @@ type CustomerCRUDSuite struct {
 }
 
 func (s *CustomerCRUDSuite) SetupSuite() {
-	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
-	s.customerHelper = NewCustomerTestHelper(testEnv.Database, "http://localhost:18080")
+	s.accountHelper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
+	s.customerHelper = NewCustomerTestHelper(testEnv.Database, e2eBaseURL)
 }
 
 func (s *CustomerCRUDSuite) SetupTest() {

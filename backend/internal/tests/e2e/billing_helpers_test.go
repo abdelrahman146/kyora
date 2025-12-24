@@ -23,8 +23,6 @@ import (
 	"github.com/stripe/stripe-go/v83/paymentmethod"
 )
 
-const e2eBaseURL = "http://localhost:18080"
-
 type BillingTestHelper struct {
 	db     *database.Database
 	client *testutils.HTTPClient

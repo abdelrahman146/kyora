@@ -14,7 +14,7 @@ type HTTPBodyLimitSuite struct {
 }
 
 func (s *HTTPBodyLimitSuite) SetupSuite() {
-	s.client = testutils.NewHTTPClient("http://localhost:18080")
+	s.client = testutils.NewHTTPClient(e2eBaseURL)
 }
 
 func (s *HTTPBodyLimitSuite) TestRejectsOverLimitBody() {

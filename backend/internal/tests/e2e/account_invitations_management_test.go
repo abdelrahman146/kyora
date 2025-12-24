@@ -20,7 +20,7 @@ type InvitationManagementSuite struct {
 }
 
 func (s *InvitationManagementSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *InvitationManagementSuite) SetupTest() {
@@ -269,7 +269,7 @@ type InvitationAcceptanceSuite struct {
 }
 
 func (s *InvitationAcceptanceSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *InvitationAcceptanceSuite) SetupTest() {
@@ -453,7 +453,7 @@ type UserManagementSuite struct {
 }
 
 func (s *UserManagementSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *UserManagementSuite) SetupTest() {

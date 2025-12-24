@@ -18,7 +18,7 @@ type UserProfileSuite struct {
 }
 
 func (s *UserProfileSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *UserProfileSuite) SetupTest() {
@@ -164,7 +164,7 @@ type WorkspaceSuite struct {
 }
 
 func (s *WorkspaceSuite) SetupSuite() {
-	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, "http://localhost:18080")
+	s.helper = NewAccountTestHelper(testEnv.Database, testEnv.CacheAddr, e2eBaseURL)
 }
 
 func (s *WorkspaceSuite) SetupTest() {
