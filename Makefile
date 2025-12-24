@@ -4,6 +4,20 @@ dev.server:
 	@echo "Starting backend development server..."
 	@cd backend && rm -rf tmp && air server
 
+# Backend OpenAPI
+.PHONY: openapi
+openapi:
+	@echo "Generating backend OpenAPI docs (Swaggo)..."
+	@cd backend && rm -rf docs
+	@cd backend && go run github.com/swaggo/swag/cmd/swag@v1.16.4 init \
+		-g main.go \
+		-o ./docs \
+		--parseDependency \
+		--parseInternal \
+		--parseDepth 2 \
+		--outputTypes json,yaml
+	@echo "OpenAPI generated: backend/docs/swagger.json and backend/docs/swagger.yaml"
+
 # Backend Testing
 .PHONY: test
 test:
@@ -73,6 +87,10 @@ help:
 	@echo ""
 	@echo "Backend Development:"
 	@echo "  dev.server           - Run backend development server with live reload"
+	@echo ""
+	@echo "Backend OpenAPI:"
+	@echo "  openapi              - Generate backend OpenAPI docs (Swaggo)"
+	@echo "  openapi.verify       - Generate and verify OpenAPI covers real routes (E2E)"
 	@echo ""
 	@echo "Backend Testing:"
 	@echo "  test                 - Run all backend tests (verbose)"
