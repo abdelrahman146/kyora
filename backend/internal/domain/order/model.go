@@ -123,8 +123,8 @@ type CreateOrderRequest struct {
 	CustomerID        string                    `json:"customerId" binding:"required"`
 	Channel           string                    `json:"channel" binding:"required"`
 	ShippingAddressID string                    `json:"shippingAddressId" binding:"required"`
-	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty,gte=0"`
-	Discount          decimal.Decimal           `json:"discount" binding:"omitempty,gte=0"`
+	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty"`
+	Discount          decimal.Decimal           `json:"discount" binding:"omitempty"`
 	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
 	PaymentReference  sql.NullString            `json:"paymentReference" binding:"omitempty"`
 	OrderedAt         time.Time                 `json:"orderedAt" binding:"omitempty"`
@@ -132,9 +132,9 @@ type CreateOrderRequest struct {
 }
 
 type UpdateOrderRequest struct {
-	ShippingFee decimal.NullDecimal       `json:"shippingFee" binding:"omitempty,gte=0"`
+	ShippingFee decimal.NullDecimal       `json:"shippingFee" binding:"omitempty"`
 	Channel     string                    `json:"channel" binding:"omitempty"`
-	Discount    decimal.NullDecimal       `json:"discount" binding:"omitempty,gte=0"`
+	Discount    decimal.NullDecimal       `json:"discount" binding:"omitempty"`
 	OrderedAt   time.Time                 `json:"orderedAt" binding:"omitempty"`
 	Items       []*CreateOrderItemRequest `json:"items,omitempty" binding:"omitempty,dive,required"`
 }
@@ -212,7 +212,7 @@ var OrderSchema = struct {
 
 const (
 	OrderItemTable  = "order_items"
-	OrderItemStruct = "OrderItem"
+	OrderItemStruct = "Items"
 	OrderItemPrefix = "oitm"
 )
 
@@ -243,8 +243,8 @@ func (m *OrderItem) BeforeCreate(tx *gorm.DB) (err error) {
 type CreateOrderItemRequest struct {
 	VariantID string          `json:"variantId" binding:"required"`
 	Quantity  int             `json:"quantity" binding:"required,min=1"`
-	UnitPrice decimal.Decimal `json:"unitPrice" binding:"required,gt=0"`
-	UnitCost  decimal.Decimal `json:"unitCost" binding:"omitempty,gte=0"`
+	UnitPrice decimal.Decimal `json:"unitPrice" binding:"required"`
+	UnitCost  decimal.Decimal `json:"unitCost" binding:"omitempty"`
 }
 
 var OrderItemSchema = struct {
@@ -279,7 +279,7 @@ var OrderItemSchema = struct {
 
 const (
 	OrderNoteTable  = "order_notes"
-	OrderNoteStruct = "OrderNote"
+	OrderNoteStruct = "Notes"
 	OrderNotePrefix = "onot"
 )
 

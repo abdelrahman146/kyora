@@ -53,6 +53,13 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 		if req == nil || len(req.Items) == 0 {
 			return ErrEmptyOrderItems()
 		}
+		// validate decimal fields (validator cannot handle decimal.Decimal with numeric comparisons)
+		if req.ShippingFee.LessThan(decimal.Zero) {
+			return problem.BadRequest("shippingFee cannot be negative")
+		}
+		if req.Discount.LessThan(decimal.Zero) {
+			return problem.BadRequest("discount cannot be negative")
+		}
 		// ownership validation: ensure customer + address belong to this business
 		if _, err := s.customer.GetCustomerByID(tctx, actor, biz, req.CustomerID); err != nil {
 			return err
@@ -143,6 +150,14 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *business.Business, id string, req *UpdateOrderRequest) (*Order, error) {
 	var updated *Order
 	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		// validate decimal fields
+		if req.ShippingFee.Valid && req.ShippingFee.Decimal.LessThan(decimal.Zero) {
+			return problem.BadRequest("shippingFee cannot be negative")
+		}
+		if req.Discount.Valid && req.Discount.Decimal.LessThan(decimal.Zero) {
+			return problem.BadRequest("discount cannot be negative")
+		}
+
 		// load order with items scoped by business
 		ord, err := s.storage.order.FindByID(tctx, id,
 			s.storage.order.ScopeBusinessID(biz.ID),
@@ -346,6 +361,13 @@ func (s *Service) prepareOrderItems(ctx context.Context, actor *account.User, bi
 		}
 		if reqItem.Quantity <= 0 {
 			return nil, nil, ErrInvalidOrderItemQuantity(reqItem.VariantID, reqItem.Quantity)
+		}
+		// validate decimal fields
+		if reqItem.UnitPrice.LessThanOrEqual(decimal.Zero) {
+			return nil, nil, problem.BadRequest("unitPrice must be greater than zero").With("variantId", reqItem.VariantID)
+		}
+		if reqItem.UnitCost.LessThan(decimal.Zero) {
+			return nil, nil, problem.BadRequest("unitCost cannot be negative").With("variantId", reqItem.VariantID)
 		}
 		// Create order item
 		orderItem := &OrderItem{
