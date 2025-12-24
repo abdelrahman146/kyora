@@ -130,3 +130,9 @@ func TooManyRequests(detail string) *Problem {
 		Status: 429, Title: "Too Many Requests", Detail: detail, Type: aboutBlank,
 	}
 }
+
+func PayloadTooLarge(detail string) *Problem {
+	return &Problem{
+		Status: http.StatusRequestEntityTooLarge, Title: "Payload Too Large", Detail: detail, Type: aboutBlank,
+	}
+}

@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -149,16 +150,19 @@ func LoginAndGetToken(client *HTTPClient, email, password string) (string, error
 	}
 	defer resp.Body.Close()
 
+	if resp.StatusCode != http.StatusOK {
+		return "", fmt.Errorf("login failed: status %d", resp.StatusCode)
+	}
+
 	var result map[string]interface{}
 	if err := DecodeJSON(resp, &result); err != nil {
 		return "", err
 	}
 
-	if token, ok := result["token"].(string); ok {
+	if token, ok := result["token"].(string); ok && token != "" {
 		return token, nil
 	}
-
-	return "", nil
+	return "", fmt.Errorf("login response missing token")
 }
 
 // CreateTestPlan creates a complete test plan with all required fields

@@ -254,6 +254,28 @@ func (s *CustomerCRUDSuite) TestGetCustomer_CrossWorkspaceIsolation() {
 	s.Equal(http.StatusNotFound, resp.StatusCode)
 }
 
+func (s *CustomerCRUDSuite) TestGetCustomer_CrossBusinessIsolation_SameWorkspace() {
+	ctx := context.Background()
+
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz1, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "biz-1")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "biz-2")
+	s.NoError(err)
+
+	customer1, err := s.customerHelper.CreateTestCustomer(ctx, biz1.ID, "customer1@example.com", "Customer 1")
+	s.NoError(err)
+
+	// Same workspace token, but wrong business descriptor.
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/biz-2/customers/%s", customer1.ID), nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusNotFound, resp.StatusCode)
+}
+
 func (s *CustomerCRUDSuite) TestListCustomers_Success() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)

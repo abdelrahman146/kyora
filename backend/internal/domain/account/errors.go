@@ -41,3 +41,7 @@ func ErrCannotUpdateOwnerRole(err error) *problem.Problem {
 func ErrUserNotInWorkspace(err error) *problem.Problem {
 	return problem.NotFound("user is not a member of this workspace").WithError(err)
 }
+
+func ErrAuthRateLimited(err error) *problem.Problem {
+	return problem.TooManyRequests("too many requests").WithError(err)
+}

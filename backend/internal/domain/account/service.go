@@ -3,6 +3,7 @@ package account
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
@@ -15,6 +16,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"gorm.io/gorm"
 )
 
@@ -38,6 +40,24 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 
 func (s *Service) GetUserByID(ctx context.Context, id string) (*User, error) {
 	return s.storage.user.FindByID(ctx, id, s.storage.user.WithPreload(WorkspaceStruct))
+}
+
+// GetWorkspaceUserByID returns a user only if they belong to the given workspace.
+// This prevents cross-workspace user ID probing (BOLA) and keeps errors consistent.
+func (s *Service) GetWorkspaceUserByID(ctx context.Context, workspaceID, userID string) (*User, error) {
+	user, err := s.storage.user.FindOne(
+		ctx,
+		s.storage.user.ScopeWorkspaceID(workspaceID),
+		s.storage.user.ScopeID(userID),
+		s.storage.user.WithPreload(WorkspaceStruct),
+	)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return nil, ErrUserNotInWorkspace(err)
+		}
+		return nil, problem.InternalError().WithError(err)
+	}
+	return user, nil
 }
 
 func (s *Service) GetWorkspaceByID(ctx context.Context, id string) (*Workspace, error) {
@@ -92,6 +112,16 @@ func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email, password
 
 // LoginWithEmailAndPasswordWithContext includes client context for security notifications
 func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, email, password, clientIP, userAgent string) (*LoginResponse, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+	ip := strings.TrimSpace(clientIP)
+	if ip == "" {
+		ip = "unknown"
+	}
+	// Basic abuse protection for login attempts: best-effort, cache-backed.
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:auth:login:%s:%s", normalizedEmail, ip), 10*time.Minute, 20, 0) {
+		return nil, ErrAuthRateLimited(nil)
+	}
+
 	user, err := s.GetUserByEmail(ctx, email)
 	if err != nil {
 		return nil, ErrInvalidCredentials(err)
@@ -119,6 +149,12 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 }
 
 func (s *Service) CreateVerifyEmailToken(ctx context.Context, email string) (string, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+	// Abuse protection: prevent spamming verification emails (best-effort, cache-backed).
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:auth:verify_email:%s", normalizedEmail), time.Hour, 5, 30*time.Second) {
+		return "", ErrAuthRateLimited(nil)
+	}
+
 	user, err := s.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", ErrInvalidCredentials(err)
@@ -161,6 +197,12 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 }
 
 func (s *Service) CreatePasswordResetToken(ctx context.Context, email string) (string, error) {
+	normalizedEmail := strings.ToLower(strings.TrimSpace(email))
+	// Abuse protection: prevent spamming reset emails (best-effort, cache-backed).
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:auth:password_reset:%s", normalizedEmail), time.Hour, 5, 30*time.Second) {
+		return "", ErrAuthRateLimited(nil)
+	}
+
 	user, err := s.GetUserByEmail(ctx, email)
 	if err != nil {
 		return "", ErrInvalidCredentials(err)
@@ -374,8 +416,12 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string, firstName,
 		return nil, nil, ErrInvalidOrExpiredToken(err)
 	}
 
-	// Find the invitation
-	invitation, err := s.storage.invitation.FindByID(ctx, payload.InvitationID)
+	// Find the invitation (scoped to token payload)
+	invitation, err := s.storage.invitation.FindOne(ctx,
+		s.storage.invitation.ScopeID(payload.InvitationID),
+		s.storage.invitation.ScopeEquals(UserInvitationSchema.WorkspaceID, payload.WorkspaceID),
+		s.storage.invitation.ScopeEquals(UserInvitationSchema.Email, payload.Email),
+	)
 	if err != nil {
 		return nil, nil, ErrInvitationNotFound(err)
 	}
@@ -464,8 +510,12 @@ func (s *Service) AcceptInvitationWithGoogleAuth(ctx context.Context, token stri
 		return nil, nil, problem.Forbidden("Google account email does not match the invitation email")
 	}
 
-	// Find the invitation
-	invitation, err := s.storage.invitation.FindByID(ctx, payload.InvitationID)
+	// Find the invitation (scoped to token payload)
+	invitation, err := s.storage.invitation.FindOne(ctx,
+		s.storage.invitation.ScopeID(payload.InvitationID),
+		s.storage.invitation.ScopeEquals(UserInvitationSchema.WorkspaceID, payload.WorkspaceID),
+		s.storage.invitation.ScopeEquals(UserInvitationSchema.Email, payload.Email),
+	)
 	if err != nil {
 		return nil, nil, ErrInvitationNotFound(err)
 	}
@@ -541,15 +591,10 @@ func (s *Service) UpdateUserRole(ctx context.Context, actor *User, workspace *Wo
 		return nil, ErrCannotUpdateOwnRole(nil)
 	}
 
-	// Get target user
-	targetUser, err := s.GetUserByID(ctx, targetUserID)
+	// Get target user scoped to the workspace (prevents ID probing).
+	targetUser, err := s.GetWorkspaceUserByID(ctx, workspace.ID, targetUserID)
 	if err != nil {
 		return nil, err
-	}
-
-	// Verify target user is in the same workspace
-	if targetUser.WorkspaceID != workspace.ID {
-		return nil, ErrUserNotInWorkspace(nil)
 	}
 
 	// Prevent updating the workspace owner's role
@@ -579,9 +624,14 @@ func (s *Service) GetWorkspaceInvitations(ctx context.Context, workspaceID strin
 	return s.storage.invitation.FindMany(ctx, scopes...)
 }
 
-// RevokeInvitation revokes a pending invitation
-func (s *Service) RevokeInvitation(ctx context.Context, invitationID string) error {
-	invitation, err := s.storage.invitation.FindByID(ctx, invitationID)
+// RevokeInvitation revokes a pending invitation.
+// It enforces workspace scoping to prevent cross-tenant access (BOLA).
+func (s *Service) RevokeInvitation(ctx context.Context, workspaceID string, invitationID string) error {
+	invitation, err := s.storage.invitation.FindOne(
+		ctx,
+		s.storage.invitation.ScopeWorkspaceID(workspaceID),
+		s.storage.invitation.ScopeID(invitationID),
+	)
 	if err != nil {
 		return ErrInvitationNotFound(err)
 	}

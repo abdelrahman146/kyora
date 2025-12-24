@@ -10,6 +10,7 @@ http:
   port: 8080
   base_url: "http://localhost:8080"
   trace_id_header: "X-Trace-ID"
+  max_body_bytes: 1048576
 database:
   dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=UTC"
   max_open_conns: 25

@@ -52,6 +52,13 @@ func (m *Cache) Delete(key string) error {
 	return m.mc.Delete(key)
 }
 
+// FlushAll clears the entire cache.
+//
+// Intended for test isolation; avoid calling in production request paths.
+func (m *Cache) FlushAll() error {
+	return m.mc.FlushAll()
+}
+
 func (m *Cache) Unmarshal(data []byte, v any) error {
 	return json.Unmarshal(data, v)
 }

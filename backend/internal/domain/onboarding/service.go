@@ -18,6 +18,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	stripelib "github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/checkout/session"
 	"github.com/stripe/stripe-go/v83/customer"
@@ -109,8 +110,8 @@ func (s *Service) GenerateEmailOTP(ctx context.Context, token string) error {
 		return ErrInvalidStage(nil, string(StagePlanSelected))
 	}
 	// rate limit: max 5 per hour and at least 30s between requests
-	if err := s.throttle("rl:otp:"+sess.Email, time.Hour, 5, 30*time.Second); err != nil {
-		return err
+	if !throttle.Allow(s.storage.cache, "rl:otp:"+sess.Email, time.Hour, 5, 30*time.Second) {
+		return ErrRateLimited(nil)
 	}
 	code, err := id.RandomNumber(6)
 	if err != nil {
@@ -302,8 +303,8 @@ func (s *Service) InitiatePayment(ctx context.Context, token string, successURL,
 		return "", nil
 	}
 	// Throttle duplicate attempts: max 3 per 10 minutes, at least 30s apart
-	if err := s.throttle("rl:pay:"+sess.ID, 10*time.Minute, 3, 30*time.Second); err != nil {
-		return "", err
+	if !throttle.Allow(s.storage.cache, "rl:pay:"+sess.ID, 10*time.Minute, 3, 30*time.Second) {
+		return "", ErrRateLimited(nil)
 	}
 	plan, err := s.billing.GetPlanByDescriptor(ctx, sess.PlanDescriptor)
 	if err != nil || plan == nil {
@@ -425,43 +426,6 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 		return createdUser, "", jwtErr
 	}
 	return createdUser, jwtToken, nil
-}
-
-// throttle implements a simple token bucket using cache with JSON state
-type throttleState struct {
-	Count int   `json:"count"`
-	Last  int64 `json:"last"` // unix seconds
-}
-
-func (s *Service) throttle(key string, window time.Duration, max int, minInterval time.Duration) error {
-	if s.storage.cache == nil {
-		return nil
-	}
-	now := time.Now()
-	// read state
-	var st throttleState
-	if data, err := s.storage.cache.Get(key); err == nil && len(data) > 0 {
-		_ = s.storage.cache.Unmarshal(data, &st)
-	}
-	// enforce min interval
-	if st.Last != 0 && now.Sub(time.Unix(st.Last, 0)) < minInterval {
-		return ErrRateLimited(nil)
-	}
-	// increment and cap
-	st.Count++
-	st.Last = now.Unix()
-	if st.Count > max {
-		// write back to ensure TTL stays
-		if b, err := s.storage.cache.Marshal(st); err == nil {
-			_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
-		}
-		return ErrRateLimited(nil)
-	}
-	// persist with TTL window
-	if b, err := s.storage.cache.Marshal(st); err == nil {
-		_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
-	}
-	return nil
 }
 
 // Expose selected helpers for other packages (webhooks)

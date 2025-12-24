@@ -22,6 +22,7 @@ func (s *PasswordResetSuite) SetupSuite() {
 }
 
 func (s *PasswordResetSuite) SetupTest() {
+	s.NoError(testEnv.Cache.FlushAll())
 	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
 	s.NoError(err)
 }

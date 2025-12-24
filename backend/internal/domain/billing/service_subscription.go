@@ -31,10 +31,6 @@ func (s *Service) ListPlans(ctx context.Context) ([]*Plan, error) {
 	return s.storage.plan.FindMany(ctx)
 }
 
-func (s *Service) GetSubscriptionByID(ctx context.Context, id string) (*Subscription, error) {
-	return s.storage.subscription.FindByID(ctx, id)
-}
-
 func (s *Service) GetSubscriptionByWorkspaceID(ctx context.Context, workspaceID string) (*Subscription, error) {
 	return s.storage.subscription.FindOne(ctx, s.storage.subscription.ScopeWorkspaceID(workspaceID), s.storage.subscription.WithPreload(PlanStruct))
 }

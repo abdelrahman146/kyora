@@ -24,6 +24,7 @@ func (s *InvitationManagementSuite) SetupSuite() {
 }
 
 func (s *InvitationManagementSuite) SetupTest() {
+	s.NoError(testEnv.Cache.FlushAll())
 	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "subscriptions", "plans")
 	s.NoError(err)
 }
@@ -226,6 +227,33 @@ func (s *InvitationManagementSuite) TestRevokeInvitation_AlreadyAccepted() {
 	s.Contains(result["detail"], "only pending invitations can be revoked")
 }
 
+func (s *InvitationManagementSuite) TestRevokeInvitation_CrossWorkspace_NotFound() {
+	ctx := context.Background()
+
+	// Workspace A actor
+	_, _, tokenA, err := s.helper.CreateTestUser(ctx, "ownerA@example.com", "Password123!", "Owner", "A", role.RoleAdmin)
+	s.NoError(err)
+
+	// Workspace B actor + invitation in workspace B
+	userB, workspaceB, _, err := s.helper.CreateTestUser(ctx, "ownerB@example.com", "Password123!", "Owner", "B", role.RoleAdmin)
+	s.NoError(err)
+
+	invitationB, err := s.helper.CreateInvitation(ctx, workspaceB.ID, "inviteB@example.com", userB.ID, role.RoleUser, account.InvitationStatusPending)
+	s.NoError(err)
+
+	resp, err := s.helper.Client.AuthenticatedRequest("DELETE", "/v1/workspaces/invitations/"+invitationB.ID, nil, tokenA)
+	s.NoError(err)
+	defer resp.Body.Close()
+
+	// Must not reveal existence across workspaces
+	s.Equal(http.StatusNotFound, resp.StatusCode)
+
+	// Ensure invitation was not modified
+	updatedInvitation, err := s.helper.GetInvitation(ctx, invitationB.ID)
+	s.NoError(err)
+	s.Equal(account.InvitationStatusPending, updatedInvitation.Status)
+}
+
 func TestInvitationManagementSuite(t *testing.T) {
 	if testServer == nil {
 		t.Skip("Test server not initialized")
@@ -245,6 +273,7 @@ func (s *InvitationAcceptanceSuite) SetupSuite() {
 }
 
 func (s *InvitationAcceptanceSuite) SetupTest() {
+	s.NoError(testEnv.Cache.FlushAll())
 	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
 	s.NoError(err)
 }
@@ -428,6 +457,7 @@ func (s *UserManagementSuite) SetupSuite() {
 }
 
 func (s *UserManagementSuite) SetupTest() {
+	s.NoError(testEnv.Cache.FlushAll())
 	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
 	s.NoError(err)
 }

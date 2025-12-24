@@ -104,7 +104,7 @@ func (h *HTTPClient) Request(method, path string, payload interface{}) (*http.Re
 	return h.Client.Do(req)
 }
 
-// AuthenticatedRequest makes an authenticated request with JWT cookie
+// AuthenticatedRequest makes an authenticated request with Authorization: Bearer.
 func (h *HTTPClient) AuthenticatedRequest(method, path string, payload interface{}, token string) (*http.Response, error) {
 	var body io.Reader
 	if payload != nil {
@@ -122,7 +122,7 @@ func (h *HTTPClient) AuthenticatedRequest(method, path string, payload interface
 		req.Header.Set("Content-Type", "application/json")
 	}
 	if token != "" {
-		req.AddCookie(&http.Cookie{Name: "jwt", Value: token})
+		req.Header.Set("Authorization", "Bearer "+token)
 	}
 	return h.Client.Do(req)
 }

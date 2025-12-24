@@ -24,6 +24,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
+	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/gin-gonic/gin"
 	"github.com/spf13/viper"
@@ -177,6 +178,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// server initialization logic
 	r := gin.New()
 	r.Use(logger.Middleware())
+	r.Use(request.LimitBodySize(viper.GetInt64(config.HTTPMaxBodyBytes)))
 	r.Use(gin.Recovery())
 
 	// health endpoint

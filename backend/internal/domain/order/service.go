@@ -17,6 +17,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/timeseries"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
@@ -42,8 +43,8 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 
 func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*Order, error) {
 	// Basic abuse/double-submit protection (best-effort, cache-backed).
-	if err := s.throttle(fmt.Sprintf("rl:order:create:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second); err != nil {
-		return nil, err
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:order:create:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second) {
+		return nil, ErrOrderRateLimited()
 	}
 
 	var order *Order
@@ -544,8 +545,8 @@ func (s *Service) DeleteOrder(ctx context.Context, actor *account.User, biz *bus
 
 func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, req *CreateOrderNoteRequest) (*OrderNote, error) {
 	// Basic abuse protection for note creation.
-	if err := s.throttle(fmt.Sprintf("rl:order:note:create:%s:%s:%s", biz.ID, actor.ID, orderID), 5*time.Minute, 60, 1*time.Second); err != nil {
-		return nil, err
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:order:note:create:%s:%s:%s", biz.ID, actor.ID, orderID), 5*time.Minute, 60, 1*time.Second) {
+		return nil, ErrOrderRateLimited()
 	}
 
 	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
@@ -561,54 +562,16 @@ func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz 
 	return note, nil
 }
 
-// throttle implements a simple token bucket using cache with JSON state.
-// This is best-effort and becomes a no-op when cache isn't configured.
-type throttleState struct {
-	Count int   `json:"count"`
-	Last  int64 `json:"last"` // unix seconds
-}
-
-func (s *Service) throttle(key string, window time.Duration, max int, minInterval time.Duration) error {
-	if s.storage.cache == nil {
-		return nil
-	}
-	now := time.Now()
-	// read state
-	var st throttleState
-	if data, err := s.storage.cache.Get(key); err == nil && len(data) > 0 {
-		_ = s.storage.cache.Unmarshal(data, &st)
-	}
-	// enforce min interval
-	if st.Last != 0 && now.Sub(time.Unix(st.Last, 0)) < minInterval {
-		return ErrOrderRateLimited()
-	}
-	// increment and cap
-	st.Count++
-	st.Last = now.Unix()
-	if st.Count > max {
-		// write back to ensure TTL stays
-		if b, err := s.storage.cache.Marshal(st); err == nil {
-			_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
-		}
-		return ErrOrderRateLimited()
-	}
-	// persist with TTL window
-	if b, err := s.storage.cache.Marshal(st); err == nil {
-		_ = s.storage.cache.SetX(key, b, int32(window.Seconds()))
-	}
-	return nil
-}
-
 func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, noteID string, req *UpdateOrderNoteRequest) (*OrderNote, error) {
 	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
 		return nil, ErrOrderNotFound(orderID, err)
 	}
-	note, err := s.storage.orderNote.FindByID(ctx, noteID)
+	note, err := s.storage.orderNote.FindOne(ctx,
+		s.storage.orderNote.ScopeID(noteID),
+		s.storage.orderNote.ScopeEquals(OrderNoteSchema.OrderID, orderID),
+	)
 	if err != nil {
 		return nil, ErrOrderNoteNotFound(noteID, err)
-	}
-	if note.OrderID != orderID {
-		return nil, ErrOrderNoteNotFound(noteID, gorm.ErrRecordNotFound)
 	}
 	if req.Content != "" {
 		note.Content = req.Content
@@ -624,12 +587,12 @@ func (s *Service) DeleteOrderNote(ctx context.Context, actor *account.User, biz 
 	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
 		return ErrOrderNotFound(orderID, err)
 	}
-	note, err := s.storage.orderNote.FindByID(ctx, noteID)
+	note, err := s.storage.orderNote.FindOne(ctx,
+		s.storage.orderNote.ScopeID(noteID),
+		s.storage.orderNote.ScopeEquals(OrderNoteSchema.OrderID, orderID),
+	)
 	if err != nil {
 		return ErrOrderNoteNotFound(noteID, err)
-	}
-	if note.OrderID != orderID {
-		return ErrOrderNoteNotFound(noteID, gorm.ErrRecordNotFound)
 	}
 	return s.storage.orderNote.DeleteOne(ctx, note)
 }

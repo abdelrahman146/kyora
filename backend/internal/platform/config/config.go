@@ -26,6 +26,7 @@ const (
 	HTTPPort          = "http.port"
 	HTTPBaseURL       = "http.base_url"
 	HTTPTraceIDHeader = "http.trace_id_header"
+	HTTPMaxBodyBytes  = "http.max_body_bytes"
 	// database configuration
 	DatabaseDSN          = "database.dsn"
 	DatabaseMaxOpenConns = "database.max_open_conns"
@@ -66,8 +67,9 @@ const (
 )
 
 func init() {
-	viper.SetConfigName(".kyora") // name of config file (without extension)
-	viper.SetConfigType("yaml")   // REQUIRED if the config file does not have the extension in the name
+	viper.SetConfigName(".kyora")                 // name of config file (without extension)
+	viper.SetConfigType("yaml")                   // REQUIRED if the config file does not have the extension in the name
+	viper.SetDefault(HTTPMaxBodyBytes, 1024*1024) // 1 MiB default max request body
 	// Add current directory first
 	viper.AddConfigPath(".")
 	// Attempt to discover project root (where .kyora.yaml resides) by walking parent dirs

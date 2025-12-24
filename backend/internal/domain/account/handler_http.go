@@ -1,6 +1,7 @@
 package account
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
@@ -159,6 +160,11 @@ func (h *HttpHandler) ForgotPassword(c *gin.Context) {
 
 	_, err := h.service.CreatePasswordResetToken(c.Request.Context(), req.Email)
 	if err != nil {
+		var p *problem.Problem
+		if errors.As(err, &p) && p.Status == http.StatusTooManyRequests {
+			response.Error(c, err)
+			return
+		}
 		// Return success even if email not found to prevent email enumeration
 		response.SuccessEmpty(c, http.StatusNoContent)
 		return
@@ -226,6 +232,11 @@ func (h *HttpHandler) RequestEmailVerification(c *gin.Context) {
 
 	_, err := h.service.CreateVerifyEmailToken(c.Request.Context(), req.Email)
 	if err != nil {
+		var p *problem.Problem
+		if errors.As(err, &p) && p.Status == http.StatusTooManyRequests {
+			response.Error(c, err)
+			return
+		}
 		// Return success even if email not found to prevent email enumeration
 		response.SuccessEmpty(c, http.StatusNoContent)
 		return
@@ -434,15 +445,9 @@ func (h *HttpHandler) GetWorkspaceUser(c *gin.Context) {
 		return
 	}
 
-	user, err := h.service.GetUserByID(c.Request.Context(), userID)
+	user, err := h.service.GetWorkspaceUserByID(c.Request.Context(), actor.WorkspaceID, userID)
 	if err != nil {
 		response.Error(c, err)
-		return
-	}
-
-	// Verify user belongs to same workspace
-	if user.WorkspaceID != actor.WorkspaceID {
-		response.Error(c, ErrUserNotInWorkspace(nil))
 		return
 	}
 
@@ -539,13 +544,19 @@ func (h *HttpHandler) GetWorkspaceInvitations(c *gin.Context) {
 // @Router       /v1/invitations/{invitationId} [delete]
 // @Security     BearerAuth
 func (h *HttpHandler) RevokeInvitation(c *gin.Context) {
+	actor, err := ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
 	invitationID := c.Param("invitationId")
 	if invitationID == "" {
 		response.Error(c, problem.BadRequest("invitationId is required"))
 		return
 	}
 
-	err := h.service.RevokeInvitation(c.Request.Context(), invitationID)
+	err = h.service.RevokeInvitation(c.Request.Context(), actor.WorkspaceID, invitationID)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -752,16 +763,10 @@ func (h *HttpHandler) RemoveUserFromWorkspace(c *gin.Context) {
 		return
 	}
 
-	// Get target user
-	targetUser, err := h.service.GetUserByID(c.Request.Context(), userID)
+	// Get target user scoped to the workspace (prevents ID probing).
+	targetUser, err := h.service.GetWorkspaceUserByID(c.Request.Context(), actor.WorkspaceID, userID)
 	if err != nil {
 		response.Error(c, err)
-		return
-	}
-
-	// Verify target user is in the same workspace
-	if targetUser.WorkspaceID != actor.WorkspaceID {
-		response.Error(c, ErrUserNotInWorkspace(nil))
 		return
 	}
 

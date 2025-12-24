@@ -44,12 +44,12 @@ func (s *Service) GetCustomerAddressByID(ctx context.Context, actor *account.Use
 	if err != nil {
 		return nil, err
 	}
-	address, err := s.storage.customerAddress.FindByID(ctx, addressID)
+	address, err := s.storage.customerAddress.FindOne(ctx,
+		s.storage.customerAddress.ScopeID(addressID),
+		s.storage.customerAddress.ScopeEquals(CustomerAddressSchema.CustomerID, customerID),
+	)
 	if err != nil {
 		return nil, err
-	}
-	if address.CustomerID != customerID {
-		return nil, ErrCustomerAddressNotFound(nil)
 	}
 	return address, nil
 }
@@ -239,12 +239,12 @@ func (s *Service) DeleteCustomerNote(ctx context.Context, actor *account.User, b
 		return err
 	}
 	// ensure note exists within the customer
-	note, err := s.storage.customerNote.FindByID(ctx, noteID)
+	note, err := s.storage.customerNote.FindOne(ctx,
+		s.storage.customerNote.ScopeID(noteID),
+		s.storage.customerNote.ScopeEquals(CustomerNoteSchema.CustomerID, customerID),
+	)
 	if err != nil {
 		return err
-	}
-	if note.CustomerID != customerID {
-		return gorm.ErrRecordNotFound
 	}
 	return s.storage.customerNote.DeleteOne(ctx, note)
 }
@@ -283,12 +283,12 @@ func (s *Service) UpdateCustomerAddress(ctx context.Context, actor *account.User
 		return nil, err
 	}
 	// ensure address exists within the customer
-	address, err := s.storage.customerAddress.FindByID(ctx, addressID)
+	address, err := s.storage.customerAddress.FindOne(ctx,
+		s.storage.customerAddress.ScopeID(addressID),
+		s.storage.customerAddress.ScopeEquals(CustomerAddressSchema.CustomerID, customerID),
+	)
 	if err != nil {
 		return nil, err
-	}
-	if address.CustomerID != customerID {
-		return nil, gorm.ErrRecordNotFound
 	}
 	if req.Street != "" {
 		address.Street = transformer.ToNullableString(req.Street)
@@ -330,12 +330,12 @@ func (s *Service) DeleteCustomerAddress(ctx context.Context, actor *account.User
 		return err
 	}
 	// ensure address exists within the customer
-	address, err := s.storage.customerAddress.FindByID(ctx, addressID)
+	address, err := s.storage.customerAddress.FindOne(ctx,
+		s.storage.customerAddress.ScopeID(addressID),
+		s.storage.customerAddress.ScopeEquals(CustomerAddressSchema.CustomerID, customerID),
+	)
 	if err != nil {
 		return err
-	}
-	if address.CustomerID != customerID {
-		return gorm.ErrRecordNotFound
 	}
 	return s.storage.customerAddress.DeleteOne(ctx, address)
 }

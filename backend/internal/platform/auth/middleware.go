@@ -4,6 +4,7 @@ import (
 	"errors"
 
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
+	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/ctxkey"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
@@ -16,15 +17,13 @@ var (
 func EnforceAuthentication(c *gin.Context) {
 	jwtToken := JwtFromContext(c)
 	if jwtToken == "" {
-		c.JSON(401, gin.H{"error": "unauthorized"})
-		c.Abort()
+		response.Error(c, problem.Unauthorized("unauthorized"))
 		return
 	}
 	// verify jwtToken
 	claims, err := ParseJwtToken(jwtToken)
 	if err != nil {
-		c.JSON(401, gin.H{"error": "unauthorized"})
-		c.Abort()
+		response.Error(c, problem.Unauthorized("unauthorized").WithError(err))
 		return
 	}
 	c.Set(ClaimsKey, claims)

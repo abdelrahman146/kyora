@@ -82,9 +82,14 @@ func ClearJwtCookie(c *gin.Context) {
 }
 
 func JwtFromContext(c *gin.Context) string {
-	jwtToken, err := c.Cookie(jwtCookieName)
-	if err != nil {
-		return ""
+	authHeader := c.GetHeader("Authorization")
+	if strings.HasPrefix(authHeader, bearerPrefix) {
+		return authHeader
 	}
-	return jwtToken
+
+	jwtToken, err := c.Cookie(jwtCookieName)
+	if err == nil && jwtToken != "" {
+		return jwtToken
+	}
+	return ""
 }

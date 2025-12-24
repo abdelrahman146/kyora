@@ -168,6 +168,7 @@ func (s *WorkspaceSuite) SetupSuite() {
 }
 
 func (s *WorkspaceSuite) SetupTest() {
+	s.NoError(testEnv.Cache.FlushAll())
 	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces")
 	s.NoError(err)
 }
