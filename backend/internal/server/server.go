@@ -18,6 +18,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/domain/storefront"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/config"
@@ -171,6 +172,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	orderStorage := order.NewStorage(db, cacheDB)
 	orderSvc := order.NewService(orderStorage, atomicProcessor, bus, inventorySvc, customerSvc, businessSvc)
 
+	storefrontStorage := storefront.NewStorage(db, cacheDB)
+	storefrontSvc := storefront.NewService(storefrontStorage, atomicProcessor, businessSvc, inventorySvc, customerSvc, orderSvc)
+
 	analyticsSvc := analytics.NewService(&analytics.ServiceParams{
 		Inventory:  inventorySvc,
 		Orders:     orderSvc,
@@ -194,6 +198,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	// register domain routes under /api
 	registerBillingRoutes(r, billing.NewHttpHandler(billingSvc, accountSvc), accountSvc)
+
+	// Public storefront routes (no auth required)
+	registerStorefrontRoutes(r, storefront.NewHttpHandler(storefrontSvc))
 
 	// Register account routes with plan limit enforcement for team members
 	registerAccountRoutes(r, account.NewHttpHandler(accountSvc), accountSvc, billingSvc)

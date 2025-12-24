@@ -224,6 +224,155 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 	return order, nil
 }
 
+// CreatePendingStorefrontOrder creates an order from the public storefront.
+// It is unauthenticated and therefore:
+// - uses server-side pricing from inventory variants
+// - enforces variant ownership by scoping to the given business
+// - creates the order as pending and unpaid
+// - optionally stores a single consolidated order note
+func (s *Service) CreatePendingStorefrontOrder(
+	ctx context.Context,
+	biz *business.Business,
+	customerID string,
+	shippingAddressID string,
+	items map[string]int,
+	note string,
+) (*Order, error) {
+	if biz == nil {
+		return nil, problem.InternalError().With("reason", "business is required")
+	}
+	customerID = strings.TrimSpace(customerID)
+	if customerID == "" {
+		return nil, problem.BadRequest("customerId is required").With("field", "customerId")
+	}
+	shippingAddressID = strings.TrimSpace(shippingAddressID)
+	if shippingAddressID == "" {
+		return nil, problem.BadRequest("shippingAddressId is required").With("field", "shippingAddressId")
+	}
+	if len(items) == 0 {
+		return nil, ErrEmptyOrderItems()
+	}
+
+	var created *Order
+	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		tx, _ := tctx.Value(database.TxKey).(*gorm.DB)
+		if tx == nil {
+			return problem.InternalError().With("reason", "missing transaction in context")
+		}
+
+		if _, err := s.customer.GetCustomerByID(tctx, nil, biz, customerID); err != nil {
+			return err
+		}
+		if _, err := s.customer.GetCustomerAddressByID(tctx, nil, biz, customerID, shippingAddressID); err != nil {
+			return err
+		}
+
+		// Prepare order items with server-side pricing.
+		reqItems := make([]*CreateOrderItemRequest, 0, len(items))
+		for variantID, qty := range items {
+			vid := strings.TrimSpace(variantID)
+			if vid == "" {
+				return problem.BadRequest("variantId is required")
+			}
+			if qty <= 0 {
+				return ErrInvalidOrderItemQuantity(vid, qty)
+			}
+			v, err := s.inventory.GetVariantByID(tctx, nil, biz, vid)
+			if err != nil {
+				return ErrVariantNotFound(vid, err)
+			}
+			if v.Currency != "" && strings.TrimSpace(strings.ToUpper(v.Currency)) != strings.TrimSpace(strings.ToUpper(biz.Currency)) {
+				return problem.BadRequest("variant currency must match business currency").With("variantId", vid)
+			}
+			reqItems = append(reqItems, &CreateOrderItemRequest{
+				VariantID: vid,
+				Quantity:  qty,
+				UnitPrice: v.SalePrice,
+				UnitCost:  v.CostPrice,
+			})
+		}
+
+		orderItems, adjustments, err := s.prepareOrderItems(tctx, nil, biz, reqItems)
+		if err != nil {
+			return err
+		}
+
+		vatRate := biz.VatRate
+		subtotal := s.calculateSubtotal(orderItems)
+		cogs := s.calculateCOGS(orderItems)
+		vat := s.calculateVAT(subtotal, vatRate)
+		shippingFee := decimal.Zero
+		discount := decimal.Zero
+		total := s.calculateTotal(subtotal, vat, shippingFee, discount)
+
+		var orderNumber string
+		const maxRetries = 5
+		for i := 0; i < maxRetries; i++ {
+			orderNumber = id.Base62(6)
+			sp := fmt.Sprintf("sp_storefront_order_number_%d", i)
+			if err := tx.SavePoint(sp).Error; err != nil {
+				return err
+			}
+			ord := &Order{
+				BusinessID:        biz.ID,
+				CustomerID:        customerID,
+				ShippingAddressID: shippingAddressID,
+				Channel:           "storefront",
+				Subtotal:          subtotal,
+				VAT:               vat,
+				VATRate:           vatRate,
+				ShippingFee:       shippingFee,
+				Discount:          discount,
+				COGS:              cogs,
+				Total:             total,
+				Currency:          biz.Currency,
+				Status:            OrderStatusPending,
+				PaymentStatus:     OrderPaymentStatusPending,
+				PaymentMethod:     OrderPaymentMethodBankTransfer,
+				OrderNumber:       orderNumber,
+				OrderedAt:         time.Now().UTC(),
+			}
+			if err := s.storage.order.CreateOne(tctx, ord); err != nil {
+				if database.IsUniqueViolation(err) {
+					if rbErr := tx.RollbackTo(sp).Error; rbErr != nil {
+						return rbErr
+					}
+					continue
+				}
+				return err
+			}
+			created = ord
+			break
+		}
+		if created == nil || created.ID == "" {
+			return ErrOrderNumberGenerationFailed(nil)
+		}
+
+		for _, oi := range orderItems {
+			oi.OrderID = created.ID
+		}
+		if err := s.storage.orderItem.CreateMany(tctx, orderItems); err != nil {
+			return err
+		}
+		if err := s.adjustInventoryLevels(tctx, nil, biz, adjustments); err != nil {
+			return err
+		}
+		if strings.TrimSpace(note) != "" {
+			on := &OrderNote{OrderID: created.ID, Content: strings.TrimSpace(note)}
+			if err := s.storage.orderNote.CreateOne(tctx, on); err != nil {
+				return err
+			}
+			created.Notes = []*OrderNote{on}
+		}
+		created.Items = orderItems
+		return nil
+	}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
+	if err != nil {
+		return nil, err
+	}
+	return created, nil
+}
+
 func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *business.Business, id string, req *UpdateOrderRequest) (*Order, error) {
 	var updated *Order
 	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
@@ -551,8 +700,12 @@ func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.U
 		if order.PaidAt.Valid {
 			paidAt = order.PaidAt.Time
 		}
+		// Detach from the request lifecycle so async handlers can complete.
+		// This preserves context values (e.g. trace ID) but prevents cancellation
+		// when the HTTP request finishes.
+		bgctx := context.WithoutCancel(ctx)
 		s.bus.Emit(bus.OrderPaymentSucceededTopic, &bus.OrderPaymentSucceededEvent{
-			Ctx:           ctx,
+			Ctx:           bgctx,
 			BusinessID:    biz.ID,
 			OrderID:       order.ID,
 			PaymentMethod: string(order.PaymentMethod),

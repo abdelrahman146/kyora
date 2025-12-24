@@ -174,6 +174,17 @@ func (s *BusinessPaymentMethodsSuite) TestOrderPaid_CreatesTransactionFeeExpense
 	expectedFee := orderTotal.Mul(decimal.RequireFromString("0.05")).Round(2)
 
 	// Mark order as paid.
+	// Payment status transitions require the order to be placed/shipped/fulfilled.
+	statusResp, err := s.orderHelper.Client.AuthenticatedRequest(
+		"PATCH",
+		"/v1/businesses/"+biz.Descriptor+"/orders/"+orderID+"/status",
+		map[string]interface{}{"status": "placed"},
+		token,
+	)
+	s.NoError(err)
+	defer statusResp.Body.Close()
+	s.Equal(http.StatusOK, statusResp.StatusCode)
+
 	paidResp, err := s.orderHelper.Client.AuthenticatedRequest("PATCH", "/v1/businesses/"+biz.Descriptor+"/orders/"+orderID+"/payment-status", map[string]interface{}{"paymentStatus": "paid"}, token)
 	s.NoError(err)
 	defer paidResp.Body.Close()

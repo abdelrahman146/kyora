@@ -26,18 +26,32 @@ func NewHttpHandler(svc *Service) *HttpHandler {
 }
 
 type businessResponse struct {
-	ID            string     `json:"id"`
-	WorkspaceID   string     `json:"workspaceId"`
-	Descriptor    string     `json:"descriptor"`
-	Name          string     `json:"name"`
-	CountryCode   string     `json:"countryCode"`
-	Currency      string     `json:"currency"`
-	VatRate       string     `json:"vatRate"`
-	SafetyBuffer  string     `json:"safetyBuffer"`
-	EstablishedAt time.Time  `json:"establishedAt"`
-	ArchivedAt    *time.Time `json:"archivedAt,omitempty"`
-	CreatedAt     time.Time  `json:"createdAt"`
-	UpdatedAt     time.Time  `json:"updatedAt"`
+	ID                 string          `json:"id"`
+	WorkspaceID        string          `json:"workspaceId"`
+	Descriptor         string          `json:"descriptor"`
+	Name               string          `json:"name"`
+	Brand              string          `json:"brand"`
+	CountryCode        string          `json:"countryCode"`
+	Currency           string          `json:"currency"`
+	StorefrontPublicID string          `json:"storefrontPublicId"`
+	StorefrontEnabled  bool            `json:"storefrontEnabled"`
+	StorefrontTheme    StorefrontTheme `json:"storefrontTheme"`
+	SupportEmail       string          `json:"supportEmail"`
+	PhoneNumber        string          `json:"phoneNumber"`
+	WhatsappNumber     string          `json:"whatsappNumber"`
+	Address            string          `json:"address"`
+	WebsiteURL         string          `json:"websiteUrl"`
+	InstagramURL       string          `json:"instagramUrl"`
+	FacebookURL        string          `json:"facebookUrl"`
+	TikTokURL          string          `json:"tiktokUrl"`
+	XURL               string          `json:"xUrl"`
+	SnapchatURL        string          `json:"snapchatUrl"`
+	VatRate            string          `json:"vatRate"`
+	SafetyBuffer       string          `json:"safetyBuffer"`
+	EstablishedAt      time.Time       `json:"establishedAt"`
+	ArchivedAt         *time.Time      `json:"archivedAt,omitempty"`
+	CreatedAt          time.Time       `json:"createdAt"`
+	UpdatedAt          time.Time       `json:"updatedAt"`
 }
 
 type shippingZoneResponse struct {
@@ -96,18 +110,32 @@ func toPaymentMethodResponse(v BusinessPaymentMethodView) paymentMethodResponse 
 
 func toBusinessResponse(b *Business) businessResponse {
 	return businessResponse{
-		ID:            b.ID,
-		WorkspaceID:   b.WorkspaceID,
-		Descriptor:    b.Descriptor,
-		Name:          b.Name,
-		CountryCode:   b.CountryCode,
-		Currency:      b.Currency,
-		VatRate:       b.VatRate.String(),
-		SafetyBuffer:  b.SafetyBuffer.StringFixed(2),
-		EstablishedAt: b.EstablishedAt,
-		ArchivedAt:    b.ArchivedAt,
-		CreatedAt:     b.CreatedAt,
-		UpdatedAt:     b.UpdatedAt,
+		ID:                 b.ID,
+		WorkspaceID:        b.WorkspaceID,
+		Descriptor:         b.Descriptor,
+		Name:               b.Name,
+		Brand:              b.Brand,
+		CountryCode:        b.CountryCode,
+		Currency:           b.Currency,
+		StorefrontPublicID: b.StorefrontPublicID,
+		StorefrontEnabled:  b.StorefrontEnabled,
+		StorefrontTheme:    b.StorefrontTheme,
+		SupportEmail:       b.SupportEmail,
+		PhoneNumber:        b.PhoneNumber,
+		WhatsappNumber:     b.WhatsappNumber,
+		Address:            b.Address,
+		WebsiteURL:         b.WebsiteURL,
+		InstagramURL:       b.InstagramURL,
+		FacebookURL:        b.FacebookURL,
+		TikTokURL:          b.TikTokURL,
+		XURL:               b.XURL,
+		SnapchatURL:        b.SnapchatURL,
+		VatRate:            b.VatRate.String(),
+		SafetyBuffer:       b.SafetyBuffer.StringFixed(2),
+		EstablishedAt:      b.EstablishedAt,
+		ArchivedAt:         b.ArchivedAt,
+		CreatedAt:          b.CreatedAt,
+		UpdatedAt:          b.UpdatedAt,
 	}
 }
 

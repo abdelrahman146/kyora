@@ -91,6 +91,25 @@ func (s *Service) GetBusinessByDescriptorForWorkspace(ctx context.Context, works
 	)
 }
 
+// GetBusinessByStorefrontPublicID returns a business by its public storefront ID.
+// This is used by unauthenticated storefront endpoints.
+// It only returns enabled, non-archived businesses.
+func (s *Service) GetBusinessByStorefrontPublicID(ctx context.Context, storefrontPublicID string) (*Business, error) {
+	id := strings.TrimSpace(storefrontPublicID)
+	if id == "" {
+		return nil, problem.BadRequest("storefrontId is required")
+	}
+	biz, err := s.storage.business.FindOne(ctx,
+		s.storage.business.ScopeEquals(BusinessSchema.StorefrontPublicID, id),
+		s.storage.business.ScopeEquals(BusinessSchema.StorefrontEnabled, true),
+		s.storage.business.ScopeIsNull(BusinessSchema.ArchivedAt),
+	)
+	if err != nil {
+		return nil, ErrBusinessNotFound(id, err)
+	}
+	return biz, nil
+}
+
 func (s *Service) ListBusinesses(ctx context.Context, actor *account.User) ([]*Business, error) {
 	if err := actor.Role.HasPermission(role.ActionView, role.ResourceBusiness); err != nil {
 		return nil, err
@@ -128,12 +147,25 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 	var created *Business
 	err = s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
 		biz := &Business{
-			WorkspaceID: actor.WorkspaceID,
-			Descriptor:  normDescriptor,
-			Name:        input.Name,
-			CountryCode: country,
-			VatRate:     input.VatRate,
-			Currency:    currency,
+			WorkspaceID:       actor.WorkspaceID,
+			Descriptor:        normDescriptor,
+			Name:              input.Name,
+			Brand:             strings.TrimSpace(input.Brand),
+			CountryCode:       country,
+			VatRate:           input.VatRate,
+			Currency:          currency,
+			StorefrontEnabled: input.StorefrontEnabled,
+			StorefrontTheme:   input.StorefrontTheme,
+			SupportEmail:      strings.TrimSpace(input.SupportEmail),
+			PhoneNumber:       strings.TrimSpace(input.PhoneNumber),
+			WhatsappNumber:    strings.TrimSpace(input.WhatsappNumber),
+			Address:           strings.TrimSpace(input.Address),
+			WebsiteURL:        strings.TrimSpace(input.WebsiteURL),
+			InstagramURL:      strings.TrimSpace(input.InstagramURL),
+			FacebookURL:       strings.TrimSpace(input.FacebookURL),
+			TikTokURL:         strings.TrimSpace(input.TikTokURL),
+			XURL:              strings.TrimSpace(input.XURL),
+			SnapchatURL:       strings.TrimSpace(input.SnapchatURL),
 		}
 		if !input.SafetyBuffer.IsZero() {
 			biz.SafetyBuffer = input.SafetyBuffer
@@ -370,6 +402,9 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 	if input.Name != nil {
 		business.Name = strings.TrimSpace(*input.Name)
 	}
+	if input.Brand != nil {
+		business.Brand = strings.TrimSpace(*input.Brand)
+	}
 	if input.Descriptor != nil {
 		norm, err := normalizeBusinessDescriptor(*input.Descriptor)
 		if err != nil {
@@ -409,6 +444,42 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 	}
 	if input.EstablishedAt != nil {
 		business.EstablishedAt = input.EstablishedAt.Time
+	}
+	if input.StorefrontEnabled != nil {
+		business.StorefrontEnabled = *input.StorefrontEnabled
+	}
+	if input.StorefrontTheme != nil {
+		business.StorefrontTheme = *input.StorefrontTheme
+	}
+	if input.SupportEmail != nil {
+		business.SupportEmail = strings.TrimSpace(*input.SupportEmail)
+	}
+	if input.PhoneNumber != nil {
+		business.PhoneNumber = strings.TrimSpace(*input.PhoneNumber)
+	}
+	if input.WhatsappNumber != nil {
+		business.WhatsappNumber = strings.TrimSpace(*input.WhatsappNumber)
+	}
+	if input.Address != nil {
+		business.Address = strings.TrimSpace(*input.Address)
+	}
+	if input.WebsiteURL != nil {
+		business.WebsiteURL = strings.TrimSpace(*input.WebsiteURL)
+	}
+	if input.InstagramURL != nil {
+		business.InstagramURL = strings.TrimSpace(*input.InstagramURL)
+	}
+	if input.FacebookURL != nil {
+		business.FacebookURL = strings.TrimSpace(*input.FacebookURL)
+	}
+	if input.TikTokURL != nil {
+		business.TikTokURL = strings.TrimSpace(*input.TikTokURL)
+	}
+	if input.XURL != nil {
+		business.XURL = strings.TrimSpace(*input.XURL)
+	}
+	if input.SnapchatURL != nil {
+		business.SnapchatURL = strings.TrimSpace(*input.SnapchatURL)
 	}
 	err = s.storage.business.UpdateOne(ctx, business)
 	if err != nil {

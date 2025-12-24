@@ -154,6 +154,7 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 			BusinessID:  biz.ID,
 			Name:        req.Product.Name,
 			Description: req.Product.Description,
+			Photos:      PhotoURLList(req.Product.Photos),
 			CategoryID:  req.Product.CategoryID,
 		}
 		err = s.storage.products.CreateOne(txCtx, product)
@@ -236,6 +237,7 @@ func (s *Service) CreateProduct(ctx context.Context, actor *account.User, biz *b
 		BusinessID:  biz.ID,
 		Name:        req.Name,
 		Description: req.Description,
+		Photos:      PhotoURLList(req.Photos),
 		CategoryID:  req.CategoryID,
 	}
 	err := s.storage.products.CreateOne(ctx, product)
@@ -281,6 +283,7 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 		CostPrice:          *req.CostPrice,
 		SalePrice:          *req.SalePrice,
 		Currency:           biz.Currency,
+		Photos:             PhotoURLList(req.Photos),
 		StockQuantity:      *req.StockQuantity,
 		StockQuantityAlert: *req.StockQuantityAlert,
 	}
@@ -310,6 +313,9 @@ func (s *Service) UpdateProduct(ctx context.Context, actor *account.User, biz *b
 		if req.Description != "" {
 			product.Description = req.Description
 		}
+		if req.Photos != nil {
+			product.Photos = PhotoURLList(req.Photos)
+		}
 		if req.CategoryID != "" {
 			if _, err := s.GetCategoryByID(tctx, actor, biz, req.CategoryID); err != nil {
 				return err
@@ -335,6 +341,9 @@ func (s *Service) UpdateVariant(ctx context.Context, actor *account.User, biz *b
 	}
 	if req.SKU != nil {
 		variant.SKU = strings.TrimSpace(*req.SKU)
+	}
+	if req.Photos != nil {
+		variant.Photos = PhotoURLList(req.Photos)
 	}
 	if req.CostPrice != nil {
 		if req.CostPrice.IsNegative() {

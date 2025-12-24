@@ -10,10 +10,20 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
+	"github.com/abdelrahman146/kyora/internal/domain/storefront"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/gin-gonic/gin"
 )
+
+func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
+
+	group := r.Group("/v1/storefront")
+	{
+		group.GET("/:storefrontPublicId/catalog", h.GetCatalog)
+		group.POST("/:storefrontPublicId/orders", h.CreateOrder)
+	}
+}
 
 func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 	group := r.Group("/api/onboarding")

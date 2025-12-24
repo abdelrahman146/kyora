@@ -1,12 +1,59 @@
 package inventory
 
 import (
+	"database/sql/driver"
+	"encoding/json"
+	"errors"
+
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/shopspring/decimal"
 	"gorm.io/gorm"
 )
+
+// PhotoURLList is a JSONB-backed list of photo URLs.
+type PhotoURLList []string
+
+func (p PhotoURLList) Value() (driver.Value, error) {
+	if p == nil {
+		p = []string{}
+	}
+	b, err := json.Marshal([]string(p))
+	if err != nil {
+		return nil, err
+	}
+	return string(b), nil
+}
+
+func (p *PhotoURLList) Scan(value any) error {
+	if p == nil {
+		return problem.InternalError().WithError(errors.New("PhotoURLList scan into nil receiver"))
+	}
+	if value == nil {
+		*p = PhotoURLList{}
+		return nil
+	}
+	switch v := value.(type) {
+	case []byte:
+		var out []string
+		if err := json.Unmarshal(v, &out); err != nil {
+			return err
+		}
+		*p = PhotoURLList(out)
+		return nil
+	case string:
+		var out []string
+		if err := json.Unmarshal([]byte(v), &out); err != nil {
+			return err
+		}
+		*p = PhotoURLList(out)
+		return nil
+	default:
+		return problem.InternalError().WithError(errors.New("unexpected scan type for PhotoURLList"))
+	}
+}
 
 /* Product Model */
 //---------------*/
@@ -24,6 +71,7 @@ type Product struct {
 	Business    *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	Name        string             `gorm:"column:name;type:text;not null" json:"name"`
 	Description string             `gorm:"column:description;type:text" json:"description"`
+	Photos      PhotoURLList       `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
 	CategoryID  string             `gorm:"column:category_id;type:text;index" json:"categoryId"`
 	Category    *Category          `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
 	Variants    []*Variant         `gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE;" json:"variants,omitempty"`
@@ -37,15 +85,17 @@ func (m *Product) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateProductRequest struct {
-	Name        string `json:"name" binding:"required"`
-	Description string `json:"description" binding:"omitempty"`
-	CategoryID  string `json:"categoryId" binding:"required"`
+	Name        string   `json:"name" binding:"required"`
+	Description string   `json:"description" binding:"omitempty"`
+	Photos      []string `json:"photos" binding:"omitempty,max=10,dive,required"`
+	CategoryID  string   `json:"categoryId" binding:"required"`
 }
 
 type UpdateProductRequest struct {
-	Name        string `json:"name" binding:"omitempty"`
-	Description string `json:"description" binding:"omitempty"`
-	CategoryID  string `json:"categoryId" binding:"omitempty"`
+	Name        string   `json:"name" binding:"omitempty"`
+	Description string   `json:"description" binding:"omitempty"`
+	Photos      []string `json:"photos" binding:"omitempty,max=10,dive,required"`
+	CategoryID  string   `json:"categoryId" binding:"omitempty"`
 }
 
 var ProductSchema = struct {
@@ -53,6 +103,7 @@ var ProductSchema = struct {
 	BusinessID  schema.Field
 	Name        schema.Field
 	Description schema.Field
+	Photos      schema.Field
 	CategoryID  schema.Field
 	CreatedAt   schema.Field
 	UpdatedAt   schema.Field
@@ -62,6 +113,7 @@ var ProductSchema = struct {
 	BusinessID:  schema.NewField("business_id", "businessId"),
 	Name:        schema.NewField("name", "name"),
 	Description: schema.NewField("description", "description"),
+	Photos:      schema.NewField("photos", "photos"),
 	CategoryID:  schema.NewField("category_id", "categoryId"),
 }
 
@@ -96,6 +148,7 @@ type Variant struct {
 	CostPrice          decimal.Decimal    `gorm:"column:cost_price;type:numeric;not null;default:0" json:"costPrice"`
 	SalePrice          decimal.Decimal    `gorm:"column:sale_price;type:numeric;not null;default:0" json:"salePrice"`
 	Currency           string             `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
+	Photos             PhotoURLList       `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
 	StockQuantity      int                `gorm:"column:stock_quantity;type:int;not null;default:0" json:"stockQuantity"`
 	StockQuantityAlert int                `gorm:"column:stock_alert;type:int;not null;default:0" json:"stockQuantityAlert"`
 }
@@ -111,6 +164,7 @@ type CreateVariantRequest struct {
 	ProductID          string           `form:"productId" json:"productId" binding:"required"`
 	Code               string           `form:"code" json:"code" binding:"required"`
 	SKU                string           `form:"sku" json:"sku" binding:"omitempty"`
+	Photos             []string         `form:"photos" json:"photos" binding:"omitempty,max=10,dive,required"`
 	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"required"`
 	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"required"`
 	StockQuantity      *int             `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
@@ -120,6 +174,7 @@ type CreateVariantRequest struct {
 type UpdateVariantRequest struct {
 	Code               *string          `form:"code" json:"code" binding:"omitempty"`
 	SKU                *string          `form:"sku" json:"sku" binding:"omitempty"`
+	Photos             []string         `form:"photos" json:"photos" binding:"omitempty,max=10,dive,required"`
 	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"omitempty"`
 	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"omitempty"`
 	Currency           *string          `form:"currency" json:"currency" binding:"omitempty,len=3"`
@@ -137,6 +192,7 @@ var VariantSchema = struct {
 	CostPrice          schema.Field
 	SalePrice          schema.Field
 	Currency           schema.Field
+	Photos             schema.Field
 	StockQuantity      schema.Field
 	StockQuantityAlert schema.Field
 	CreatedAt          schema.Field
@@ -152,6 +208,7 @@ var VariantSchema = struct {
 	CostPrice:          schema.NewField("cost_price", "costPrice"),
 	SalePrice:          schema.NewField("sale_price", "salePrice"),
 	Currency:           schema.NewField("currency", "currency"),
+	Photos:             schema.NewField("photos", "photos"),
 	StockQuantity:      schema.NewField("stock_quantity", "stockQuantity"),
 	StockQuantityAlert: schema.NewField("stock_alert", "stockQuantityAlert"),
 	CreatedAt:          schema.NewField("created_at", "createdAt"),

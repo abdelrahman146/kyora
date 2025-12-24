@@ -22,6 +22,21 @@ type Service struct {
 	bus     *bus.Bus
 }
 
+// UpsertCustomerByEmailInput is used by public storefront order submissions.
+// Only a minimal set of fields are supported to keep mass-assignment impossible.
+type UpsertCustomerByEmailInput struct {
+	Email             string
+	Name              string
+	PhoneNumber       string
+	PhoneCode         string
+	InstagramUsername string
+	TikTokUsername    string
+	FacebookUsername  string
+	XUsername         string
+	SnapchatUsername  string
+	WhatsappNumber    string
+}
+
 func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *bus.Bus) *Service {
 	return &Service{
 		bus:     bus,
@@ -81,6 +96,87 @@ func (s *Service) CreateCustomer(ctx context.Context, actor *account.User, biz *
 		return nil, err
 	}
 	return customer, nil
+}
+
+// UpsertCustomerByEmail creates or updates a customer using (businessId, email) as a natural key.
+// It is designed for unauthenticated storefront flows.
+func (s *Service) UpsertCustomerByEmail(ctx context.Context, biz *business.Business, in *UpsertCustomerByEmailInput) (*Customer, error) {
+	if biz == nil {
+		return nil, problem.InternalError().With("reason", "business is required")
+	}
+	if in == nil {
+		return nil, problem.BadRequest("customer is required")
+	}
+	email := strings.TrimSpace(strings.ToLower(in.Email))
+	if email == "" {
+		return nil, problem.BadRequest("email is required").With("field", "email")
+	}
+	name := strings.TrimSpace(in.Name)
+	if name == "" {
+		return nil, problem.BadRequest("name is required").With("field", "name")
+	}
+
+	existing, err := s.storage.customer.FindOne(ctx,
+		s.storage.customer.ScopeBusinessID(biz.ID),
+		s.storage.customer.ScopeEquals(CustomerSchema.Email, email),
+	)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			cust := &Customer{
+				BusinessID:        biz.ID,
+				Name:              name,
+				Email:             transformer.ToNullableString(email),
+				CountryCode:       strings.TrimSpace(strings.ToUpper(biz.CountryCode)),
+				Gender:            GenderOther,
+				PhoneNumber:       transformer.ToNullableString(strings.TrimSpace(in.PhoneNumber)),
+				PhoneCode:         transformer.ToNullableString(strings.TrimSpace(in.PhoneCode)),
+				TikTokUsername:    transformer.ToNullableString(strings.TrimSpace(in.TikTokUsername)),
+				InstagramUsername: transformer.ToNullableString(strings.TrimSpace(in.InstagramUsername)),
+				FacebookUsername:  transformer.ToNullableString(strings.TrimSpace(in.FacebookUsername)),
+				XUsername:         transformer.ToNullableString(strings.TrimSpace(in.XUsername)),
+				SnapchatUsername:  transformer.ToNullableString(strings.TrimSpace(in.SnapchatUsername)),
+				WhatsappNumber:    transformer.ToNullableString(strings.TrimSpace(in.WhatsappNumber)),
+				JoinedAt:          time.Now().UTC(),
+			}
+			if err := s.storage.customer.CreateOne(ctx, cust); err != nil {
+				return nil, err
+			}
+			return cust, nil
+		}
+		return nil, err
+	}
+
+	// Update only when new values are provided.
+	existing.Name = name
+	if strings.TrimSpace(in.PhoneNumber) != "" {
+		existing.PhoneNumber = transformer.ToNullableString(strings.TrimSpace(in.PhoneNumber))
+	}
+	if strings.TrimSpace(in.PhoneCode) != "" {
+		existing.PhoneCode = transformer.ToNullableString(strings.TrimSpace(in.PhoneCode))
+	}
+	if strings.TrimSpace(in.TikTokUsername) != "" {
+		existing.TikTokUsername = transformer.ToNullableString(strings.TrimSpace(in.TikTokUsername))
+	}
+	if strings.TrimSpace(in.InstagramUsername) != "" {
+		existing.InstagramUsername = transformer.ToNullableString(strings.TrimSpace(in.InstagramUsername))
+	}
+	if strings.TrimSpace(in.FacebookUsername) != "" {
+		existing.FacebookUsername = transformer.ToNullableString(strings.TrimSpace(in.FacebookUsername))
+	}
+	if strings.TrimSpace(in.XUsername) != "" {
+		existing.XUsername = transformer.ToNullableString(strings.TrimSpace(in.XUsername))
+	}
+	if strings.TrimSpace(in.SnapchatUsername) != "" {
+		existing.SnapchatUsername = transformer.ToNullableString(strings.TrimSpace(in.SnapchatUsername))
+	}
+	if strings.TrimSpace(in.WhatsappNumber) != "" {
+		existing.WhatsappNumber = transformer.ToNullableString(strings.TrimSpace(in.WhatsappNumber))
+	}
+
+	if err := s.storage.customer.UpdateOne(ctx, existing); err != nil {
+		return nil, err
+	}
+	return existing, nil
 }
 
 func (s *Service) UpdateCustomer(ctx context.Context, actor *account.User, biz *business.Business, id string, req *UpdateCustomerRequest) (*Customer, error) {
