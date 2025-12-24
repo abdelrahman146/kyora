@@ -144,7 +144,7 @@ func (s *InventoryCategoriesSuite) TestListCategories_Success_ViewPermission() {
 		{Email: "viewer@example.com", Password: "Password123!", FirstName: "Viewer", LastName: "User", Role: role.RoleUser},
 	})
 	s.NoError(err)
-	viewerToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
+	viewerToken, err := auth.NewJwtToken(users[1].ID, ws.ID, users[1].AuthVersion)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	biz, err := s.inventoryHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
@@ -212,7 +212,7 @@ func (s *InventoryCategoriesSuite) TestManageEndpoints_RequireManagePermission()
 		{Email: "member@example.com", Password: "Password123!", FirstName: "Member", LastName: "User", Role: role.RoleUser},
 	})
 	s.NoError(err)
-	memberToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
+	memberToken, err := auth.NewJwtToken(users[1].ID, ws.ID, users[1].AuthVersion)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	biz, err := s.inventoryHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")

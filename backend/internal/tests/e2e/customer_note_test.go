@@ -325,7 +325,7 @@ func (s *CustomerNoteSuite) TestNoteOperations_UnauthorizedUser() {
 	}
 	userRepo := database.NewRepository[account.User](testEnv.Database)
 	s.NoError(userRepo.CreateOne(ctx, member))
-	userToken, err := auth.NewJwtToken(member.ID, member.WorkspaceID)
+	userToken, err := auth.NewJwtToken(member.ID, member.WorkspaceID, member.AuthVersion)
 	s.NoError(err)
 
 	// User can view notes (has view permission)

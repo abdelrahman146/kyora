@@ -293,7 +293,7 @@ func (s *InventoryProductsSuite) TestViewAllowed_ManageForbidden_ForUserRole() {
 		{Email: "member@example.com", Password: "Password123!", FirstName: "Member", LastName: "User", Role: role.RoleUser},
 	})
 	s.NoError(err)
-	memberToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
+	memberToken, err := auth.NewJwtToken(users[1].ID, ws.ID, users[1].AuthVersion)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	biz, err := s.inventoryHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")

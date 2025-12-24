@@ -1,6 +1,7 @@
 package account
 
 import (
+	"context"
 	"encoding/json"
 	"time"
 
@@ -22,6 +23,7 @@ type Storage struct {
 	workspace  *database.Repository[Workspace]
 	user       *database.Repository[User]
 	invitation *database.Repository[UserInvitation]
+	session    *database.Repository[Session]
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
@@ -30,7 +32,36 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 		workspace:  database.NewRepository[Workspace](db),
 		user:       database.NewRepository[User](db),
 		invitation: database.NewRepository[UserInvitation](db),
+		session:    database.NewRepository[Session](db),
 	}
+}
+
+func (s *Storage) CreateSession(ctx context.Context, sess *Session) error {
+	return s.session.CreateOne(ctx, sess)
+}
+
+func (s *Storage) GetSessionByTokenHash(ctx context.Context, tokenHash string, now time.Time) (*Session, error) {
+	return s.session.FindOne(
+		ctx,
+		s.session.ScopeEquals(SessionSchema.TokenHash, tokenHash),
+		s.session.ScopeGreaterThan(SessionSchema.ExpiresAt, now),
+	)
+}
+
+func (s *Storage) RevokeSessionByTokenHash(ctx context.Context, tokenHash string) error {
+	return s.session.DeleteMany(ctx, s.session.ScopeEquals(SessionSchema.TokenHash, tokenHash))
+}
+
+func (s *Storage) RevokeAllSessionsForUser(ctx context.Context, userID string) error {
+	return s.session.DeleteMany(ctx, s.session.ScopeEquals(SessionSchema.UserID, userID))
+}
+
+func (s *Storage) RevokeOtherSessionsForUser(ctx context.Context, userID string, keepTokenHash string) error {
+	return s.session.DeleteMany(
+		ctx,
+		s.session.ScopeEquals(SessionSchema.UserID, userID),
+		s.session.ScopeNotEquals(SessionSchema.TokenHash, keepTokenHash),
+	)
 }
 
 type PasswordResetPayload struct {

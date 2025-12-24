@@ -131,7 +131,7 @@ func (s *InventorySummarySuite) TestSummary_ViewAllowed_ForUserRole() {
 		{Email: "viewer@example.com", Password: "Password123!", FirstName: "Viewer", LastName: "User", Role: role.RoleUser},
 	})
 	s.NoError(err)
-	viewerToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
+	viewerToken, err := auth.NewJwtToken(users[1].ID, ws.ID, users[1].AuthVersion)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	_, err = s.inventoryHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")

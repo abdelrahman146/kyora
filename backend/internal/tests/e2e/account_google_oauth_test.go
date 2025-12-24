@@ -28,12 +28,12 @@ func (s *GoogleOAuthSuite) SetupSuite() {
 }
 
 func (s *GoogleOAuthSuite) SetupTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
 	s.NoError(err)
 }
 
 func (s *GoogleOAuthSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
 	s.NoError(err)
 }
 
@@ -381,12 +381,12 @@ func (s *GoogleInvitationAcceptanceSuite) SetupSuite() {
 }
 
 func (s *GoogleInvitationAcceptanceSuite) SetupTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 
 func (s *GoogleInvitationAcceptanceSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 

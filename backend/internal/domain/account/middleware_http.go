@@ -43,6 +43,10 @@ func EnforceValidActor(service *Service) gin.HandlerFunc {
 			response.Error(c, err)
 			return
 		}
+		if claims.AuthVersion != user.AuthVersion {
+			response.Error(c, problem.Unauthorized("invalid or expired token"))
+			return
+		}
 		l := logger.FromContext(c.Request.Context())
 		l.With("actorID", user.ID, "actorEmail", user.Email, "actorName", fmt.Sprintf("%s %s", user.FirstName, user.LastName), "actorRole", user.Role)
 		ctx := logger.WithContext(c.Request.Context(), l)

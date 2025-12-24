@@ -138,7 +138,12 @@ The `testutils.HTTPClient` provides reusable HTTP helpers:
 - `Put(path, payload)`: Make PUT requests with JSON
 - `Patch(path, payload)`: Make PATCH requests with JSON
 - `Delete(path)`: Make DELETE requests
-- `AuthenticatedRequest(method, path, payload, token)`: Make authenticated requests with Authorization: Bearer header
+- `AuthenticatedRequest(method, path, payload, token)`: Make authenticated requests with `Authorization: Bearer <token>` (where `token` is an access JWT from login/refresh)
+
+Auth responses:
+
+- Auth-related endpoints commonly return `{ user, token, refreshToken }`.
+- Use `token` for authenticated requests; use `refreshToken` with `POST /v1/auth/refresh` to rotate.
 
 Helper functions:
 

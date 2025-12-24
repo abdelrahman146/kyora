@@ -10,7 +10,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
-	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
@@ -373,16 +372,16 @@ func (s *Service) MarkPaymentSucceeded(ctx context.Context, sessionID, stripeSub
 }
 
 // CompleteOnboarding performs a single transactional commit into permanent tables.
-func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *account.User, jwt string, err error) {
+func (s *Service) CompleteOnboarding(ctx context.Context, token, clientIP, userAgent string) (user *account.User, jwt string, refreshToken string, err error) {
 	sess, err := s.storage.GetByToken(ctx, token)
 	if err != nil || sess == nil {
-		return nil, "", ErrSessionNotFound(err)
+		return nil, "", "", ErrSessionNotFound(err)
 	}
 	if time.Now().After(sess.ExpiresAt) {
-		return nil, "", ErrSessionExpired(nil)
+		return nil, "", "", ErrSessionExpired(nil)
 	}
 	if sess.Stage != StageReadyToCommit {
-		return nil, "", ErrInvalidStage(nil, string(StageReadyToCommit))
+		return nil, "", "", ErrInvalidStage(nil, string(StageReadyToCommit))
 	}
 	var createdUser *account.User
 	var createdWorkspace *account.Workspace
@@ -427,7 +426,7 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 		return nil
 	}, pactomic.WithRetries(2))
 	if err != nil {
-		return nil, "", err
+		return nil, "", "", err
 	}
 	// Send welcome email (best effort)
 	l := logger.FromContext(ctx)
@@ -439,11 +438,11 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 		}
 	}(createdUser)
 	// Generate JWT
-	jwtToken, jwtErr := auth.NewJwtToken(createdUser.ID, createdUser.WorkspaceID)
+	tokens, jwtErr := s.account.IssueTokensForUserWithContext(ctx, createdUser, clientIP, userAgent)
 	if jwtErr != nil {
-		return createdUser, "", jwtErr
+		return createdUser, "", "", jwtErr
 	}
-	return createdUser, jwtToken, nil
+	return createdUser, tokens.Token, tokens.RefreshToken, nil
 }
 
 // Expose selected helpers for other packages (webhooks)

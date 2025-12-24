@@ -6,6 +6,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/config"
+	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/gin-gonic/gin"
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/spf13/viper"
@@ -18,10 +19,11 @@ var (
 type CustomClaims struct {
 	UserID      string `json:"userId"`
 	WorkspaceID string `json:"workspaceId"`
+	AuthVersion int    `json:"authVersion"`
 	jwt.RegisteredClaims
 }
 
-func NewJwtToken(userID string, workspaceID string) (string, error) {
+func NewJwtToken(userID string, workspaceID string, authVersion int) (string, error) {
 	expiry := viper.GetInt(config.JWTExpirySeconds) // in seconds
 	jwtExpiry := time.Hour * 24
 	if expiry > 0 {
@@ -31,12 +33,15 @@ func NewJwtToken(userID string, workspaceID string) (string, error) {
 	if secret == "" {
 		return "", fmt.Errorf("JWT secret is not configured")
 	}
+	now := time.Now().UTC()
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, CustomClaims{
 		UserID:      userID,
 		WorkspaceID: workspaceID,
+		AuthVersion: authVersion,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(jwtExpiry)),
-			IssuedAt:  jwt.NewNumericDate(time.Now()),
+			ID:        id.KsuidWithPrefix("jwt"),
+			ExpiresAt: jwt.NewNumericDate(now.Add(jwtExpiry)),
+			IssuedAt:  jwt.NewNumericDate(now),
 			Issuer:    viper.GetString(config.JWTIssuer),
 			Audience:  jwt.ClaimStrings{viper.GetString(config.JWTAudience)},
 			Subject:   userID,

@@ -139,10 +139,12 @@ func (h *HttpHandler) Complete(c *gin.Context) {
 	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
-	user, token, err := h.svc.CompleteOnboarding(c.Request.Context(), req.SessionToken)
+	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	user, token, refreshToken, err := h.svc.CompleteOnboarding(c.Request.Context(), req.SessionToken, clientIP, userAgent)
 	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"user": user, "token": token})
+	response.SuccessJSON(c, http.StatusOK, gin.H{"user": user, "token": token, "refreshToken": refreshToken})
 }

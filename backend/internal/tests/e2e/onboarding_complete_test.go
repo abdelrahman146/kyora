@@ -21,11 +21,11 @@ func (s *OnboardingCompleteSuite) SetupSuite() {
 }
 
 func (s *OnboardingCompleteSuite) SetupTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions", "plans", "businesses", "subscriptions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "subscriptions")
 }
 
 func (s *OnboardingCompleteSuite) TearDownTest() {
-	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "onboarding_sessions", "plans", "businesses", "subscriptions")
+	testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions", "onboarding_sessions", "plans", "businesses", "subscriptions")
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_Success() {
@@ -45,10 +45,12 @@ func (s *OnboardingCompleteSuite) TestComplete_Success() {
 
 	s.NotNil(result["user"], "should return user")
 	s.NotEmpty(result["token"], "should return JWT token")
+	s.NotEmpty(result["refreshToken"], "should return refresh token")
 	// Verify response structure
-	s.Len(result, 2, "response should have exactly 2 fields")
+	s.Len(result, 3, "response should have exactly 3 fields")
 	s.Contains(result, "user")
 	s.Contains(result, "token")
+	s.Contains(result, "refreshToken")
 
 	user := result["user"].(map[string]interface{})
 	s.Equal("complete@example.com", user["email"])
@@ -170,14 +172,17 @@ func (s *OnboardingCompleteSuite) TestComplete_ValidJWTToken() {
 
 	jwtToken := result["token"].(string)
 	s.NotEmpty(jwtToken, "should return JWT token")
+	refreshToken := result["refreshToken"].(string)
+	s.NotEmpty(refreshToken, "should return refresh token")
 
 	// Token should be usable for authenticated requests
 	s.Greater(len(jwtToken), 20, "JWT token should be reasonable length")
 
 	// Verify response structure
-	s.Len(result, 2, "response should have exactly 2 fields")
+	s.Len(result, 3, "response should have exactly 3 fields")
 	s.Contains(result, "user")
 	s.Contains(result, "token")
+	s.Contains(result, "refreshToken")
 }
 
 func (s *OnboardingCompleteSuite) TestComplete_IdempotencySafety() {

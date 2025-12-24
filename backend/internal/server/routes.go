@@ -31,6 +31,10 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 	authGroup := r.Group("/v1/auth")
 	{
 		authGroup.POST("/login", h.Login)
+		authGroup.POST("/refresh", h.Refresh)
+		authGroup.POST("/logout", h.Logout)
+		authGroup.POST("/logout-all", h.LogoutAll)
+		authGroup.POST("/logout-others", h.LogoutOtherDevices)
 		authGroup.POST("/google/login", h.LoginWithGoogle)
 		authGroup.GET("/google/url", h.GetGoogleAuthURL)
 		authGroup.POST("/forgot-password", h.ForgotPassword)

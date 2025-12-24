@@ -23,12 +23,12 @@ func (s *PasswordResetSuite) SetupSuite() {
 
 func (s *PasswordResetSuite) SetupTest() {
 	s.NoError(testEnv.Cache.FlushAll())
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 
 func (s *PasswordResetSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 
@@ -135,6 +135,56 @@ func (s *PasswordResetSuite) TestResetPassword_Success() {
 	defer oldLoginResp.Body.Close()
 
 	s.Equal(http.StatusUnauthorized, oldLoginResp.StatusCode)
+}
+
+func (s *PasswordResetSuite) TestResetPassword_RevokesSessionsAndInvalidatesAccessTokens() {
+	ctx := context.Background()
+	email := "session@example.com"
+	oldPassword := "OldPassword123!"
+	newPassword := "NewPassword456!"
+
+	user, _, _, err := s.helper.CreateTestUser(ctx, email, oldPassword, "John", "Doe", role.RoleAdmin)
+	s.NoError(err)
+
+	// Login to obtain access + refresh token
+	loginPayload := map[string]interface{}{"email": email, "password": oldPassword}
+	loginResp, err := s.helper.Client.Post("/v1/auth/login", loginPayload)
+	s.NoError(err)
+	defer loginResp.Body.Close()
+	s.Equal(http.StatusOK, loginResp.StatusCode)
+	var loginResult map[string]interface{}
+	s.NoError(testutils.DecodeJSON(loginResp, &loginResult))
+	accessToken := loginResult["token"].(string)
+	refreshToken := loginResult["refreshToken"].(string)
+	s.NotEmpty(accessToken)
+	s.NotEmpty(refreshToken)
+
+	// Access token works before reset
+	meResp, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/users/me", nil, accessToken)
+	s.NoError(err)
+	defer meResp.Body.Close()
+	s.Equal(http.StatusOK, meResp.StatusCode)
+
+	// Reset password
+	resetToken, err := s.helper.CreatePasswordResetToken(ctx, user)
+	s.NoError(err)
+	resetPayload := map[string]interface{}{"token": resetToken, "newPassword": newPassword}
+	resetResp, err := s.helper.Client.Post("/v1/auth/reset-password", resetPayload)
+	s.NoError(err)
+	defer resetResp.Body.Close()
+	s.Equal(http.StatusNoContent, resetResp.StatusCode)
+
+	// Old access token should no longer be accepted (authVersion mismatch)
+	meResp2, err := s.helper.Client.AuthenticatedRequest("GET", "/v1/users/me", nil, accessToken)
+	s.NoError(err)
+	defer meResp2.Body.Close()
+	s.Equal(http.StatusUnauthorized, meResp2.StatusCode)
+
+	// Old refresh token should be revoked
+	refreshResp, err := s.helper.Client.Post("/v1/auth/refresh", map[string]interface{}{"refreshToken": refreshToken})
+	s.NoError(err)
+	defer refreshResp.Body.Close()
+	s.Equal(http.StatusUnauthorized, refreshResp.StatusCode)
 }
 
 func (s *PasswordResetSuite) TestResetPassword_InvalidToken() {

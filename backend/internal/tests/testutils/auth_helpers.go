@@ -52,7 +52,7 @@ func CreateAuthenticatedUser(ctx context.Context, db *database.Database, email, 
 	}
 
 	// Generate JWT token
-	token, err := auth.NewJwtToken(user.ID, user.WorkspaceID)
+	token, err := auth.NewJwtToken(user.ID, user.WorkspaceID, user.AuthVersion)
 	if err != nil {
 		return nil, nil, "", err
 	}

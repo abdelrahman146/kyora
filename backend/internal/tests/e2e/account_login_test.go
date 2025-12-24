@@ -22,12 +22,12 @@ func (s *LoginSuite) SetupSuite() {
 
 func (s *LoginSuite) SetupTest() {
 	s.NoError(testEnv.Cache.FlushAll())
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
 	s.NoError(err)
 }
 
 func (s *LoginSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "sessions")
 	s.NoError(err)
 }
 
@@ -55,9 +55,10 @@ func (s *LoginSuite) TestLogin_Success() {
 	s.NoError(testutils.DecodeJSON(resp, &result))
 
 	// Verify exact response structure
-	s.Len(result, 2, "response should have exactly 2 fields")
+	s.Len(result, 3, "response should have exactly 3 fields")
 	s.Contains(result, "user")
 	s.Contains(result, "token")
+	s.Contains(result, "refreshToken")
 
 	// Verify user object
 	user := result["user"].(map[string]interface{})
@@ -68,8 +69,9 @@ func (s *LoginSuite) TestLogin_Success() {
 	s.NotEmpty(user["workspaceId"])
 	s.NotEmpty(user["role"])
 
-	// Verify JWT token is set in cookies
+	// Verify tokens are present
 	s.NotEmpty(result["token"])
+	s.NotEmpty(result["refreshToken"])
 }
 
 func (s *LoginSuite) TestLogin_InvalidEmail() {

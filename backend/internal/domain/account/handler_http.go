@@ -4,7 +4,6 @@ import (
 	"errors"
 	"net/http"
 
-	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
@@ -33,7 +32,7 @@ type loginRequest struct {
 // Login authenticates a user with email and password
 //
 // @Summary      Login with email and password
-// @Description  Authenticates a user and returns a JWT token
+// @Description  Authenticates a user and returns an access token + refresh token
 // @Tags         auth
 // @Accept       json
 // @Produce      json
@@ -119,19 +118,121 @@ func (h *HttpHandler) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	// Generate JWT token
-	jwtToken, err := auth.NewJwtToken(user.ID, user.WorkspaceID)
+	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	tokens, err := h.service.IssueTokensForUserWithContext(c.Request.Context(), user, clientIP, userAgent)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, err)
 		return
 	}
 
-	loginResp := &LoginResponse{
-		User:  user,
-		Token: jwtToken,
-	}
+	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
 
 	response.SuccessJSON(c, http.StatusOK, loginResp)
+}
+
+type refreshRequest struct {
+	RefreshToken string `json:"refreshToken" binding:"required"`
+}
+
+// Refresh exchanges a refresh token for a new access token and rotated refresh token.
+//
+// @Summary      Refresh access token
+// @Description  Rotates the refresh token and returns a new access token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body refreshRequest true "Refresh token"
+// @Success      200 {object} RefreshResponse
+// @Failure      401 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/auth/refresh [post]
+func (h *HttpHandler) Refresh(c *gin.Context) {
+	var req refreshRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+
+	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	resp, err := h.service.RefreshTokens(c.Request.Context(), req.RefreshToken, clientIP, userAgent)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, resp)
+}
+
+// Logout revokes a single refresh token.
+//
+// @Summary      Logout
+// @Description  Revokes the provided refresh token
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body refreshRequest true "Refresh token"
+// @Success      204
+// @Failure      401 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/auth/logout [post]
+func (h *HttpHandler) Logout(c *gin.Context) {
+	var req refreshRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	if err := h.service.Logout(c.Request.Context(), req.RefreshToken); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
+}
+
+// LogoutAll revokes all refresh tokens for the user (and invalidates all access tokens).
+//
+// @Summary      Logout all devices
+// @Description  Revokes all refresh tokens for the user and bumps authVersion
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body refreshRequest true "Refresh token"
+// @Success      204
+// @Failure      401 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/auth/logout-all [post]
+func (h *HttpHandler) LogoutAll(c *gin.Context) {
+	var req refreshRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	if err := h.service.LogoutAll(c.Request.Context(), req.RefreshToken); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
+}
+
+// LogoutOtherDevices revokes all other refresh tokens for the same user.
+//
+// @Summary      Logout other devices
+// @Description  Revokes all refresh tokens except the provided one
+// @Tags         auth
+// @Accept       json
+// @Produce      json
+// @Param        request body refreshRequest true "Refresh token"
+// @Success      204
+// @Failure      401 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/auth/logout-others [post]
+func (h *HttpHandler) LogoutOtherDevices(c *gin.Context) {
+	var req refreshRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	if err := h.service.LogoutOtherDevices(c.Request.Context(), req.RefreshToken); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
 // Password reset endpoints
@@ -601,17 +702,15 @@ func (h *HttpHandler) AcceptInvitation(c *gin.Context) {
 	// Load workspace relationship
 	user.Workspace = workspace
 
-	// Generate JWT token for auto-login
-	jwtToken, err := auth.NewJwtToken(user.ID, user.WorkspaceID)
+	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	tokens, err := h.service.IssueTokensForUserWithContext(c.Request.Context(), user, clientIP, userAgent)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, err)
 		return
 	}
 
-	loginResp := &LoginResponse{
-		User:  user,
-		Token: jwtToken,
-	}
+	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
 
 	response.SuccessJSON(c, http.StatusOK, loginResp)
 }
@@ -661,17 +760,15 @@ func (h *HttpHandler) AcceptInvitationWithGoogle(c *gin.Context) {
 	// Load workspace relationship
 	user.Workspace = workspace
 
-	// Generate JWT token for auto-login
-	jwtToken, err := auth.NewJwtToken(user.ID, user.WorkspaceID)
+	clientIP := c.ClientIP()
+	userAgent := c.GetHeader("User-Agent")
+	tokens, err := h.service.IssueTokensForUserWithContext(c.Request.Context(), user, clientIP, userAgent)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, err)
 		return
 	}
 
-	loginResp := &LoginResponse{
-		User:  user,
-		Token: jwtToken,
-	}
+	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
 
 	response.SuccessJSON(c, http.StatusOK, loginResp)
 }

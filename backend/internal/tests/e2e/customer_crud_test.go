@@ -172,7 +172,7 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_UnauthorizedUser() {
 	})
 	s.NoError(err)
 
-	userToken, err := auth.NewJwtToken(users[1].ID, ws.ID)
+	userToken, err := auth.NewJwtToken(users[1].ID, ws.ID, users[1].AuthVersion)
 	s.NoError(err)
 	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
 	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")

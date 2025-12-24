@@ -42,6 +42,8 @@ const (
 	JWTExpirySeconds = "auth.jwt.expiry_seconds"
 	JWTIssuer        = "auth.jwt.issuer"
 	JWTAudience      = "auth.jwt.audience"
+	// refresh token configuration
+	RefreshTokenExpirySeconds = "auth.refresh_token_ttl_seconds"
 	// Password reset configuration
 	PasswordResetTokenExpirySeconds = "auth.password_reset_ttl_seconds"
 	// Email verification configuration
@@ -87,6 +89,9 @@ func Configure() {
 	viper.SetDefault(HTTPMaxBodyBytes, int64(1024*1024)) // 1 MiB default max request body
 	viper.SetDefault(BillingAutoSyncPlans, true)
 	viper.SetDefault(DatabaseAutoMigrate, true)
+	// Auth defaults
+	// Refresh tokens are long-lived and rotated; keep configurable.
+	viper.SetDefault(RefreshTokenExpirySeconds, int64(30*24*60*60)) // 30 days
 
 	// Add current directory first
 	viper.AddConfigPath(".")

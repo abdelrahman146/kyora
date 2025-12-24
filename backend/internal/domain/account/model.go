@@ -2,6 +2,7 @@ package account
 
 import (
 	"database/sql"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
@@ -80,6 +81,67 @@ type User struct {
 	Email           string     `gorm:"column:email;type:text;uniqueIndex" json:"email"`
 	Password        string     `gorm:"column:password;type:text" json:"-"`
 	IsEmailVerified bool       `gorm:"column:is_email_verified;type:boolean;default:false" json:"isEmailVerified"`
+	AuthVersion     int        `gorm:"column:auth_version;type:int;default:1" json:"-"`
+}
+
+/* Session Model */
+//---------------*/
+
+const (
+	SessionTable  = "sessions"
+	SessionStruct = "Session"
+	SessionPrefix = "ses"
+)
+
+// Session represents a long-lived server-side authentication session.
+//
+// A session is created when a user logs in (or completes an auth flow) and is tied to an
+// opaque refresh token returned once to the client. Only the refresh token hash is stored.
+//
+// Security model:
+// - Access tokens (JWT) are short-lived and stateless.
+// - Sessions are stateful and can be revoked server-side.
+// - On sensitive changes (e.g. password reset), we revoke all sessions and bump User.AuthVersion.
+type Session struct {
+	gorm.Model
+	ID          string    `gorm:"column:id;primaryKey;type:text"`
+	UserID      string    `gorm:"column:user_id;type:text;index"`
+	WorkspaceID string    `gorm:"column:workspace_id;type:text;index"`
+	TokenHash   string    `gorm:"column:token_hash;type:text;uniqueIndex"`
+	ExpiresAt   time.Time `gorm:"column:expires_at;type:timestamp with time zone;index"`
+	CreatedIP   string    `gorm:"column:created_ip;type:text"`
+	UserAgent   string    `gorm:"column:user_agent;type:text"`
+}
+
+func (m *Session) TableName() string {
+	return SessionTable
+}
+
+func (m *Session) BeforeCreate(tx *gorm.DB) (err error) {
+	if m.ID == "" {
+		m.ID = id.KsuidWithPrefix(SessionPrefix)
+	}
+	return nil
+}
+
+var SessionSchema = struct {
+	ID          schema.Field
+	UserID      schema.Field
+	WorkspaceID schema.Field
+	TokenHash   schema.Field
+	ExpiresAt   schema.Field
+	CreatedAt   schema.Field
+	UpdatedAt   schema.Field
+	DeletedAt   schema.Field
+}{
+	ID:          schema.NewField("id", "id"),
+	UserID:      schema.NewField("user_id", "userId"),
+	WorkspaceID: schema.NewField("workspace_id", "workspaceId"),
+	TokenHash:   schema.NewField("token_hash", "tokenHash"),
+	ExpiresAt:   schema.NewField("expires_at", "expiresAt"),
+	CreatedAt:   schema.NewField("created_at", "createdAt"),
+	UpdatedAt:   schema.NewField("updated_at", "updatedAt"),
+	DeletedAt:   schema.NewField("deleted_at", "deletedAt"),
 }
 
 func (m *User) TableName() string {
@@ -89,6 +151,9 @@ func (m *User) TableName() string {
 func (m *User) BeforeCreate(tx *gorm.DB) (err error) {
 	if m.ID == "" {
 		m.ID = id.KsuidWithPrefix(UserPrefix)
+	}
+	if m.AuthVersion <= 0 {
+		m.AuthVersion = 1
 	}
 	return nil
 }

@@ -65,7 +65,7 @@ func (h *AccountingTestHelper) CreateWorkspaceWithAdminAndMemberAndBusiness(ctx 
 		return nil, err
 	}
 
-	memberToken, err := auth.NewJwtToken(member.ID, member.WorkspaceID)
+	memberToken, err := auth.NewJwtToken(member.ID, member.WorkspaceID, member.AuthVersion)
 	if err != nil {
 		return nil, err
 	}

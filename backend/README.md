@@ -39,7 +39,7 @@ backend/
 - **ORM**: GORM
 - **Database**: PostgreSQL
 - **Cache**: Memcached
-- **Auth**: JWT, Google OAuth
+- **Auth**: Access JWT (Authorization: Bearer), refresh-token sessions (rotation/revocation), Google OAuth
 - **Payments**: Stripe SDK
 - **Email**: Resend
 - **Logging**: slog
@@ -65,6 +65,7 @@ backend/
    - Database DSN
    - Cache hosts
    - JWT secret
+    - Refresh token TTL (optional)
    - Stripe API keys
    - Email provider settings
 
@@ -86,7 +87,7 @@ Key configuration sections:
 - `http.*` - HTTP server settings
 - `database.*` - PostgreSQL connection
 - `cache.*` - Memcached settings
-- `auth.*` - JWT and OAuth settings
+- `auth.*` - JWT (access), refresh token TTL, and OAuth settings
 - `billing.*` - Stripe configuration
 - `email.*` - Email provider settings
 
@@ -195,12 +196,18 @@ API documentation is generated using Swagger/OpenAPI.
 
 HTTP endpoints follow REST conventions with middleware chain:
 1. Logger - Adds trace ID
-2. Authentication - Validates JWT
+2. Authentication - Validates access JWT from `Authorization: Bearer <token>`
 3. Actor validation - Loads user
 4. Workspace membership - Validates workspace access
 5. Permission check - Validates role permissions
 6. Subscription check - Ensures active subscription (optional)
 7. Plan limits - Enforces usage limits (optional)
+
+Auth token flow:
+- Login/onboarding/invitation acceptance return `{ user, token, refreshToken }`
+- Use `token` as the access JWT for authenticated requests
+- Use `refreshToken` with `POST /v1/auth/refresh` to rotate and get new tokens
+- Logout endpoints revoke refresh sessions: `POST /v1/auth/logout`, `/v1/auth/logout-others`, `/v1/auth/logout-all`
 
 ## Commands
 

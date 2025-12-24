@@ -274,12 +274,12 @@ func (s *InvitationAcceptanceSuite) SetupSuite() {
 
 func (s *InvitationAcceptanceSuite) SetupTest() {
 	s.NoError(testEnv.Cache.FlushAll())
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 
 func (s *InvitationAcceptanceSuite) TearDownTest() {
-	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations")
+	err := testutils.TruncateTables(testEnv.Database, "users", "workspaces", "user_invitations", "sessions")
 	s.NoError(err)
 }
 
@@ -308,10 +308,12 @@ func (s *InvitationAcceptanceSuite) TestAcceptInvitation_Success() {
 	s.NoError(testutils.DecodeJSON(resp, &result))
 
 	// Assert response structure
-	s.Len(result, 2)
+	s.Len(result, 3)
 	s.Contains(result, "user")
 	s.Contains(result, "token")
+	s.Contains(result, "refreshToken")
 	s.NotEmpty(result["token"])
+	s.NotEmpty(result["refreshToken"])
 
 	userData := result["user"].(map[string]interface{})
 	s.Equal("newuser@example.com", userData["email"])

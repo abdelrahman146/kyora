@@ -8,6 +8,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
@@ -17,6 +18,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 )
 
@@ -102,8 +104,64 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (*User, erro
 }
 
 type LoginResponse struct {
-	User  *User  `json:"user"`
-	Token string `json:"token"`
+	User         *User  `json:"user"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+type RefreshResponse struct {
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken"`
+}
+
+func (s *Service) issueTokensForUser(ctx context.Context, user *User, clientIP, userAgent string) (*RefreshResponse, error) {
+	// Ensure we always have a non-zero auth version moving forward.
+	if user.AuthVersion <= 0 {
+		user.AuthVersion = 1
+		if err := s.storage.user.UpdateOne(ctx, user); err != nil {
+			return nil, problem.InternalError().WithError(err)
+		}
+	}
+
+	accessToken, err := auth.NewJwtToken(user.ID, user.WorkspaceID, user.AuthVersion)
+	if err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	rawRefresh, err := auth.NewRefreshToken()
+	if err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+	hash := auth.HashRefreshToken(rawRefresh)
+
+	ttl := viper.GetInt(config.RefreshTokenExpirySeconds)
+	if ttl <= 0 {
+		ttl = 30 * 24 * 60 * 60
+	}
+	expAt := time.Now().UTC().Add(time.Duration(ttl) * time.Second)
+
+	sess := &Session{
+		UserID:      user.ID,
+		WorkspaceID: user.WorkspaceID,
+		TokenHash:   hash,
+		ExpiresAt:   expAt,
+		CreatedIP:   strings.TrimSpace(clientIP),
+		UserAgent:   strings.TrimSpace(userAgent),
+	}
+	if sess.CreatedIP == "" {
+		sess.CreatedIP = "unknown"
+	}
+	if err := s.storage.CreateSession(ctx, sess); err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	return &RefreshResponse{Token: accessToken, RefreshToken: rawRefresh}, nil
+}
+
+// IssueTokensForUserWithContext issues a new access JWT and a new refresh token.
+// The refresh token is stored hashed in the database and returned raw only once.
+func (s *Service) IssueTokensForUserWithContext(ctx context.Context, user *User, clientIP, userAgent string) (*RefreshResponse, error) {
+	return s.issueTokensForUser(ctx, user, clientIP, userAgent)
 }
 
 func (s *Service) LoginWithEmailAndPassword(ctx context.Context, email, password string) (*LoginResponse, error) {
@@ -127,9 +185,9 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 		return nil, ErrInvalidCredentials(err)
 	}
 	if hash.ValidatePassword(password, user.Password) {
-		token, err := auth.NewJwtToken(user.ID, user.WorkspaceID)
+		tokens, err := s.issueTokensForUser(ctx, user, clientIP, userAgent)
 		if err != nil {
-			return nil, problem.InternalError().WithError(err)
+			return nil, err
 		}
 
 		// Send login notification email asynchronously (best-effort)
@@ -143,11 +201,102 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 		}(user, clientIP, userAgent)
 
 		return &LoginResponse{
-			User:  user,
-			Token: token,
+			User:         user,
+			Token:        tokens.Token,
+			RefreshToken: tokens.RefreshToken,
 		}, nil
 	}
 	return nil, ErrInvalidCredentials(nil)
+}
+
+func (s *Service) RefreshTokens(ctx context.Context, refreshToken, clientIP, userAgent string) (*RefreshResponse, error) {
+	refreshToken = strings.TrimSpace(refreshToken)
+	if refreshToken == "" {
+		return nil, ErrInvalidOrExpiredToken(nil)
+	}
+
+	hash := auth.HashRefreshToken(refreshToken)
+	sess, err := s.storage.GetSessionByTokenHash(ctx, hash, time.Now().UTC())
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return nil, ErrInvalidOrExpiredToken(err)
+		}
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	user, err := s.GetUserByID(ctx, sess.UserID)
+	if err != nil {
+		return nil, ErrInvalidOrExpiredToken(err)
+	}
+
+	// Rotate token: revoke old first to minimize replay window.
+	if err := s.storage.RevokeSessionByTokenHash(ctx, hash); err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	return s.issueTokensForUser(ctx, user, clientIP, userAgent)
+}
+
+func (s *Service) Logout(ctx context.Context, refreshToken string) error {
+	refreshToken = strings.TrimSpace(refreshToken)
+	if refreshToken == "" {
+		return ErrInvalidOrExpiredToken(nil)
+	}
+	hash := auth.HashRefreshToken(refreshToken)
+	if err := s.storage.RevokeSessionByTokenHash(ctx, hash); err != nil {
+		return problem.InternalError().WithError(err)
+	}
+	return nil
+}
+
+func (s *Service) LogoutAll(ctx context.Context, refreshToken string) error {
+	refreshToken = strings.TrimSpace(refreshToken)
+	if refreshToken == "" {
+		return ErrInvalidOrExpiredToken(nil)
+	}
+	hash := auth.HashRefreshToken(refreshToken)
+	sess, err := s.storage.GetSessionByTokenHash(ctx, hash, time.Now().UTC())
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return ErrInvalidOrExpiredToken(err)
+		}
+		return problem.InternalError().WithError(err)
+	}
+
+	user, err := s.GetUserByID(ctx, sess.UserID)
+	if err != nil {
+		return ErrInvalidOrExpiredToken(err)
+	}
+
+	// Immediately invalidate all access tokens.
+	user.AuthVersion++
+	if err := s.storage.user.UpdateOne(ctx, user); err != nil {
+		return problem.InternalError().WithError(err)
+	}
+
+	if err := s.storage.RevokeAllSessionsForUser(ctx, user.ID); err != nil {
+		return problem.InternalError().WithError(err)
+	}
+	return nil
+}
+
+func (s *Service) LogoutOtherDevices(ctx context.Context, refreshToken string) error {
+	refreshToken = strings.TrimSpace(refreshToken)
+	if refreshToken == "" {
+		return ErrInvalidOrExpiredToken(nil)
+	}
+	hash := auth.HashRefreshToken(refreshToken)
+	sess, err := s.storage.GetSessionByTokenHash(ctx, hash, time.Now().UTC())
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return ErrInvalidOrExpiredToken(err)
+		}
+		return problem.InternalError().WithError(err)
+	}
+	if err := s.storage.RevokeOtherSessionsForUser(ctx, sess.UserID, hash); err != nil {
+		return problem.InternalError().WithError(err)
+	}
+	return nil
 }
 
 func (s *Service) CreateVerifyEmailToken(ctx context.Context, email string) (string, error) {
@@ -241,12 +390,18 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 		return problem.InternalError().WithError(err)
 	}
 	user.Password = hashedPassword
+	user.AuthVersion++
 	err = s.storage.user.UpdateOne(ctx, user)
 	if err != nil {
 		return problem.InternalError().WithError(err)
 	}
 	err = s.storage.ConsumePasswordResetToken(token)
 	if err != nil {
+		return problem.InternalError().WithError(err)
+	}
+
+	// Revoke all sessions so password resets kick everyone out.
+	if err := s.storage.RevokeAllSessionsForUser(ctx, user.ID); err != nil {
 		return problem.InternalError().WithError(err)
 	}
 

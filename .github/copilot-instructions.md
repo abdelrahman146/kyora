@@ -115,7 +115,7 @@ Core patterns you must follow
 **Database access:**
 
 - Use `database.Database.Conn(ctx)` for transaction-aware connections. Context may contain transaction from `TxKey`.
-- Use generic `database.Repository[T]` pattern. Each domain creates typed repos in `storage.go` via `database.NewRepository[Model](db)`.
+- Use generic `database.Repository[T]` pattern. Each domain creates typed repos in `storage.go` via `database.NewRepository[Model] (db)`.
 - Repositories auto-migrate models on construction.
 - **Scopes** (chainable filters): `ScopeBusinessID`, `ScopeWorkspaceID`, `ScopeID`, `ScopeIDs`, `ScopeEquals`, `ScopeIn`, `ScopeNotIn`, `ScopeGreaterThan`, `ScopeLessThan`, `ScopeBetween`, `ScopeTime`, `ScopeCreatedAt`, `ScopeSearchTerm`, `ScopeIsNull`.
 - **Query modifiers**: `WithPreload`, `WithJoins`, `WithPagination`, `WithOrderBy`, `WithLimit`, `WithReturning`, `WithLockingStrength` (UPDATE, SHARE, SKIP LOCKED, NOWAIT).
@@ -141,6 +141,17 @@ Core patterns you must follow
   6. Optional: `billing.EnforcePlanWorkspaceLimits(planLimit, counterFunc)` - checks plan limits before operations
 - Extract from context: `account.ActorFromContext(c)`, `account.WorkspaceFromContext(c)`, `auth.ClaimsFromContext(c)`
 - JWT helpers in `backend/internal/platform/auth/jwt.go`. `JwtFromContext` extracts token from Authorization header only.
+
+**Access + refresh tokens:**
+
+- Access authentication uses a short-lived JWT sent via `Authorization: Bearer <token>` (no cookies).
+- Long-lived authentication uses an opaque `refreshToken` persisted server-side as a **session** (hashed token, expiry, client metadata).
+- Refresh is rotation-based: `POST /v1/auth/refresh` consumes a `refreshToken` and returns a new `{ token, refreshToken }`.
+- Device/session logout endpoints:
+  - `POST /v1/auth/logout` revokes the given refresh session
+  - `POST /v1/auth/logout-others` keeps the current session and revokes the rest
+  - `POST /v1/auth/logout-all` revokes all sessions and bumps `User.AuthVersion`
+- Access JWT claims include `authVersion`; middleware rejects tokens when `claims.authVersion != user.AuthVersion` (global invalidation).
 
 **Responses & errors:**
 
@@ -169,7 +180,7 @@ Domain conventions (copy when adding modules)
 **storage.go:**
 
 - Create typed repositories: `order *database.Repository[Order]`, `orderItem *database.Repository[OrderItem]`
-- Initialize in constructor: `database.NewRepository[Order](db)` (auto-migrates on construction)
+- Initialize in constructor: `database.NewRepository[Order] (db)` (auto-migrates on construction)
 - Store cache reference if needed: `cache *cache.Cache`
 - Return struct with all repositories
 
@@ -281,6 +292,9 @@ Events & integrations
 - **Multi-tenancy**: ALWAYS scope queries by `WorkspaceID` (or legacy `BusinessID`). Never return data across workspaces.
 - **Config constants**: Use constants from `backend/internal/platform/config/config.go`, never hardcode config keys.
 - **JWT source**: `JwtFromContext` extracts JWT token from the Authorization header (format: `Bearer <token>`).
+- **No auth cookies**: Do not add cookie-based JWT transport; all access auth is Bearer header.
+- **Refresh tokens are opaque**: Treat `refreshToken` like a password (log/redact carefully); store only hashes in DB.
+- **Session invalidation**: Use logout endpoints and/or bump `User.AuthVersion` on sensitive changes (e.g., password reset).
 - **Ordering/search**: Use JSON field names (from Schema) in requests, not DB column names. Schema handles mapping.
 - **ID generation**: Prefer KSUID with prefix for external IDs (`id.KsuidWithPrefix("ord")`), Base62 for short codes (`id.Base62(6)`).
 - **Transactions**: Use atomic processor for multi-step writes. Don't manually begin/commit transactions.
