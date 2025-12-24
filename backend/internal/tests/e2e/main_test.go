@@ -11,6 +11,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/server"
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/spf13/viper"
+	"github.com/stripe/stripe-go/v83"
 )
 
 var (
@@ -54,6 +55,13 @@ func TestMain(m *testing.M) {
 		log.Fatalf("environment init failed: %v", err)
 	}
 	testEnv = env
+
+	// Ensure any direct stripe-go calls from tests (helpers) are routed to stripe-mock.
+	// Server initialization also configures this, but doing it here avoids accidental
+	// dependency on server boot order.
+	stripe.Key = viper.GetString(config.StripeAPIKey)
+	backend := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{URL: &env.StripeMockBase})
+	stripe.SetBackend(stripe.APIBackend, backend)
 
 	// Create server with container-provided dependencies (DB, cache, stripe-mock)
 	testServer, err = server.New(

@@ -81,10 +81,13 @@ func (s *Service) CreateCheckoutSession(ctx context.Context, ws *account.Workspa
 			logger.FromContext(ctx).Error("failed to ensure plan synced before checkout", "error", err, "planId", plan.ID)
 			return "", fmt.Errorf("failed to ensure plan in stripe: %w", err)
 		}
+		if plan.StripePlanID == nil || *plan.StripePlanID == "" {
+			return "", fmt.Errorf("plan %s missing stripe price id after sync", plan.ID)
+		}
 		// For paid plans, create subscription
 		lineItems = []*stripelib.CheckoutSessionLineItemParams{
 			{
-				Price:    stripelib.String(plan.StripePlanID),
+				Price:    stripelib.String(*plan.StripePlanID),
 				Quantity: stripelib.Int64(1),
 			},
 		}

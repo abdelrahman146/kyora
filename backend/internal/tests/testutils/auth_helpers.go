@@ -210,7 +210,7 @@ func CreateTestPlan(ctx context.Context, db *database.Database, descriptor strin
 		Descriptor:   descriptor,
 		Name:         "Test " + descriptor + " Plan",
 		Description:  "Test plan for E2E testing with descriptor " + descriptor,
-		StripePlanID: stripePlanID,
+		StripePlanID: &stripePlanID,
 		Price:        decimal.NewFromInt(0),
 		Currency:     "aed",
 		BillingCycle: billing.BillingCycleMonthly,

@@ -34,12 +34,12 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 	if p == nil {
 		return fmt.Errorf("plan is nil")
 	}
-	if p.StripePlanID == "" {
+	if p.StripePlanID == nil || *p.StripePlanID == "" {
 		// Full sync path
 		if err := s.syncSinglePlanToStripe(ctx, p); err != nil {
 			return err
 		}
-		if p.StripePlanID == "" { // still empty — treat as error
+		if p.StripePlanID == nil || *p.StripePlanID == "" { // still empty — treat as error
 			return fmt.Errorf("plan %s not synced to Stripe (missing price id)", p.ID)
 		}
 		return nil
@@ -58,7 +58,8 @@ func (s *Service) ensurePlanSynced(ctx context.Context, p *Plan) error {
 		if err != nil {
 			return err
 		}
-		p.StripePlanID = newPrice.ID
+		priceID := newPrice.ID
+		p.StripePlanID = &priceID
 		if err := s.storage.plan.UpdateOne(ctx, p); err != nil {
 			return fmt.Errorf("failed updating plan price id: %w", err)
 		}
@@ -81,7 +82,8 @@ func (s *Service) syncSinglePlanToStripe(ctx context.Context, p *Plan) error {
 		if err != nil {
 			return fmt.Errorf("failed to create new price: %w", err)
 		}
-		p.StripePlanID = newPrice.ID
+		priceID := newPrice.ID
+		p.StripePlanID = &priceID
 		if err := s.storage.plan.UpdateOne(ctx, p); err != nil {
 			logger.FromContext(ctx).Error("Failed to update plan with new Stripe price ID", "error", err, "plan_id", p.ID, "price_id", newPrice.ID)
 			return fmt.Errorf("failed to update plan: %w", err)
@@ -93,8 +95,8 @@ func (s *Service) syncSinglePlanToStripe(ctx context.Context, p *Plan) error {
 
 // findOrCreateProduct finds existing product by metadata or creates new one
 func (s *Service) findOrCreateProduct(ctx context.Context, p *Plan) (*stripelib.Product, error) {
-	if p.StripePlanID != "" {
-		if pr, err := price.Get(p.StripePlanID, nil); err == nil && pr != nil && pr.Product != nil {
+	if p.StripePlanID != nil && *p.StripePlanID != "" {
+		if pr, err := price.Get(*p.StripePlanID, nil); err == nil && pr != nil && pr.Product != nil {
 			if prod, err := product.Get(pr.Product.ID, nil); err == nil {
 				if prod.Metadata != nil {
 					if kyoraID, exists := prod.Metadata["kyora_plan_id"]; exists && kyoraID == p.ID {
@@ -176,12 +178,12 @@ func (s *Service) updateProductMetadata(ctx context.Context, prod *stripelib.Pro
 }
 
 func (s *Service) validateExistingPrice(ctx context.Context, p *Plan, productID string) (bool, error) {
-	if p.StripePlanID == "" {
+	if p.StripePlanID == nil || *p.StripePlanID == "" {
 		return true, nil
 	}
-	existingPrice, err := price.Get(p.StripePlanID, nil)
+	existingPrice, err := price.Get(*p.StripePlanID, nil)
 	if err != nil {
-		logger.FromContext(ctx).Warn("Failed to fetch existing price, will create new one", "priceId", p.StripePlanID, "error", err)
+		logger.FromContext(ctx).Warn("Failed to fetch existing price, will create new one", "priceId", *p.StripePlanID, "error", err)
 		return true, nil
 	}
 	interval := "month"

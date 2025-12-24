@@ -134,10 +134,13 @@ func (s *Service) CreateTrialSubscription(ctx context.Context, ws *account.Works
 		logger.FromContext(ctx).Error("failed to ensure plan synced before trial subscription", "error", err, "plan_id", plan.ID)
 		return nil, fmt.Errorf("failed to ensure plan in stripe: %w", err)
 	}
+	if plan.StripePlanID == nil || *plan.StripePlanID == "" {
+		return nil, fmt.Errorf("plan missing stripe price id")
+	}
 	trialEnd := time.Now().AddDate(0, 0, trialDays).Unix()
 	params := &stripelib.SubscriptionParams{
 		Customer:          stripelib.String(customerID),
-		Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(plan.StripePlanID)}},
+		Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(*plan.StripePlanID)}},
 		TrialEnd:          stripelib.Int64(trialEnd),
 		CollectionMethod:  stripelib.String("charge_automatically"),
 		PaymentBehavior:   stripelib.String("default_incomplete"),

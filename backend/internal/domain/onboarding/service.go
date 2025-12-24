@@ -320,7 +320,7 @@ func (s *Service) InitiatePayment(ctx context.Context, token string, successURL,
 	if err != nil || plan == nil {
 		return "", ErrPlanNotFound(err)
 	}
-	if plan.StripePlanID == "" {
+	if plan.StripePlanID == nil || *plan.StripePlanID == "" {
 		return "", ErrStripeOperation(fmt.Errorf("plan not available for checkout"))
 	}
 	// If we already have a pending checkout session, reuse its URL
@@ -340,7 +340,7 @@ func (s *Service) InitiatePayment(ctx context.Context, token string, successURL,
 	params := &stripelib.CheckoutSessionParams{
 		Customer:   stripelib.String(sess.StripeCustomerID),
 		Mode:       stripelib.String(string(stripelib.CheckoutSessionModeSubscription)),
-		LineItems:  []*stripelib.CheckoutSessionLineItemParams{{Price: stripelib.String(plan.StripePlanID), Quantity: stripelib.Int64(1)}},
+		LineItems:  []*stripelib.CheckoutSessionLineItemParams{{Price: stripelib.String(*plan.StripePlanID), Quantity: stripelib.Int64(1)}},
 		SuccessURL: stripelib.String(successURL),
 		CancelURL:  stripelib.String(cancelURL),
 		Metadata:   map[string]string{"onboarding_session_id": sess.ID, "plan_id": plan.ID},

@@ -101,7 +101,7 @@ func (h *BillingTestHelper) CreatePlan(ctx context.Context, descriptor string, p
 		Descriptor:   descriptor,
 		Name:         "Test " + descriptor,
 		Description:  "E2E plan " + descriptor,
-		StripePlanID: stripePlanID,
+		StripePlanID: &stripePlanID,
 		Price:        price,
 		Currency:     "usd",
 		BillingCycle: billing.BillingCycleMonthly,

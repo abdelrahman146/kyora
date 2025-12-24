@@ -19,7 +19,7 @@ type Storage struct {
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
-	return &Storage{
+	s := &Storage{
 		cache:         cache,
 		db:            db,
 		plan:          database.NewRepository[Plan](db),
@@ -27,6 +27,8 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 		invoiceRecord: database.NewRepository[InvoiceRecord](db),
 		event:         database.NewRepository[StripeEvent](db),
 	}
+
+	return s
 }
 
 func (s *Storage) FindInvoiceRecordByWorkspaceAndStripeID(ctx context.Context, workspaceID, stripeInvoiceID string) (*InvoiceRecord, error) {
@@ -42,13 +44,15 @@ func (s *Storage) FindInvoiceRecordByWorkspaceAndStripeID(ctx context.Context, w
 func (s *Storage) SyncPlans(ctx context.Context) error {
 	logger.FromContext(ctx).Info("Syncing plans to database", "planCount", len(plans))
 
-	for _, plan := range plans {
+	for _, template := range plans {
+		plan := template // copy
 		existing, err := s.plan.FindOne(ctx, s.plan.ScopeEquals(PlanSchema.Descriptor, plan.Descriptor))
 		if err != nil && !database.IsRecordNotFound(err) {
 			logger.FromContext(ctx).Error("failed to fetch existing plan", "error", err, "descriptor", plan.Descriptor)
 			continue
 		}
 		if existing == nil {
+			// Keep StripePlanID NULL until Stripe sync populates it.
 			if err := s.plan.CreateOne(ctx, &plan); err != nil {
 				logger.FromContext(ctx).Error("failed to create plan", "error", err, "descriptor", plan.Descriptor)
 				continue
@@ -56,6 +60,10 @@ func (s *Storage) SyncPlans(ctx context.Context) error {
 			logger.FromContext(ctx).Info("Plan created", "descriptor", plan.Descriptor, "id", plan.ID)
 		} else {
 			plan.ID = existing.ID
+			// Never overwrite an existing Stripe price ID during a DB-only sync.
+			if plan.StripePlanID == nil {
+				plan.StripePlanID = existing.StripePlanID
+			}
 			if err := s.plan.UpdateOne(ctx, &plan); err != nil {
 				logger.FromContext(ctx).Error("failed to update plan", "error", err, "descriptor", plan.Descriptor)
 				continue

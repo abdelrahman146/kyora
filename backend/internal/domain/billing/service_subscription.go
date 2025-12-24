@@ -42,6 +42,9 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		logger.FromContext(ctx).Error("Failed to ensure plan synced before subscription", "error", err, "plan_id", plan.ID)
 		return nil, fmt.Errorf("failed to ensure plan in stripe: %w", err)
 	}
+	if plan == nil || plan.StripePlanID == nil || *plan.StripePlanID == "" {
+		return nil, fmt.Errorf("plan missing stripe price id")
+	}
 	if ws == nil {
 		return nil, fmt.Errorf("workspace cannot be nil")
 	}
@@ -79,7 +82,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 			}
 			idempotencyKey := fmt.Sprintf("sub_update_%s_%s", existing.StripeSubID, plan.ID)
 			updateParams := &stripelib.SubscriptionParams{
-				Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(plan.StripePlanID)}},
+				Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(*plan.StripePlanID)}},
 				ProrationBehavior: stripelib.String("create_prorations"),
 				CancelAtPeriodEnd: stripelib.Bool(false),
 				Metadata:          map[string]string{"workspace_id": ws.ID, "plan_id": plan.ID},
@@ -102,7 +105,7 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		idempotencyKey := fmt.Sprintf("sub_create_%s_%s", ws.ID, plan.ID)
 		createParams := &stripelib.SubscriptionParams{
 			Customer:          stripelib.String(custID),
-			Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(plan.StripePlanID)}},
+			Items:             []*stripelib.SubscriptionItemsParams{{Price: stripelib.String(*plan.StripePlanID)}},
 			ProrationBehavior: stripelib.String("create_prorations"),
 			CancelAtPeriodEnd: stripelib.Bool(false),
 			Metadata:          map[string]string{"workspace_id": ws.ID, "plan_id": plan.ID},
@@ -559,9 +562,12 @@ func (s *Service) ScheduleSubscriptionChange(ctx context.Context, ws *account.Wo
 		l.Error("failed to ensure plan synced", "error", err)
 		return nil, err
 	}
+	if plan.StripePlanID == nil || *plan.StripePlanID == "" {
+		return nil, fmt.Errorf("plan missing stripe price id")
+	}
 	scheduleParams := &stripelib.SubscriptionScheduleParams{FromSubscription: stripelib.String(sub.StripeSubID)}
 	currentPhase := &stripelib.SubscriptionSchedulePhaseParams{
-		Items:     []*stripelib.SubscriptionSchedulePhaseItemParams{{Price: stripelib.String(plan.StripePlanID)}},
+		Items:     []*stripelib.SubscriptionSchedulePhaseItemParams{{Price: stripelib.String(*plan.StripePlanID)}},
 		StartDate: stripelib.Int64(effectiveTime.Unix()),
 	}
 	if prorationMode != "" {

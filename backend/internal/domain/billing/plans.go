@@ -12,7 +12,6 @@ var plans = []Plan{
 		Description:  "Perfect for sole owners just getting started with their business",
 		Price:        decimal.NewFromInt(0),
 		Currency:     "aed",
-		StripePlanID: "", // Will be populated by Stripe sync
 		BillingCycle: BillingCycleMonthly,
 		Features: PlanFeature{
 			CustomerManagement:       true,
@@ -43,7 +42,6 @@ var plans = []Plan{
 		Description:  "For growing businesses that need advanced features and higher limits",
 		Price:        decimal.NewFromFloat(54.99),
 		Currency:     "aed",
-		StripePlanID: "", // Will be populated by Stripe sync
 		BillingCycle: BillingCycleMonthly,
 		Features: PlanFeature{
 			CustomerManagement:       true,
@@ -74,7 +72,6 @@ var plans = []Plan{
 		Description:  "For large businesses with advanced needs and unlimited usage",
 		Price:        decimal.NewFromFloat(155.99),
 		Currency:     "aed",
-		StripePlanID: "", // Will be populated by Stripe sync
 		BillingCycle: BillingCycleMonthly,
 		Features: PlanFeature{
 			CustomerManagement:       true,

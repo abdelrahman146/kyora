@@ -90,7 +90,7 @@ func (h *OnboardingTestHelper) EnsureTestPlan(descriptor, name string, price flo
 		Description:  description,
 		Price:        decimal.NewFromFloat(price),
 		Currency:     "aed",
-		StripePlanID: "",
+		StripePlanID: nil,
 		BillingCycle: billing.BillingCycleMonthly,
 		Features:     features,
 		Limits:       limits,

@@ -151,7 +151,7 @@ type Plan struct {
 	Descriptor   string          `json:"descriptor" gorm:"column:descriptor;type:text;not null;unique"`
 	Name         string          `json:"name" gorm:"column:name;type:text;not null"`
 	Description  string          `json:"description" gorm:"column:description;type:text;not null"`
-	StripePlanID string          `json:"stripePlanId" gorm:"column:stripe_plan_id;type:text;not null;unique"`
+	StripePlanID *string         `json:"stripePlanId" gorm:"column:stripe_plan_id;type:text;unique"`
 	Price        decimal.Decimal `json:"price" gorm:"column:price;type:decimal(10,2);not null"`
 	Currency     string          `json:"currency" gorm:"column:currency;type:text;not null"`
 	BillingCycle BillingCycle    `json:"billingCycle" gorm:"column:billing_cycle;type:text;not null"`

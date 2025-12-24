@@ -62,6 +62,28 @@ var (
 	seedPassword string
 )
 
+func isStripeSeedEnabled(stripeKey, baseURL string) bool {
+	if strings.TrimSpace(baseURL) != "" {
+		// Explicit stripe-mock or custom Stripe API backend; allow the seed flow.
+		return true
+	}
+	key := strings.TrimSpace(stripeKey)
+	if key == "" {
+		return false
+	}
+	// Refuse obvious placeholders to avoid confusing 401s during local seed.
+	lk := strings.ToLower(key)
+	if strings.Contains(lk, "your_stripe") || strings.Contains(lk, "your_stripe_api_key") || strings.Contains(lk, "changeme") || strings.Contains(lk, "replace") || strings.Contains(lk, "********") {
+		return false
+	}
+	// The canonical stripe-mock test key only works with a custom base URL.
+	if key == "sk_test_123" {
+		return false
+	}
+	// Secret keys must start with sk_ (pk_ is publishable).
+	return strings.HasPrefix(key, "sk_")
+}
+
 var seedCmd = &cobra.Command{
 	Use:   "seed",
 	Short: "Seed local development data",
@@ -75,7 +97,7 @@ var seedCmd = &cobra.Command{
 		counts := sz.counts()
 
 		// Initialize Stripe (best-effort; seed still works without it).
-		stripeKey := viper.GetString(config.StripeAPIKey)
+		stripeKey := strings.TrimSpace(viper.GetString(config.StripeAPIKey))
 		baseURL := strings.TrimSpace(os.Getenv("KYORA_STRIPE_BASE_URL"))
 		if baseURL != "" {
 			// Stripe-mock expects a specific test key. Prefer an explicit override when provided,
@@ -87,7 +109,7 @@ var seedCmd = &cobra.Command{
 			}
 		}
 
-		stripeEnabled := stripeKey != ""
+		stripeEnabled := isStripeSeedEnabled(stripeKey, baseURL)
 		if stripeEnabled {
 			stripelib.Key = stripeKey
 			stripelib.SetAppInfo(&stripelib.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
@@ -98,7 +120,7 @@ var seedCmd = &cobra.Command{
 			}
 			slog.Info("Stripe client initialized")
 		} else {
-			slog.Warn("Stripe API key not configured; billing seed steps will be skipped")
+			slog.Warn("Stripe not configured (or placeholder key); Stripe seed steps will be skipped", "baseURL", baseURL)
 		}
 
 		// Initialize database connection.
@@ -232,10 +254,13 @@ var seedCmd = &cobra.Command{
 			return err
 		}
 
-		// Billing: sync plans + ensure Stripe customer + subscription.
+		// Billing: always sync plans to database; sync to Stripe only when configured.
+		_ = step("Syncing billing plans to database (best-effort)", func() error {
+			return billingSvc.SyncPlans(ctx)
+		})
 		if stripeEnabled {
-			_ = step("Syncing billing plans (best-effort)", func() error {
-				return billingSvc.SyncPlansComplete(ctx)
+			_ = step("Syncing billing plans to Stripe (best-effort)", func() error {
+				return billingSvc.SyncPlansToStripe(ctx)
 			})
 			_ = step("Creating Stripe customer (best-effort)", func() error {
 				_, err := billingSvc.EnsureCustomer(ctx, ws)

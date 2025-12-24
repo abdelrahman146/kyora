@@ -3,6 +3,7 @@ package testutils
 import (
 	"context"
 	"fmt"
+	"net/http"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
@@ -92,7 +93,7 @@ func CreateStripeMock(ctx context.Context) (string, func(), error) {
 		ContainerRequest: testcontainers.ContainerRequest{
 			Image:        StripeMockImage,
 			ExposedPorts: []string{"12111/tcp"},
-			WaitingFor:   wait.ForListeningPort("12111/tcp").WithStartupTimeout(10 * time.Second),
+			WaitingFor:   wait.ForListeningPort("12111/tcp").WithStartupTimeout(30 * time.Second),
 		},
 		Started: true,
 	}
@@ -111,6 +112,25 @@ func CreateStripeMock(ctx context.Context) (string, func(), error) {
 		return "", nil, fmt.Errorf("stripe-mock port retrieval failed: %w", err)
 	}
 	baseURL := fmt.Sprintf("http://%s:%s", host, mappedPort.Port())
+
+	// Extra readiness: stripe-mock may have an open port slightly before it's ready to serve.
+	// Consider the service ready once it responds to any HTTP request.
+	client := &http.Client{Timeout: 750 * time.Millisecond}
+	deadline := time.Now().Add(10 * time.Second)
+	for {
+		if time.Now().After(deadline) {
+			_ = container.Terminate(ctx)
+			return "", nil, fmt.Errorf("stripe-mock did not become ready in time (baseURL=%s)", baseURL)
+		}
+		req, _ := http.NewRequestWithContext(ctx, http.MethodGet, baseURL+"/", nil)
+		resp, reqErr := client.Do(req)
+		if reqErr == nil {
+			_ = resp.Body.Close()
+			break
+		}
+		time.Sleep(150 * time.Millisecond)
+	}
+
 	cleanup := func() { _ = container.Terminate(ctx) }
 	return baseURL, cleanup, nil
 }
