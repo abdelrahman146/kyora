@@ -80,6 +80,11 @@ clean.backend:
 	@cd backend && rm -rf tmp build-errors.log
 	@echo "Backend artifacts cleaned"
 
+seed:
+	@echo "Seeding backend database with initial data..."
+	@cd backend && STRIPE_BASE_URL="http://localhost:12111" go run . seed --clean --size large
+	@echo "Database seeding completed"
+
 # Help
 .PHONY: help
 help:
