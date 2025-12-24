@@ -52,6 +52,17 @@ type shippingZoneResponse struct {
 	UpdatedAt             time.Time `json:"updatedAt"`
 }
 
+type paymentMethodResponse struct {
+	Descriptor        string `json:"descriptor"`
+	Name              string `json:"name"`
+	LogoURL           string `json:"logoUrl"`
+	Enabled           bool   `json:"enabled"`
+	FeePercent        string `json:"feePercent"`
+	FeeFixed          string `json:"feeFixed"`
+	DefaultFeePercent string `json:"defaultFeePercent"`
+	DefaultFeeFixed   string `json:"defaultFeeFixed"`
+}
+
 func toShippingZoneResponse(z *ShippingZone) shippingZoneResponse {
 	resp := shippingZoneResponse{
 		ID:                    z.ID,
@@ -68,6 +79,19 @@ func toShippingZoneResponse(z *ShippingZone) shippingZoneResponse {
 		resp.Countries = []string{}
 	}
 	return resp
+}
+
+func toPaymentMethodResponse(v BusinessPaymentMethodView) paymentMethodResponse {
+	return paymentMethodResponse{
+		Descriptor:        string(v.Descriptor),
+		Name:              v.Name,
+		LogoURL:           v.LogoURL,
+		Enabled:           v.Enabled,
+		FeePercent:        v.FeePercent.String(),
+		FeeFixed:          v.FeeFixed.String(),
+		DefaultFeePercent: v.DefaultFeePercent.String(),
+		DefaultFeeFixed:   v.DefaultFeeFixed.String(),
+	}
 }
 
 func toBusinessResponse(b *Business) businessResponse {
@@ -235,6 +259,92 @@ func (h *HttpHandler) ListShippingZones(c *gin.Context) {
 		resp = append(resp, toShippingZoneResponse(z))
 	}
 	response.SuccessJSON(c, http.StatusOK, resp)
+}
+
+// ListPaymentMethods returns all payment methods (global catalog + business overrides).
+//
+// @Summary      List payment methods
+// @Description  Returns business payment methods configuration (enabled + fees) based on a global catalog with per-business overrides
+// @Tags         business
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Success      200 {array} business.paymentMethodResponse
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/payment-methods [get]
+// @Security     BearerAuth
+func (h *HttpHandler) ListPaymentMethods(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	items, err := h.svc.ListPaymentMethods(c.Request.Context(), actor, biz)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	resp := make([]paymentMethodResponse, 0, len(items))
+	for _, it := range items {
+		resp = append(resp, toPaymentMethodResponse(it))
+	}
+	response.SuccessJSON(c, http.StatusOK, resp)
+}
+
+// UpdatePaymentMethod updates a business payment method (enabled + fees override).
+//
+// @Summary      Update payment method
+// @Description  Enables/disables a payment method for a business and updates its fee configuration
+// @Tags         business
+// @Accept       json
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        descriptor path string true "Payment method descriptor"
+// @Param        request body business.UpdateBusinessPaymentMethodRequest true "Payment method update"
+// @Success      200 {object} business.paymentMethodResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/payment-methods/{descriptor} [patch]
+// @Security     BearerAuth
+func (h *HttpHandler) UpdatePaymentMethod(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	descriptor := strings.TrimSpace(c.Param("descriptor"))
+	if descriptor == "" {
+		response.Error(c, problem.BadRequest("descriptor is required"))
+		return
+	}
+
+	var req UpdateBusinessPaymentMethodRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+
+	updated, err := h.svc.UpdatePaymentMethod(c.Request.Context(), actor, biz, descriptor, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toPaymentMethodResponse(*updated))
 }
 
 // GetShippingZone returns a shipping zone by ID.

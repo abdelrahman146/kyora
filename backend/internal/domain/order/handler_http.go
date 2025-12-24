@@ -52,7 +52,7 @@ type updateOrderPaymentStatusRequest struct {
 }
 
 type addOrderPaymentDetailsRequest struct {
-	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery"`
+	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
 	PaymentReference string             `json:"paymentReference" binding:"omitempty"`
 }
 
@@ -312,7 +312,7 @@ func (h *HttpHandler) UpdateOrder(c *gin.Context) {
 	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
-	if req.Items != nil && len(req.Items) > 100 {
+	if len(req.Items) > 100 {
 		response.Error(c, problem.BadRequest("too many order items").With("max", 100))
 		return
 	}

@@ -8,6 +8,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
@@ -412,6 +413,87 @@ func (s *Service) UpdateExpense(ctx context.Context, actor *account.User, biz *b
 		return nil, err
 	}
 	return expense, nil
+}
+
+// UpsertTransactionFeeExpenseForOrder creates (or updates) an idempotent transaction-fee expense linked to an order.
+//
+// Idempotency is enforced by a unique constraint on (business_id, order_id, category).
+// This method is intended for internal automation (e.g., background events) and does not perform actor permission checks.
+func (s *Service) UpsertTransactionFeeExpenseForOrder(
+	ctx context.Context,
+	businessID string,
+	orderID string,
+	amount decimal.Decimal,
+	currency string,
+	occurredOn time.Time,
+	paymentMethod string,
+) error {
+	if businessID == "" || orderID == "" {
+		return fmt.Errorf("businessID and orderID are required")
+	}
+	if amount.LessThanOrEqual(decimal.Zero) {
+		return nil
+	}
+	if occurredOn.IsZero() {
+		occurredOn = time.Now().UTC()
+	}
+
+	note := "Transaction fee"
+	if paymentMethod != "" {
+		note = fmt.Sprintf("Transaction fee (%s)", paymentMethod)
+	}
+
+	return s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
+		existing, err := s.storage.expense.FindOne(tctx,
+			s.storage.expense.ScopeBusinessID(businessID),
+			s.storage.expense.ScopeEquals(ExpenseSchema.OrderID, orderID),
+			s.storage.expense.ScopeEquals(ExpenseSchema.Category, ExpenseCategoryTransactionFee),
+			s.storage.expense.WithLockingStrength(database.LockingStrengthUpdate),
+		)
+		if err != nil && !database.IsRecordNotFound(err) {
+			return err
+		}
+		if err == nil {
+			existing.Amount = amount
+			existing.Currency = currency
+			existing.OccurredOn = occurredOn
+			existing.Note = transformer.ToNullString(note)
+			existing.Type = ExpenseTypeOneTime
+			return s.storage.expense.UpdateOne(tctx, existing)
+		}
+
+		exp := &Expense{
+			BusinessID: businessID,
+			OrderID:    transformer.ToNullString(orderID),
+			Amount:     amount,
+			Currency:   currency,
+			Category:   ExpenseCategoryTransactionFee,
+			Note:       transformer.ToNullString(note),
+			Type:       ExpenseTypeOneTime,
+			OccurredOn: occurredOn,
+		}
+		if err := s.storage.expense.CreateOne(tctx, exp); err != nil {
+			if database.IsUniqueViolation(err) {
+				again, err2 := s.storage.expense.FindOne(tctx,
+					s.storage.expense.ScopeBusinessID(businessID),
+					s.storage.expense.ScopeEquals(ExpenseSchema.OrderID, orderID),
+					s.storage.expense.ScopeEquals(ExpenseSchema.Category, ExpenseCategoryTransactionFee),
+					s.storage.expense.WithLockingStrength(database.LockingStrengthUpdate),
+				)
+				if err2 != nil {
+					return err2
+				}
+				again.Amount = amount
+				again.Currency = currency
+				again.OccurredOn = occurredOn
+				again.Note = transformer.ToNullString(note)
+				again.Type = ExpenseTypeOneTime
+				return s.storage.expense.UpdateOne(tctx, again)
+			}
+			return err
+		}
+		return nil
+	}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
 }
 
 func (s *Service) GetRecurringExpenseByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*RecurringExpense, error) {

@@ -121,6 +121,22 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 			zone = z
 		}
 
+		// Default payment method for backward compatibility.
+		paymentMethod := req.PaymentMethod
+		if paymentMethod == "" {
+			paymentMethod = OrderPaymentMethodBankTransfer
+		}
+		// Validate payment method enabled for this business.
+		if s.business != nil {
+			enabled, _, _, err := s.business.GetEffectivePaymentMethodFee(tctx, biz.ID, business.PaymentMethodDescriptor(paymentMethod))
+			if err != nil {
+				return err
+			}
+			if !enabled {
+				return problem.BadRequest("payment method is disabled for this business").With("paymentMethod", paymentMethod)
+			}
+		}
+
 		// calculate totals from items and fees and vat
 		vatRate := biz.VatRate
 		subtotal := s.calculateSubtotal(orderItems)
@@ -157,7 +173,7 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 				Currency:          biz.Currency,
 				Status:            OrderStatusPending,
 				PaymentStatus:     OrderPaymentStatusPending,
-				PaymentMethod:     req.PaymentMethod,
+				PaymentMethod:     paymentMethod,
 				PaymentReference:  req.PaymentReference,
 				OrderNumber:       orderNumber,
 			}
@@ -349,6 +365,16 @@ func (s *Service) AddOrderPaymentDetails(ctx context.Context, actor *account.Use
 		case OrderStatusCancelled, OrderStatusReturned:
 			return ErrOrderPaymentStatusUpdateNotAllowedForOrderStatus(ord.ID, ord.Status, ord.PaymentStatus)
 		}
+		// Validate payment method enabled for this business.
+		if s.business != nil {
+			enabled, _, _, err := s.business.GetEffectivePaymentMethodFee(tctx, biz.ID, business.PaymentMethodDescriptor(req.PaymentMethod))
+			if err != nil {
+				return err
+			}
+			if !enabled {
+				return problem.BadRequest("payment method is disabled for this business").With("paymentMethod", req.PaymentMethod)
+			}
+		}
 		ord.PaymentMethod = req.PaymentMethod
 		ord.PaymentReference = req.PaymentReference
 		if err := s.storage.order.UpdateOne(tctx, ord); err != nil {
@@ -510,6 +536,7 @@ func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.U
 	if err != nil {
 		return nil, ErrOrderNotFound(id, err)
 	}
+	prevPaymentStatus := order.PaymentStatus
 	sm := newOrderStateMachine(order)
 
 	if err := sm.transitionPaymentStatusTo(paymentStatus); err != nil {
@@ -517,6 +544,22 @@ func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.U
 	}
 	if err := s.storage.order.UpdateOne(ctx, order); err != nil {
 		return nil, err
+	}
+	// Emit background automation event when an order becomes paid.
+	if paymentStatus == OrderPaymentStatusPaid && prevPaymentStatus != OrderPaymentStatusPaid && s.bus != nil {
+		paidAt := time.Now().UTC()
+		if order.PaidAt.Valid {
+			paidAt = order.PaidAt.Time
+		}
+		s.bus.Emit(bus.OrderPaymentSucceededTopic, &bus.OrderPaymentSucceededEvent{
+			Ctx:           ctx,
+			BusinessID:    biz.ID,
+			OrderID:       order.ID,
+			PaymentMethod: string(order.PaymentMethod),
+			OrderTotal:    order.Total,
+			Currency:      order.Currency,
+			PaidAt:        paidAt,
+		})
 	}
 	return order, nil
 }

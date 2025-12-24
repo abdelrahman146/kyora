@@ -286,6 +286,21 @@ func registerBusinessScopedRoutes(
 		}
 	}
 
+	// Payment methods (business settings)
+	paymentMethods := group.Group("/payment-methods")
+	{
+		paymentMethods.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), businessHandler.ListPaymentMethods)
+
+		managePaymentMethods := paymentMethods.Group("")
+		managePaymentMethods.Use(
+			account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness),
+			billing.EnforceActiveSubscription(billingService),
+		)
+		{
+			managePaymentMethods.PATCH("/:descriptor", businessHandler.UpdatePaymentMethod)
+		}
+	}
+
 	// Order routes
 	orders := group.Group("/orders")
 	{

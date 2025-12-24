@@ -245,25 +245,26 @@ const (
 type ExpenseCategory string
 
 const (
-	ExpenseCategoryOffice        ExpenseCategory = "office"
-	ExpenseCategoryTravel        ExpenseCategory = "travel"
-	ExpenseCategorySupplies      ExpenseCategory = "supplies"
-	ExpenseCategoryUtilities     ExpenseCategory = "utilities"
-	ExpenseCategoryPayroll       ExpenseCategory = "payroll"
-	ExpenseCategoryMarketing     ExpenseCategory = "marketing"
-	ExpenseCategoryRent          ExpenseCategory = "rent"
-	ExpenseCategorySoftware      ExpenseCategory = "software"
-	ExpenseCategoryMaintenance   ExpenseCategory = "maintenance"
-	ExpenseCategoryInsurance     ExpenseCategory = "insurance"
-	ExpenseCategoryTaxes         ExpenseCategory = "taxes"
-	ExpenseCategoryTraining      ExpenseCategory = "training"
-	ExpenseCategoryConsulting    ExpenseCategory = "consulting"
-	ExpenseCategoryMiscellaneous ExpenseCategory = "miscellaneous"
-	ExpenseCategoryLegal         ExpenseCategory = "legal"
-	ExpenseCategoryResearch      ExpenseCategory = "research"
-	ExpenseCategoryEquipment     ExpenseCategory = "equipment"
-	ExpenseCategoryShipping      ExpenseCategory = "shipping"
-	ExpenseCategoryOther         ExpenseCategory = "other"
+	ExpenseCategoryOffice         ExpenseCategory = "office"
+	ExpenseCategoryTravel         ExpenseCategory = "travel"
+	ExpenseCategorySupplies       ExpenseCategory = "supplies"
+	ExpenseCategoryUtilities      ExpenseCategory = "utilities"
+	ExpenseCategoryPayroll        ExpenseCategory = "payroll"
+	ExpenseCategoryMarketing      ExpenseCategory = "marketing"
+	ExpenseCategoryRent           ExpenseCategory = "rent"
+	ExpenseCategorySoftware       ExpenseCategory = "software"
+	ExpenseCategoryMaintenance    ExpenseCategory = "maintenance"
+	ExpenseCategoryInsurance      ExpenseCategory = "insurance"
+	ExpenseCategoryTaxes          ExpenseCategory = "taxes"
+	ExpenseCategoryTraining       ExpenseCategory = "training"
+	ExpenseCategoryConsulting     ExpenseCategory = "consulting"
+	ExpenseCategoryMiscellaneous  ExpenseCategory = "miscellaneous"
+	ExpenseCategoryLegal          ExpenseCategory = "legal"
+	ExpenseCategoryResearch       ExpenseCategory = "research"
+	ExpenseCategoryEquipment      ExpenseCategory = "equipment"
+	ExpenseCategoryShipping       ExpenseCategory = "shipping"
+	ExpenseCategoryTransactionFee ExpenseCategory = "transaction_fee"
+	ExpenseCategoryOther          ExpenseCategory = "other"
 )
 
 func ExpenseCategoriesList() []ExpenseCategory {
@@ -286,6 +287,7 @@ func ExpenseCategoriesList() []ExpenseCategory {
 		ExpenseCategoryResearch,
 		ExpenseCategoryEquipment,
 		ExpenseCategoryShipping,
+		ExpenseCategoryTransactionFee,
 		ExpenseCategoryOther,
 	}
 }
@@ -293,14 +295,15 @@ func ExpenseCategoriesList() []ExpenseCategory {
 type Expense struct {
 	gorm.Model
 	ID                 string             `gorm:"column:id;primaryKey;type:text" json:"id"`
-	BusinessID         string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
+	BusinessID         string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:idx_expense_business_order_category" json:"businessId"`
 	Business           *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
+	OrderID            sql.NullString     `gorm:"column:order_id;type:text;index;uniqueIndex:idx_expense_business_order_category" json:"orderId,omitempty"`
 	RecurringExpenseID sql.NullString     `gorm:"column:recurring_expense_id;type:text;index" json:"recurringExpenseId"`
 	RecurringExpense   *RecurringExpense  `gorm:"foreignKey:RecurringExpenseID;references:ID" json:"recurringExpense,omitempty"`
 	Amount             decimal.Decimal    `gorm:"column:amount;type:numeric;not null" json:"amount"`
 	Currency           string             `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
 	OccurredOn         time.Time          `gorm:"column:occurred_on;type:date;not null;default:now()" json:"occurredOn"`
-	Category           ExpenseCategory    `gorm:"column:category;type:text;not null;index" json:"category"`
+	Category           ExpenseCategory    `gorm:"column:category;type:text;not null;index;uniqueIndex:idx_expense_business_order_category" json:"category"`
 	Type               ExpenseType        `gorm:"column:type;type:text;not null;index" json:"type"`
 	Note               sql.NullString     `gorm:"column:note;type:text" json:"note"`
 }
@@ -337,6 +340,7 @@ type UpdateExpenseRequest struct {
 var ExpenseSchema = struct {
 	ID                 schema.Field
 	BusinessID         schema.Field
+	OrderID            schema.Field
 	RecurringExpenseID schema.Field
 	Amount             schema.Field
 	Currency           schema.Field
@@ -350,6 +354,7 @@ var ExpenseSchema = struct {
 }{
 	ID:                 schema.NewField("id", "id"),
 	BusinessID:         schema.NewField("business_id", "businessId"),
+	OrderID:            schema.NewField("order_id", "orderId"),
 	RecurringExpenseID: schema.NewField("recurring_expense_id", "recurringExpenseId"),
 	Amount:             schema.NewField("amount", "amount"),
 	Currency:           schema.NewField("currency", "currency"),
@@ -446,7 +451,7 @@ type CreateRecurringExpenseRequest struct {
 	RecurringEndDate             time.Time                 `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty,gtfield=RecurringStartDate"`
 	RecurringStartDate           time.Time                 `form:"recurringStartDate" json:"recurringStartDate" binding:"required"`
 	Amount                       decimal.Decimal           `form:"amount" json:"amount" binding:"required"`
-	Category                     ExpenseCategory           `form:"category" json:"category" binding:"required,oneof=office travel supplies utilities payroll marketing rent software maintenance insurance taxes training consulting miscellaneous legal research equipment shipping other"`
+	Category                     ExpenseCategory           `form:"category" json:"category" binding:"required,oneof=office travel supplies utilities payroll marketing rent software maintenance insurance taxes training consulting miscellaneous legal research equipment shipping transaction_fee other"`
 	Note                         string                    `form:"note" json:"note" binding:"omitempty"`
 	AutoCreateHistoricalExpenses bool                      `form:"autoCreateHistoricalExpenses" json:"autoCreateHistoricalExpenses" binding:"omitempty"`
 }

@@ -67,6 +67,8 @@ const (
 	OrderPaymentMethodPayPal         OrderPaymentMethod = "paypal"
 	OrderPaymentMethodBankTransfer   OrderPaymentMethod = "bank_transfer"
 	OrderPaymentMethodCashOnDelivery OrderPaymentMethod = "cash_on_delivery"
+	OrderPaymentMethodTamara         OrderPaymentMethod = "tamara"
+	OrderPaymentMethodTabby          OrderPaymentMethod = "tabby"
 )
 
 const (
@@ -128,7 +130,7 @@ type CreateOrderRequest struct {
 	ShippingZoneID    *string                   `json:"shippingZoneId" binding:"omitempty"`
 	ShippingFee       decimal.Decimal           `json:"shippingFee" binding:"omitempty"`
 	Discount          decimal.Decimal           `json:"discount" binding:"omitempty"`
-	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery"`
+	PaymentMethod     OrderPaymentMethod        `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
 	PaymentReference  sql.NullString            `json:"paymentReference" binding:"omitempty"`
 	OrderedAt         time.Time                 `json:"orderedAt" binding:"omitempty"`
 	Items             []*CreateOrderItemRequest `json:"items" binding:"required,dive,required"`
@@ -144,7 +146,7 @@ type UpdateOrderRequest struct {
 }
 
 type AddOrderPaymentDetailsRequest struct {
-	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery"`
+	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
 	PaymentReference sql.NullString     `json:"paymentReference" binding:"omitempty"`
 }
 

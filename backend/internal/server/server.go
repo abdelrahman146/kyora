@@ -163,6 +163,7 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	accountingStorage := accounting.NewStorage(db, cacheDB)
 	accountingSvc := accounting.NewService(accountingStorage, atomicProcessor, bus)
+	accounting.NewBusHandler(bus, accountingSvc, businessSvc)
 
 	customerStorage := customer.NewStorage(db, cacheDB)
 	customerSvc := customer.NewService(customerStorage, atomicProcessor, bus)

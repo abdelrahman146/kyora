@@ -12,6 +12,7 @@ type Storage struct {
 	cache    *cache.Cache
 	business *database.Repository[Business]
 	zone     *database.Repository[ShippingZone]
+	payment  *database.Repository[BusinessPaymentMethod]
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
@@ -19,6 +20,7 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 		cache:    cache,
 		business: database.NewRepository[Business](db),
 		zone:     database.NewRepository[ShippingZone](db),
+		payment:  database.NewRepository[BusinessPaymentMethod](db),
 	}
 }
 
@@ -56,4 +58,30 @@ func (s *Storage) ListShippingZones(ctx context.Context, businessID string) ([]*
 
 func (s *Storage) CountShippingZones(ctx context.Context, businessID string) (int64, error) {
 	return s.zone.Count(ctx, s.zone.ScopeBusinessID(businessID))
+}
+
+func (s *Storage) ListBusinessPaymentMethods(ctx context.Context, businessID string) ([]*BusinessPaymentMethod, error) {
+	return s.payment.FindMany(ctx,
+		s.payment.ScopeBusinessID(businessID),
+		s.payment.WithOrderBy([]string{"descriptor ASC"}),
+	)
+}
+
+func (s *Storage) GetBusinessPaymentMethodByDescriptor(ctx context.Context, businessID string, descriptor PaymentMethodDescriptor) (*BusinessPaymentMethod, error) {
+	return s.payment.FindOne(ctx,
+		s.payment.ScopeBusinessID(businessID),
+		s.payment.ScopeEquals(BusinessPaymentMethodSchema.Descriptor, descriptor),
+	)
+}
+
+func (s *Storage) UpsertBusinessPaymentMethod(ctx context.Context, pm *BusinessPaymentMethod) error {
+	if pm == nil {
+		return problem.BadRequest("payment method is required")
+	}
+	// Try update path first (preferred, avoids extra unique-violation errors under concurrency).
+	if pm.ID != "" {
+		return s.payment.UpdateOne(ctx, pm)
+	}
+	// Best-effort create.
+	return s.payment.CreateOne(ctx, pm)
 }
