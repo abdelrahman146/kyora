@@ -19,7 +19,10 @@ var onboardingCleanupCmd = &cobra.Command{
 	RunE: func(cmd *cobra.Command, args []string) error {
 		dsn := viper.GetString(config.DatabaseDSN)
 		logLevel := viper.GetString(config.DatabaseLogLevel)
-		db := database.NewConnection(dsn, logLevel)
+		db, err := database.NewConnection(dsn, logLevel)
+		if err != nil {
+			return err
+		}
 		servers := viper.GetStringSlice(config.CacheHosts)
 		cacheDB := cache.NewConnection(servers)
 		storage := onboarding.NewStorage(db, cacheDB)

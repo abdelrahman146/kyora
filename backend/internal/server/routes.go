@@ -163,14 +163,6 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 	r.POST("/webhooks/stripe", h.HandleWebhook)
 }
 
-func registerAccountingRoutes(r *gin.Engine, h *accounting.HttpHandler, accountService *account.Service) {
-	// Deprecated: accounting routes are now business-scoped under /v1/businesses/:businessDescriptor/accounting
-}
-
-func registerAnalyticsRoutes(r *gin.Engine, h *analytics.HttpHandler, accountService *account.Service) {
-	// Deprecated: analytics routes are now business-scoped under /v1/businesses/:businessDescriptor/analytics
-}
-
 func registerBusinessRoutes(r *gin.Engine, h *business.HttpHandler, accountService *account.Service, billingService *billing.Service, businessService *business.Service) {
 	group := r.Group("/v1/businesses")
 	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
@@ -189,14 +181,6 @@ func registerBusinessRoutes(r *gin.Engine, h *business.HttpHandler, accountServi
 	group.POST("/:businessDescriptor/archive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.ArchiveBusiness)
 	group.POST("/:businessDescriptor/unarchive", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.UnarchiveBusiness)
 	group.DELETE("/:businessDescriptor", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), h.DeleteBusiness)
-}
-
-func registerCustomerRoutes(r *gin.Engine, h *customer.HttpHandler, accountService *account.Service) {
-	// Deprecated: customer routes are now business-scoped under /v1/businesses/:businessDescriptor/customers
-}
-
-func registerInventoryRoutes(r *gin.Engine, h *inventory.HttpHandler, accountService *account.Service) {
-	// Deprecated: inventory routes are now business-scoped under /v1/businesses/:businessDescriptor/inventory
 }
 
 func registerBusinessScopedRoutes(

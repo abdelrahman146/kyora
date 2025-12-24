@@ -1,12 +1,9 @@
-/*
-Copyright © 2025 NAME HERE <EMAIL ADDRESS>
-*/
 package cmd
 
 import (
 	"os"
 
-	_ "github.com/abdelrahman146/kyora/internal/platform/config"
+	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	"github.com/spf13/cobra"
 )
@@ -17,9 +14,14 @@ var rootCmd = &cobra.Command{
 	Short: "Kyora is a simple social media business management saas application",
 	Long: `Kyora is a simple social media business management saas application
 	that helps businesses manage their orders, customers, expenses, and analyze their business performance.`,
-	PersistentPreRun: func(cmd *cobra.Command, args []string) {
-		// Ensure Viper has loaded (via config package init) then initialize logger
+	PersistentPreRunE: func(cmd *cobra.Command, args []string) error {
+		// Load config once for all commands. Missing config file is OK (env vars / flags may be used).
+		if err := config.Load(); err != nil {
+			return err
+		}
+		// Initialize logger after config is loaded.
 		logger.Init()
+		return nil
 	},
 }
 

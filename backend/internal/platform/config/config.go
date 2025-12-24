@@ -3,6 +3,8 @@
 package config
 
 import (
+	"errors"
+	"fmt"
 	"log"
 	"os"
 	"path/filepath"
@@ -55,6 +57,8 @@ const (
 	StripeWebhookSecret = "billing.stripe.webhook_secret"
 	// billing configuration
 	BillingAutoSyncPlans = "billing.auto_sync_plans" // bool - automatically sync plans on startup (default: true)
+	// database configuration (advanced)
+	DatabaseAutoMigrate = "database.auto_migrate" // bool - auto-migrate models on startup (default: true)
 	// email configuration
 	EmailProvider     = "email.provider"        // values: resend, mock
 	EmailMockEnabled  = "email.mock.enabled"    // bool toggle to force mock
@@ -66,12 +70,27 @@ const (
 	EmailHelpURL      = "email.help_url"        // help/knowledge base URL
 )
 
-func init() {
-	viper.SetConfigName(".kyora")                 // name of config file (without extension)
-	viper.SetConfigType("yaml")                   // REQUIRED if the config file does not have the extension in the name
-	viper.SetDefault(HTTPMaxBodyBytes, 1024*1024) // 1 MiB default max request body
+var configured bool
+
+// Configure prepares Viper defaults and search paths.
+// It is safe to call multiple times.
+func Configure() {
+	if configured {
+		return
+	}
+	configured = true
+
+	viper.SetConfigName(".kyora")
+	viper.SetConfigType("yaml")
+
+	// Defaults
+	viper.SetDefault(HTTPMaxBodyBytes, int64(1024*1024)) // 1 MiB default max request body
+	viper.SetDefault(BillingAutoSyncPlans, true)
+	viper.SetDefault(DatabaseAutoMigrate, true)
+
 	// Add current directory first
 	viper.AddConfigPath(".")
+
 	// Attempt to discover project root (where .kyora.yaml resides) by walking parent dirs
 	if wd, err := os.Getwd(); err == nil {
 		dir := wd
@@ -88,8 +107,45 @@ func init() {
 			dir = parent
 		}
 	}
-	viper.AutomaticEnv() // read in environment variables that match
-	if err := viper.ReadInConfig(); err != nil {
-		log.Fatalf("Error reading config file, %s", err)
+
+	viper.AutomaticEnv()
+}
+
+type LoadOption func(*LoadOptions)
+
+type LoadOptions struct {
+	RequireConfigFile bool
+}
+
+// WithRequiredConfigFile makes Load return an error if the config file cannot be found.
+func WithRequiredConfigFile(required bool) LoadOption {
+	return func(o *LoadOptions) { o.RequireConfigFile = required }
+}
+
+// Load reads the config file if present.
+// It never terminates the process; callers should handle returned errors.
+func Load(opts ...LoadOption) error {
+	Configure()
+	options := &LoadOptions{}
+	for _, opt := range opts {
+		opt(options)
 	}
+
+	if err := viper.ReadInConfig(); err != nil {
+		var notFound viper.ConfigFileNotFoundError
+		if errors.As(err, &notFound) {
+			if options.RequireConfigFile {
+				return fmt.Errorf("config file not found: %w", err)
+			}
+			return nil
+		}
+		return fmt.Errorf("failed to read config: %w", err)
+	}
+
+	// Keep a log line for visibility in CLI usage; avoid fatal exits.
+	if file := viper.ConfigFileUsed(); file != "" {
+		log.Printf("Loaded config file: %s", file)
+	}
+
+	return nil
 }

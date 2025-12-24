@@ -42,7 +42,12 @@ This command is useful for:
 		// Initialize database connection
 		dsn := viper.GetString(config.DatabaseDSN)
 		logLevel := viper.GetString(config.DatabaseLogLevel)
-		db := database.NewConnection(dsn, logLevel)
+		db, err := database.NewConnection(dsn, logLevel)
+		if err != nil {
+			slog.Error("Failed to connect to database", "error", err)
+			fmt.Println("❌ Failed to connect to database:", err)
+			return
+		}
 		defer db.CloseConnection()
 
 		// Initialize cache

@@ -144,7 +144,9 @@ func (s *Service) DownloadInvoiceURL(ctx context.Context, ws *account.Workspace,
 		if (inv.InvoicePDF != "" && rec.InvoicePDF == "") || (inv.HostedInvoiceURL != "" && rec.HostedInvoiceURL == "") {
 			rec.InvoicePDF = inv.InvoicePDF
 			rec.HostedInvoiceURL = inv.HostedInvoiceURL
-			_ = s.storage.invoiceRecord.UpdateOne(ctx, rec)
+			if err := s.storage.invoiceRecord.UpdateOne(ctx, rec); err != nil {
+				logger.FromContext(ctx).Warn("failed to persist invoice record urls", "error", err, "stripeInvoiceId", invoiceID, "workspaceId", ws.ID)
+			}
 		}
 
 		// Prefer stored values if available.
@@ -274,10 +276,10 @@ func (s *Service) CreateInvoice(ctx context.Context, ws *account.Workspace, desc
 	}
 
 	params := &stripelib.InvoiceParams{
-		Customer:    stripelib.String(customerID),
-		Currency:    stripelib.String(currency),
-		Description: stripelib.String(description),
-		AutoAdvance: stripelib.Bool(true),
+		Customer:         stripelib.String(customerID),
+		Currency:         stripelib.String(currency),
+		Description:      stripelib.String(description),
+		AutoAdvance:      stripelib.Bool(true),
 		CollectionMethod: stripelib.String(string(stripelib.InvoiceCollectionMethodSendInvoice)),
 		Metadata: map[string]string{
 			"workspace_id": ws.ID,

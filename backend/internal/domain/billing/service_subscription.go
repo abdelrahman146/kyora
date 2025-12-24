@@ -11,6 +11,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	atomic "github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/helpers"
+	"github.com/shopspring/decimal"
 	stripelib "github.com/stripe/stripe-go/v83"
 	"github.com/stripe/stripe-go/v83/creditnote"
 	"github.com/stripe/stripe-go/v83/invoice"
@@ -140,11 +141,14 @@ func (s *Service) CreateOrUpdateSubscription(ctx context.Context, ws *account.Wo
 		if details, err := s.GetSubscriptionDetails(ctx, ws); err == nil && details.PaymentMethod.Last4 != "" {
 			paymentMethodLastFour = details.PaymentMethod.Last4
 		}
-		go func() {
-			if err := s.Notification.SendSubscriptionWelcomeEmail(context.Background(), ws.ID, result, plan, paymentMethodLastFour); err != nil {
-				logger.FromContext(ctx).Error("Failed to send subscription welcome email", "error", err, "workspaceId", ws.ID, "subscriptionId", result.ID)
+		l := logger.FromContext(ctx)
+		go func(workspaceID string, sub *Subscription, p *Plan, last4 string) {
+			bg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := s.Notification.SendSubscriptionWelcomeEmail(bg, workspaceID, sub, p, last4); err != nil {
+				l.Warn("failed to send subscription welcome email", "error", err, "workspaceId", workspaceID, "subscriptionId", sub.ID)
 			}
-		}()
+		}(ws.ID, result, plan, paymentMethodLastFour)
 	}
 	return result, nil
 }
@@ -181,11 +185,14 @@ func (s *Service) CancelSubscriptionImmediately(ctx context.Context, ws *account
 		logger.FromContext(ctx).Info("Successfully canceled subscription", "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
 		if s.Notification != nil {
 			if plan, planErr := s.GetPlanByID(ctx, subRec.PlanID); planErr == nil {
-				go func() {
-					if err := s.Notification.SendSubscriptionCanceledEmail(context.Background(), ws.ID, subRec, plan, time.Now(), ""); err != nil {
-						logger.FromContext(ctx).Error("Failed to send subscription canceled email", "error", err, "workspaceId", ws.ID, "subscriptionId", subRec.StripeSubID)
+				l := logger.FromContext(ctx)
+				go func(workspaceID string, sub *Subscription, p *Plan) {
+					bg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+					defer cancel()
+					if err := s.Notification.SendSubscriptionCanceledEmail(bg, workspaceID, sub, p, time.Now().UTC(), ""); err != nil {
+						l.Warn("failed to send subscription canceled email", "error", err, "workspaceId", workspaceID, "subscriptionId", sub.StripeSubID)
 					}
-				}()
+				}(ws.ID, subRec, plan)
 			}
 		}
 		return nil
@@ -256,102 +263,142 @@ func (s *Service) ensureFeatureCompatibility(currentPlan, newPlan *Plan) error {
 }
 
 // SyncSubscriptionStatus updates the local record based on Stripe status
-func (s *Service) SyncSubscriptionStatus(ctx context.Context, stripeSubID string, status string, periodStart, periodEnd int64) {
+func (s *Service) SyncSubscriptionStatus(ctx context.Context, stripeSubID string, status string, periodStart, periodEnd int64) error {
 	rec, err := s.storage.subscription.FindOne(ctx, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, stripeSubID))
-	if err != nil || rec == nil {
-		return
+	if err != nil {
+		return err
+	}
+	if rec == nil {
+		logger.FromContext(ctx).Warn("subscription not found for stripeSubID", "stripeSubId", stripeSubID)
+		return nil
 	}
 	rec.Status = mapStripeStatus(stripelib.SubscriptionStatus(status))
 	if periodEnd > 0 {
 		rec.CurrentPeriodEnd = time.Unix(periodEnd, 0)
 	}
-	_ = s.storage.subscription.UpdateOne(ctx, rec)
+	if err := s.storage.subscription.UpdateOne(ctx, rec); err != nil {
+		return err
+	}
+	return nil
 }
 
 // MarkSubscriptionPastDue sets subscription status to past_due
-func (s *Service) MarkSubscriptionPastDue(ctx context.Context, stripeSubID string) {
+func (s *Service) MarkSubscriptionPastDue(ctx context.Context, stripeSubID string) error {
 	rec, err := s.storage.subscription.FindOne(ctx, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, stripeSubID))
-	if err != nil || rec == nil {
-		return
+	if err != nil {
+		return err
+	}
+	if rec == nil {
+		logger.FromContext(ctx).Warn("subscription not found for stripeSubID", "stripeSubId", stripeSubID)
+		return nil
 	}
 	rec.Status = SubscriptionStatusPastDue
-	_ = s.storage.subscription.UpdateOne(ctx, rec)
+	return s.storage.subscription.UpdateOne(ctx, rec)
 }
 
 // MarkSubscriptionActive sets subscription status to active
-func (s *Service) MarkSubscriptionActive(ctx context.Context, stripeSubID string) {
+func (s *Service) MarkSubscriptionActive(ctx context.Context, stripeSubID string) error {
 	rec, err := s.storage.subscription.FindOne(ctx, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, stripeSubID))
-	if err != nil || rec == nil {
-		return
+	if err != nil {
+		return err
+	}
+	if rec == nil {
+		logger.FromContext(ctx).Warn("subscription not found for stripeSubID", "stripeSubId", stripeSubID)
+		return nil
 	}
 	rec.Status = SubscriptionStatusActive
-	_ = s.storage.subscription.UpdateOne(ctx, rec)
+	return s.storage.subscription.UpdateOne(ctx, rec)
 }
 
 // RefundAndFinalizeCancellation computes prorated refund and cancels in Stripe, then updates local DB
-func (s *Service) RefundAndFinalizeCancellation(ctx context.Context, stripeSubID string, periodStart, periodEnd int64) {
+func (s *Service) RefundAndFinalizeCancellation(ctx context.Context, stripeSubID string, periodStart, periodEnd int64) error {
 	rec, err := s.storage.subscription.FindOne(ctx, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, stripeSubID))
-	if err != nil || rec == nil {
-		return
+	if err != nil {
+		return err
 	}
-	ip := &stripelib.InvoiceListParams{Subscription: stripelib.String(stripeSubID)}
-	ip.Status = stripelib.String(string(stripelib.InvoiceStatusPaid))
-	ip.Limit = stripelib.Int64(1)
-	iter := invoice.List(ip)
-	if iter.Next() {
-		inv := iter.Invoice()
-		if periodStart > 0 && periodEnd > 0 {
-			now := time.Now()
-			pEnd := time.Unix(periodEnd, 0)
-			pStart := time.Unix(periodStart, 0)
-			if pEnd.Before(now) {
-				pEnd = rec.CurrentPeriodEnd
-			}
-			if !(pStart.After(now) || pEnd.Before(pStart)) {
-				total := pEnd.Sub(pStart).Seconds()
-				remaining := pEnd.Sub(now).Seconds()
-				if total > 0 && remaining > 0 && inv.AmountPaid > 0 {
-					refundAmount := int64(float64(inv.AmountPaid) * (remaining / total))
-					if refundAmount > 0 {
-						lparams := &stripelib.CreditNoteListParams{Invoice: stripelib.String(inv.ID)}
-						lparams.Limit = stripelib.Int64(10)
-						alreadyRefunded := false
-						itCN := creditnote.List(lparams)
-						for itCN.Next() {
-							cn := itCN.CreditNote()
-							if cn != nil && cn.Metadata != nil {
-								if v, ok := cn.Metadata["kyoraRefundKind"]; ok && v == "cancel_prorated" {
-									alreadyRefunded = true
-									break
+	if rec == nil {
+		logger.FromContext(ctx).Warn("subscription not found for stripeSubID", "stripeSubId", stripeSubID)
+		return nil
+	}
+	if periodStart > 0 && periodEnd > 0 {
+		ip := &stripelib.InvoiceListParams{Subscription: stripelib.String(stripeSubID)}
+		ip.Status = stripelib.String(string(stripelib.InvoiceStatusPaid))
+		ip.Limit = stripelib.Int64(1)
+		iter := invoice.List(ip)
+		if iter.Next() {
+			inv := iter.Invoice()
+			if inv != nil && inv.AmountPaid > 0 {
+				now := time.Now().UTC()
+				pStart := time.Unix(periodStart, 0).UTC()
+				pEnd := time.Unix(periodEnd, 0).UTC()
+				if pEnd.Before(now) {
+					pEnd = rec.CurrentPeriodEnd
+				}
+				if !pStart.After(now) && !pEnd.Before(pStart) {
+					totalNanos := pEnd.Sub(pStart).Nanoseconds()
+					remainingNanos := pEnd.Sub(now).Nanoseconds()
+					if totalNanos > 0 && remainingNanos > 0 {
+						refundAmount := decimal.NewFromInt(inv.AmountPaid).
+							Mul(decimal.NewFromInt(remainingNanos)).
+							Div(decimal.NewFromInt(totalNanos)).
+							IntPart()
+						if refundAmount > 0 {
+							lparams := &stripelib.CreditNoteListParams{Invoice: stripelib.String(inv.ID)}
+							lparams.Limit = stripelib.Int64(10)
+							alreadyRefunded := false
+							itCN := creditnote.List(lparams)
+							for itCN.Next() {
+								cn := itCN.CreditNote()
+								if cn != nil && cn.Metadata != nil {
+									if v, ok := cn.Metadata["kyoraRefundKind"]; ok && v == "cancel_prorated" {
+										alreadyRefunded = true
+										break
+									}
 								}
 							}
-						}
-						if !alreadyRefunded {
-							_, rerr := creditnote.New(&stripelib.CreditNoteParams{
-								Invoice:      stripelib.String(inv.ID),
-								Amount:       stripelib.Int64(refundAmount),
-								RefundAmount: stripelib.Int64(refundAmount),
-								Reason:       stripelib.String(string(stripelib.CreditNoteReasonOrderChange)),
-								Memo:         stripelib.String("Prorated refund for immediate cancellation"),
-								Metadata:     map[string]string{"kyoraRefundKind": "cancel_prorated", "subscription": stripeSubID, "workspaceId": rec.WorkspaceID},
-							})
-							if rerr != nil {
-								logger.FromContext(ctx).Error("failed to create credit note refund", "error", rerr, "invoice", inv.ID)
+							if err := itCN.Err(); err != nil {
+								logger.FromContext(ctx).Warn("credit note listing failed", "error", err, "invoice", inv.ID)
 							}
-						} else {
-							logger.FromContext(ctx).Info("skip credit note refund: already applied", "invoice", inv.ID, "subscription", stripeSubID)
+							if !alreadyRefunded {
+								_, rerr := creditnote.New(&stripelib.CreditNoteParams{
+									Invoice:      stripelib.String(inv.ID),
+									Amount:       stripelib.Int64(refundAmount),
+									RefundAmount: stripelib.Int64(refundAmount),
+									Reason:       stripelib.String(string(stripelib.CreditNoteReasonOrderChange)),
+									Memo:         stripelib.String("Prorated refund for immediate cancellation"),
+									Metadata: map[string]string{
+										"kyoraRefundKind": "cancel_prorated",
+										"subscription":    stripeSubID,
+										"workspaceId":     rec.WorkspaceID,
+									},
+								})
+								if rerr != nil {
+									logger.FromContext(ctx).Error("failed to create credit note refund", "error", rerr, "invoice", inv.ID)
+								}
+							} else {
+								logger.FromContext(ctx).Info("skip credit note refund: already applied", "invoice", inv.ID, "subscription", stripeSubID)
+							}
 						}
 					}
 				}
 			}
-		} else {
-			logger.FromContext(ctx).Info("Skipping refund calculation: missing period bounds", "subscription", stripeSubID)
 		}
+		if err := iter.Err(); err != nil {
+			logger.FromContext(ctx).Warn("invoice listing failed", "error", err, "subscription", stripeSubID)
+		}
+	} else {
+		logger.FromContext(ctx).Info("Skipping refund calculation: missing period bounds", "subscription", stripeSubID)
 	}
-	_, _ = subscription.Cancel(stripeSubID, &stripelib.SubscriptionCancelParams{InvoiceNow: stripelib.Bool(false), Prorate: stripelib.Bool(false)})
+	cancelParams := &stripelib.SubscriptionCancelParams{InvoiceNow: stripelib.Bool(false), Prorate: stripelib.Bool(false)}
+	if _, err := withStripeRetry(ctx, 3, func() (*stripelib.Subscription, error) { return subscription.Cancel(stripeSubID, cancelParams) }); err != nil {
+		return err
+	}
 	rec.Status = SubscriptionStatusCanceled
-	rec.CurrentPeriodEnd = time.Now()
-	_ = s.storage.subscription.UpdateOne(ctx, rec)
+	rec.CurrentPeriodEnd = time.Now().UTC()
+	if err := s.storage.subscription.UpdateOne(ctx, rec); err != nil {
+		return err
+	}
+	return nil
 }
 
 // ensureWithinNewPlanLimits enforces usage within new plan limits (users, businesses, monthly orders)
@@ -474,9 +521,12 @@ func (s *Service) ResumeSubscriptionIfNoDue(ctx context.Context, ws *account.Wor
 	// Sync local status (fetch again)
 	stripeSub2, err := subscription.Get(rec.StripeSubID, nil)
 	if err == nil {
-		s.SyncSubscriptionStatus(ctx, stripeSub2.ID, string(stripeSub2.Status), 0, 0)
-		rec, _ = s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
-		l.Info("subscription resume completed", "finalStatus", rec.Status)
+		if err := s.SyncSubscriptionStatus(ctx, stripeSub2.ID, string(stripeSub2.Status), 0, 0); err != nil {
+			l.Warn("failed to sync local subscription status", "error", err)
+		} else {
+			rec, _ = s.GetSubscriptionByWorkspaceID(ctx, ws.ID)
+			l.Info("subscription resume completed", "finalStatus", rec.Status)
+		}
 	}
 	return rec, nil
 }

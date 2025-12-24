@@ -24,6 +24,18 @@ func ErrPlanNotFound(err error) error {
 	return problem.BadRequest("selected plan not found").WithError(err)
 }
 
+func ErrSessionUpdateFailed(err error) error {
+	p := problem.InternalError()
+	p.Detail = "failed to update onboarding session"
+	return p.WithError(err)
+}
+
+func ErrSessionCleanupFailed(err error) error {
+	p := problem.InternalError()
+	p.Detail = "failed to cleanup onboarding sessions"
+	return p.WithError(err)
+}
+
 // No special 402 helper; use BadRequest to indicate payment gating in the flow layer
 func ErrPaymentRequired(err error) error {
 	return problem.BadRequest("payment required").WithError(err)

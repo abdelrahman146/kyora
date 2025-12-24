@@ -15,12 +15,6 @@ import (
 
 var LoggerCtxKey = ctxkey.New("logger")
 
-// init sets a sensible default logger (JSON, INFO). It can be overridden by Init().
-func init() {
-	handler := slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelInfo})
-	slog.SetDefault(slog.New(handler))
-}
-
 // Init configures the global slog logger from viper config values.
 // It should be called early in application startup (e.g., Cobra PersistentPreRun).
 func Init() {

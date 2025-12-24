@@ -54,7 +54,8 @@ func (s *BillingSubscriptionAdvancedSuite) TestEstimateProration_AndScheduleChan
 	_, err = s.helper.CreatePlan(ctx, pro, decimal.NewFromInt(20), billing.PlanLimit{MaxOrdersPerMonth: 2000, MaxTeamMembers: 20, MaxBusinesses: 10})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": starter}, adminToken)
 	s.NoError(err)
@@ -104,7 +105,8 @@ func (s *BillingSubscriptionAdvancedSuite) TestTrialEndpoints_AreConsistent() {
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
 	s.NoError(err)
 	defer respSub.Body.Close()
@@ -134,7 +136,8 @@ func (s *BillingSubscriptionAdvancedSuite) TestGracePeriod_Validation() {
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
 	s.NoError(err)
 	defer respSub.Body.Close()
@@ -164,7 +167,8 @@ func (s *BillingSubscriptionAdvancedSuite) TestResumeSubscription_AfterCancel() 
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
 	s.NoError(err)

@@ -11,6 +11,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
 	pactomic "github.com/abdelrahman146/kyora/internal/platform/types/atomic"
@@ -55,6 +56,8 @@ func (s *Service) StartSession(ctx context.Context, emailStr, planDescriptor str
 	// Ensure email is not already a completed user
 	if _, err := s.account.GetUserByEmail(ctx, emailStr); err == nil {
 		return nil, ErrEmailAlreadyExists(nil)
+	} else if err != nil && !database.IsRecordNotFound(err) {
+		return nil, err
 	}
 	// Try to fetch plan and determine paid/free
 	plan, err := s.billing.GetPlanByDescriptor(ctx, planDescriptor)
@@ -63,7 +66,8 @@ func (s *Service) StartSession(ctx context.Context, emailStr, planDescriptor str
 	}
 	isPaid := !plan.Price.IsZero()
 	// Resume if active session exists
-	if existing, err := s.storage.GetActiveByEmail(ctx, emailStr); err == nil && existing != nil {
+	existing, err := s.storage.GetActiveByEmail(ctx, emailStr)
+	if err == nil {
 		// Update plan if changed
 		existing.PlanID = plan.ID
 		existing.PlanDescriptor = plan.Descriptor
@@ -71,11 +75,18 @@ func (s *Service) StartSession(ctx context.Context, emailStr, planDescriptor str
 		if existing.Stage == "" {
 			existing.Stage = StagePlanSelected
 		}
-		_ = s.storage.UpdateSession(ctx, existing)
+		if err := s.storage.UpdateSession(ctx, existing); err != nil {
+			return nil, ErrSessionUpdateFailed(err)
+		}
 		return existing, nil
 	}
+	if err != nil && !database.IsRecordNotFound(err) {
+		return nil, err
+	}
 	// Clear expired sessions to avoid unique constraint conflicts
-	_ = s.storage.DeleteExpiredSessionsByEmail(ctx, emailStr)
+	if err := s.storage.DeleteExpiredSessionsByEmail(ctx, emailStr); err != nil {
+		return nil, ErrSessionCleanupFailed(err)
+	}
 	sess := &OnboardingSession{
 		Email:          emailStr,
 		PlanID:         plan.ID,
@@ -419,7 +430,14 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token string) (user *a
 		return nil, "", err
 	}
 	// Send welcome email (best effort)
-	go func() { _ = s.emailNotif.SendWelcomeEmail(context.Background(), createdUser) }()
+	l := logger.FromContext(ctx)
+	go func(u *account.User) {
+		bg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		if err := s.emailNotif.SendWelcomeEmail(bg, u); err != nil {
+			l.Warn("failed to send welcome email", "error", err)
+		}
+	}(createdUser)
 	// Generate JWT
 	jwtToken, jwtErr := auth.NewJwtToken(createdUser.ID, createdUser.WorkspaceID)
 	if jwtErr != nil {

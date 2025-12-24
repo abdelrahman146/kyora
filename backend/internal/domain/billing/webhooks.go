@@ -5,8 +5,8 @@ import (
 	"crypto/hmac"
 	"crypto/sha256"
 	"crypto/subtle"
-	"encoding/json"
 	"encoding/hex"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strconv"
@@ -189,7 +189,10 @@ func (s *Service) handleSubscriptionCreated(ctx context.Context, raw json.RawMes
 	status := cast.ToString(obj["status"])
 	start := cast.ToInt64(obj["current_period_start"])
 	end := cast.ToInt64(obj["current_period_end"])
-	s.SyncSubscriptionStatus(ctx, id, status, start, end)
+	if err := s.SyncSubscriptionStatus(ctx, id, status, start, end); err != nil {
+		logger.FromContext(ctx).Error("failed to sync subscription status", "error", err, "stripeSubId", id)
+		return ErrWebhookProcessingFailed(err, "sync_subscription")
+	}
 	return nil
 }
 
@@ -205,7 +208,10 @@ func (s *Service) handleSubscriptionDeleted(ctx context.Context, raw json.RawMes
 	id := cast.ToString(obj["id"])
 	start := cast.ToInt64(obj["current_period_start"])
 	end := cast.ToInt64(obj["current_period_end"])
-	s.RefundAndFinalizeCancellation(ctx, id, start, end)
+	if err := s.RefundAndFinalizeCancellation(ctx, id, start, end); err != nil {
+		logger.FromContext(ctx).Error("failed to finalize cancellation", "error", err, "stripeSubId", id)
+		return ErrWebhookProcessingFailed(err, "finalize_cancellation")
+	}
 	return nil
 }
 
@@ -216,33 +222,49 @@ func (s *Service) handleInvoicePaymentSucceeded(ctx context.Context, raw json.Ra
 	}
 	subID := cast.ToString(obj["subscription"])
 	if subID != "" {
-		s.MarkSubscriptionActive(ctx, subID)
+		if err := s.MarkSubscriptionActive(ctx, subID); err != nil {
+			logger.FromContext(ctx).Error("failed to mark subscription active", "error", err, "stripeSubId", subID)
+			return ErrWebhookProcessingFailed(err, "mark_subscription_active")
+		}
 		if s.Notification != nil {
-			go func(subscriptionID string) {
-				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+			l := logger.FromContext(ctx)
+			go func(subscriptionID string, createdAt int64) {
+				bg, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+				subscription, err := s.storage.subscription.FindOne(bg, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
+					if err != nil {
+						l.Warn("failed to load subscription for payment notification", "error", err, "stripeSubId", subscriptionID)
+					}
 					return
 				}
-				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				plan, err := s.GetPlanByID(bg, subscription.PlanID)
 				if err != nil || plan == nil {
+					if err != nil {
+						l.Warn("failed to load plan for payment notification", "error", err, "planId", subscription.PlanID)
+					}
 					return
 				}
 				invoiceURL := cast.ToString(obj["hosted_invoice_url"])
 				if invoiceURL == "" {
 					invoiceURL = cast.ToString(obj["invoice_pdf"])
 				}
-				payAt := time.Now()
-				if v := cast.ToInt64(obj["created"]); v != 0 {
-					payAt = time.Unix(v, 0)
+				payAt := time.Now().UTC()
+				if createdAt != 0 {
+					payAt = time.Unix(createdAt, 0).UTC()
 				}
 				last4 := "****" // masked; extraction omitted
 				isFirst := time.Since(subscription.CreatedAt) < 24*time.Hour
 				if isFirst {
-					_ = s.Notification.SendSubscriptionConfirmedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL)
+					if err := s.Notification.SendSubscriptionConfirmedEmail(bg, subscription.WorkspaceID, subscription, plan, last4, invoiceURL); err != nil {
+						l.Warn("failed to send subscription confirmed email", "error", err, "workspaceId", subscription.WorkspaceID)
+					}
 				} else {
-					_ = s.Notification.SendPaymentSucceededEmail(context.Background(), subscription.WorkspaceID, subscription, plan, last4, invoiceURL, payAt)
+					if err := s.Notification.SendPaymentSucceededEmail(bg, subscription.WorkspaceID, subscription, plan, last4, invoiceURL, payAt); err != nil {
+						l.Warn("failed to send payment succeeded email", "error", err, "workspaceId", subscription.WorkspaceID)
+					}
 				}
-			}(subID)
+			}(subID, cast.ToInt64(obj["created"]))
 		}
 	}
 	return nil
@@ -255,18 +277,32 @@ func (s *Service) handleInvoicePaymentFailed(ctx context.Context, raw json.RawMe
 	}
 	subID := cast.ToString(obj["subscription"])
 	if subID != "" {
-		s.MarkSubscriptionPastDue(ctx, subID)
+		if err := s.MarkSubscriptionPastDue(ctx, subID); err != nil {
+			logger.FromContext(ctx).Error("failed to mark subscription past due", "error", err, "stripeSubId", subID)
+			return ErrWebhookProcessingFailed(err, "mark_subscription_past_due")
+		}
 		if s.Notification != nil {
+			l := logger.FromContext(ctx)
 			go func(subscriptionID string) {
-				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+				bg, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+				subscription, err := s.storage.subscription.FindOne(bg, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
+					if err != nil {
+						l.Warn("failed to load subscription for payment failed notification", "error", err, "stripeSubId", subscriptionID)
+					}
 					return
 				}
-				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				plan, err := s.GetPlanByID(bg, subscription.PlanID)
 				if err != nil || plan == nil {
+					if err != nil {
+						l.Warn("failed to load plan for payment failed notification", "error", err, "planId", subscription.PlanID)
+					}
 					return
 				}
-				_ = s.Notification.SendPaymentFailedEmail(context.Background(), subscription.WorkspaceID, subscription, plan, "****", time.Now(), nil)
+				if err := s.Notification.SendPaymentFailedEmail(bg, subscription.WorkspaceID, subscription, plan, "****", time.Now().UTC(), nil); err != nil {
+					l.Warn("failed to send payment failed email", "error", err, "workspaceId", subscription.WorkspaceID)
+				}
 			}(subID)
 		}
 	}
@@ -281,20 +317,32 @@ func (s *Service) handleTrialWillEnd(ctx context.Context, raw json.RawMessage) e
 	subID := cast.ToString(obj["id"])
 	if subID != "" {
 		if s.Notification != nil {
+			l := logger.FromContext(ctx)
 			go func(subscriptionID string) {
-				subscription, err := s.storage.subscription.FindOne(context.Background(), s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
+				bg, cancel := context.WithTimeout(context.Background(), 15*time.Second)
+				defer cancel()
+				subscription, err := s.storage.subscription.FindOne(bg, s.storage.subscription.ScopeEquals(SubscriptionSchema.StripeSubID, subscriptionID))
 				if err != nil || subscription == nil {
+					if err != nil {
+						l.Warn("failed to load subscription for trial ending notification", "error", err, "stripeSubId", subscriptionID)
+					}
 					return
 				}
-				plan, err := s.GetPlanByID(context.Background(), subscription.PlanID)
+				plan, err := s.GetPlanByID(bg, subscription.PlanID)
 				if err != nil || plan == nil {
+					if err != nil {
+						l.Warn("failed to load plan for trial ending notification", "error", err, "planId", subscription.PlanID)
+					}
 					return
 				}
-				trialInfo, err := s.CheckTrialStatus(context.Background(), &account.Workspace{ID: subscription.WorkspaceID})
+				trialInfo, err := s.CheckTrialStatus(bg, &account.Workspace{ID: subscription.WorkspaceID})
 				if err != nil {
+					l.Warn("failed to check trial status", "error", err, "workspaceId", subscription.WorkspaceID)
 					return
 				}
-				_ = s.Notification.SendTrialEndingEmail(context.Background(), subscription.WorkspaceID, subscription, plan, trialInfo)
+				if err := s.Notification.SendTrialEndingEmail(bg, subscription.WorkspaceID, subscription, plan, trialInfo); err != nil {
+					l.Warn("failed to send trial ending email", "error", err, "workspaceId", subscription.WorkspaceID)
+				}
 			}(subID)
 		}
 	}
@@ -317,7 +365,10 @@ func (s *Service) handleInvoiceMarkedUncollectible(ctx context.Context, raw json
 	}
 	if subID, ok := obj["subscription"].(string); ok && subID != "" {
 		// Downgrade local status so UI can show attention needed
-		s.MarkSubscriptionPastDue(ctx, subID)
+		if err := s.MarkSubscriptionPastDue(ctx, subID); err != nil {
+			logger.FromContext(ctx).Error("failed to mark subscription past due", "error", err, "stripeSubId", subID)
+			return ErrWebhookProcessingFailed(err, "mark_subscription_past_due")
+		}
 	}
 	return nil
 }
@@ -347,9 +398,11 @@ func (s *Service) handlePaymentMethodAutomaticallyUpdated(ctx context.Context, r
 		if cid != "" {
 			cu, err := customer.Get(cid, nil)
 			if err == nil && (cu.InvoiceSettings == nil || cu.InvoiceSettings.DefaultPaymentMethod == nil) {
-				_, _ = withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
+				if _, err := withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
 					return customer.Update(cid, &stripelib.CustomerParams{InvoiceSettings: &stripelib.CustomerInvoiceSettingsParams{DefaultPaymentMethod: stripelib.String(pm.ID)}})
-				})
+				}); err != nil {
+					logger.FromContext(ctx).Warn("failed to update customer default payment method", "error", err, "stripeCustomerId", cid, "stripePaymentMethodId", pm.ID)
+				}
 			}
 		}
 	}
@@ -381,13 +434,18 @@ func (s *Service) handleCheckoutSessionCompleted(ctx context.Context, raw json.R
 			}); err != nil {
 				return ErrWebhookProcessingFailed(err, "attach_payment_method")
 			}
-			_, _ = withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
+			if _, err := withStripeRetry[*stripelib.Customer](ctx, 3, func() (*stripelib.Customer, error) {
 				return customer.Update(sess.Customer.ID, &stripelib.CustomerParams{InvoiceSettings: &stripelib.CustomerInvoiceSettingsParams{DefaultPaymentMethod: stripelib.String(pmID)}})
-			})
+			}); err != nil {
+				logger.FromContext(ctx).Warn("failed to set customer invoice settings default payment method", "error", err, "stripeCustomerId", sess.Customer.ID, "stripePaymentMethodId", pmID)
+			}
 		}
 	}
 	if sess.Subscription != nil {
-		s.MarkSubscriptionActive(ctx, sess.Subscription.ID)
+		if err := s.MarkSubscriptionActive(ctx, sess.Subscription.ID); err != nil {
+			logger.FromContext(ctx).Error("failed to mark subscription active", "error", err, "stripeSubId", sess.Subscription.ID)
+			return ErrWebhookProcessingFailed(err, "mark_subscription_active")
+		}
 		// If this checkout was part of onboarding, notify the onboarding flow via event
 		if sess.Metadata != nil {
 			if obID, ok := sess.Metadata["onboarding_session_id"]; ok && obID != "" {

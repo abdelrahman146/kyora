@@ -26,6 +26,12 @@ func TestMain(m *testing.M) {
 
 	// Override email provider to use mock for tests
 	viper.Set(config.EmailProvider, "mock")
+	// JWT is required for authenticated endpoints in tests.
+	viper.Set(config.JWTSecret, "test_jwt_secret")
+
+	// Keep tests quiet and faster; E2E suites can generate lots of DB queries.
+	// (Set to "info" locally when debugging query issues.)
+	viper.Set(config.DatabaseLogLevel, "silent")
 
 	// Configure Stripe for stripe-mock.
 	// stripe-mock accepts a limited set of test keys; use the canonical one.
@@ -36,6 +42,12 @@ func TestMain(m *testing.M) {
 	// Disable automatic plan sync for test isolation
 	// Tests will create their own plans as needed
 	viper.Set(config.BillingAutoSyncPlans, false)
+
+	// Auto-migrate is very expensive when it runs once per repository construction.
+	// In E2E, the server boot will touch all storages once (migrating tables).
+	// After that, tests and helpers may create additional storages for fixtures,
+	// so we disable auto-migrate to keep `go test ./...` bounded.
+	viper.Set(config.DatabaseAutoMigrate, true)
 
 	env, cleanup, err := testutils.InitEnvironment(ctx)
 	if err != nil {
@@ -58,6 +70,9 @@ func TestMain(m *testing.M) {
 		cleanup()
 		log.Fatalf("failed to start server: %v", err)
 	}
+
+	// Prevent repeated migrations from test helpers/suites.
+	viper.Set(config.DatabaseAutoMigrate, false)
 
 	// Run tests
 	exitCode := m.Run()

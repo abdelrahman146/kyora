@@ -80,6 +80,9 @@ func WithStripeBaseURL(url string) func(*ServerConfig) {
 }
 
 func New(opts ...func(*ServerConfig)) (*Server, error) {
+	// Ensure config defaults are present even when running outside Cobra (e.g., tests).
+	config.Configure()
+
 	// apply options and set config values and override env variables
 	conf := &ServerConfig{}
 	for _, opt := range opts {
@@ -127,7 +130,10 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	dsn := viper.GetString(config.DatabaseDSN)
 	logLevel := viper.GetString(config.DatabaseLogLevel)
 
-	db := database.NewConnection(dsn, logLevel)
+	db, err := database.NewConnection(dsn, logLevel)
+	if err != nil {
+		return nil, err
+	}
 	servers := viper.GetStringSlice(config.CacheHosts)
 	cacheDB := cache.NewConnection(servers)
 	atomicProcessor := database.NewAtomicProcess(db)

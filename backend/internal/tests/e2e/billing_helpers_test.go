@@ -47,12 +47,12 @@ func (h *BillingTestHelper) UniqueEmail(prefix string) string {
 	return fmt.Sprintf("%s_%s@example.com", h.UniqueSlug(prefix), id.Base62(6))
 }
 
-func (h *BillingTestHelper) CreateTestUser(ctx context.Context, email string, userRole role.Role) (*account.User, *account.Workspace, string) {
+func (h *BillingTestHelper) CreateTestUser(ctx context.Context, email string, userRole role.Role) (*account.User, *account.Workspace, string, error) {
 	user, ws, token, err := testutils.CreateAuthenticatedUser(ctx, h.db, email, "Pass123!", "Test", "User", userRole)
 	if err != nil {
-		panic(err)
+		return nil, nil, "", err
 	}
-	return user, ws, token
+	return user, ws, token, nil
 }
 
 func (h *BillingTestHelper) CreateStripeCardPaymentMethod() (string, error) {
