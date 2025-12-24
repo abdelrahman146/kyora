@@ -151,6 +151,7 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 			Descriptor:        normDescriptor,
 			Name:              input.Name,
 			Brand:             strings.TrimSpace(input.Brand),
+			LogoURL:           strings.TrimSpace(input.LogoURL),
 			CountryCode:       country,
 			VatRate:           input.VatRate,
 			Currency:          currency,
@@ -224,6 +225,16 @@ func (s *Service) normalizeZoneCountries(in []string) (CountryCodeList, error) {
 func (s *Service) ListShippingZones(ctx context.Context, actor *account.User, biz *Business) ([]*ShippingZone, error) {
 	if err := actor.Role.HasPermission(role.ActionView, role.ResourceBusiness); err != nil {
 		return nil, err
+	}
+	return s.storage.ListShippingZones(ctx, biz.ID)
+}
+
+// ListShippingZonesPublic returns shipping zones for a business without requiring an authenticated actor.
+//
+// This is intended for public storefront use only.
+func (s *Service) ListShippingZonesPublic(ctx context.Context, biz *Business) ([]*ShippingZone, error) {
+	if biz == nil {
+		return nil, problem.BadRequest("business is required")
 	}
 	return s.storage.ListShippingZones(ctx, biz.ID)
 }
@@ -404,6 +415,9 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 	}
 	if input.Brand != nil {
 		business.Brand = strings.TrimSpace(*input.Brand)
+	}
+	if input.LogoURL != nil {
+		business.LogoURL = strings.TrimSpace(*input.LogoURL)
 	}
 	if input.Descriptor != nil {
 		norm, err := normalizeBusinessDescriptor(*input.Descriptor)

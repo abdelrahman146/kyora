@@ -44,6 +44,7 @@ type PublicBusiness struct {
 	Name               string                   `json:"name"`
 	Descriptor         string                   `json:"descriptor"`
 	Brand              string                   `json:"brand,omitempty"`
+	LogoURL            string                   `json:"logoUrl,omitempty"`
 	CountryCode        string                   `json:"countryCode"`
 	Currency           string                   `json:"currency"`
 	StorefrontPublicID string                   `json:"storefrontPublicId"`
@@ -69,7 +70,7 @@ type PublicVariant struct {
 	SKU       string                 `json:"sku"`
 	SalePrice string                 `json:"salePrice"`
 	Currency  string                 `json:"currency"`
-	Photos    inventory.PhotoURLList `json:"photos,omitempty"`
+	Photos    inventory.PhotoURLList `json:"photos"`
 }
 
 type PublicProduct struct {
@@ -77,7 +78,7 @@ type PublicProduct struct {
 	Name        string                 `json:"name"`
 	Description string                 `json:"description,omitempty"`
 	CategoryID  string                 `json:"categoryId"`
-	Photos      inventory.PhotoURLList `json:"photos,omitempty"`
+	Photos      inventory.PhotoURLList `json:"photos"`
 	Variants    []PublicVariant        `json:"variants"`
 }
 
@@ -91,6 +92,15 @@ type CatalogResponse struct {
 	Business   PublicBusiness   `json:"business"`
 	Categories []PublicCategory `json:"categories"`
 	Products   []PublicProduct  `json:"products"`
+}
+
+type PublicShippingZone struct {
+	ID                    string   `json:"id"`
+	Name                  string   `json:"name"`
+	Countries             []string `json:"countries"`
+	Currency              string   `json:"currency"`
+	ShippingCost          string   `json:"shippingCost"`
+	FreeShippingThreshold string   `json:"freeShippingThreshold"`
 }
 
 func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*CatalogResponse, error) {
@@ -117,6 +127,10 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 
 	variantsByProduct := map[string][]PublicVariant{}
 	for _, v := range vars {
+		photos := v.Photos
+		if photos == nil {
+			photos = inventory.PhotoURLList{}
+		}
 		variantsByProduct[v.ProductID] = append(variantsByProduct[v.ProductID], PublicVariant{
 			ID:        v.ID,
 			ProductID: v.ProductID,
@@ -125,7 +139,7 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 			SKU:       v.SKU,
 			SalePrice: v.SalePrice.String(),
 			Currency:  v.Currency,
-			Photos:    v.Photos,
+			Photos:    photos,
 		})
 	}
 
@@ -136,12 +150,16 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 
 	outProds := make([]PublicProduct, 0, len(prods))
 	for _, p := range prods {
+		photos := p.Photos
+		if photos == nil {
+			photos = inventory.PhotoURLList{}
+		}
 		outProds = append(outProds, PublicProduct{
 			ID:          p.ID,
 			Name:        p.Name,
 			Description: p.Description,
 			CategoryID:  p.CategoryID,
-			Photos:      p.Photos,
+			Photos:      photos,
 			Variants:    variantsByProduct[p.ID],
 		})
 	}
@@ -152,6 +170,7 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 			Name:               biz.Name,
 			Descriptor:         biz.Descriptor,
 			Brand:              biz.Brand,
+			LogoURL:            biz.LogoURL,
 			CountryCode:        biz.CountryCode,
 			Currency:           biz.Currency,
 			StorefrontPublicID: biz.StorefrontPublicID,
@@ -172,6 +191,38 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 		Products:   outProds,
 	}
 	return resp, nil
+}
+
+func (s *Service) ListShippingZones(ctx context.Context, storefrontPublicID string) ([]PublicShippingZone, error) {
+	biz, err := s.business.GetBusinessByStorefrontPublicID(ctx, storefrontPublicID)
+	if err != nil {
+		return nil, ErrStorefrontNotFound(storefrontPublicID, err)
+	}
+	if !biz.StorefrontEnabled {
+		return nil, ErrStorefrontDisabled(storefrontPublicID)
+	}
+
+	zones, err := s.business.ListShippingZonesPublic(ctx, biz)
+	if err != nil {
+		return nil, err
+	}
+
+	out := make([]PublicShippingZone, 0, len(zones))
+	for _, z := range zones {
+		countries := []string(z.Countries)
+		if countries == nil {
+			countries = []string{}
+		}
+		out = append(out, PublicShippingZone{
+			ID:                    z.ID,
+			Name:                  z.Name,
+			Countries:             countries,
+			Currency:              z.Currency,
+			ShippingCost:          z.ShippingCost.String(),
+			FreeShippingThreshold: z.FreeShippingThreshold.String(),
+		})
+	}
+	return out, nil
 }
 
 func (s *Service) listAllProducts(ctx context.Context, biz *business.Business) ([]*inventory.Product, error) {

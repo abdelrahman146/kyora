@@ -1,0 +1,32 @@
+@import "tailwindcss";
+@plugin "daisyui";
+
+:root {
+  -webkit-tap-highlight-color: transparent;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+html,
+body {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+}
+
+/* Better mobile feel: avoid accidental overscroll glow / selection */
+* {
+  -webkit-touch-callout: none;
+}
+
+/* iOS safe-area helpers */
+.safe-bottom {
+  padding-bottom: env(safe-area-inset-bottom);
+}
+
+.safe-top {
+  padding-top: env(safe-area-inset-top);
+}

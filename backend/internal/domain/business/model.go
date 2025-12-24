@@ -69,6 +69,7 @@ type Business struct {
 	Workspace   *account.Workspace `gorm:"foreignKey:WorkspaceID;references:ID" json:"workspace,omitempty"`
 	Name        string             `gorm:"column:name;type:text" json:"name"`
 	Brand       string             `gorm:"column:brand;type:text" json:"brand"`
+	LogoURL     string             `gorm:"column:logo_url;type:text" json:"logoUrl"`
 	CountryCode string             `gorm:"column:country_code;type:text" json:"countryCode"`
 	Currency    string             `gorm:"column:currency;type:text" json:"currency"`
 
@@ -114,6 +115,7 @@ var BusinessSchema = struct {
 	WorkspaceID        schema.Field
 	Name               schema.Field
 	Brand              schema.Field
+	LogoURL            schema.Field
 	CountryCode        schema.Field
 	Currency           schema.Field
 	StorefrontPublicID schema.Field
@@ -142,6 +144,7 @@ var BusinessSchema = struct {
 	WorkspaceID:        schema.NewField("workspace_id", "workspaceId"),
 	Name:               schema.NewField("name", "name"),
 	Brand:              schema.NewField("brand", "brand"),
+	LogoURL:            schema.NewField("logo_url", "logoUrl"),
 	CountryCode:        schema.NewField("country_code", "countryCode"),
 	Currency:           schema.NewField("currency", "currency"),
 	StorefrontPublicID: schema.NewField("storefront_public_id", "storefrontPublicId"),
@@ -169,6 +172,7 @@ var BusinessSchema = struct {
 type CreateBusinessInput struct {
 	Name              string          `form:"name" json:"name" binding:"required"`
 	Brand             string          `form:"brand" json:"brand" binding:"omitempty"`
+	LogoURL           string          `form:"logoUrl" json:"logoUrl" binding:"omitempty,url"`
 	Descriptor        string          `form:"descriptor" json:"descriptor" binding:"required"`
 	CountryCode       string          `form:"countryCode" json:"countryCode" binding:"required,len=2"`
 	Currency          string          `form:"currency" json:"currency" binding:"required,len=3"`
@@ -192,6 +196,7 @@ type CreateBusinessInput struct {
 type UpdateBusinessInput struct {
 	Name              *string             `form:"name" json:"name" binding:"omitempty"`
 	Brand             *string             `form:"brand" json:"brand" binding:"omitempty"`
+	LogoURL           *string             `form:"logoUrl" json:"logoUrl" binding:"omitempty,url"`
 	Descriptor        *string             `form:"descriptor" json:"descriptor" binding:"omitempty"`
 	CountryCode       *string             `form:"countryCode" json:"countryCode" binding:"omitempty,len=2"`
 	Currency          *string             `form:"currency" json:"currency" binding:"omitempty,len=3"`

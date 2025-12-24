@@ -36,6 +36,24 @@ func (h *HttpHandler) GetCatalog(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, data)
 }
 
+// ListShippingZones godoc
+// @Summary List storefront shipping zones
+// @Description Returns shipping zones for the storefront (public)
+// @Tags storefront
+// @Param storefrontPublicId path string true "Storefront Public ID"
+// @Success 200 {array} storefront.PublicShippingZone
+// @Failure 404 {object} problem.Problem
+// @Router /v1/storefront/{storefrontPublicId}/shipping-zones [get]
+func (h *HttpHandler) ListShippingZones(c *gin.Context) {
+	storefrontID := c.Param("storefrontPublicId")
+	data, err := h.service.ListShippingZones(c.Request.Context(), storefrontID)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, data)
+}
+
 // CreateOrder godoc
 // @Summary Create storefront order
 // @Description Creates a pending, unpaid order from the public storefront (idempotent via Idempotency-Key)

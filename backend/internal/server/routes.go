@@ -1,6 +1,8 @@
 package server
 
 import (
+	"time"
+
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
@@ -13,14 +15,31 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/storefront"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
+	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
 func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
-
 	group := r.Group("/v1/storefront")
 	{
+		// Public storefront endpoints must be callable from arbitrary storefront origins (custom domains,
+		// link-in-bio pages, local dev). These endpoints do not rely on cookies/credentials.
+		group.Use(cors.New(cors.Config{
+			AllowAllOrigins: true,
+			AllowMethods:    []string{"GET", "POST", "OPTIONS"},
+			AllowHeaders: []string{
+				"Origin",
+				"Content-Type",
+				"Accept",
+				"Idempotency-Key",
+				"X-Trace-ID",
+			},
+			ExposeHeaders: []string{"X-Trace-ID"},
+			MaxAge:        12 * time.Hour,
+		}))
+
 		group.GET("/:storefrontPublicId/catalog", h.GetCatalog)
+		group.GET("/:storefrontPublicId/shipping-zones", h.ListShippingZones)
 		group.POST("/:storefrontPublicId/orders", h.CreateOrder)
 	}
 }

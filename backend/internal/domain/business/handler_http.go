@@ -31,6 +31,7 @@ type businessResponse struct {
 	Descriptor         string          `json:"descriptor"`
 	Name               string          `json:"name"`
 	Brand              string          `json:"brand"`
+	LogoURL            string          `json:"logoUrl"`
 	CountryCode        string          `json:"countryCode"`
 	Currency           string          `json:"currency"`
 	StorefrontPublicID string          `json:"storefrontPublicId"`
@@ -115,6 +116,7 @@ func toBusinessResponse(b *Business) businessResponse {
 		Descriptor:         b.Descriptor,
 		Name:               b.Name,
 		Brand:              b.Brand,
+		LogoURL:            b.LogoURL,
 		CountryCode:        b.CountryCode,
 		Currency:           b.Currency,
 		StorefrontPublicID: b.StorefrontPublicID,
