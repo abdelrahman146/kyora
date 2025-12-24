@@ -68,7 +68,7 @@ type listCustomersQuery struct {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, email)"
-// @Param        search query string false "Search term for customer name or email"
+// @Param        search query string false "Search term for customer name/email/phone/social handles"
 // @Success      200 {object} list.ListResponse[Customer]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -98,6 +98,14 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 	}
 	if query.PageSize == 0 {
 		query.PageSize = 20
+	}
+	if query.SearchTerm != "" {
+		term, err := list.NormalizeSearchTerm(query.SearchTerm)
+		if err != nil {
+			response.Error(c, problem.BadRequest("invalid search term"))
+			return
+		}
+		query.SearchTerm = term
 	}
 
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)

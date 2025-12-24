@@ -121,6 +121,42 @@ func (s *InventoryProductsSuite) TestListProducts_PaginationAndOrdering() {
 	s.Equal("C Product", items2[0].(map[string]interface{})["name"])
 }
 
+func (s *InventoryProductsSuite) TestListProducts_Search() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+	biz, err := s.inventoryHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+	cat, err := s.inventoryHelper.CreateTestCategory(ctx, biz.ID, "Cat", "cat")
+	s.NoError(err)
+
+	_, err = s.inventoryHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Alpha", "")
+	s.NoError(err)
+	_, err = s.inventoryHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Bravo", "")
+	s.NoError(err)
+
+	resp, err := s.inventoryHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/inventory/products?search=Bravo", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.True(len(items) >= 1)
+
+	found := false
+	for _, it := range items {
+		m := it.(map[string]interface{})
+		if m["name"] == "Bravo" {
+			found = true
+			break
+		}
+	}
+	s.True(found)
+}
+
 func (s *InventoryProductsSuite) TestGetProduct_IncludesVariants() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)

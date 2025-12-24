@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
@@ -308,6 +309,48 @@ func (s *CustomerCRUDSuite) TestListCustomers_Success() {
 	s.Equal(float64(5), result["totalCount"])
 }
 
+func (s *CustomerCRUDSuite) TestListCustomers_Search() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	_, err = s.customerHelper.CreateTestCustomer(ctx, biz.ID, "alice@example.com", "Alice Wonder")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomer(ctx, biz.ID, "bob@example.com", "Bob Builder")
+	s.NoError(err)
+
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?search=alice", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 1)
+	item := items[0].(map[string]interface{})
+	s.Equal("Alice Wonder", item["name"])
+}
+
+func (s *CustomerCRUDSuite) TestListCustomers_Search_TooLong() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+	_, err = s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	long := strings.Repeat("a", 300)
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?search="+long, nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusBadRequest, resp.StatusCode)
+}
+
 func (s *CustomerCRUDSuite) TestListCustomers_Pagination() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
@@ -371,14 +414,14 @@ func (s *CustomerCRUDSuite) TestListCustomers_CrossWorkspaceIsolation() {
 	s.NoError(err)
 
 	// Each workspace should only see its own customers
-	resp1, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-1/customers", nil, token1)
+	resp1, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-1/customers?search=Customer", nil, token1)
 	s.NoError(err)
 	defer resp1.Body.Close()
 	var result1 map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp1, &result1))
 	s.Equal(float64(1), result1["totalCount"])
 
-	resp2, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-2/customers", nil, token2)
+	resp2, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-2/customers?search=Customer", nil, token2)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	var result2 map[string]interface{}

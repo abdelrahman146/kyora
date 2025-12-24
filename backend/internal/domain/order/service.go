@@ -451,77 +451,73 @@ type ListOrdersFilters struct {
 }
 
 func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListOrdersFilters) ([]*Order, int64, error) {
-	opts := []func(db *gorm.DB) *gorm.DB{
-		s.storage.order.ScopeBusinessID(biz.ID),
-		s.storage.order.WithPagination(req.Offset(), req.Limit()),
-		s.storage.order.WithOrderBy(req.ParsedOrderBy(OrderSchema)),
+	baseScopes := []func(db *gorm.DB) *gorm.DB{
+		// Qualify business_id to avoid ambiguity when joining other tables that also have business_id.
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 	}
-	if req.SearchTerm() != "" {
-		opts = append(opts, s.storage.order.ScopeSearchTerm(req.SearchTerm(), OrderSchema.OrderNumber, OrderSchema.Channel))
-	}
+
 	if filters != nil {
 		if len(filters.Statuses) > 0 {
 			vals := make([]any, 0, len(filters.Statuses))
 			for _, st := range filters.Statuses {
 				vals = append(vals, st)
 			}
-			opts = append(opts, s.storage.order.ScopeIn(OrderSchema.Status, vals))
+			baseScopes = append(baseScopes, s.storage.order.ScopeIn(OrderSchema.Status, vals))
 		}
 		if len(filters.PaymentStatuses) > 0 {
 			vals := make([]any, 0, len(filters.PaymentStatuses))
 			for _, st := range filters.PaymentStatuses {
 				vals = append(vals, st)
 			}
-			opts = append(opts, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
+			baseScopes = append(baseScopes, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
 		}
 		if filters.CustomerID != "" {
-			opts = append(opts, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
+			baseScopes = append(baseScopes, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
 		}
 		if filters.OrderNumber != "" {
-			opts = append(opts, s.storage.order.ScopeEquals(OrderSchema.OrderNumber, filters.OrderNumber))
+			baseScopes = append(baseScopes, s.storage.order.ScopeEquals(OrderSchema.OrderNumber, filters.OrderNumber))
 		}
 		if !filters.From.IsZero() || !filters.To.IsZero() {
-			opts = append(opts, s.storage.order.ScopeTime(OrderSchema.OrderedAt, filters.From, filters.To))
+			baseScopes = append(baseScopes, s.storage.order.ScopeTime(OrderSchema.OrderedAt, filters.From, filters.To))
 		}
 	}
 
-	items, err := s.storage.order.FindMany(ctx, opts...)
+	var listExtra []func(db *gorm.DB) *gorm.DB
+	if req.SearchTerm() != "" {
+		term := req.SearchTerm()
+		like := "%" + term + "%"
+		baseScopes = append(baseScopes,
+			s.storage.order.WithJoins("LEFT JOIN customers ON customers.id = orders.customer_id"),
+			s.storage.order.ScopeWhere(
+				"(orders.search_vector @@ websearch_to_tsquery('simple', ?) OR customers.search_vector @@ websearch_to_tsquery('simple', ?) OR orders.order_number ILIKE ? OR customers.name ILIKE ? OR customers.email ILIKE ?)",
+				term,
+				term,
+				like,
+				like,
+				like,
+			),
+		)
+		if !req.HasExplicitOrderBy() {
+			rankExpr, err := database.WebSearchRankOrder(term, "orders.search_vector", "customers.search_vector")
+			if err != nil {
+				return nil, 0, err
+			}
+			listExtra = append(listExtra, s.storage.order.WithOrderByExpr(rankExpr))
+		}
+	}
+
+	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)
+	findOpts = append(findOpts, listExtra...)
+	findOpts = append(findOpts,
+		s.storage.order.WithPagination(req.Offset(), req.Limit()),
+		s.storage.order.WithOrderBy(req.ParsedOrderBy(OrderSchema)),
+	)
+	items, err := s.storage.order.FindMany(ctx, findOpts...)
 	if err != nil {
 		return nil, 0, err
 	}
-	// Count without pagination/order
-	countOpts := []func(db *gorm.DB) *gorm.DB{
-		s.storage.order.ScopeBusinessID(biz.ID),
-	}
-	if req.SearchTerm() != "" {
-		countOpts = append(countOpts, s.storage.order.ScopeSearchTerm(req.SearchTerm(), OrderSchema.OrderNumber, OrderSchema.Channel))
-	}
-	if filters != nil {
-		if len(filters.Statuses) > 0 {
-			vals := make([]any, 0, len(filters.Statuses))
-			for _, st := range filters.Statuses {
-				vals = append(vals, st)
-			}
-			countOpts = append(countOpts, s.storage.order.ScopeIn(OrderSchema.Status, vals))
-		}
-		if len(filters.PaymentStatuses) > 0 {
-			vals := make([]any, 0, len(filters.PaymentStatuses))
-			for _, st := range filters.PaymentStatuses {
-				vals = append(vals, st)
-			}
-			countOpts = append(countOpts, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
-		}
-		if filters.CustomerID != "" {
-			countOpts = append(countOpts, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
-		}
-		if filters.OrderNumber != "" {
-			countOpts = append(countOpts, s.storage.order.ScopeEquals(OrderSchema.OrderNumber, filters.OrderNumber))
-		}
-		if !filters.From.IsZero() || !filters.To.IsZero() {
-			countOpts = append(countOpts, s.storage.order.ScopeTime(OrderSchema.OrderedAt, filters.From, filters.To))
-		}
-	}
-	count, err := s.storage.order.Count(ctx, countOpts...)
+
+	count, err := s.storage.order.Count(ctx, baseScopes...)
 	if err != nil {
 		return nil, 0, err
 	}

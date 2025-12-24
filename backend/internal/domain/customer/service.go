@@ -8,8 +8,10 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/timeseries"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
 	"gorm.io/gorm"
@@ -143,19 +145,34 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 	}
 
 	// Apply search if provided
+	var listOpts []func(*gorm.DB) *gorm.DB
 	if req.SearchTerm() != "" {
-		searchScopes := []func(*gorm.DB) *gorm.DB{
-			s.storage.customer.ScopeSearchTerm(req.SearchTerm(), CustomerSchema.Name, CustomerSchema.Email),
+		term := req.SearchTerm()
+		like := "%" + term + "%"
+		scopes = append(scopes,
+			s.storage.customer.ScopeWhere(
+				"(customers.search_vector @@ websearch_to_tsquery('simple', ?) OR customers.name ILIKE ? OR customers.email ILIKE ?)",
+				term,
+				like,
+				like,
+			),
+		)
+		if !req.HasExplicitOrderBy() {
+			rankExpr, err := database.WebSearchRankOrder(term, "customers.search_vector")
+			if err != nil {
+				return nil, 0, problem.InternalError().WithError(err)
+			}
+			listOpts = append(listOpts, s.storage.customer.WithOrderByExpr(rankExpr))
 		}
-		scopes = append(scopes, searchScopes...)
 	}
 
-	customers, err := s.storage.customer.FindMany(ctx,
-		append(scopes,
-			s.storage.customer.WithPagination(req.Offset(), req.Limit()),
-			s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
-		)...,
+	findOpts := append([]func(*gorm.DB) *gorm.DB{}, scopes...)
+	findOpts = append(findOpts, listOpts...)
+	findOpts = append(findOpts,
+		s.storage.customer.WithPagination(req.Offset(), req.Limit()),
+		s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
 	)
+	customers, err := s.storage.customer.FindMany(ctx, findOpts...)
 	if err != nil {
 		return nil, 0, err
 	}

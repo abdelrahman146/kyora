@@ -18,14 +18,14 @@ type Storage struct {
 }
 
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
-	ensurePgTrgmAndIndexes(db)
-
-	return &Storage{
+	st := &Storage{
 		cache:      cache,
 		products:   database.NewRepository[Product](db),
 		variants:   database.NewRepository[Variant](db),
 		categories: database.NewRepository[Category](db),
 	}
+	ensurePgTrgmAndIndexes(db)
+	return st
 }
 
 func ensurePgTrgmAndIndexes(db *database.Database) {

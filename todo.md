@@ -8,7 +8,7 @@
 - [*] Implement payment with stripe integration and billing
 - [*] Implement onboarding flow
 - [*] Implement invite users
-- [ ] Add handlers and routes and permissions and limits
-- [ ] Add Filters and Search functionality in all domains
-- [ ] Add test cases
+- [*] Add handlers and routes and permissions and limits
+- [*] Add Filters and Search functionality in all domains
+- [*] Add test cases
 - [ ] Add OpenAPI docs

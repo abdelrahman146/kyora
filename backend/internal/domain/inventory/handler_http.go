@@ -76,6 +76,14 @@ func (h *HttpHandler) ListProducts(c *gin.Context) {
 	if query.PageSize == 0 {
 		query.PageSize = 20
 	}
+	if query.SearchTerm != "" {
+		term, err := list.NormalizeSearchTerm(query.SearchTerm)
+		if err != nil {
+			response.Error(c, problem.BadRequest("invalid search term"))
+			return
+		}
+		query.SearchTerm = term
+	}
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
 	items, err := h.service.ListProducts(c.Request.Context(), actor, biz, listReq)
 	if err != nil {
@@ -360,6 +368,14 @@ func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 	if query.PageSize == 0 {
 		query.PageSize = 20
 	}
+	if query.SearchTerm != "" {
+		term, err := list.NormalizeSearchTerm(query.SearchTerm)
+		if err != nil {
+			response.Error(c, problem.BadRequest("invalid search term"))
+			return
+		}
+		query.SearchTerm = term
+	}
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
 	items, total, err := h.service.ListProductVariants(c.Request.Context(), actor, biz, productID, listReq)
 	if err != nil {
@@ -407,6 +423,14 @@ func (h *HttpHandler) ListVariants(c *gin.Context) {
 	}
 	if query.PageSize == 0 {
 		query.PageSize = 20
+	}
+	if query.SearchTerm != "" {
+		term, err := list.NormalizeSearchTerm(query.SearchTerm)
+		if err != nil {
+			response.Error(c, problem.BadRequest("invalid search term"))
+			return
+		}
+		query.SearchTerm = term
 	}
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
 	items, err := h.service.ListVariants(c.Request.Context(), actor, biz, listReq)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 
 	"github.com/abdelrahman146/kyora/internal/domain/order"
@@ -215,6 +216,166 @@ func (s *OrderSuite) TestInsufficientStock() {
 	updatedVariant, err := s.orderHelper.GetVariant(ctx, variant.ID)
 	s.NoError(err)
 	s.Equal(3, updatedVariant.StockQuantity)
+}
+
+func (s *OrderSuite) TestListOrders_Search_ByCustomerAndOrderNumber() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Search Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product", decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+	orderID := created["id"].(string)
+	s.NotEmpty(orderID)
+	orderNumber, ok := created["orderNumber"].(string)
+	s.True(ok)
+	s.NotEmpty(orderNumber)
+
+	// Search by customer name (join)
+	listResp, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders?search=Search%20Customer", nil, token)
+	s.NoError(err)
+	defer listResp.Body.Close()
+	s.Equal(http.StatusOK, listResp.StatusCode)
+
+	var listResult map[string]interface{}
+	s.NoError(testutils.DecodeJSON(listResp, &listResult))
+	s.Equal(float64(1), listResult["totalCount"])
+	items := listResult["items"].([]interface{})
+	s.Len(items, 1)
+	s.Equal(orderID, items[0].(map[string]interface{})["id"])
+
+	// Search by order number
+	listResp2, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders?search="+orderNumber, nil, token)
+	s.NoError(err)
+	defer listResp2.Body.Close()
+	s.Equal(http.StatusOK, listResp2.StatusCode)
+
+	var listResult2 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(listResp2, &listResult2))
+	s.Equal(float64(1), listResult2["totalCount"])
+}
+
+func (s *OrderSuite) TestListOrders_Search_TooLong() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+	_, err = s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	long := strings.Repeat("a", 400)
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders?search="+long, nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusBadRequest, resp.StatusCode)
+}
+
+func (s *OrderSuite) TestListOrders_Search_CrossWorkspaceIsolation() {
+	ctx := context.Background()
+
+	// Workspace 1
+	_, ws1, token1, err := s.accountHelper.CreateTestUser(ctx, "admin1@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws1.ID))
+	biz1, err := s.orderHelper.CreateTestBusiness(ctx, ws1.ID, "biz-1")
+	s.NoError(err)
+	c1, a1, err := s.orderHelper.CreateTestCustomer(ctx, biz1.ID, "one@example.com", "Shared Name")
+	s.NoError(err)
+	cat1, err := s.orderHelper.CreateTestCategory(ctx, biz1.ID, "Cat", "cat")
+	s.NoError(err)
+	_, v1, err := s.orderHelper.CreateTestProduct(ctx, biz1.ID, cat1.ID, "P1", decimal.NewFromInt(1), decimal.NewFromInt(2), 10)
+	s.NoError(err)
+
+	resp1, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/biz-1/orders", map[string]interface{}{
+		"customerId":        c1.ID,
+		"shippingAddressId": a1.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{{
+			"variantId": v1.ID,
+			"quantity":  1,
+			"unitPrice": 2,
+			"unitCost":  1,
+		}},
+	}, token1)
+	s.NoError(err)
+	resp1.Body.Close()
+	s.Equal(http.StatusCreated, resp1.StatusCode)
+
+	// Workspace 2
+	_, ws2, token2, err := s.accountHelper.CreateTestUser(ctx, "admin2@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws2.ID))
+	biz2, err := s.orderHelper.CreateTestBusiness(ctx, ws2.ID, "biz-2")
+	s.NoError(err)
+	c2, a2, err := s.orderHelper.CreateTestCustomer(ctx, biz2.ID, "two@example.com", "Shared Name")
+	s.NoError(err)
+	cat2, err := s.orderHelper.CreateTestCategory(ctx, biz2.ID, "Cat", "cat")
+	s.NoError(err)
+	_, v2, err := s.orderHelper.CreateTestProduct(ctx, biz2.ID, cat2.ID, "P2", decimal.NewFromInt(1), decimal.NewFromInt(2), 10)
+	s.NoError(err)
+
+	resp2, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/biz-2/orders", map[string]interface{}{
+		"customerId":        c2.ID,
+		"shippingAddressId": a2.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{{
+			"variantId": v2.ID,
+			"quantity":  1,
+			"unitPrice": 2,
+			"unitCost":  1,
+		}},
+	}, token2)
+	s.NoError(err)
+	resp2.Body.Close()
+	s.Equal(http.StatusCreated, resp2.StatusCode)
+
+	// Search within each business must not leak.
+	list1, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-1/orders?search=Shared%20Name", nil, token1)
+	s.NoError(err)
+	defer list1.Body.Close()
+	var r1 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(list1, &r1))
+	s.Equal(float64(1), r1["totalCount"])
+
+	list2, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/biz-2/orders?search=Shared%20Name", nil, token2)
+	s.NoError(err)
+	defer list2.Body.Close()
+	var r2 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(list2, &r2))
+	s.Equal(float64(1), r2["totalCount"])
 }
 
 func TestOrderSuite(t *testing.T) {

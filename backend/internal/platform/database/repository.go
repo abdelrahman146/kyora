@@ -104,6 +104,25 @@ func (r *Repository[T]) WithOrderBy(orderBy []string) func(db *gorm.DB) *gorm.DB
 	}
 }
 
+// WithOrderByExpr applies an ORDER BY expression with bound variables.
+// Use this for complex orderings (e.g., ranking) while remaining injection-safe.
+func (r *Repository[T]) WithOrderByExpr(expr clause.Expr) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Order(expr)
+	}
+}
+
+// ScopeWhere applies an arbitrary WHERE clause with bound variables.
+// Prefer schema-based scopes where possible; use this for specialized queries.
+func (r *Repository[T]) ScopeWhere(sql string, vars ...any) func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if strings.TrimSpace(sql) == "" {
+			return db
+		}
+		return db.Where(sql, vars...)
+	}
+}
+
 func (r *Repository[T]) ScopeID(id any) func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where("id = ?", id)

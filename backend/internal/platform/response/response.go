@@ -9,6 +9,10 @@ import (
 )
 
 func Error(c *gin.Context, err error) {
+	if err != nil {
+		_ = c.Error(err).SetType(gin.ErrorTypePrivate)
+	}
+
 	var p *problem.Problem
 	if !errors.As(err, &p) {
 		if database.IsRecordNotFound(err) {

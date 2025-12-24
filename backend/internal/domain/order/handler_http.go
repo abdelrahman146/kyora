@@ -74,7 +74,7 @@ type updateOrderNoteRequest struct {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -createdAt, -orderedAt, -total)"
-// @Param        search query string false "Search term (matches orderNumber or channel)"
+// @Param        search query string false "Search term (matches orderNumber, channel, or customer name/email)"
 // @Param        status query []string false "Filter by status (repeatable)"
 // @Param        paymentStatus query []string false "Filter by payment status (repeatable)"
 // @Param        customerId query string false "Filter by customerId"
@@ -109,6 +109,14 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 	}
 	if query.PageSize == 0 {
 		query.PageSize = 20
+	}
+	if query.SearchTerm != "" {
+		term, err := list.NormalizeSearchTerm(query.SearchTerm)
+		if err != nil {
+			response.Error(c, problem.BadRequest("invalid search term"))
+			return
+		}
+		query.SearchTerm = term
 	}
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
 

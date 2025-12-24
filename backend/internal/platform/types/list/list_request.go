@@ -3,15 +3,39 @@ package list
 import (
 	"fmt"
 	"reflect"
+	"regexp"
+	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 )
+
+const (
+	// MaxSearchTermLength limits the size of user-provided search input to prevent
+	// pathological queries and reduce abuse potential.
+	MaxSearchTermLength = 128
+)
+
+var whitespaceRe = regexp.MustCompile(`\s+`)
 
 type ListRequest struct {
 	page       int
 	pageSize   int
 	orderBy    []string // e.g., ["name", "-createdAt"]
 	searchTerm string
+}
+
+// NormalizeSearchTerm trims and normalizes a user-provided search term.
+// It rejects overly long terms to avoid abuse.
+func NormalizeSearchTerm(term string) (string, error) {
+	term = strings.TrimSpace(term)
+	if term == "" {
+		return "", nil
+	}
+	term = whitespaceRe.ReplaceAllString(term, " ")
+	if len(term) > MaxSearchTermLength {
+		return "", fmt.Errorf("search term too long")
+	}
+	return term, nil
 }
 
 func (r *ListRequest) Offset() int {
@@ -36,6 +60,12 @@ func (r *ListRequest) OrderBy() []string {
 		return []string{"-createdAt"}
 	}
 	return r.orderBy
+}
+
+// HasExplicitOrderBy reports whether the caller provided an explicit orderBy.
+// This is useful for relevance-based ordering when search is present.
+func (r *ListRequest) HasExplicitOrderBy() bool {
+	return len(r.orderBy) > 0
 }
 
 func (r *ListRequest) SearchTerm() string {
