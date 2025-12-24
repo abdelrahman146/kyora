@@ -35,13 +35,6 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 		account:         accountSvc,
 		Notification:    notification,
 	}
-	// Best-effort background plan sync on service creation
-	go func() {
-		// use background context to avoid blocking init
-		if err := s.SyncPlansToStripe(context.Background()); err != nil {
-			logger.FromContext(context.Background()).Error("plan sync to stripe failed", "error", err)
-		}
-	}()
 	return s
 }
 

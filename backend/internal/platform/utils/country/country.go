@@ -2,6 +2,7 @@ package country
 
 import (
 	"sort"
+	"sync"
 )
 
 type Country struct {
@@ -101,23 +102,28 @@ var countryByPhonePrefixMap map[string]Country
 var countryByIsoCodeMap map[string]Country
 var sortedCountries []Country
 
-func init() {
-	countryByCodeMap = make(map[string]Country)
-	countryByPhonePrefixMap = make(map[string]Country)
-	countryByIsoCodeMap = make(map[string]Country)
-	sortedCountries = make([]Country, 0, len(countries))
-	for _, country := range countries {
-		countryByCodeMap[country.Code] = country
-		countryByPhonePrefixMap[country.PhonePrefix] = country
-		countryByIsoCodeMap[country.IsoCode] = country
-	}
-	sort.Slice(countries, func(i, j int) bool {
-		return countries[i].Name > countries[j].Name
+var initOnce sync.Once
+
+func ensureInit() {
+	initOnce.Do(func() {
+		countryByCodeMap = make(map[string]Country, len(countries))
+		countryByPhonePrefixMap = make(map[string]Country, len(countries))
+		countryByIsoCodeMap = make(map[string]Country, len(countries))
+		for _, c := range countries {
+			countryByCodeMap[c.Code] = c
+			countryByPhonePrefixMap[c.PhonePrefix] = c
+			countryByIsoCodeMap[c.IsoCode] = c
+		}
+
+		sortedCountries = append([]Country(nil), countries...)
+		sort.Slice(sortedCountries, func(i, j int) bool {
+			return sortedCountries[i].Name < sortedCountries[j].Name
+		})
 	})
-	sortedCountries = countries
 }
 
 func FindByCode(code string) Country {
+	ensureInit()
 	if country, ok := countryByCodeMap[code]; ok {
 		return country
 	}
@@ -125,6 +131,7 @@ func FindByCode(code string) Country {
 }
 
 func FindByPhonePrefix(prefix string) Country {
+	ensureInit()
 	if country, ok := countryByPhonePrefixMap[prefix]; ok {
 		return country
 	}
@@ -132,6 +139,7 @@ func FindByPhonePrefix(prefix string) Country {
 }
 
 func FindByIsoCode(isoCode string) Country {
+	ensureInit()
 	if country, ok := countryByIsoCodeMap[isoCode]; ok {
 		return country
 	}
@@ -139,5 +147,6 @@ func FindByIsoCode(isoCode string) Country {
 }
 
 func Countries() []Country {
-	return sortedCountries
+	ensureInit()
+	return append([]Country(nil), sortedCountries...)
 }

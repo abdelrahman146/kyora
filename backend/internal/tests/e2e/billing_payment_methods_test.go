@@ -46,8 +46,10 @@ func (s *BillingPaymentMethodsSuite) TearDownTest() {
 
 func (s *BillingPaymentMethodsSuite) TestSetupIntent_Authz() {
 	ctx := s.T().Context()
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
-	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
+	_, _, memberToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	s.NoError(err)
 
 	respUnauthed, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/payment-methods/setup-intent", nil, "")
 	s.NoError(err)
@@ -79,7 +81,8 @@ func (s *BillingPaymentMethodsSuite) TestAttachPaymentMethod_Validation_AndDetai
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.NewFromInt(10), billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	// Create subscription so we have a customer.
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)

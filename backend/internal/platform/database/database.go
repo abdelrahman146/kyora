@@ -4,6 +4,7 @@ package database
 
 import (
 	"context"
+	"fmt"
 	"log/slog"
 	"time"
 
@@ -20,7 +21,7 @@ type Database struct {
 
 var TxKey = ctxkey.New("transaction")
 
-func NewConnection(dsn string, logLevel string) *Database {
+func NewConnection(dsn string, logLevel string) (*Database, error) {
 	maxAttempts := 5
 	var db *gorm.DB
 	var err error
@@ -37,12 +38,12 @@ func NewConnection(dsn string, logLevel string) *Database {
 	}
 	if err != nil {
 		slog.Error("Could not connect to the database", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("connect database: %w", err)
 	}
 	sqlDB, err := db.DB()
 	if err != nil {
 		slog.Error("Could not get database instance", "error", err)
-		panic(err)
+		return nil, fmt.Errorf("get sql db: %w", err)
 	}
 	// Ensure required Postgres extensions exist (used by search scopes and indexes).
 	// This is safe to run multiple times and avoids test/dev failures on fresh databases.
@@ -55,7 +56,7 @@ func NewConnection(dsn string, logLevel string) *Database {
 	sqlDB.SetMaxOpenConns(maxOpenConns)
 	sqlDB.SetMaxIdleConns(maxIdleConns)
 	sqlDB.SetConnMaxIdleTime(maxIdleTime)
-	return &Database{db: db}
+	return &Database{db: db}, nil
 }
 
 func (d *Database) GetDB() *gorm.DB {

@@ -51,8 +51,10 @@ func (s *BillingTaxWebhookSuite) TearDownTest() {
 func (s *BillingTaxWebhookSuite) TestCalculateTax_Auth_AndValidation() {
 	ctx := s.T().Context()
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
-	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
+	_, _, memberToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	s.NoError(err)
 
 	// Unauthorized
 	respUnauthed, err := s.helper.Client().Post("/v1/billing/tax/calculate", map[string]interface{}{"amount": 1000, "currency": "usd"})

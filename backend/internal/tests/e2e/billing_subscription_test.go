@@ -50,7 +50,8 @@ func (s *BillingSubscriptionSuite) TestSubscription_CreateGetCancel() {
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, ws, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, ws, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	respCreate, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, adminToken)
 	s.NoError(err)
@@ -104,7 +105,8 @@ func (s *BillingSubscriptionSuite) TestSubscription_Create_ForbiddenForMember() 
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	_, _, memberToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	s.NoError(err)
 
 	resp, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, memberToken)
 	s.NoError(err)

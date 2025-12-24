@@ -3,13 +3,16 @@ package database
 import (
 	"context"
 	"fmt"
+	"log/slog"
 	"strings"
 	"time"
 
+	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/types/keyvalue"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/types/timeseries"
 	"github.com/shopspring/decimal"
+	"github.com/spf13/viper"
 	"gorm.io/gorm"
 	"gorm.io/gorm/clause"
 )
@@ -21,8 +24,19 @@ type Repository[T any] struct {
 }
 
 func NewRepository[T any](db *Database) *Repository[T] {
-	db.AutoMigrate(new(T))
+	if shouldAutoMigrate() {
+		if err := db.AutoMigrate(new(T)); err != nil {
+			slog.Default().Error("database auto-migration failed", "error", err, "model", fmt.Sprintf("%T", new(T)))
+		}
+	}
 	return &Repository[T]{db: db}
+}
+
+func shouldAutoMigrate() bool {
+	if viper.IsSet(config.DatabaseAutoMigrate) {
+		return viper.GetBool(config.DatabaseAutoMigrate)
+	}
+	return true
 }
 
 type LockingStrength string

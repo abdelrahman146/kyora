@@ -50,8 +50,10 @@ func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_AuthzAndFre
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
-	_, _, memberToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
+	_, _, memberToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("member"), role.RoleUser)
+	s.NoError(err)
 
 	payload := map[string]interface{}{
 		"planDescriptor": descriptor,
@@ -110,7 +112,8 @@ func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_PaidPlan_Re
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.NewFromInt(10), billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	payload := map[string]interface{}{
 		"planDescriptor": descriptor,
@@ -138,7 +141,8 @@ func (s *BillingSubscriptionCheckoutPortalSuite) TestCheckoutSession_PaidPlan_Re
 
 func (s *BillingSubscriptionCheckoutPortalSuite) TestBillingPortalSession_ReturnsURL() {
 	ctx := s.T().Context()
-	_, _, adminToken := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, adminToken, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	payload := map[string]interface{}{
 		"returnUrl": "https://example.com/return",

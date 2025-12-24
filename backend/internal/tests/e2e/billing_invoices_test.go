@@ -46,8 +46,10 @@ func (s *BillingInvoicesSuite) TearDownTest() {
 
 func (s *BillingInvoicesSuite) TestInvoices_CreateAndList_AndBOLAOnPay() {
 	ctx := s.T().Context()
-	_, _, token1 := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin1"), role.RoleAdmin)
-	_, _, token2 := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin2"), role.RoleAdmin)
+	_, _, token1, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin1"), role.RoleAdmin)
+	s.NoError(err)
+	_, _, token2, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin2"), role.RoleAdmin)
+	s.NoError(err)
 
 	respCreate, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/invoices", map[string]interface{}{
 		"description": "Manual invoice",
@@ -117,7 +119,8 @@ func (s *BillingInvoicesSuite) TestInvoices_Pay_HappyPath_WithPaymentMethod() {
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.NewFromInt(10), billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
 
-	_, _, token := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, token, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	// Ensure subscription + customer exist
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, token)

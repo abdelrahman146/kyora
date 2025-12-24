@@ -132,13 +132,15 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 			return nil, problem.InternalError().WithError(err)
 		}
 
-		// Send login notification email asynchronously
-		go func() {
-			if err := s.Notification.SendLoginNotificationEmail(context.Background(), user, clientIP, userAgent); err != nil {
-				// Log error but don't fail the login process
-				// Login notifications are a security feature but shouldn't block user access
+		// Send login notification email asynchronously (best-effort)
+		l := logger.FromContext(ctx)
+		go func(u *User, ipAddr, ua string) {
+			bg, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+			defer cancel()
+			if err := s.Notification.SendLoginNotificationEmail(bg, u, ipAddr, ua); err != nil {
+				l.Warn("failed to send login notification email", "error", err)
 			}
-		}()
+		}(user, clientIP, userAgent)
 
 		return &LoginResponse{
 			User:  user,

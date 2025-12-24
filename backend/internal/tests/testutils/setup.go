@@ -44,7 +44,11 @@ func CreateDatabase(ctx context.Context) (*database.Database, string, func(), er
 		return nil, "", nil, fmt.Errorf("postgres dsn retrieval failed: %w", err)
 	}
 	logLevel := "silent"
-	db := database.NewConnection(dsn, logLevel)
+	db, err := database.NewConnection(dsn, logLevel)
+	if err != nil {
+		_ = container.Terminate(ctx)
+		return nil, "", nil, fmt.Errorf("database connection failed: %w", err)
+	}
 	cleanup := func() {
 		_ = db.CloseConnection() // errors logged via slog internally if any
 		_ = container.Terminate(ctx)

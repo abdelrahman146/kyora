@@ -1,6 +1,8 @@
 package bus
 
 import (
+	"log/slog"
+	"runtime/debug"
 	"sync"
 	"sync/atomic"
 )
@@ -60,7 +62,11 @@ func (b *Bus) Listen(topic Topic, handler func(any)) (unsubscribe func()) {
 		defer b.wg.Done()
 		for payload := range ch {
 			func() {
-				defer func() { _ = recover() }() // protect bus from panicking handlers
+				defer func() {
+					if r := recover(); r != nil {
+						slog.Error("bus handler panicked", "topic", topic, "panic", r, "stack", string(debug.Stack()))
+					}
+				}()
 				handler(payload)
 			}()
 		}
@@ -88,16 +94,10 @@ func (b *Bus) Emit(topic Topic, payload any) {
 	}
 	ev := Event{Topic: topic, Payload: payload}
 
-	// Try fast path; if emit queue is full, offload to a goroutine to avoid blocking caller.
+	// Reliable delivery: apply backpressure instead of dropping events.
 	select {
 	case b.emitCh <- ev:
-	default:
-		go func() {
-			select {
-			case b.emitCh <- ev:
-			case <-b.stop:
-			}
-		}()
+	case <-b.stop:
 	}
 }
 
@@ -107,7 +107,6 @@ func (b *Bus) Close() {
 		return
 	}
 	close(b.stop)
-	close(b.emitCh)
 
 	// Close all subscriber channels
 	b.mu.Lock()
@@ -125,24 +124,30 @@ func (b *Bus) Close() {
 
 func (b *Bus) dispatch() {
 	defer b.wg.Done()
-	for ev := range b.emitCh {
-		// Snapshot subscriber channels to avoid holding lock during sends
-		b.mu.RLock()
-		var targets []chan any
-		if subs, ok := b.topics[ev.Topic]; ok {
-			targets = make([]chan any, 0, len(subs))
-			for _, ch := range subs {
-				targets = append(targets, ch)
+	for {
+		select {
+		case <-b.stop:
+			return
+		case ev := <-b.emitCh:
+			// Snapshot subscriber channels to avoid holding lock during sends
+			b.mu.RLock()
+			var targets []chan any
+			if subs, ok := b.topics[ev.Topic]; ok {
+				targets = make([]chan any, 0, len(subs))
+				for _, ch := range subs {
+					targets = append(targets, ch)
+				}
 			}
-		}
-		b.mu.RUnlock()
+			b.mu.RUnlock()
 
-		for _, ch := range targets {
-			// Non-blocking send to avoid slow subscribers blocking the bus
-			select {
-			case ch <- ev.Payload:
-			default:
-				// Drop if subscriber is slow; keeps bus responsive
+			for _, ch := range targets {
+				func(ch chan any) {
+					defer func() { _ = recover() }() // ignore sends to channels closed by unsubscribe races
+					select {
+					case ch <- ev.Payload:
+					case <-b.stop:
+					}
+				}(ch)
 			}
 		}
 	}

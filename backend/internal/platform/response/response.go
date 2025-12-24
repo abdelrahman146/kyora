@@ -10,13 +10,14 @@ import (
 
 func Error(c *gin.Context, err error) {
 	var p *problem.Problem
-	if errors.As(err, &p) {
-	} else if database.IsRecordNotFound(err) {
-		p = problem.NotFound("resource not found").WithError(err)
-	} else if database.IsUniqueViolation(err) {
-		p = problem.Conflict("resource already exists").WithError(err)
-	} else {
-		p = problem.InternalError().WithError(err)
+	if !errors.As(err, &p) {
+		if database.IsRecordNotFound(err) {
+			p = problem.NotFound("resource not found").WithError(err)
+		} else if database.IsUniqueViolation(err) {
+			p = problem.Conflict("resource already exists").WithError(err)
+		} else {
+			p = problem.InternalError().WithError(err)
+		}
 	}
 	if p.Instance == "" && c.Request != nil && c.Request.URL != nil {
 		p.Instance = c.Request.URL.Path

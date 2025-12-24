@@ -61,7 +61,8 @@ func (s *BillingUsageQuotaSuite) TestUsageAndQuota_HappyPath() {
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, limits)
 	s.NoError(err)
 
-	_, ws, token := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, ws, token, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 	_, err = s.helper.AddWorkspaceUser(ctx, ws.ID, s.helper.UniqueEmail("member"), role.RoleUser)
 	s.NoError(err)
 
@@ -111,7 +112,8 @@ func (s *BillingUsageQuotaSuite) TestUsageQuota_ValidationErrors() {
 	descriptor := s.helper.UniqueSlug("starter")
 	_, err := s.helper.CreatePlan(ctx, descriptor, decimal.Zero, billing.PlanLimit{MaxOrdersPerMonth: 1000, MaxTeamMembers: 10, MaxBusinesses: 5})
 	s.NoError(err)
-	_, _, token := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	_, _, token, err := s.helper.CreateTestUser(ctx, s.helper.UniqueEmail("admin"), role.RoleAdmin)
+	s.NoError(err)
 
 	// needs subscription to avoid 500 on quota read
 	respSub, err := s.helper.Client().AuthenticatedRequest("POST", "/v1/billing/subscription", map[string]interface{}{"planDescriptor": descriptor}, token)
