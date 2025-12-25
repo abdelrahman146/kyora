@@ -243,6 +243,40 @@ func (h *HttpHandler) complete(c *gin.Context, expectedPurpose Purpose) {
 	response.SuccessJSON(c, http.StatusOK, res)
 }
 
+// DeleteAsset godoc
+// @Summary      Delete uploaded asset
+// @Description  Deletes an uploaded asset if it belongs to the business and is not referenced.
+// @Tags         assets
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        assetId path string true "Asset ID"
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      409 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/assets/{assetId} [delete]
+func (h *HttpHandler) DeleteAsset(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := business.BusinessFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	assetID := strings.TrimSpace(c.Param("assetId"))
+	if err := h.svc.DeleteAsset(c.Request.Context(), actor, biz, assetID); err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessEmpty(c, http.StatusNoContent)
+}
+
 // GetPublicAsset godoc
 // @Summary      Get public asset
 // @Description  Serves public assets. For local provider, streams bytes. For S3, redirects to the public URL.

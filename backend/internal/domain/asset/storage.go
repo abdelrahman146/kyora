@@ -86,3 +86,28 @@ func (s *Storage) ListReadyOrphans(ctx context.Context, now time.Time, minAge ti
 		s.asset.WithLimit(limit),
 	)
 }
+
+func (s *Storage) IsReferenced(ctx context.Context, a *Asset) (bool, error) {
+	if a == nil {
+		return false, nil
+	}
+	url := strings.TrimSpace(a.PublicURL)
+	if url == "" {
+		return false, nil
+	}
+
+	conditions := strings.Join([]string{
+		"EXISTS (SELECT 1 FROM businesses b WHERE b.deleted_at IS NULL AND b.id = uploaded_assets.business_id AND b.logo_url = ?)",
+		"EXISTS (SELECT 1 FROM products p WHERE p.deleted_at IS NULL AND p.business_id = uploaded_assets.business_id AND p.photos @> jsonb_build_array(?::text))",
+		"EXISTS (SELECT 1 FROM variants v WHERE v.deleted_at IS NULL AND v.business_id = uploaded_assets.business_id AND v.photos @> jsonb_build_array(?::text))",
+	}, " OR ")
+
+	count, err := s.asset.Count(ctx,
+		s.asset.ScopeID(a.ID),
+		s.asset.ScopeWhere("("+conditions+")", url, url, url),
+	)
+	if err != nil {
+		return false, err
+	}
+	return count > 0, nil
+}

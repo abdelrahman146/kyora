@@ -25,3 +25,7 @@ func ErrUploadNotReady() error {
 func ErrRateLimited() error {
 	return problem.TooManyRequests("too many requests")
 }
+
+func ErrAssetInUse(id string) error {
+	return problem.Conflict("asset is referenced by other resources").With("assetId", id)
+}

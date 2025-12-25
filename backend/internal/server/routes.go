@@ -255,6 +255,8 @@ func registerBusinessScopedRoutes(
 			uploads.POST("/:assetId/complete/product_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteProductPhotoUpload)
 			uploads.POST("/:assetId/complete/variant_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteVariantPhotoUpload)
 		}
+
+		assetsGroup.DELETE("/:assetId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.DeleteAsset)
 	}
 
 	// Customer routes

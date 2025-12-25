@@ -18,6 +18,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
+	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"github.com/spf13/viper"
@@ -261,6 +262,94 @@ func (s *Service) CompleteUpload(ctx context.Context, actor *account.User, biz *
 	}
 
 	return s.markReady(ctx, a, publicURL)
+}
+
+// DeleteAsset removes an uploaded asset if it belongs to the business, the actor is authorized,
+// and the asset is not currently referenced by any business, product, or variant.
+func (s *Service) DeleteAsset(ctx context.Context, actor *account.User, biz *business.Business, assetID string) error {
+	if actor == nil {
+		return problem.Unauthorized("unauthorized")
+	}
+	if biz == nil {
+		return problem.BadRequest("business is required")
+	}
+
+	assetID = strings.TrimSpace(assetID)
+	if assetID == "" {
+		return problem.BadRequest("assetId is required")
+	}
+
+	if !throttle.Allow(s.storage.Cache(), fmt.Sprintf("rl:asset:delete:%s:%s", biz.ID, actor.ID), time.Minute, 120, 150*time.Millisecond) {
+		return ErrRateLimited()
+	}
+
+	a, err := s.storage.GetByID(ctx, biz.ID, assetID)
+	if err != nil || a == nil {
+		return ErrAssetNotFound(assetID, err)
+	}
+	if a.WorkspaceID != biz.WorkspaceID {
+		return problem.Forbidden("asset does not belong to workspace")
+	}
+
+	if err := s.authorizeDelete(actor, a); err != nil {
+		return err
+	}
+
+	if a.Status == StatusReady {
+		referenced, rerr := s.storage.IsReferenced(ctx, a)
+		if rerr != nil {
+			return rerr
+		}
+		if referenced {
+			return ErrAssetInUse(a.ID)
+		}
+	}
+
+	_, derr := s.deleteAsset(ctx, a)
+	return derr
+}
+
+func (s *Service) authorizeDelete(actor *account.User, a *Asset) error {
+	switch a.Purpose {
+	case PurposeBusinessLogo:
+		return actor.Role.HasPermission(role.ActionManage, role.ResourceBusiness)
+	case PurposeProductPhoto, PurposeVariantPhoto:
+		return actor.Role.HasPermission(role.ActionManage, role.ResourceInventory)
+	default:
+		return problem.Forbidden("unsupported asset purpose").With("purpose", a.Purpose)
+	}
+}
+
+type deleteOutcome struct {
+	deletedFile bool
+	deletedBlob bool
+}
+
+func (s *Service) deleteAsset(ctx context.Context, a *Asset) (*deleteOutcome, error) {
+	out := &deleteOutcome{}
+	if a == nil {
+		return out, nil
+	}
+
+	if a.LocalFilePath != "" {
+		if err := os.Remove(a.LocalFilePath); err == nil {
+			out.deletedFile = true
+		} else if !os.IsNotExist(err) {
+			return out, err
+		}
+	}
+
+	if s.blob != nil && a.ObjectKey != "" {
+		if err := s.blob.Delete(ctx, a.ObjectKey); err != nil {
+			return out, err
+		}
+		out.deletedBlob = true
+	}
+
+	if err := s.storage.Delete(ctx, a); err != nil {
+		return out, err
+	}
+	return out, nil
 }
 
 func (s *Service) StoreLocalContent(ctx context.Context, actor *account.User, biz *business.Business, assetID string, expectedPurpose Purpose, contentType string, r io.Reader) (*Asset, error) {
