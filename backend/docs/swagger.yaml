@@ -938,6 +938,65 @@ definitions:
       totalRevenue:
         type: number
     type: object
+  asset.CompleteUploadResponse:
+    properties:
+      assetId:
+        type: string
+      publicUrl:
+        type: string
+      status:
+        $ref: '#/definitions/asset.Status'
+    type: object
+  asset.CreateUploadRequest:
+    properties:
+      contentType:
+        maxLength: 128
+        type: string
+      fileName:
+        maxLength: 255
+        type: string
+      idempotencyKey:
+        maxLength: 128
+        type: string
+      sizeBytes:
+        type: integer
+    required:
+    - contentType
+    - fileName
+    - sizeBytes
+    type: object
+  asset.CreateUploadResponse:
+    properties:
+      assetId:
+        type: string
+      expiresAt:
+        type: string
+      publicUrl:
+        type: string
+      status:
+        $ref: '#/definitions/asset.Status'
+      upload:
+        $ref: '#/definitions/asset.UploadDescriptor'
+    type: object
+  asset.Status:
+    enum:
+    - pending
+    - ready
+    type: string
+    x-enum-varnames:
+    - StatusPending
+    - StatusReady
+  asset.UploadDescriptor:
+    properties:
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      method:
+        type: string
+      url:
+        type: string
+    type: object
   billing.BillingCycle:
     enum:
     - monthly
@@ -1231,6 +1290,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
+      logoUrl:
+        type: string
       name:
         type: string
       phoneNumber:
@@ -1283,6 +1344,8 @@ definitions:
       facebookUrl:
         type: string
       instagramUrl:
+        type: string
+      logoUrl:
         type: string
       name:
         type: string
@@ -1394,6 +1457,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
+      logoUrl:
+        type: string
       name:
         type: string
       phoneNumber:
@@ -1468,6 +1533,8 @@ definitions:
       id:
         type: string
       instagramUrl:
+        type: string
+      logoUrl:
         type: string
       name:
         type: string
@@ -2631,6 +2698,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
+      logoUrl:
+        type: string
       name:
         type: string
       phoneNumber:
@@ -2681,6 +2750,23 @@ definitions:
         items:
           $ref: '#/definitions/storefront.PublicVariant'
         type: array
+    type: object
+  storefront.PublicShippingZone:
+    properties:
+      countries:
+        items:
+          type: string
+        type: array
+      currency:
+        type: string
+      freeShippingThreshold:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      shippingCost:
+        type: string
     type: object
   storefront.PublicVariant:
     properties:
@@ -24296,6 +24382,397 @@ paths:
       summary: Archive business
       tags:
       - business
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/business_logo:
+    post:
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CompleteUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Complete business logo upload
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/product_photo:
+    post:
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CompleteUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Complete product photo upload
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/variant_photo:
+    post:
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CompleteUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Complete variant photo upload
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/business_logo:
+    put:
+      description: Uploads file bytes to Kyora when storage.provider=local.
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Upload logo content (local provider only)
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/product_photo:
+    put:
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Upload product photo content (local provider only)
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/variant_photo:
+    put:
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Upload variant photo content (local provider only)
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/logo:
+    post:
+      consumes:
+      - application/json
+      description: Returns a direct upload URL for a business logo (image). Requires
+        manage business permission.
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Upload request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/asset.CreateUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CreateUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Initiate business logo upload
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/product-photo:
+    post:
+      consumes:
+      - application/json
+      description: Returns a direct upload URL for a product photo (image). Requires
+        manage inventory permission.
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Upload request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/asset.CreateUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CreateUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Initiate product photo upload
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/variant-photo:
+    post:
+      consumes:
+      - application/json
+      description: Returns a direct upload URL for a variant photo (image). Requires
+        manage inventory permission.
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Upload request
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/asset.CreateUploadRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/asset.CreateUploadResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Initiate variant photo upload
+      tags:
+      - assets
   /v1/businesses/{businessDescriptor}/customers:
     get:
       description: Returns a paginated list of all customers for the authenticated
@@ -26931,6 +27408,30 @@ paths:
       summary: Accept invitation with Google
       tags:
       - invitations
+  /v1/public/assets/{assetId}:
+    get:
+      description: Serves public assets. For local provider, streams bytes. For S3,
+        redirects to the public URL.
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      produces:
+      - application/octet-stream
+      responses:
+        "200":
+          description: OK
+        "302":
+          description: Found
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Get public asset
+      tags:
+      - assets
   /v1/storefront/{storefrontPublicId}/catalog:
     get:
       description: Returns public business info, categories, products, and variants
@@ -26990,6 +27491,29 @@ paths:
           schema:
             $ref: '#/definitions/problem.Problem'
       summary: Create storefront order
+      tags:
+      - storefront
+  /v1/storefront/{storefrontPublicId}/shipping-zones:
+    get:
+      description: Returns shipping zones for the storefront (public)
+      parameters:
+      - description: Storefront Public ID
+        in: path
+        name: storefrontPublicId
+        required: true
+        type: string
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/storefront.PublicShippingZone'
+            type: array
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: List storefront shipping zones
       tags:
       - storefront
   /v1/users/me:

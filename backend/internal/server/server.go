@@ -7,11 +7,13 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
+	"github.com/abdelrahman146/kyora/internal/domain/asset"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
@@ -19,6 +21,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/domain/storefront"
+	"github.com/abdelrahman146/kyora/internal/platform/blob"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/config"
@@ -144,6 +147,26 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 		return nil, err
 	}
 
+	// asset/blob storage (uploads)
+	var blobProvider blob.Provider
+	storageProvider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
+	if storageProvider != "" && storageProvider != "local" {
+		p, err := blob.NewS3CompatibleProvider(blob.S3CompatibleConfig{
+			Bucket:          viper.GetString(config.StorageBucket),
+			Region:          viper.GetString(config.StorageRegion),
+			Endpoint:        viper.GetString(config.StorageEndpoint),
+			AccessKeyID:     viper.GetString(config.StorageAccessKeyID),
+			SecretAccessKey: viper.GetString(config.StorageSecretAccessKey),
+			PublicBaseURL:   viper.GetString(config.StoragePublicBaseURL),
+		})
+		if err != nil {
+			return nil, err
+		}
+		blobProvider = p
+	}
+	assetStorage := asset.NewStorage(db, cacheDB)
+	assetSvc := asset.NewService(assetStorage, atomicProcessor, blobProvider)
+
 	// DI - create storages first
 	accountStorage := account.NewStorage(db, cacheDB)
 	billingStorage := billing.NewStorage(db, cacheDB)
@@ -214,9 +237,13 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	inventoryHandler := inventory.NewHttpHandler(inventorySvc)
 	orderHandler := order.NewHttpHandler(orderSvc)
 	businessHandler := business.NewHttpHandler(businessSvc)
+	assetHandler := asset.NewHttpHandler(assetSvc)
+
+	// Public asset serving routes (no auth required)
+	registerPublicAssetRoutes(r, assetHandler)
 
 	// Register business-scoped routes
-	registerBusinessScopedRoutes(r, accountSvc, billingSvc, businessSvc, businessHandler, accountingHandler, analyticsHandler, customerHandler, inventoryHandler, orderHandler)
+	registerBusinessScopedRoutes(r, accountSvc, billingSvc, businessSvc, businessHandler, assetHandler, accountingHandler, analyticsHandler, customerHandler, inventoryHandler, orderHandler)
 
 	// Register business routes
 	registerBusinessRoutes(r, businessHandler, accountSvc, billingSvc, businessSvc)

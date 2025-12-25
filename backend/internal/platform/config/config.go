@@ -70,6 +70,17 @@ const (
 	EmailFromName     = "email.from_name"       // default From display name
 	EmailSupportEmail = "email.support_email"   // support contact email
 	EmailHelpURL      = "email.help_url"        // help/knowledge base URL
+
+	// blob storage / uploads
+	StorageProvider        = "storage.provider"          // values: local, s3
+	StorageBucket          = "storage.bucket"            // bucket/container name
+	StorageRegion          = "storage.region"            // region (e.g., nyc3 for DO Spaces)
+	StorageEndpoint        = "storage.endpoint"          // optional (e.g., https://nyc3.digitaloceanspaces.com)
+	StorageAccessKeyID     = "storage.access_key_id"     // S3-compatible access key
+	StorageSecretAccessKey = "storage.secret_access_key" // S3-compatible secret
+	StoragePublicBaseURL   = "storage.public_base_url"   // optional public base URL (e.g., https://bucket.endpoint)
+
+	UploadsMaxBytes = "uploads.max_bytes" // max file size in bytes for direct uploads
 )
 
 var configured bool
@@ -89,6 +100,8 @@ func Configure() {
 	viper.SetDefault(HTTPMaxBodyBytes, int64(1024*1024)) // 1 MiB default max request body
 	viper.SetDefault(BillingAutoSyncPlans, true)
 	viper.SetDefault(DatabaseAutoMigrate, true)
+	viper.SetDefault(StorageProvider, "local")
+	viper.SetDefault(UploadsMaxBytes, int64(5*1024*1024)) // 5 MiB per upload default
 	// Auth defaults
 	// Refresh tokens are long-lived and rotated; keep configurable.
 	viper.SetDefault(RefreshTokenExpirySeconds, int64(30*24*60*60)) // 30 days

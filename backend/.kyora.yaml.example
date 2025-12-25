@@ -10,7 +10,8 @@ http:
   port: 8080
   base_url: "http://localhost:8080"
   trace_id_header: "X-Trace-ID"
-  max_body_bytes: 1048576
+  # Increase if using `storage.provider: local` and uploading file bytes to the API.
+  max_body_bytes: 6291456
 database:
   dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=UTC"
   max_open_conns: 25
@@ -46,3 +47,18 @@ email:
   from_name: "Kyora"
   support_email: "support@kyora.io"
   help_url: "https://kyora.io/help"
+
+# Blob storage / uploads
+# - `local` is intended for local development and tests (upload bytes to Kyora)
+# - `s3` supports S3-compatible providers like DigitalOcean Spaces
+storage:
+  provider: "local" # options: local, s3
+  bucket: ""
+  region: ""
+  endpoint: "" # e.g. https://nyc3.digitaloceanspaces.com
+  access_key_id: ""
+  secret_access_key: ""
+  public_base_url: "" # e.g. https://my-bucket.nyc3.digitaloceanspaces.com
+
+uploads:
+  max_bytes: 5242880

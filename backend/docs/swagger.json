@@ -4275,6 +4275,592 @@
                 }
             }
         },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/logo": {
+            "post": {
+                "description": "Returns a direct upload URL for a business logo (image). Requires manage business permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Initiate business logo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Upload request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/product-photo": {
+            "post": {
+                "description": "Returns a direct upload URL for a product photo (image). Requires manage inventory permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Initiate product photo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Upload request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/variant-photo": {
+            "post": {
+                "description": "Returns a direct upload URL for a variant photo (image). Requires manage inventory permission.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Initiate variant photo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Upload request",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CreateUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/business_logo": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Complete business logo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CompleteUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/product_photo": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Complete product photo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CompleteUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/variant_photo": {
+            "post": {
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Complete variant photo upload",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/asset.CompleteUploadResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/business_logo": {
+            "put": {
+                "description": "Uploads file bytes to Kyora when storage.provider=local.",
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Upload logo content (local provider only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/product_photo": {
+            "put": {
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Upload product photo content (local provider only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/variant_photo": {
+            "put": {
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Upload variant photo content (local provider only)",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/businesses/{businessDescriptor}/customers": {
             "get": {
                 "security": [
@@ -8259,6 +8845,41 @@
                 }
             }
         },
+        "/v1/public/assets/{assetId}": {
+            "get": {
+                "description": "Serves public assets. For local provider, streams bytes. For S3, redirects to the public URL.",
+                "produces": [
+                    "application/octet-stream"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Get public asset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK"
+                    },
+                    "302": {
+                        "description": "Found"
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/storefront/{storefrontPublicId}/catalog": {
             "get": {
                 "description": "Returns public business info, categories, products, and variants for a storefront",
@@ -8341,6 +8962,41 @@
                     },
                     "429": {
                         "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/storefront/{storefrontPublicId}/shipping-zones": {
+            "get": {
+                "description": "Returns shipping zones for the storefront (public)",
+                "tags": [
+                    "storefront"
+                ],
+                "summary": "List storefront shipping zones",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Storefront Public ID",
+                        "name": "storefrontPublicId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/storefront.PublicShippingZone"
+                            }
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -10068,6 +10724,93 @@
                 }
             }
         },
+        "asset.CompleteUploadResponse": {
+            "type": "object",
+            "properties": {
+                "assetId": {
+                    "type": "string"
+                },
+                "publicUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/asset.Status"
+                }
+            }
+        },
+        "asset.CreateUploadRequest": {
+            "type": "object",
+            "required": [
+                "contentType",
+                "fileName",
+                "sizeBytes"
+            ],
+            "properties": {
+                "contentType": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "fileName": {
+                    "type": "string",
+                    "maxLength": 255
+                },
+                "idempotencyKey": {
+                    "type": "string",
+                    "maxLength": 128
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                }
+            }
+        },
+        "asset.CreateUploadResponse": {
+            "type": "object",
+            "properties": {
+                "assetId": {
+                    "type": "string"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "publicUrl": {
+                    "type": "string"
+                },
+                "status": {
+                    "$ref": "#/definitions/asset.Status"
+                },
+                "upload": {
+                    "$ref": "#/definitions/asset.UploadDescriptor"
+                }
+            }
+        },
+        "asset.Status": {
+            "type": "string",
+            "enum": [
+                "pending",
+                "ready"
+            ],
+            "x-enum-varnames": [
+                "StatusPending",
+                "StatusReady"
+            ]
+        },
+        "asset.UploadDescriptor": {
+            "type": "object",
+            "properties": {
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "method": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
         "billing.BillingCycle": {
             "type": "string",
             "enum": [
@@ -10500,6 +11243,9 @@
                 "instagramUrl": {
                     "type": "string"
                 },
+                "logoUrl": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -10583,6 +11329,9 @@
                     "type": "string"
                 },
                 "instagramUrl": {
+                    "type": "string"
+                },
+                "logoUrl": {
                     "type": "string"
                 },
                 "name": {
@@ -10743,6 +11492,9 @@
                 "instagramUrl": {
                     "type": "string"
                 },
+                "logoUrl": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -10854,6 +11606,9 @@
                     "type": "string"
                 },
                 "instagramUrl": {
+                    "type": "string"
+                },
+                "logoUrl": {
                     "type": "string"
                 },
                 "name": {
@@ -12591,6 +13346,9 @@
                 "instagramUrl": {
                     "type": "string"
                 },
+                "logoUrl": {
+                    "type": "string"
+                },
                 "name": {
                     "type": "string"
                 },
@@ -12666,6 +13424,32 @@
                     "items": {
                         "$ref": "#/definitions/storefront.PublicVariant"
                     }
+                }
+            }
+        },
+        "storefront.PublicShippingZone": {
+            "type": "object",
+            "properties": {
+                "countries": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "freeShippingThreshold": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "shippingCost": {
+                    "type": "string"
                 }
             }
         },

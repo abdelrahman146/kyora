@@ -6,6 +6,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
+	"github.com/abdelrahman146/kyora/internal/domain/asset"
 	"github.com/abdelrahman146/kyora/internal/domain/billing"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
@@ -222,6 +223,7 @@ func registerBusinessScopedRoutes(
 	billingService *billing.Service,
 	businessService *business.Service,
 	businessHandler *business.HttpHandler,
+	assetHandler *asset.HttpHandler,
 	accountingHandler *accounting.HttpHandler,
 	analyticsHandler *analytics.HttpHandler,
 	customerHandler *customer.HttpHandler,
@@ -235,6 +237,25 @@ func registerBusinessScopedRoutes(
 		account.EnforceWorkspaceMembership(accountService),
 		business.EnforceBusinessValidity(businessService),
 	)
+
+	// Asset upload routes
+	assetsGroup := group.Group("/assets")
+	{
+		uploads := assetsGroup.Group("/uploads")
+		{
+			uploads.POST("/logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.CreateLogoUpload)
+			uploads.POST("/product-photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CreateProductPhotoUpload)
+			uploads.POST("/variant-photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CreateVariantPhotoUpload)
+
+			uploads.PUT("/:assetId/content/business_logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.PutLogoContent)
+			uploads.PUT("/:assetId/content/product_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.PutProductPhotoContent)
+			uploads.PUT("/:assetId/content/variant_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.PutVariantPhotoContent)
+
+			uploads.POST("/:assetId/complete/business_logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.CompleteLogoUpload)
+			uploads.POST("/:assetId/complete/product_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteProductPhotoUpload)
+			uploads.POST("/:assetId/complete/variant_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteVariantPhotoUpload)
+		}
+	}
 
 	// Customer routes
 	customers := group.Group("/customers")
@@ -431,5 +452,12 @@ func registerBusinessScopedRoutes(
 		}
 
 		accountingGroup.GET("/summary", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), accountingHandler.GetAccountingSummary)
+	}
+}
+
+func registerPublicAssetRoutes(r *gin.Engine, h *asset.HttpHandler) {
+	group := r.Group("/v1/public")
+	{
+		group.GET("/assets/:assetId", h.GetPublicAsset)
 	}
 }

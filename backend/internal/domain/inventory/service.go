@@ -150,11 +150,13 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 		if _, err := s.GetCategoryByID(txCtx, actor, biz, req.Product.CategoryID); err != nil {
 			return err
 		}
+
+		photos := PhotoURLList(req.Product.Photos)
 		product = &Product{
 			BusinessID:  biz.ID,
 			Name:        req.Product.Name,
 			Description: req.Product.Description,
-			Photos:      PhotoURLList(req.Product.Photos),
+			Photos:      photos,
 			CategoryID:  req.Product.CategoryID,
 		}
 		err = s.storage.products.CreateOne(txCtx, product)
@@ -233,11 +235,13 @@ func (s *Service) CreateProduct(ctx context.Context, actor *account.User, biz *b
 	if _, err := s.GetCategoryByID(ctx, actor, biz, req.CategoryID); err != nil {
 		return nil, err
 	}
+
+	photos := PhotoURLList(req.Photos)
 	product := &Product{
 		BusinessID:  biz.ID,
 		Name:        req.Name,
 		Description: req.Description,
-		Photos:      PhotoURLList(req.Photos),
+		Photos:      photos,
 		CategoryID:  req.CategoryID,
 	}
 	err := s.storage.products.CreateOne(ctx, product)
@@ -274,6 +278,7 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 	if sku == "" {
 		sku = CreateProductSKU(biz.Descriptor, product.Name, req.Code)
 	}
+	photos := PhotoURLList(req.Photos)
 	variant := &Variant{
 		BusinessID:         biz.ID,
 		ProductID:          product.ID,
@@ -283,7 +288,7 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 		CostPrice:          *req.CostPrice,
 		SalePrice:          *req.SalePrice,
 		Currency:           biz.Currency,
-		Photos:             PhotoURLList(req.Photos),
+		Photos:             photos,
 		StockQuantity:      *req.StockQuantity,
 		StockQuantityAlert: *req.StockQuantityAlert,
 	}
