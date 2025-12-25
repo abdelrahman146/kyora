@@ -17,6 +17,7 @@ var inventoryTables = []string{
 	"categories",
 	"products",
 	"variants",
+	"uploaded_assets",
 	"subscriptions",
 	"plans",
 }

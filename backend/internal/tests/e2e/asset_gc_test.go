@@ -24,6 +24,7 @@ type AssetGCSuite struct {
 	helper       *AccountTestHelper
 	assetStorage *asset.Storage
 	assetService *asset.Service
+	inventory    *InventoryTestHelper
 }
 
 func (s *AssetGCSuite) SetupSuite() {
@@ -31,6 +32,7 @@ func (s *AssetGCSuite) SetupSuite() {
 	cacheClient := cache.NewConnection([]string{testEnv.CacheAddr})
 	s.assetStorage = asset.NewStorage(testEnv.Database, cacheClient)
 	s.assetService = asset.NewService(s.assetStorage, database.NewAtomicProcess(testEnv.Database), nil)
+	s.inventory = NewInventoryTestHelper(testEnv.Database, e2eBaseURL)
 }
 
 func (s *AssetGCSuite) SetupTest() {
@@ -191,8 +193,13 @@ func (s *AssetGCSuite) TestGC_DeletesReadyOrphanAndRemovesLocalFile() {
 	_, _ = io.ReadAll(getResp.Body)
 	getResp.Body.Close()
 
-	gcNow := time.Now().UTC().Add(2 * time.Minute)
-	gcRes, err := s.assetService.GarbageCollect(ctx, asset.GarbageCollectOptions{Now: gcNow, PendingLimit: 1, OrphanLimit: 100, OrphanMinAge: 0})
+	gcNow := time.Now().UTC().Add(31 * time.Minute)
+	gcRes, err := s.assetService.GarbageCollect(ctx, asset.GarbageCollectOptions{
+		Now:          gcNow,
+		PendingLimit: 1,
+		OrphanLimit:  100,
+		OrphanMinAge: 30 * time.Minute,
+	})
 	s.NoError(err)
 	s.GreaterOrEqual(gcRes.DeletedAssets, 1)
 
@@ -263,6 +270,77 @@ func (s *AssetGCSuite) TestGC_DoesNotDeleteReferencedReadyAsset() {
 	s.NoError(err)
 	getAfter.Body.Close()
 	s.Equal(http.StatusOK, getAfter.StatusCode)
+}
+
+func (s *AssetGCSuite) TestGC_DoesNotDeleteProductOrVariantPhotos() {
+	ctx := context.Background()
+	_, ws, token, err := s.helper.CreateTestUser(ctx, s.uniqueEmail("admin"), "ValidPassword123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.helper.CreateTestSubscription(ctx, ws.ID))
+	bizDescriptor := s.createBusiness(ctx, token)
+	businessID := s.getBusinessID(ctx, bizDescriptor, token)
+
+	cat, err := s.inventory.CreateTestCategory(ctx, businessID, "Cat", "cat")
+	s.NoError(err)
+
+	productContent := []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n'}
+	productAssetID, productURL := UploadTestAsset(ctx, s.T(), s.helper.Client, AssetUploadParams{
+		BusinessDescriptor: bizDescriptor,
+		Token:              token,
+		CreatePath:         "assets/uploads/product-photo",
+		CompletePurpose:    "product_photo",
+		ContentType:        "image/png",
+		Content:            productContent,
+	})
+
+	prodPayload := map[string]interface{}{
+		"name":        "GC Product",
+		"description": "",
+		"categoryId":  cat.ID,
+		"photos":      []string{productURL},
+	}
+	prodResp, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/inventory/products", bizDescriptor), prodPayload, token)
+	s.NoError(err)
+	defer prodResp.Body.Close()
+	s.Equal(http.StatusCreated, prodResp.StatusCode)
+	var prod map[string]interface{}
+	s.NoError(testutils.DecodeJSON(prodResp, &prod))
+	prodID := prod["id"].(string)
+
+	variantContent := []byte{'v', 'p', 'n', 'g'}
+	variantAssetID, variantURL := UploadTestAsset(ctx, s.T(), s.helper.Client, AssetUploadParams{
+		BusinessDescriptor: bizDescriptor,
+		Token:              token,
+		CreatePath:         "assets/uploads/variant-photo",
+		CompletePurpose:    "variant_photo",
+		ContentType:        "image/png",
+		Content:            variantContent,
+	})
+
+	variantPayload := map[string]interface{}{
+		"productId":          prodID,
+		"code":               "VAR",
+		"sku":                "",
+		"photos":             []string{variantURL},
+		"costPrice":          "1",
+		"salePrice":          "2",
+		"stockQuantity":      1,
+		"stockQuantityAlert": 0,
+	}
+	variantResp, err := s.helper.Client.AuthenticatedRequest("POST", fmt.Sprintf("/v1/businesses/%s/inventory/variants", bizDescriptor), variantPayload, token)
+	s.NoError(err)
+	defer variantResp.Body.Close()
+	s.Equal(http.StatusCreated, variantResp.StatusCode)
+
+	gcNow := time.Now().UTC().Add(2 * time.Minute)
+	gcRes, err := s.assetService.GarbageCollect(ctx, asset.GarbageCollectOptions{Now: gcNow, PendingLimit: 10, OrphanLimit: 10, OrphanMinAge: 0})
+	s.NoError(err)
+	s.Equal(0, gcRes.DeletedAssets)
+
+	_, err = s.assetStorage.FindByID(ctx, productAssetID)
+	s.NoError(err)
+	_, err = s.assetStorage.FindByID(ctx, variantAssetID)
+	s.NoError(err)
 }
 
 func TestAssetGCSuite(t *testing.T) {
