@@ -53,6 +53,25 @@ func (s *BusinessAssetsSuite) TestCreateBusiness_WithUploadedLogo() {
 	s.NoError(s.helper.CreateTestSubscription(ctx, ws.ID))
 
 	bizDescriptor := fmt.Sprintf("logo-%s", strings.ToLower(id.Base62(6)))
+	createPayload := map[string]interface{}{
+		"name":        "Logo Biz",
+		"descriptor":  bizDescriptor,
+		"countryCode": "EG",
+		"currency":    "USD",
+	}
+
+	createResp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses", createPayload, token)
+	s.NoError(err)
+	defer createResp.Body.Close()
+	s.Equal(http.StatusCreated, createResp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(createResp, &created))
+	biz := created["business"].(map[string]interface{})
+	s.Equal(bizDescriptor, biz["descriptor"])
+	s.Equal("EG", biz["countryCode"])
+	s.Equal("USD", biz["currency"])
+
 	content := []byte{0x89, 'P', 'N', 'G', '\r', '\n', 0x1a, '\n', 0x00, 0x00, 0x00, 0x00}
 	_, logoURL := UploadTestAsset(ctx, s.T(), s.helper.Client, AssetUploadParams{
 		BusinessDescriptor: bizDescriptor,
@@ -63,24 +82,17 @@ func (s *BusinessAssetsSuite) TestCreateBusiness_WithUploadedLogo() {
 		Content:            content,
 	})
 
-	payload := map[string]interface{}{
-		"name":        "Logo Biz",
-		"descriptor":  bizDescriptor,
-		"countryCode": "eg",
-		"currency":    "usd",
-		"logoUrl":     logoURL,
-	}
-
-	resp, err := s.helper.Client.AuthenticatedRequest("POST", "/v1/businesses", payload, token)
+	updatePayload := map[string]interface{}{"logoUrl": logoURL}
+	updateResp, err := s.helper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/%s", bizDescriptor), updatePayload, token)
 	s.NoError(err)
-	defer resp.Body.Close()
-	s.Equal(http.StatusCreated, resp.StatusCode)
+	defer updateResp.Body.Close()
+	s.Equal(http.StatusOK, updateResp.StatusCode)
 
-	var result map[string]interface{}
-	s.NoError(testutils.DecodeJSON(resp, &result))
-	biz := result["business"].(map[string]interface{})
-	s.Equal(logoURL, biz["logoUrl"])
-	s.Equal(bizDescriptor, biz["descriptor"])
+	var updated map[string]interface{}
+	s.NoError(testutils.DecodeJSON(updateResp, &updated))
+	updatedBiz := updated["business"].(map[string]interface{})
+	s.Equal(logoURL, updatedBiz["logoUrl"])
+	s.Equal(bizDescriptor, updatedBiz["descriptor"])
 
 	getResp, err := s.helper.Client.AuthenticatedRequest("GET", fmt.Sprintf("/v1/businesses/%s", bizDescriptor), nil, token)
 	s.NoError(err)
@@ -91,6 +103,7 @@ func (s *BusinessAssetsSuite) TestCreateBusiness_WithUploadedLogo() {
 	s.NoError(testutils.DecodeJSON(getResp, &fetched))
 	fetchedBiz := fetched["business"].(map[string]interface{})
 	s.Equal(logoURL, fetchedBiz["logoUrl"])
+	s.Equal(biz["id"], fetchedBiz["id"])
 }
 
 func TestBusinessAssetsSuite(t *testing.T) {

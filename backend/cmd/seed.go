@@ -5,7 +5,9 @@ import (
 	"errors"
 	"fmt"
 	"log/slog"
+	"math"
 	"math/rand"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -22,6 +24,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
+	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
@@ -62,6 +65,54 @@ var (
 	seedPassword string
 )
 
+type workspaceSeedConfig struct {
+	Name              string
+	Slug              string
+	BusinessName      string
+	Descriptor        string
+	Country           string
+	Currency          string
+	Brand             string
+	PlanDescriptor    string
+	SupportEmail      string
+	PhoneNumber       string
+	WhatsappNumber    string
+	StorefrontEnabled bool
+	StorefrontTheme   business.StorefrontTheme
+	Counts            seedCounts
+	TeamMembers       []seedTeamMember
+}
+
+type seedTeamMember struct {
+	FirstName string
+	LastName  string
+	Email     string
+	Role      role.Role
+}
+
+type seedWorkspaceResult struct {
+	Workspace       *account.Workspace
+	Business        *business.Business
+	Owner           *account.User
+	CreatedOrders   int
+	PaidOrders      int
+	FulfilledOrders int
+}
+
+type seedDeps struct {
+	accountSvc    *account.Service
+	accountStore  *account.Storage
+	billingSvc    *billing.Service
+	businessSvc   *business.Service
+	inventorySvc  *inventory.Service
+	customerSvc   *customer.Service
+	accountingSvc *accounting.Service
+	orderSvc      *order.Service
+	billingStore  *billing.Storage
+	stripeEnabled bool
+	rng           *rand.Rand
+}
+
 func isStripeSeedEnabled(stripeKey, baseURL string) bool {
 	if strings.TrimSpace(baseURL) != "" {
 		// Explicit stripe-mock or custom Stripe API backend; allow the seed flow.
@@ -89,41 +140,20 @@ var seedCmd = &cobra.Command{
 	Short: "Seed local development data",
 	RunE: func(cmd *cobra.Command, args []string) error {
 		ctx := context.Background()
-
 		sz := seedSize(strings.TrimSpace(strings.ToLower(seedSizeFlag)))
 		if sz != seedSmall && sz != seedMedium && sz != seedLarge {
 			return errors.New("invalid --size. allowed: small|medium|large")
 		}
-		counts := sz.counts()
 
-		// Initialize Stripe (best-effort; seed still works without it).
-		stripeKey := strings.TrimSpace(viper.GetString(config.StripeAPIKey))
-		baseURL := strings.TrimSpace(os.Getenv("KYORA_STRIPE_BASE_URL"))
-		if baseURL != "" {
-			// Stripe-mock expects a specific test key. Prefer an explicit override when provided,
-			// otherwise force the well-known stripe-mock test key.
-			if override := strings.TrimSpace(os.Getenv("KYORA_STRIPE_API_KEY")); override != "" {
-				stripeKey = override
-			} else {
-				stripeKey = "sk_test_123"
-			}
-		}
-
-		stripeEnabled := isStripeSeedEnabled(stripeKey, baseURL)
+		baseCounts := sz.counts()
+		stripeKey, stripeBaseURL := loadStripeConfig()
+		stripeEnabled := isStripeSeedEnabled(stripeKey, stripeBaseURL)
 		if stripeEnabled {
-			stripelib.Key = stripeKey
-			stripelib.SetAppInfo(&stripelib.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
-			if baseURL != "" {
-				backend := stripelib.GetBackendWithConfig(stripelib.APIBackend, &stripelib.BackendConfig{URL: &baseURL})
-				stripelib.SetBackend(stripelib.APIBackend, backend)
-				slog.Info("Stripe base URL overridden", "baseURL", baseURL)
-			}
-			slog.Info("Stripe client initialized")
+			initStripeClient(stripeKey, stripeBaseURL)
 		} else {
-			slog.Warn("Stripe not configured (or placeholder key); Stripe seed steps will be skipped", "baseURL", baseURL)
+			slog.Warn("Stripe not configured (or placeholder key); Stripe seed steps will be skipped", "baseURL", stripeBaseURL)
 		}
 
-		// Initialize database connection.
 		dsn := viper.GetString(config.DatabaseDSN)
 		logLevel := viper.GetString(config.DatabaseLogLevel)
 		db, err := database.NewConnection(dsn, logLevel)
@@ -133,21 +163,19 @@ var seedCmd = &cobra.Command{
 		}
 		defer db.CloseConnection()
 
-		// Initialize cache.
 		servers := viper.GetStringSlice(config.CacheHosts)
 		cacheDB := cache.NewConnection(servers)
 
-		// Initialize platform dependencies.
 		atomicProcessor := database.NewAtomicProcess(db)
 		eventBus := bus.New()
 		defer eventBus.Close()
+
 		emailClient, err := email.New()
 		if err != nil {
 			slog.Error("Failed to initialize email client", "error", err)
 			return fmt.Errorf("failed to initialize email client: %w", err)
 		}
 
-		// DI - storages/services.
 		accountStorage := account.NewStorage(db, cacheDB)
 		accountSvc := account.NewService(accountStorage, atomicProcessor, eventBus, emailClient)
 
@@ -167,14 +195,25 @@ var seedCmd = &cobra.Command{
 		accountingSvc := accounting.NewService(accountingStorage, atomicProcessor, eventBus)
 		accounting.NewBusHandler(eventBus, accountingSvc, businessSvc)
 
-		// Seed runs are intentionally high-throughput. The order service has a 1-second
-		// anti-double-submit throttle backed by cache; bypass it for seeding.
 		orderStorage := order.NewStorage(db, nil)
 		orderSvc := order.NewService(orderStorage, atomicProcessor, eventBus, inventorySvc, customerSvc, businessSvc)
 
 		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		deps := seedDeps{
+			accountSvc:    accountSvc,
+			accountStore:  accountStorage,
+			billingSvc:    billingSvc,
+			businessSvc:   businessSvc,
+			inventorySvc:  inventorySvc,
+			customerSvc:   customerSvc,
+			accountingSvc: accountingSvc,
+			orderSvc:      orderSvc,
+			billingStore:  billingStorage,
+			stripeEnabled: stripeEnabled,
+			rng:           rng,
+		}
 
-		fmt.Printf("🌱 Seeding (%s)\n", sz)
+		fmt.Printf("🌱 Seeding multi-workspace dataset (%s)\n", sz)
 
 		if seedClean {
 			if err := step("Cleaning database", func() error { return truncateAllPublicTables(ctx, db) }); err != nil {
@@ -187,284 +226,38 @@ var seedCmd = &cobra.Command{
 			return fmt.Errorf("failed to hash password: %w", err)
 		}
 
-		// Seed workspace + owner.
-		var owner *account.User
-		var ws *account.Workspace
-		ownerEmail := "owner@kyora.dev"
-		if err := step("Creating workspace + owner", func() error {
-			u, w, err := accountSvc.BootstrapWorkspaceAndOwner(ctx, "Dev", "Owner", ownerEmail, passwordHash, true, "")
-			if err != nil {
-				return fmt.Errorf("failed to create workspace/owner (try --clean): %w", err)
-			}
-			owner = u
-			ws = w
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		// Create business.
-		var biz *business.Business
-		bizDescriptor := "demo"
-		if err := step("Creating business", func() error {
-			descriptor := bizDescriptor
-			for attempt := 0; attempt < 10; attempt++ {
-				try := descriptor
-				if attempt > 0 {
-					try = fmt.Sprintf("%s-%d", descriptor, rng.Intn(10_000))
-				}
-				available, err := businessSvc.IsBusinessDescriptorAvailable(ctx, owner, try)
-				if err != nil {
-					return err
-				}
-				if !available {
-					continue
-				}
-				created, err := businessSvc.CreateBusiness(ctx, owner, &business.CreateBusinessInput{
-					Name:              "Kyora Demo Shop",
-					Descriptor:        try,
-					Brand:             "Kyora",
-					CountryCode:       "SA",
-					Currency:          "SAR",
-					VatRate:           decimal.NewFromFloat(0.15),
-					StorefrontEnabled: true,
-					SupportEmail:      "support@kyora.dev",
-					PhoneNumber:       "+966500000000",
-					WhatsappNumber:    "+966500000000",
-					Address:           "Riyadh, Saudi Arabia",
-				})
-				if err != nil {
-					return err
-				}
-				biz = created
-				bizDescriptor = try
-				return nil
-			}
-			return errors.New("failed to create business after retries")
-		}); err != nil {
-			return err
-		}
-
-		// Enable a payment method so orders can be created.
-		if err := step("Enabling payment methods", func() error {
-			enabled := true
-			_, err := businessSvc.UpdatePaymentMethod(ctx, owner, biz, "bank_transfer", &business.UpdateBusinessPaymentMethodRequest{Enabled: &enabled})
-			return err
-		}); err != nil {
-			return err
-		}
-
-		// Billing: always sync plans to database; sync to Stripe only when configured.
-		_ = step("Syncing billing plans to database (best-effort)", func() error {
+		if err := step("Syncing billing plans to database", func() error {
 			return billingSvc.SyncPlans(ctx)
-		})
+		}); err != nil {
+			return err
+		}
 		if stripeEnabled {
 			_ = step("Syncing billing plans to Stripe (best-effort)", func() error {
 				return billingSvc.SyncPlansToStripe(ctx)
 			})
-			_ = step("Creating Stripe customer (best-effort)", func() error {
-				_, err := billingSvc.EnsureCustomer(ctx, ws)
+		}
+
+		configs := buildWorkspaceConfigs(baseCounts)
+		results := make([]*seedWorkspaceResult, 0, len(configs))
+
+		for _, cfg := range configs {
+			res, err := seedWorkspace(ctx, deps, cfg, passwordHash)
+			if err != nil {
 				return err
-			})
-			_ = step("Creating default Stripe payment method (best-effort)", func() error {
-				// Create a PaymentMethod using a test token, then attach and set default.
-				pm, err := paymentmethod.New(&stripelib.PaymentMethodParams{
-					Type: stripelib.String("card"),
-					Card: &stripelib.PaymentMethodCardParams{Token: stripelib.String("tok_visa")},
-				})
-				if err != nil {
-					return err
-				}
-				_, err = paymentmethod.Attach(pm.ID, &stripelib.PaymentMethodAttachParams{Customer: stripelib.String(ws.StripeCustomerID.String)})
-				if err != nil {
-					return err
-				}
-				// Persist on workspace and set default via billing service.
-				if err := accountSvc.SetWorkspaceDefaultPaymentMethod(ctx, ws.ID, pm.ID); err != nil {
-					return err
-				}
-				return billingSvc.AttachAndSetDefaultPaymentMethod(ctx, ws, pm.ID)
-			})
-			_ = step("Creating subscription (best-effort)", func() error {
-				plan, err := billingSvc.GetPlanByDescriptor(ctx, "starter")
-				if err != nil {
-					return err
-				}
-				_, err = billingSvc.CreateOrUpdateSubscription(ctx, ws, plan)
-				return err
-			})
-		}
-
-		// Inventory.
-		var categories []*inventory.Category
-		if err := step("Creating categories", func() error {
-			categories = make([]*inventory.Category, 0, counts.categories)
-			for i := 0; i < counts.categories; i++ {
-				cat, err := inventorySvc.CreateCategory(ctx, owner, biz, &inventory.CreateCategoryRequest{
-					Name:       fmt.Sprintf("Category %d", i+1),
-					Descriptor: fmt.Sprintf("cat-%d", i+1),
-				})
-				if err != nil {
-					return err
-				}
-				categories = append(categories, cat)
 			}
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		var variants []*inventory.Variant
-		if err := step("Creating products + variants", func() error {
-			variants = make([]*inventory.Variant, 0, counts.products*2)
-			for i := 0; i < counts.products; i++ {
-				cat := categories[i%len(categories)]
-				cost := decimal.NewFromInt(int64(20 + rng.Intn(50)))
-				price := cost.Mul(decimal.NewFromFloat(1.8)).Round(2)
-				premium := price.Mul(decimal.NewFromFloat(1.25)).Round(2)
-				q := 250
-				alert := 20
-				p, err := inventorySvc.CreateProductWithVariants(ctx, owner, biz, &inventory.CreateProductWithVariantsRequest{
-					Product: inventory.CreateProductRequest{
-						Name:        fmt.Sprintf("Product %d", i+1),
-						Description: "Seeded product",
-						Photos:      []string{},
-						CategoryID:  cat.ID,
-					},
-					Variants: []inventory.CreateProductVariantRequest{
-						{Code: "default", CostPrice: &cost, SalePrice: &price, StockQuantity: &q, StockQuantityAlert: &alert},
-						{Code: "premium", CostPrice: &cost, SalePrice: &premium, StockQuantity: &q, StockQuantityAlert: &alert},
-					},
-				})
-				if err != nil {
-					return err
-				}
-				variants = append(variants, p.Variants...)
-			}
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		// Customers.
-		var customers []*customer.Customer
-		var addressesByCustomer map[string][]*customer.CustomerAddress
-		if err := step("Creating customers + addresses", func() error {
-			customers = make([]*customer.Customer, 0, counts.customers)
-			addressesByCustomer = make(map[string][]*customer.CustomerAddress, counts.customers)
-			for i := 0; i < counts.customers; i++ {
-				c, err := customerSvc.CreateCustomer(ctx, owner, biz, &customer.CreateCustomerRequest{
-					Name:        fmt.Sprintf("Customer %d", i+1),
-					Email:       fmt.Sprintf("customer%d@kyora.dev", i+1),
-					CountryCode: "SA",
-					PhoneCode:   "+966",
-					PhoneNumber: fmt.Sprintf("500%06d", i+1),
-				})
-				if err != nil {
-					return err
-				}
-				customers = append(customers, c)
-				addr, err := customerSvc.CreateCustomerAddress(ctx, owner, biz, c.ID, &customer.CreateCustomerAddressRequest{
-					Street:      fmt.Sprintf("Street %d", i+1),
-					City:        "Riyadh",
-					State:       "Riyadh",
-					ZipCode:     "11564",
-					CountryCode: "SA",
-					PhoneCode:   "+966",
-					Phone:       fmt.Sprintf("500%06d", i+1),
-				})
-				if err != nil {
-					return err
-				}
-				addressesByCustomer[c.ID] = []*customer.CustomerAddress{addr}
-			}
-			return nil
-		}); err != nil {
-			return err
-		}
-
-		// Orders.
-		createdOrders := 0
-		paidOrders := 0
-		fulfilledOrders := 0
-		if err := step("Creating orders", func() error {
-			for i := 0; i < counts.orders; i++ {
-				c := customers[rng.Intn(len(customers))]
-				addr := addressesByCustomer[c.ID][0]
-
-				itemsCount := 1 + rng.Intn(3)
-				items := make([]*order.CreateOrderItemRequest, 0, itemsCount)
-				for j := 0; j < itemsCount; j++ {
-					v := variants[rng.Intn(len(variants))]
-					qty := 1 + rng.Intn(3)
-					items = append(items, &order.CreateOrderItemRequest{
-						VariantID: v.ID,
-						Quantity:  qty,
-						UnitPrice: v.SalePrice,
-						UnitCost:  v.CostPrice,
-					})
-				}
-
-				orderedAt := time.Now().UTC().Add(-time.Duration(rng.Intn(45*24)) * time.Hour)
-				ord, err := orderSvc.CreateOrder(ctx, owner, biz, &order.CreateOrderRequest{
-					CustomerID:        c.ID,
-					Channel:           "instagram",
-					ShippingAddressID: addr.ID,
-					ShippingFee:       decimal.NewFromInt(0),
-					Discount:          decimal.NewFromInt(0),
-					PaymentMethod:     order.OrderPaymentMethodBankTransfer,
-					OrderedAt:         orderedAt,
-					Items:             items,
-				})
-				if err != nil {
-					return err
-				}
-				createdOrders++
-
-				// Mark some orders as paid/fulfilled for history.
-				// Note: Payment can only be set to paid for orders in Placed/Shipped/Fulfilled.
-				shouldFulfill := rng.Float64() < 0.5
-				shouldPay := rng.Float64() < 0.7
-				if shouldFulfill {
-					// Fulfilled orders should be paid in seeded data.
-					shouldPay = true
-				}
-				if shouldPay || shouldFulfill {
-					if _, err := orderSvc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusPlaced); err != nil {
-						return err
-					}
-				}
-				if shouldPay {
-					if _, err := orderSvc.UpdateOrderPaymentStatus(ctx, owner, biz, ord.ID, order.OrderPaymentStatusPaid); err != nil {
-						return err
-					}
-					paidOrders++
-				}
-				if shouldFulfill {
-					if _, err := orderSvc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusShipped); err != nil {
-						return err
-					}
-					if _, err := orderSvc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusFulfilled); err != nil {
-						return err
-					}
-					fulfilledOrders++
-				}
-			}
-			return nil
-		}); err != nil {
-			return err
+			results = append(results, res)
 		}
 
 		fmt.Println("✅ Seed complete")
 		fmt.Println("---")
-		fmt.Println("Workspace:", ws.ID)
-		fmt.Println("Business:", biz.ID, "("+bizDescriptor+")")
-		fmt.Println("Owner email:", ownerEmail)
-		fmt.Println("Owner password:", seedPassword)
-		fmt.Printf("Categories: %d\n", len(categories))
-		fmt.Printf("Products: %d\n", counts.products)
-		fmt.Printf("Customers: %d\n", len(customers))
-		fmt.Printf("Orders: %d (paid %d, fulfilled %d)\n", createdOrders, paidOrders, fulfilledOrders)
+		for _, res := range results {
+			fmt.Printf("Workspace: %s\n", res.Workspace.ID)
+			fmt.Printf("Business: %s (%s)\n", res.Business.ID, res.Business.Descriptor)
+			fmt.Printf("Owner: %s (%s)\n", res.Owner.Email, res.Owner.ID)
+			fmt.Printf("Orders: %d (paid %d, fulfilled %d)\n", res.CreatedOrders, res.PaidOrders, res.FulfilledOrders)
+			fmt.Println("---")
+		}
+		fmt.Println("Default owner password:", seedPassword)
 		return nil
 	},
 }
@@ -474,6 +267,760 @@ func init() {
 	seedCmd.Flags().StringVar(&seedSizeFlag, "size", string(seedSmall), "seed size: small|medium|large")
 	seedCmd.Flags().StringVar(&seedPassword, "password", "KyoraDev@123", "password for seeded owner account")
 	rootCmd.AddCommand(seedCmd)
+}
+
+func loadStripeConfig() (string, string) {
+	stripeKey := strings.TrimSpace(viper.GetString(config.StripeAPIKey))
+	baseURL := strings.TrimSpace(os.Getenv("KYORA_STRIPE_BASE_URL"))
+	if baseURL != "" {
+		if override := strings.TrimSpace(os.Getenv("KYORA_STRIPE_API_KEY")); override != "" {
+			stripeKey = override
+		} else {
+			stripeKey = "sk_test_123"
+		}
+	}
+	return stripeKey, baseURL
+}
+
+func initStripeClient(stripeKey, baseURL string) {
+	stripelib.Key = stripeKey
+	stripelib.SetAppInfo(&stripelib.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
+	if baseURL != "" {
+		backend := stripelib.GetBackendWithConfig(stripelib.APIBackend, &stripelib.BackendConfig{URL: &baseURL})
+		stripelib.SetBackend(stripelib.APIBackend, backend)
+		slog.Info("Stripe base URL overridden", "baseURL", baseURL)
+	}
+	slog.Info("Stripe client initialized")
+}
+
+func buildWorkspaceConfigs(base seedCounts) []workspaceSeedConfig {
+	freelancerCounts := scaleCounts(base, 0.7)
+	growingCounts := scaleCounts(base, 1.5)
+	enterpriseCounts := scaleCounts(base, 3.0)
+
+	primaryTheme := business.StorefrontTheme{
+		PrimaryColor:      "#2563EB",
+		SecondaryColor:    "#10B981",
+		AccentColor:       "#2563EB",
+		BackgroundColor:   "#F8FAFC",
+		TextColor:         "#0F172A",
+		FontFamily:        "Inter",
+		HeadingFontFamily: "Inter",
+	}
+
+	boldTheme := business.StorefrontTheme{
+		PrimaryColor:      "#7C3AED",
+		SecondaryColor:    "#F59E0B",
+		AccentColor:       "#7C3AED",
+		BackgroundColor:   "#0F172A",
+		TextColor:         "#F8FAFC",
+		FontFamily:        "Inter",
+		HeadingFontFamily: "Poppins",
+	}
+
+	return []workspaceSeedConfig{
+		{
+			Name:              "Freelancer",
+			Slug:              "freelancer",
+			BusinessName:      "Freelancer Goods",
+			Descriptor:        "freelancer",
+			Country:           "US",
+			Currency:          "USD",
+			Brand:             "Freelancer Co",
+			PlanDescriptor:    "starter",
+			SupportEmail:      "freelancer.support@kyora.dev",
+			PhoneNumber:       "+12025550111",
+			WhatsappNumber:    "+12025550111",
+			StorefrontEnabled: true,
+			StorefrontTheme:   primaryTheme,
+			Counts:            freelancerCounts,
+			TeamMembers:       []seedTeamMember{},
+		},
+		{
+			Name:              "Growing Startup",
+			Slug:              "startup",
+			BusinessName:      "Atlas Outfitters",
+			Descriptor:        "atlas",
+			Country:           "AE",
+			Currency:          "AED",
+			Brand:             "Atlas",
+			PlanDescriptor:    "professional",
+			SupportEmail:      "startup.support@kyora.dev",
+			PhoneNumber:       "+971500000111",
+			WhatsappNumber:    "+971500000111",
+			StorefrontEnabled: true,
+			StorefrontTheme:   boldTheme,
+			Counts:            growingCounts,
+			TeamMembers: []seedTeamMember{
+				{FirstName: "Maya", LastName: "Chen", Email: "maya.chen@kyora.dev", Role: role.RoleUser},
+			},
+		},
+		{
+			Name:              "Enterprise Corp",
+			Slug:              "enterprise",
+			BusinessName:      "Northwind Enterprise",
+			Descriptor:        "northwind",
+			Country:           "GB",
+			Currency:          "GBP",
+			Brand:             "Northwind",
+			PlanDescriptor:    "enterprise",
+			SupportEmail:      "enterprise.support@kyora.dev",
+			PhoneNumber:       "+442080000111",
+			WhatsappNumber:    "+442080000111",
+			StorefrontEnabled: false,
+			StorefrontTheme:   primaryTheme,
+			Counts:            enterpriseCounts,
+			TeamMembers: []seedTeamMember{
+				{FirstName: "Aiden", LastName: "Stone", Email: "aiden.stone@kyora.dev", Role: role.RoleAdmin},
+				{FirstName: "Nora", LastName: "Patel", Email: "nora.patel@kyora.dev", Role: role.RoleUser},
+				{FirstName: "Leo", LastName: "Garcia", Email: "leo.garcia@kyora.dev", Role: role.RoleUser},
+			},
+		},
+	}
+}
+
+func scaleCounts(base seedCounts, factor float64) seedCounts {
+	safeCeil := func(v int) int {
+		return int(math.Max(1, math.Ceil(float64(v)*factor)))
+	}
+	return seedCounts{
+		categories: safeCeil(base.categories),
+		products:   safeCeil(base.products),
+		customers:  safeCeil(base.customers),
+		orders:     safeCeil(base.orders),
+	}
+}
+
+func seedWorkspace(ctx context.Context, deps seedDeps, cfg workspaceSeedConfig, passwordHash string) (*seedWorkspaceResult, error) {
+	label := fmt.Sprintf("[%s]", cfg.Name)
+	rng := deps.rng
+
+	ownerEmail := fmt.Sprintf("%s.owner@kyora.dev", cfg.Slug)
+	var owner *account.User
+	var ws *account.Workspace
+	if err := step(label+" Creating workspace + owner", func() error {
+		u, w, err := deps.accountSvc.BootstrapWorkspaceAndOwner(ctx, cfg.Name, "Owner", ownerEmail, passwordHash, true, "")
+		if err != nil {
+			return fmt.Errorf("failed to create workspace/owner (try --clean): %w", err)
+		}
+		owner = u
+		ws = w
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	biz, err := createBusinessWithRetries(ctx, deps.businessSvc, owner, cfg, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := step(label+" Enabling payment methods", func() error {
+		enabled := true
+		_, err := deps.businessSvc.UpdatePaymentMethod(ctx, owner, biz, "bank_transfer", &business.UpdateBusinessPaymentMethodRequest{Enabled: &enabled})
+		return err
+	}); err != nil {
+		return nil, err
+	}
+
+	if err := step(label+" Updating storefront", func() error {
+		input := &business.UpdateBusinessInput{
+			StorefrontEnabled: &cfg.StorefrontEnabled,
+			StorefrontTheme:   &cfg.StorefrontTheme,
+		}
+		if _, err := deps.businessSvc.UpdateBusiness(ctx, owner, biz.ID, input); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return nil, err
+	}
+
+	shippingZones, err := seedShippingZones(ctx, deps.businessSvc, owner, biz)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := seedStripeForWorkspace(ctx, deps, ws, biz, cfg.PlanDescriptor, label); err != nil {
+		return nil, err
+	}
+
+	_, variants, err := seedInventoryData(ctx, deps.inventorySvc, owner, biz, cfg.Counts, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	customers, addresses, err := seedCustomersAndAddresses(ctx, deps.customerSvc, owner, biz, cfg.Counts.customers, cfg.Country, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	orders, stats, err := seedOrders(ctx, deps.orderSvc, owner, biz, cfg.Counts.orders, variants, customers, addresses, shippingZones, rng)
+	if err != nil {
+		return nil, err
+	}
+
+	if err := seedAccountingData(ctx, deps.accountingSvc, owner, biz, orders, rng); err != nil {
+		return nil, err
+	}
+
+	if err := seedTeamMembers(ctx, deps, owner, ws, cfg.TeamMembers, cfg.Name); err != nil {
+		slog.Warn("failed to seed some team members", "workspace", ws.ID, "error", err)
+	}
+
+	return &seedWorkspaceResult{
+		Workspace:       ws,
+		Business:        biz,
+		Owner:           owner,
+		CreatedOrders:   stats.Created,
+		PaidOrders:      stats.Paid,
+		FulfilledOrders: stats.Fulfilled,
+	}, nil
+}
+
+func seedStripeForWorkspace(ctx context.Context, deps seedDeps, ws *account.Workspace, biz *business.Business, planDescriptor, label string) error {
+	plan, err := deps.billingSvc.GetPlanByDescriptor(ctx, planDescriptor)
+	if err != nil {
+		return fmt.Errorf("failed to load plan %s: %w", planDescriptor, err)
+	}
+
+	bestEffort := func(title string, fn func() error) {
+		_ = step(label+" "+title, func() error {
+			if !deps.stripeEnabled {
+				slog.Info("Skipping Stripe step", "reason", "stripe disabled", "workspace", ws.ID)
+				return nil
+			}
+			if err := fn(); err != nil {
+				slog.Warn("Stripe step failed", "step", title, "error", err)
+			}
+			return nil
+		})
+	}
+
+	bestEffort("Creating Stripe customer", func() error {
+		_, err := deps.billingSvc.EnsureCustomer(ctx, ws)
+		return err
+	})
+
+	bestEffort("Creating default Stripe payment method", func() error {
+		pm, err := paymentmethod.New(&stripelib.PaymentMethodParams{
+			Type: stripelib.String("card"),
+			Card: &stripelib.PaymentMethodCardParams{Token: stripelib.String("tok_visa")},
+		})
+		if err != nil {
+			return err
+		}
+		if pm.ID == "" {
+			return errors.New("payment method not created")
+		}
+		if ws.StripeCustomerID.Valid {
+			if _, err := paymentmethod.Attach(pm.ID, &stripelib.PaymentMethodAttachParams{Customer: stripelib.String(ws.StripeCustomerID.String)}); err != nil {
+				return err
+			}
+		}
+		if err := deps.accountSvc.SetWorkspaceDefaultPaymentMethod(ctx, ws.ID, pm.ID); err != nil {
+			return err
+		}
+		return deps.billingSvc.AttachAndSetDefaultPaymentMethod(ctx, ws, pm.ID)
+	})
+
+	bestEffort("Creating subscription", func() error {
+		_, err := deps.billingSvc.CreateOrUpdateSubscription(ctx, ws, plan)
+		return err
+	})
+
+	return nil
+}
+
+func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner *account.User, cfg workspaceSeedConfig, rng *rand.Rand) (*business.Business, error) {
+	var biz *business.Business
+	if err := step("["+cfg.Name+"] Creating business", func() error {
+		descriptor := cfg.Descriptor
+		for attempt := 0; attempt < 10; attempt++ {
+			candidate := descriptor
+			if attempt > 0 {
+				candidate = fmt.Sprintf("%s-%d", descriptor, rng.Intn(10_000))
+			}
+			available, err := svc.IsBusinessDescriptorAvailable(ctx, owner, candidate)
+			if err != nil {
+				return err
+			}
+			if !available {
+				continue
+			}
+			created, err := svc.CreateBusiness(ctx, owner, &business.CreateBusinessInput{
+				Name:              cfg.BusinessName,
+				Descriptor:        candidate,
+				Brand:             cfg.Brand,
+				CountryCode:       cfg.Country,
+				Currency:          cfg.Currency,
+				VatRate:           decimal.NewFromFloat(0.15),
+				StorefrontEnabled: cfg.StorefrontEnabled,
+				SupportEmail:      cfg.SupportEmail,
+				PhoneNumber:       cfg.PhoneNumber,
+				WhatsappNumber:    cfg.WhatsappNumber,
+				Address:           fmt.Sprintf("%s HQ", cfg.BusinessName),
+			})
+			if err != nil {
+				return err
+			}
+			biz = created
+			return nil
+		}
+		return errors.New("failed to create business after retries")
+	}); err != nil {
+		return nil, err
+	}
+	return biz, nil
+}
+
+func seedShippingZones(ctx context.Context, svc *business.Service, owner *account.User, biz *business.Business) ([]*business.ShippingZone, error) {
+	zones := make([]*business.ShippingZone, 0, 2)
+	domesticCost := decimal.NewFromFloat(10)
+	internationalCost := decimal.NewFromFloat(35)
+	freeThreshold := decimal.NewFromFloat(150)
+
+	domestic, err := svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
+		Name:                  "Domestic",
+		Countries:             []string{strings.ToUpper(biz.CountryCode)},
+		ShippingCost:          domesticCost,
+		FreeShippingThreshold: freeThreshold,
+	})
+	if err != nil && !database.IsUniqueViolation(err) {
+		return nil, err
+	}
+	if err == nil {
+		zones = append(zones, domestic)
+	}
+	intlCountries := []string{"GB", "DE", "AE", "US", "SA", "FR"}
+	if biz.CountryCode != "" {
+		for i, c := range intlCountries {
+			if strings.EqualFold(c, biz.CountryCode) {
+				intlCountries = append(intlCountries[:i], intlCountries[i+1:]...)
+				break
+			}
+		}
+	}
+	international, err := svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
+		Name:         "International",
+		Countries:    intlCountries,
+		ShippingCost: internationalCost,
+	})
+	if err != nil && !database.IsUniqueViolation(err) {
+		return nil, err
+	}
+	if err == nil {
+		zones = append(zones, international)
+	}
+
+	if len(zones) == 0 {
+		existing, listErr := svc.ListShippingZones(ctx, owner, biz)
+		if listErr == nil && len(existing) > 0 {
+			zones = append(zones, existing...)
+		}
+	}
+	return zones, nil
+}
+
+func seedInventoryData(ctx context.Context, svc *inventory.Service, owner *account.User, biz *business.Business, counts seedCounts, rng *rand.Rand) ([]*inventory.Category, []*inventory.Variant, error) {
+	categoryNames := []string{"Apparel", "Home & Living", "Beauty", "Electronics", "Outdoors", "Stationery", "Food & Drink"}
+	categories := make([]*inventory.Category, 0, counts.categories)
+	if err := step("["+biz.Descriptor+"] Creating categories", func() error {
+		for i := 0; i < counts.categories; i++ {
+			name := categoryNames[i%len(categoryNames)]
+			cat, err := svc.CreateCategory(ctx, owner, biz, &inventory.CreateCategoryRequest{
+				Name:       name,
+				Descriptor: fmt.Sprintf("%s-%d", strings.ToLower(strings.ReplaceAll(name, " ", "-")), i+1),
+			})
+			if err != nil {
+				return err
+			}
+			categories = append(categories, cat)
+		}
+		return nil
+	}); err != nil {
+		return nil, nil, err
+	}
+
+	variants := make([]*inventory.Variant, 0, counts.products*2)
+	adjectives := []string{"Premium", "Lightweight", "Eco", "Classic", "Modern", "Signature", "Artisan"}
+	if err := step("["+biz.Descriptor+"] Creating products + variants", func() error {
+		for i := 0; i < counts.products; i++ {
+			cat := categories[i%len(categories)]
+			cost := decimal.NewFromFloat(15 + rng.Float64()*60).Round(2)
+			price := cost.Mul(decimal.NewFromFloat(1.8)).Round(2)
+			premium := price.Mul(decimal.NewFromFloat(1.25)).Round(2)
+			stock := 100 + rng.Intn(250)
+			alert := 15 + rng.Intn(20)
+			name := fmt.Sprintf("%s %s", adjectives[i%len(adjectives)], cat.Name)
+			description := "Hand-picked product seeded for realistic demos"
+			photos := []string{
+				placeholderImageURL(name),
+				placeholderImageURL(name + " Variant"),
+			}
+			p, err := svc.CreateProductWithVariants(ctx, owner, biz, &inventory.CreateProductWithVariantsRequest{
+				Product: inventory.CreateProductRequest{
+					Name:        name,
+					Description: description,
+					Photos:      photos,
+					CategoryID:  cat.ID,
+				},
+				Variants: []inventory.CreateProductVariantRequest{
+					{Code: "standard", CostPrice: &cost, SalePrice: &price, StockQuantity: &stock, StockQuantityAlert: &alert},
+					{Code: "premium", CostPrice: &cost, SalePrice: &premium, StockQuantity: &stock, StockQuantityAlert: &alert},
+				},
+			})
+			if err != nil {
+				return err
+			}
+			variants = append(variants, p.Variants...)
+		}
+		return nil
+	}); err != nil {
+		return nil, nil, err
+	}
+
+	return categories, variants, nil
+}
+
+func seedCustomersAndAddresses(ctx context.Context, svc *customer.Service, owner *account.User, biz *business.Business, count int, homeCountry string, rng *rand.Rand) ([]*customer.Customer, map[string][]*customer.CustomerAddress, error) {
+	firstNames := []string{"Layla", "Omar", "Zoe", "Hassan", "Mia", "Jonas", "Rafael", "Noor", "Sofia", "Diego"}
+	lastNames := []string{"Khan", "Lopez", "Ibrahim", "Chen", "Patel", "Garcia", "Stone", "Okafor", "Silva", "Laurent"}
+	cities := []string{"Riyadh", "Dubai", "London", "San Francisco", "Berlin", "Paris", "Madrid", "Toronto"}
+	addressesByCustomer := make(map[string][]*customer.CustomerAddress, count)
+	customers := make([]*customer.Customer, 0, count)
+	if err := step("["+biz.Descriptor+"] Creating customers + addresses", func() error {
+		for i := 0; i < count; i++ {
+			name := fmt.Sprintf("%s %s", firstNames[i%len(firstNames)], lastNames[rng.Intn(len(lastNames))])
+			email := fmt.Sprintf("%s.%s.%d@kyora.dev", strings.ToLower(firstNames[i%len(firstNames)]), strings.ToLower(lastNames[i%len(lastNames)]), i)
+			country := homeCountry
+			if rng.Float64() < 0.35 {
+				altCountries := []string{"US", "AE", "GB", "DE", "FR"}
+				country = altCountries[rng.Intn(len(altCountries))]
+			}
+			c, err := svc.CreateCustomer(ctx, owner, biz, &customer.CreateCustomerRequest{
+				Name:        name,
+				Email:       email,
+				CountryCode: country,
+				PhoneCode:   "+1",
+				PhoneNumber: fmt.Sprintf("555%06d", rng.Intn(999999)),
+			})
+			if err != nil {
+				return err
+			}
+			addr, err := svc.CreateCustomerAddress(ctx, owner, biz, c.ID, &customer.CreateCustomerAddressRequest{
+				Street:      fmt.Sprintf("%d %s St", 10+rng.Intn(200), lastNames[i%len(lastNames)]),
+				City:        cities[rng.Intn(len(cities))],
+				State:       "",
+				ZipCode:     fmt.Sprintf("%05d", rng.Intn(99999)),
+				CountryCode: country,
+				PhoneCode:   "+1",
+				Phone:       fmt.Sprintf("555%06d", rng.Intn(999999)),
+			})
+			if err != nil {
+				return err
+			}
+			customers = append(customers, c)
+			addressesByCustomer[c.ID] = []*customer.CustomerAddress{addr}
+		}
+		return nil
+	}); err != nil {
+		return nil, nil, err
+	}
+
+	return customers, addressesByCustomer, nil
+}
+
+type orderStats struct {
+	Created   int
+	Paid      int
+	Fulfilled int
+}
+
+func seedOrders(ctx context.Context, svc *order.Service, owner *account.User, biz *business.Business, count int, variants []*inventory.Variant, customers []*customer.Customer, addresses map[string][]*customer.CustomerAddress, zones []*business.ShippingZone, rng *rand.Rand) ([]*order.Order, orderStats, error) {
+	channels := []string{"instagram", "tiktok", "whatsapp", "facebook"}
+	stats := orderStats{}
+	orders := make([]*order.Order, 0, count)
+	if err := step("["+biz.Descriptor+"] Creating orders", func() error {
+		for i := 0; i < count; i++ {
+			c := customers[rng.Intn(len(customers))]
+			addr := addresses[c.ID][0]
+			itemsCount := 1 + rng.Intn(3)
+			items := make([]*order.CreateOrderItemRequest, 0, itemsCount)
+			for j := 0; j < itemsCount; j++ {
+				v := variants[rng.Intn(len(variants))]
+				qty := 1 + rng.Intn(4)
+				items = append(items, &order.CreateOrderItemRequest{
+					VariantID: v.ID,
+					Quantity:  qty,
+					UnitPrice: v.SalePrice,
+					UnitCost:  v.CostPrice,
+				})
+			}
+
+			shippingFee := decimal.NewFromFloat(0)
+			var zoneID *string
+			if len(zones) > 0 {
+				for _, z := range zones {
+					if z.Countries.Contains(strings.ToUpper(addr.CountryCode)) {
+						zoneID = &z.ID
+						shippingFee = z.ShippingCost
+						break
+					}
+				}
+				if zoneID == nil {
+					zoneID = &zones[len(zones)-1].ID
+					shippingFee = zones[len(zones)-1].ShippingCost
+				}
+			}
+
+			discount := decimal.NewFromFloat(0)
+			if rng.Float64() < 0.2 {
+				discount = decimal.NewFromFloat(5 + rng.Float64()*15).Round(2)
+			}
+
+			orderedAt := randomPastTime(rng, 12)
+			ord, err := svc.CreateOrder(ctx, owner, biz, &order.CreateOrderRequest{
+				CustomerID:        c.ID,
+				Channel:           channels[rng.Intn(len(channels))],
+				ShippingAddressID: addr.ID,
+				ShippingZoneID:    zoneID,
+				ShippingFee:       shippingFee,
+				Discount:          discount,
+				PaymentMethod:     order.OrderPaymentMethodBankTransfer,
+				OrderedAt:         orderedAt,
+				Items:             items,
+			})
+			if err != nil {
+				return err
+			}
+			orders = append(orders, ord)
+			stats.Created++
+
+			progress := rng.Float64()
+			if progress < 0.15 {
+				updated, err := svc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusCancelled)
+				if err != nil {
+					return err
+				}
+				ord = updated
+				orders[len(orders)-1] = ord
+				continue
+			}
+
+			updatedOrder, err := svc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusPlaced)
+			if err != nil {
+				return err
+			}
+			ord = updatedOrder
+
+			payProbability := 0.65
+			if progress > 0.6 {
+				payProbability = 0.9
+			}
+			if rng.Float64() < payProbability {
+				updated, err := svc.UpdateOrderPaymentStatus(ctx, owner, biz, ord.ID, order.OrderPaymentStatusPaid)
+				if err != nil {
+					return err
+				}
+				ord = updated
+				stats.Paid++
+			}
+
+			if progress > 0.45 {
+				_, err := svc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusShipped)
+				if err != nil {
+					return err
+				}
+				fulfilled, err := svc.UpdateOrderStatus(ctx, owner, biz, ord.ID, order.OrderStatusFulfilled)
+				if err != nil {
+					return err
+				}
+				ord = fulfilled
+				stats.Fulfilled++
+			}
+
+			orders[len(orders)-1] = ord
+		}
+		return nil
+	}); err != nil {
+		return nil, stats, err
+	}
+
+	return orders, stats, nil
+}
+
+func seedAccountingData(ctx context.Context, svc *accounting.Service, owner *account.User, biz *business.Business, orders []*order.Order, rng *rand.Rand) error {
+	assets := []struct {
+		Name string
+		Type accounting.AssetType
+		Cost float64
+	}{
+		{Name: "MacBook Pro", Type: accounting.AssetTypeEquipment, Cost: 2800},
+		{Name: "Office Furniture", Type: accounting.AssetTypeFurniture, Cost: 1500},
+		{Name: "Studio Lighting", Type: accounting.AssetTypeEquipment, Cost: 800},
+	}
+
+	if err := step("["+biz.Descriptor+"] Accounting: assets", func() error {
+		for _, a := range assets {
+			_, err := svc.CreateAsset(ctx, owner, biz, &accounting.CreateAssetRequest{
+				Name:        a.Name,
+				Type:        a.Type,
+				Value:       decimal.NewFromFloat(a.Cost).Round(2),
+				PurchasedAt: randomPastTime(rng, 10),
+				Note:        "Seeded fixed asset",
+			})
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	if err := step("["+biz.Descriptor+"] Accounting: investments & withdrawals", func() error {
+		_, err := svc.CreateInvestment(ctx, owner, biz, &accounting.CreateInvestmentRequest{
+			InvestorID: owner.ID,
+			Amount:     decimal.NewFromFloat(20000 + rng.Float64()*15000).Round(2),
+			Note:       "Initial capital injection",
+			InvestedAt: randomPastTime(rng, 12),
+		})
+		if err != nil {
+			return err
+		}
+		_, err = svc.CreateWithdrawal(ctx, owner, biz, &accounting.CreateWithdrawalRequest{
+			WithdrawerID: owner.ID,
+			Amount:       decimal.NewFromFloat(1500 + rng.Float64()*1500).Round(2),
+			Note:         "Owner draw",
+			WithdrawnAt:  randomPastTime(rng, 6),
+		})
+		return err
+	}); err != nil {
+		return err
+	}
+
+	renting := accounting.CreateRecurringExpenseRequest{
+		Frequency:                    accounting.RecurringExpenseFrequencyMonthly,
+		RecurringStartDate:           time.Now().AddDate(0, -6, 0),
+		Amount:                       decimal.NewFromFloat(1200),
+		Category:                     accounting.ExpenseCategoryRent,
+		Note:                         "Monthly rent",
+		AutoCreateHistoricalExpenses: true,
+	}
+	saasp := accounting.CreateRecurringExpenseRequest{
+		Frequency:                    accounting.RecurringExpenseFrequencyMonthly,
+		RecurringStartDate:           time.Now().AddDate(0, -6, 0),
+		Amount:                       decimal.NewFromFloat(320),
+		Category:                     accounting.ExpenseCategorySoftware,
+		Note:                         "Software subscriptions",
+		AutoCreateHistoricalExpenses: true,
+	}
+	if err := step("["+biz.Descriptor+"] Accounting: recurring expenses", func() error {
+		if _, err := svc.CreateRecurringExpense(ctx, owner, biz, &renting); err != nil {
+			return err
+		}
+		if _, err := svc.CreateRecurringExpense(ctx, owner, biz, &saasp); err != nil {
+			return err
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	oneTimeExpenses := []accounting.CreateExpenseRequest{}
+	oneTimeExpenseTemplates := []struct {
+		amount   float64
+		category accounting.ExpenseCategory
+		note     string
+		months   int
+	}{
+		{amount: 450, category: accounting.ExpenseCategorySupplies, note: "Office supplies", months: 8},
+		{amount: 780, category: accounting.ExpenseCategoryTravel, note: "Client visits", months: 4},
+		{amount: 560, category: accounting.ExpenseCategoryMarketing, note: "Ad spend", months: 3},
+	}
+	for _, tpl := range oneTimeExpenseTemplates {
+		when := randomPastTime(rng, tpl.months)
+		oneTimeExpenses = append(oneTimeExpenses, accounting.CreateExpenseRequest{
+			Amount:     decimal.NewFromFloat(tpl.amount).Round(2),
+			Category:   tpl.category,
+			Type:       accounting.ExpenseTypeOneTime,
+			Note:       tpl.note,
+			OccurredOn: &when,
+		})
+	}
+	if err := step("["+biz.Descriptor+"] Accounting: one-time expenses", func() error {
+		for _, e := range oneTimeExpenses {
+			if _, err := svc.CreateExpense(ctx, owner, biz, &e); err != nil {
+				return err
+			}
+		}
+		return nil
+	}); err != nil {
+		return err
+	}
+
+	paidOrders := make([]*order.Order, 0)
+	for _, o := range orders {
+		if o.PaymentStatus == order.OrderPaymentStatusPaid {
+			paidOrders = append(paidOrders, o)
+		}
+	}
+	if len(paidOrders) > 0 {
+		_ = step("["+biz.Descriptor+"] Accounting: transaction fee expenses", func() error {
+			for _, o := range paidOrders {
+				if rng.Float64() > 0.35 {
+					continue
+				}
+				fee := o.Total.Mul(decimal.NewFromFloat(0.02)).Round(2)
+				if fee.LessThanOrEqual(decimal.Zero) {
+					continue
+				}
+				if err := svc.UpsertTransactionFeeExpenseForOrder(ctx, o.BusinessID, o.ID, fee, o.Currency, o.OrderedAt, string(o.PaymentMethod)); err != nil {
+					slog.Warn("failed to create transaction fee expense", "order", o.ID, "error", err)
+				}
+			}
+			return nil
+		})
+	}
+
+	return nil
+}
+
+func seedTeamMembers(ctx context.Context, deps seedDeps, owner *account.User, ws *account.Workspace, members []seedTeamMember, workspaceName string) error {
+	for _, m := range members {
+		inv, err := deps.accountSvc.InviteUserToWorkspace(ctx, owner, ws.ID, m.Email, m.Role)
+		if err != nil {
+			return err
+		}
+		token, _, err := deps.accountStore.CreateWorkspaceInvitationToken(&account.WorkspaceInvitationPayload{
+			InvitationID: inv.ID,
+			WorkspaceID:  ws.ID,
+			Email:        m.Email,
+			Role:         string(m.Role),
+			InviterID:    owner.ID,
+		})
+		if err != nil {
+			return err
+		}
+		if _, _, err := deps.accountSvc.AcceptInvitation(ctx, token, m.FirstName, m.LastName, seedPassword); err != nil {
+			return fmt.Errorf("failed to accept invitation for %s in %s: %w", m.Email, workspaceName, err)
+		}
+	}
+	return nil
+}
+
+func randomPastTime(rng *rand.Rand, monthsBack int) time.Time {
+	if monthsBack <= 0 {
+		monthsBack = 1
+	}
+	days := monthsBack * 30
+	return time.Now().UTC().Add(-time.Duration(rng.Intn(days*24)) * time.Hour)
+}
+
+func placeholderImageURL(text string) string {
+	encoded := url.QueryEscape(text)
+	return fmt.Sprintf("https://placehold.co/600x400?text=%s", encoded)
 }
 
 func step(title string, fn func() error) error {
