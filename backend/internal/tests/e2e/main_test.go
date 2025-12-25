@@ -30,6 +30,10 @@ func TestMain(m *testing.M) {
 	// JWT is required for authenticated endpoints in tests.
 	viper.Set(config.JWTSecret, "test_jwt_secret")
 
+	// Many domains (e.g., assets) generate absolute URLs for uploads and public access.
+	// Ensure they point at the E2E server, not the default dev port.
+	viper.Set(config.HTTPBaseURL, e2eBaseURL)
+
 	// Keep tests quiet and faster; E2E suites can generate lots of DB queries.
 	// (Set to "info" locally when debugging query issues.)
 	viper.Set(config.DatabaseLogLevel, "silent")

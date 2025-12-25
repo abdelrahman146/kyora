@@ -38,27 +38,7 @@ func NewHttpHandler(svc *Service) *HttpHandler {
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/assets/uploads/logo [post]
 func (h *HttpHandler) CreateLogoUpload(c *gin.Context) {
-	actor, err := account.ActorFromContext(c)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	biz, err := business.BusinessFromContext(c)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	var req CreateUploadRequest
-	if err := request.ValidBody(c, &req); err != nil {
-		response.Error(c, err)
-		return
-	}
-	res, err := h.svc.CreateUpload(c.Request.Context(), actor, biz, PurposeBusinessLogo, &req)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	response.SuccessJSON(c, http.StatusOK, res)
+	h.createUpload(c, PurposeBusinessLogo)
 }
 
 // CreateProductPhotoUpload godoc
@@ -77,27 +57,7 @@ func (h *HttpHandler) CreateLogoUpload(c *gin.Context) {
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/assets/uploads/product-photo [post]
 func (h *HttpHandler) CreateProductPhotoUpload(c *gin.Context) {
-	actor, err := account.ActorFromContext(c)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	biz, err := business.BusinessFromContext(c)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	var req CreateUploadRequest
-	if err := request.ValidBody(c, &req); err != nil {
-		response.Error(c, err)
-		return
-	}
-	res, err := h.svc.CreateUpload(c.Request.Context(), actor, biz, PurposeProductPhoto, &req)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	response.SuccessJSON(c, http.StatusOK, res)
+	h.createUpload(c, PurposeProductPhoto)
 }
 
 // CreateVariantPhotoUpload godoc
@@ -116,6 +76,10 @@ func (h *HttpHandler) CreateProductPhotoUpload(c *gin.Context) {
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/assets/uploads/variant-photo [post]
 func (h *HttpHandler) CreateVariantPhotoUpload(c *gin.Context) {
+	h.createUpload(c, PurposeVariantPhoto)
+}
+
+func (h *HttpHandler) createUpload(c *gin.Context, purpose Purpose) {
 	actor, err := account.ActorFromContext(c)
 	if err != nil {
 		response.Error(c, err)
@@ -131,7 +95,7 @@ func (h *HttpHandler) CreateVariantPhotoUpload(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	res, err := h.svc.CreateUpload(c.Request.Context(), actor, biz, PurposeVariantPhoto, &req)
+	res, err := h.svc.CreateUpload(c.Request.Context(), actor, biz, purpose, &req)
 	if err != nil {
 		response.Error(c, err)
 		return

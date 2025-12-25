@@ -7,7 +7,6 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -148,21 +147,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	}
 
 	// asset/blob storage (uploads)
-	var blobProvider blob.Provider
-	storageProvider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
-	if storageProvider != "" && storageProvider != "local" {
-		p, err := blob.NewS3CompatibleProvider(blob.S3CompatibleConfig{
-			Bucket:          viper.GetString(config.StorageBucket),
-			Region:          viper.GetString(config.StorageRegion),
-			Endpoint:        viper.GetString(config.StorageEndpoint),
-			AccessKeyID:     viper.GetString(config.StorageAccessKeyID),
-			SecretAccessKey: viper.GetString(config.StorageSecretAccessKey),
-			PublicBaseURL:   viper.GetString(config.StoragePublicBaseURL),
-		})
-		if err != nil {
-			return nil, err
-		}
-		blobProvider = p
+	blobProvider, err := blob.FromConfig()
+	if err != nil {
+		return nil, err
 	}
 	assetStorage := asset.NewStorage(db, cacheDB)
 	assetSvc := asset.NewService(assetStorage, atomicProcessor, blobProvider)

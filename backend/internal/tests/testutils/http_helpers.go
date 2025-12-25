@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"io"
 	"net/http"
+	"strings"
 )
 
 // HTTPClient provides reusable HTTP request helpers for E2E tests
@@ -28,9 +29,16 @@ func NewHTTPClient(baseURL string) *HTTPClient {
 	}
 }
 
+func (h *HTTPClient) fullURL(path string) string {
+	if strings.HasPrefix(path, "http://") || strings.HasPrefix(path, "https://") {
+		return path
+	}
+	return h.BaseURL + path
+}
+
 // Get makes a GET request to the specified path
 func (h *HTTPClient) Get(path string) (*http.Response, error) {
-	return h.Client.Get(h.BaseURL + path)
+	return h.Client.Get(h.fullURL(path))
 }
 
 // Post makes a POST request with JSON payload
@@ -39,7 +47,7 @@ func (h *HTTPClient) Post(path string, payload interface{}) (*http.Response, err
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("POST", h.BaseURL+path, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", h.fullURL(path), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -53,7 +61,7 @@ func (h *HTTPClient) Put(path string, payload interface{}) (*http.Response, erro
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("PUT", h.BaseURL+path, bytes.NewBuffer(body))
+	req, err := http.NewRequest("PUT", h.fullURL(path), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -67,7 +75,7 @@ func (h *HTTPClient) Patch(path string, payload interface{}) (*http.Response, er
 	if err != nil {
 		return nil, err
 	}
-	req, err := http.NewRequest("PATCH", h.BaseURL+path, bytes.NewBuffer(body))
+	req, err := http.NewRequest("PATCH", h.fullURL(path), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -77,7 +85,7 @@ func (h *HTTPClient) Patch(path string, payload interface{}) (*http.Response, er
 
 // Delete makes a DELETE request
 func (h *HTTPClient) Delete(path string) (*http.Response, error) {
-	req, err := http.NewRequest("DELETE", h.BaseURL+path, nil)
+	req, err := http.NewRequest("DELETE", h.fullURL(path), nil)
 	if err != nil {
 		return nil, err
 	}
@@ -94,7 +102,7 @@ func (h *HTTPClient) Request(method, path string, payload interface{}) (*http.Re
 		}
 		body = bytes.NewBuffer(data)
 	}
-	req, err := http.NewRequest(method, h.BaseURL+path, body)
+	req, err := http.NewRequest(method, h.fullURL(path), body)
 	if err != nil {
 		return nil, err
 	}
@@ -114,7 +122,7 @@ func (h *HTTPClient) AuthenticatedRequest(method, path string, payload interface
 		}
 		body = bytes.NewBuffer(data)
 	}
-	req, err := http.NewRequest(method, h.BaseURL+path, body)
+	req, err := http.NewRequest(method, h.fullURL(path), body)
 	if err != nil {
 		return nil, err
 	}
@@ -130,7 +138,7 @@ func (h *HTTPClient) AuthenticatedRequest(method, path string, payload interface
 // PostRaw makes a POST request with raw body bytes.
 // Useful for webhook tests where payload and signature must match exactly.
 func (h *HTTPClient) PostRaw(path string, body []byte, headers map[string]string) (*http.Response, error) {
-	req, err := http.NewRequest("POST", h.BaseURL+path, bytes.NewBuffer(body))
+	req, err := http.NewRequest("POST", h.fullURL(path), bytes.NewBuffer(body))
 	if err != nil {
 		return nil, err
 	}
@@ -138,6 +146,30 @@ func (h *HTTPClient) PostRaw(path string, body []byte, headers map[string]string
 		req.Header.Set(k, v)
 	}
 	return h.Client.Do(req)
+}
+
+// RequestRaw makes a request with raw body bytes.
+// Useful for endpoints that accept non-JSON payloads (e.g., direct file uploads).
+func (h *HTTPClient) RequestRaw(method, path string, body []byte, headers map[string]string) (*http.Response, error) {
+	req, err := http.NewRequest(method, h.fullURL(path), bytes.NewBuffer(body))
+	if err != nil {
+		return nil, err
+	}
+	for k, v := range headers {
+		req.Header.Set(k, v)
+	}
+	return h.Client.Do(req)
+}
+
+// AuthenticatedRequestRaw makes an authenticated request with raw body bytes.
+func (h *HTTPClient) AuthenticatedRequestRaw(method, path string, body []byte, headers map[string]string, token string) (*http.Response, error) {
+	if headers == nil {
+		headers = map[string]string{}
+	}
+	if token != "" {
+		headers["Authorization"] = "Bearer " + token
+	}
+	return h.RequestRaw(method, path, body, headers)
 }
 
 // DecodeJSON decodes JSON response body into target
