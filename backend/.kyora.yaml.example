@@ -36,7 +36,7 @@ auth:
     redirect_url: "http://localhost:8080/auth/google/callback"
 billing:
   stripe:
-    api_key: "sk_test_your_stripe_api_key"
+    api_key: "sk_test_123"
     webhook_secret: "whsec_your_webhook_secret"
 email:
   provider: "mock" # options: resend, mock
