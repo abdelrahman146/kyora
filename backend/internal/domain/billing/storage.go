@@ -39,6 +39,20 @@ func (s *Storage) FindInvoiceRecordByWorkspaceAndStripeID(ctx context.Context, w
 	)
 }
 
+func (s *Storage) UpsertInvoiceRecord(ctx context.Context, workspaceID, stripeInvoiceID, hostedURL, invoicePDF string) error {
+	rec, err := s.FindInvoiceRecordByWorkspaceAndStripeID(ctx, workspaceID, stripeInvoiceID)
+	if err != nil && !database.IsRecordNotFound(err) {
+		return err
+	}
+	if rec == nil {
+		rec = &InvoiceRecord{WorkspaceID: workspaceID, StripeInvoiceID: stripeInvoiceID, HostedInvoiceURL: hostedURL, InvoicePDF: invoicePDF}
+		return s.invoiceRecord.CreateOne(ctx, rec)
+	}
+	rec.HostedInvoiceURL = hostedURL
+	rec.InvoicePDF = invoicePDF
+	return s.invoiceRecord.UpdateOne(ctx, rec)
+}
+
 // SyncPlans upserts all defined plans into the database
 // This can be called manually via CLI command or automatically on startup
 func (s *Storage) SyncPlans(ctx context.Context) error {

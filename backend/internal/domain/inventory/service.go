@@ -136,6 +136,7 @@ type CreateProductWithVariantsRequest struct {
 type CreateProductVariantRequest struct {
 	Code               string           `json:"code" binding:"required"`
 	SKU                string           `json:"sku" binding:"omitempty"`
+	Photos             []string         `json:"photos" binding:"omitempty,max=10,dive,required"`
 	CostPrice          *decimal.Decimal `json:"costPrice" binding:"required"`
 	SalePrice          *decimal.Decimal `json:"salePrice" binding:"required"`
 	StockQuantity      *int             `json:"stockQuantity" binding:"required,gte=0"`
@@ -183,6 +184,7 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 			if variantReq.SalePrice.IsNegative() {
 				return problem.BadRequest("salePrice must be >= 0").With("field", "salePrice")
 			}
+			photos := PhotoURLList(variantReq.Photos)
 			sku := strings.TrimSpace(variantReq.SKU)
 			if sku == "" {
 				sku = CreateProductSKU(biz.Descriptor, product.Name, variantReq.Code)
@@ -196,6 +198,7 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 				SalePrice:          *variantReq.SalePrice,
 				CostPrice:          *variantReq.CostPrice,
 				Currency:           biz.Currency,
+				Photos:             photos,
 				StockQuantity:      *variantReq.StockQuantity,
 				StockQuantityAlert: *variantReq.StockQuantityAlert,
 			}

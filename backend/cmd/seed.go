@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"math"
 	"math/rand"
+	"net/http"
 	"net/url"
 	"os"
 	"strings"
@@ -24,12 +25,14 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
 	"github.com/shopspring/decimal"
 	"github.com/spf13/cobra"
 	"github.com/spf13/viper"
 	stripelib "github.com/stripe/stripe-go/v83"
+	"github.com/stripe/stripe-go/v83/invoice"
 	"github.com/stripe/stripe-go/v83/paymentmethod"
 )
 
@@ -278,6 +281,9 @@ func loadStripeConfig() (string, string) {
 		} else {
 			stripeKey = "sk_test_123"
 		}
+	} else if strings.HasPrefix(stripeKey, "sk_test_") {
+		// Default to local stripe-mock when using a test key and no override is provided.
+		baseURL = "http://localhost:12111"
 	}
 	return stripeKey, baseURL
 }
@@ -529,7 +535,47 @@ func seedStripeForWorkspace(ctx context.Context, deps seedDeps, ws *account.Work
 		return err
 	})
 
+	bestEffort("Syncing Stripe invoices", func() error {
+		return seedStripeInvoices(ctx, deps, ws)
+	})
+
 	return nil
+}
+
+func seedStripeInvoices(ctx context.Context, deps seedDeps, ws *account.Workspace) error {
+	if !deps.stripeEnabled {
+		return nil
+	}
+	custID, err := deps.billingSvc.EnsureCustomer(ctx, ws)
+	if err != nil {
+		return err
+	}
+	params := &stripelib.InvoiceListParams{
+		Customer:   stripelib.String(custID),
+		ListParams: stripelib.ListParams{Limit: stripelib.Int64(20)},
+	}
+	iter := invoice.List(params)
+	for iter.Next() {
+		inv := iter.Invoice()
+		if inv.Status == stripelib.InvoiceStatusDraft {
+			if finalized, err := invoice.FinalizeInvoice(inv.ID, nil); err == nil && finalized != nil {
+				inv = finalized
+			} else if err != nil {
+				slog.Warn("failed to finalize invoice", "invoice", inv.ID, "error", err)
+			}
+		}
+		if inv.Status == stripelib.InvoiceStatusOpen {
+			if _, err := invoice.Pay(inv.ID, &stripelib.InvoicePayParams{}); err != nil {
+				slog.Warn("failed to pay invoice during seed", "invoice", inv.ID, "error", err)
+			}
+		}
+		hostedURL := inv.HostedInvoiceURL
+		invoicePDF := inv.InvoicePDF
+		if err := deps.billingStore.UpsertInvoiceRecord(ctx, ws.ID, inv.ID, hostedURL, invoicePDF); err != nil {
+			slog.Warn("failed to persist invoice record", "invoice", inv.ID, "workspace", ws.ID, "error", err)
+		}
+	}
+	return iter.Err()
 }
 
 func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner *account.User, cfg workspaceSeedConfig, rng *rand.Rand) (*business.Business, error) {
@@ -541,6 +587,7 @@ func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner
 			if attempt > 0 {
 				candidate = fmt.Sprintf("%s-%d", descriptor, rng.Intn(10_000))
 			}
+			decor := randomBusinessDecor(candidate, rng)
 			available, err := svc.IsBusinessDescriptorAvailable(ctx, owner, candidate)
 			if err != nil {
 				return err
@@ -552,6 +599,7 @@ func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner
 				Name:              cfg.BusinessName,
 				Descriptor:        candidate,
 				Brand:             cfg.Brand,
+				LogoURL:           decor.logoURL,
 				CountryCode:       cfg.Country,
 				Currency:          cfg.Currency,
 				VatRate:           decimal.NewFromFloat(0.15),
@@ -560,6 +608,12 @@ func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner
 				PhoneNumber:       cfg.PhoneNumber,
 				WhatsappNumber:    cfg.WhatsappNumber,
 				Address:           fmt.Sprintf("%s HQ", cfg.BusinessName),
+				WebsiteURL:        decor.websiteURL,
+				InstagramURL:      decor.instagramURL,
+				FacebookURL:       decor.facebookURL,
+				TikTokURL:         decor.tiktokURL,
+				XURL:              decor.xURL,
+				SnapchatURL:       decor.snapchatURL,
 			})
 			if err != nil {
 				return err
@@ -580,11 +634,31 @@ func seedShippingZones(ctx context.Context, svc *business.Service, owner *accoun
 	internationalCost := decimal.NewFromFloat(35)
 	freeThreshold := decimal.NewFromFloat(150)
 
-	domestic, err := svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
-		Name:                  "Domestic",
-		Countries:             []string{strings.ToUpper(biz.CountryCode)},
-		ShippingCost:          domesticCost,
-		FreeShippingThreshold: freeThreshold,
+	retryRateLimited := func(fn func() error) error {
+		for attempt := 0; attempt < 3; attempt++ {
+			if err := fn(); err != nil {
+				var p *problem.Problem
+				if errors.As(err, &p) && p.Status == http.StatusTooManyRequests {
+					time.Sleep(1200 * time.Millisecond)
+					continue
+				}
+				return err
+			}
+			return nil
+		}
+		return problem.TooManyRequests("too many requests")
+	}
+
+	var domestic *business.ShippingZone
+	err := retryRateLimited(func() error {
+		var createErr error
+		domestic, createErr = svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
+			Name:                  "Domestic",
+			Countries:             []string{strings.ToUpper(biz.CountryCode)},
+			ShippingCost:          domesticCost,
+			FreeShippingThreshold: freeThreshold,
+		})
+		return createErr
 	})
 	if err != nil && !database.IsUniqueViolation(err) {
 		return nil, err
@@ -601,10 +675,15 @@ func seedShippingZones(ctx context.Context, svc *business.Service, owner *accoun
 			}
 		}
 	}
-	international, err := svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
-		Name:         "International",
-		Countries:    intlCountries,
-		ShippingCost: internationalCost,
+	var international *business.ShippingZone
+	err = retryRateLimited(func() error {
+		var createErr error
+		international, createErr = svc.CreateShippingZone(ctx, owner, biz, &business.CreateShippingZoneRequest{
+			Name:         "International",
+			Countries:    intlCountries,
+			ShippingCost: internationalCost,
+		})
+		return createErr
 	})
 	if err != nil && !database.IsUniqueViolation(err) {
 		return nil, err
@@ -658,6 +737,8 @@ func seedInventoryData(ctx context.Context, svc *inventory.Service, owner *accou
 				placeholderImageURL(name),
 				placeholderImageURL(name + " Variant"),
 			}
+			standardPhotos := []string{placeholderVariantImageURL(name, "standard")}
+			premiumPhotos := []string{placeholderVariantImageURL(name, "premium")}
 			p, err := svc.CreateProductWithVariants(ctx, owner, biz, &inventory.CreateProductWithVariantsRequest{
 				Product: inventory.CreateProductRequest{
 					Name:        name,
@@ -666,8 +747,8 @@ func seedInventoryData(ctx context.Context, svc *inventory.Service, owner *accou
 					CategoryID:  cat.ID,
 				},
 				Variants: []inventory.CreateProductVariantRequest{
-					{Code: "standard", CostPrice: &cost, SalePrice: &price, StockQuantity: &stock, StockQuantityAlert: &alert},
-					{Code: "premium", CostPrice: &cost, SalePrice: &premium, StockQuantity: &stock, StockQuantityAlert: &alert},
+					{Code: "standard", Photos: standardPhotos, CostPrice: &cost, SalePrice: &price, StockQuantity: &stock, StockQuantityAlert: &alert},
+					{Code: "premium", Photos: premiumPhotos, CostPrice: &cost, SalePrice: &premium, StockQuantity: &stock, StockQuantityAlert: &alert},
 				},
 			})
 			if err != nil {
@@ -698,12 +779,21 @@ func seedCustomersAndAddresses(ctx context.Context, svc *customer.Service, owner
 				altCountries := []string{"US", "AE", "GB", "DE", "FR"}
 				country = altCountries[rng.Intn(len(altCountries))]
 			}
+			handles := randomCustomerHandles(strings.Split(email, "@")[0], rng)
+			genders := []customer.CustomerGender{customer.GenderMale, customer.GenderFemale, customer.GenderOther}
+			gender := genders[rng.Intn(len(genders))]
 			c, err := svc.CreateCustomer(ctx, owner, biz, &customer.CreateCustomerRequest{
-				Name:        name,
-				Email:       email,
-				CountryCode: country,
-				PhoneCode:   "+1",
-				PhoneNumber: fmt.Sprintf("555%06d", rng.Intn(999999)),
+				Name:              name,
+				Gender:            gender,
+				Email:             email,
+				CountryCode:       country,
+				PhoneCode:         "+1",
+				PhoneNumber:       fmt.Sprintf("555%06d", rng.Intn(999999)),
+				TikTokUsername:    handles.tiktok,
+				InstagramUsername: handles.instagram,
+				FacebookUsername:  handles.facebook,
+				XUsername:         handles.x,
+				WhatsappNumber:    handles.whatsapp,
 			})
 			if err != nil {
 				return err
@@ -1018,9 +1108,81 @@ func randomPastTime(rng *rand.Rand, monthsBack int) time.Time {
 	return time.Now().UTC().Add(-time.Duration(rng.Intn(days*24)) * time.Hour)
 }
 
+type businessDecor struct {
+	logoURL      string
+	websiteURL   string
+	instagramURL string
+	facebookURL  string
+	tiktokURL    string
+	xURL         string
+	snapchatURL  string
+}
+
+type customerHandles struct {
+	tiktok    string
+	instagram string
+	facebook  string
+	x         string
+	whatsapp  string
+}
+
+func randomBusinessDecor(descriptor string, rng *rand.Rand) businessDecor {
+	seed := fmt.Sprintf("%s-%d", descriptor, rng.Intn(10_000))
+	decor := businessDecor{
+		logoURL: fmt.Sprintf("https://picsum.photos/seed/%s/320/320", seed),
+	}
+	if rng.Float64() < 0.8 {
+		decor.websiteURL = fmt.Sprintf("https://%s.kyora.test", descriptor)
+	}
+	if rng.Float64() < 0.7 {
+		decor.instagramURL = fmt.Sprintf("https://instagram.com/%s_shop", descriptor)
+	}
+	if rng.Float64() < 0.4 {
+		decor.facebookURL = fmt.Sprintf("https://facebook.com/%s.store", descriptor)
+	}
+	if rng.Float64() < 0.5 {
+		decor.tiktokURL = fmt.Sprintf("https://www.tiktok.com/@%s", descriptor)
+	}
+	if rng.Float64() < 0.35 {
+		decor.xURL = fmt.Sprintf("https://x.com/%s", descriptor)
+	}
+	if rng.Float64() < 0.2 {
+		decor.snapchatURL = fmt.Sprintf("https://www.snapchat.com/add/%s", descriptor)
+	}
+	return decor
+}
+
+func randomCustomerHandles(base string, rng *rand.Rand) customerHandles {
+	makeHandle := func(prefix string) string {
+		return fmt.Sprintf("%s_%s_%d", prefix, strings.ToLower(base), rng.Intn(10_000))
+	}
+	h := customerHandles{}
+	if rng.Float64() < 0.5 {
+		h.tiktok = makeHandle("tik")
+	}
+	if rng.Float64() < 0.6 {
+		h.instagram = makeHandle("ig")
+	}
+	if rng.Float64() < 0.35 {
+		h.facebook = makeHandle("fb")
+	}
+	if rng.Float64() < 0.4 {
+		h.x = makeHandle("x")
+	}
+	if rng.Float64() < 0.55 {
+		h.whatsapp = fmt.Sprintf("+1%s%04d", strings.Repeat("5", 3), rng.Intn(9000)+1000)
+	}
+	return h
+}
+
 func placeholderImageURL(text string) string {
 	encoded := url.QueryEscape(text)
 	return fmt.Sprintf("https://placehold.co/600x400?text=%s", encoded)
+}
+
+func placeholderVariantImageURL(productName, variantCode string) string {
+	encoded := url.QueryEscape(fmt.Sprintf("%s-%s", productName, variantCode))
+	return fmt.Sprintf("https://placehold.co/640x480?text=%s", encoded)
 }
 
 func step(title string, fn func() error) error {
