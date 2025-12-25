@@ -37,6 +37,7 @@ auth:
 billing:
   stripe:
     api_key: "sk_test_123"
+    api_base_url: "http://localhost:12111" # point to stripe-mock in local dev
     webhook_secret: "whsec_your_webhook_secret"
 email:
   provider: "mock" # options: resend, mock

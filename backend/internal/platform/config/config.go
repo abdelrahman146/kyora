@@ -57,6 +57,7 @@ const (
 	// stripe configuration
 	StripeAPIKey        = "billing.stripe.api_key"
 	StripeWebhookSecret = "billing.stripe.webhook_secret"
+	StripeAPIBaseURL    = "billing.stripe.api_base_url"
 	// billing configuration
 	BillingAutoSyncPlans = "billing.auto_sync_plans" // bool - automatically sync plans on startup (default: true)
 	// database configuration (advanced)

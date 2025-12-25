@@ -121,13 +121,19 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	stripeAPIKey := viper.GetString(config.StripeAPIKey)
 	stripe.Key = stripeAPIKey
 	stripe.SetAppInfo(&stripe.AppInfo{Name: "Kyora", Version: "1.0", URL: "https://github.com/abdelrahman146/kyora"})
-	if conf.StripeBaseURL != "" {
+	stripeBaseURL := conf.StripeBaseURL
+	if stripeBaseURL == "" {
+		stripeBaseURL = viper.GetString(config.StripeAPIBaseURL)
+	}
+	if stripeBaseURL != "" {
 		backend := stripe.GetBackendWithConfig(stripe.APIBackend, &stripe.BackendConfig{
-			URL: &conf.StripeBaseURL, // optional custom base URL for testing if not provided it will automatically use the default
+			URL: &stripeBaseURL, // optional custom base URL for testing if not provided it will automatically use the default
 		})
 		stripe.SetBackend(stripe.APIBackend, backend)
+		slog.Info("Stripe client initialized", "baseURL", stripeBaseURL)
+	} else {
+		slog.Info("Stripe client initialized")
 	}
-	slog.Info("Stripe client initialized")
 
 	// initialize database and cache connections
 	dsn := viper.GetString(config.DatabaseDSN)
