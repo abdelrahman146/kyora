@@ -1,6 +1,8 @@
+import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import DesignSystem from './routes/design-system';
 
-function App() {
+function Home() {
   const { t, i18n } = useTranslation();
 
   const toggleLanguage = () => {
@@ -15,12 +17,17 @@ function App() {
           <h1 className="text-4xl font-bold text-primary">
             Kyora Portal
           </h1>
-          <button 
-            onClick={toggleLanguage}
-            className="btn btn-primary"
-          >
-            {i18n.language === 'ar' ? 'English' : 'عربي'}
-          </button>
+          <div className="flex gap-4">
+            <Link to="/design-system" className="btn btn-secondary">
+              Design System
+            </Link>
+            <button 
+              onClick={toggleLanguage}
+              className="btn btn-primary"
+            >
+              {i18n.language === 'ar' ? 'English' : 'عربي'}
+            </button>
+          </div>
         </div>
         
         <div className="card bg-base-200 shadow-xl">
@@ -40,6 +47,17 @@ function App() {
         </div>
       </div>
     </div>
+  );
+}
+
+function App() {
+  return (
+    <BrowserRouter>
+      <Routes>
+        <Route path="/" element={<Home />} />
+        <Route path="/design-system" element={<DesignSystem />} />
+      </Routes>
+    </BrowserRouter>
   );
 }
 
