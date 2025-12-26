@@ -1,0 +1,16 @@
+@import "tailwindcss";
+
+@layer base {
+  * {
+    border-color: var(--fallback-bc, oklch(var(--bc) / 0.2));
+  }
+  
+  body {
+    background-color: var(--fallback-b1, oklch(var(--b1)));
+    color: var(--fallback-bc, oklch(var(--bc)));
+    font-synthesis: none;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+}
