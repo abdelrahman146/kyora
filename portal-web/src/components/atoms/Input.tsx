@@ -47,8 +47,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             id={inputId}
             className={cn(
               'input input-bordered w-full h-[50px]',
-              'bg-base-200 border-transparent',
-              'focus:bg-base-100 focus:border-primary focus:outline-none',
+              'bg-base-100 border-base-300',
+              'focus:border-primary focus:outline-none',
               'transition-colors',
               'text-start',
               error ? 'input-error border-error focus:border-error' : '',

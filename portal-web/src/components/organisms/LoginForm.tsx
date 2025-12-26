@@ -1,5 +1,6 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import { Link } from "react-router-dom";
 import { Mail, Lock, Loader2 } from "lucide-react";
 import { Input } from "../atoms/Input";
 import { Button } from "../atoms/Button";
@@ -77,12 +78,12 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
 
       {/* Forgot Password Link */}
       <div className="text-end">
-        <a
-          href="/forgot-password"
-          className="text-sm text-primary-600 hover:text-primary-700 hover:underline transition-colors"
+        <Link
+          to="/forgot-password"
+          className="text-sm text-primary hover:text-primary-focus hover:underline transition-colors"
         >
           {t("auth.forgot_password")}
-        </a>
+        </Link>
       </div>
 
       {/* Submit Button */}

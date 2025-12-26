@@ -145,7 +145,7 @@ export default function ForgotPasswordPage() {
               className="btn btn-ghost btn-sm w-fit mb-4 -ms-2"
               aria-label={t("auth.back_to_login")}
             >
-              <ArrowLeft size={20} />
+              <ArrowLeft size={20} className={isRTL ? "rotate-180" : ""} />
               {t("auth.back_to_login")}
             </button>
 
