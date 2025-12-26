@@ -1,86 +1,68 @@
 import { useAuth } from "../hooks/useAuth";
-import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { useLanguage } from "../hooks/useLanguage";
+import { DashboardLayout } from "../components/templates";
+import { useBusinessStore } from "../stores/businessStore";
 
 /**
- * Dashboard Page (Placeholder)
+ * Dashboard Page
  *
- * This is a temporary dashboard for testing authentication flow.
- * Will be replaced with actual dashboard implementation.
+ * Main dashboard showing business overview and key metrics.
  */
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
-  const navigate = useNavigate();
+  const { user } = useAuth();
   const { t } = useTranslation();
-  const { language, toggleLanguage } = useLanguage();
-
-  const handleLogout = () => {
-    void logout()
-      .then(() => {
-        void navigate("/login");
-      })
-      .catch((error: unknown) => {
-        console.error("Logout failed:", error);
-        void navigate("/login");
-      });
-  };
+  const { selectedBusiness } = useBusinessStore();
 
   return (
-    <div className="min-h-screen bg-base-100">
-      <div className="container mx-auto p-8">
-        <div className="flex justify-between items-center mb-8">
-          <h1 className="text-4xl font-bold text-primary">
-            {t("dashboard.title")}
-          </h1>
-          <div className="flex gap-4">
-            <button onClick={toggleLanguage} className="btn btn-ghost">
-              {language === "ar" ? "English" : "العربية"}
-            </button>
-            <button onClick={handleLogout} className="btn btn-error">
-              Logout
-            </button>
+    <DashboardLayout title={t("dashboard.title")}>
+      <div className="space-y-6">
+        {/* Welcome Section */}
+        <div className="card bg-base-200 shadow-sm">
+          <div className="card-body">
+            <h2 className="card-title text-2xl">
+              {t("dashboard.welcome")}, {user?.firstName}!
+            </h2>
+            <p className="text-base-content/70">
+              {selectedBusiness
+                ? `${t("dashboard.managing")}: ${selectedBusiness.name}`
+                : t("dashboard.select_business_to_start")}
+            </p>
           </div>
         </div>
 
-        <div className="card bg-base-200 shadow-xl">
-          <div className="card-body">
-            <h2 className="card-title">{t("dashboard.welcome")}!</h2>
-            <div className="space-y-2">
-              <p>
-                <strong>Name:</strong> {user?.firstName} {user?.lastName}
+        {/* Placeholder Content */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body">
+              <h3 className="card-title text-lg">{t("dashboard.revenue")}</h3>
+              <p className="text-3xl font-bold text-primary">AED 0</p>
+              <p className="text-sm text-base-content/60">
+                {t("dashboard.this_month")}
               </p>
-              <p>
-                <strong>Email:</strong> {user?.email}
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body">
+              <h3 className="card-title text-lg">{t("dashboard.orders")}</h3>
+              <p className="text-3xl font-bold text-success">0</p>
+              <p className="text-sm text-base-content/60">
+                {t("dashboard.pending")}
               </p>
-              <p>
-                <strong>Role:</strong>{" "}
-                <span className="badge badge-primary">{user?.role}</span>
-              </p>
-              <p>
-                <strong>Workspace ID:</strong> {user?.workspaceId}
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow-sm border border-base-300">
+            <div className="card-body">
+              <h3 className="card-title text-lg">{t("dashboard.inventory")}</h3>
+              <p className="text-3xl font-bold text-warning">0</p>
+              <p className="text-sm text-base-content/60">
+                {t("dashboard.low_stock")}
               </p>
             </div>
           </div>
         </div>
-
-        <div className="alert alert-success mt-8">
-          <svg
-            xmlns="http://www.w3.org/2000/svg"
-            className="stroke-current shrink-0 h-6 w-6"
-            fill="none"
-            viewBox="0 0 24 24"
-          >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth="2"
-              d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
-            />
-          </svg>
-          <span>Authentication successful! You are now logged in.</span>
-        </div>
       </div>
-    </div>
+    </DashboardLayout>
   );
 }

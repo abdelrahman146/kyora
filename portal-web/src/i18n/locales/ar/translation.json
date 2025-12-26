@@ -39,6 +39,7 @@
     "oauth_missing_code": "رمز المصادقة مفقود. يرجى المحاولة مرة أخرى.",
     "return_to_login": "العودة إلى تسجيل الدخول",
     "back_to_login": "العودة إلى تسجيل الدخول",
+    "logout": "تسجيل الخروج",
     "remember_password": "تتذكر كلمة المرور؟",
     "forgot_password_title": "نسيت كلمة المرور؟",
     "forgot_password_description": "أدخل عنوان بريدك الإلكتروني وسنرسل لك رابطاً لإعادة تعيين كلمة المرور.",
@@ -69,6 +70,28 @@
   },
   "dashboard": {
     "title": "لوحة التحكم",
-    "welcome": "مرحباً"
+    "welcome": "مرحباً",
+    "select_business": "اختر منشأة",
+    "no_businesses": "لا توجد منشآت متاحة",
+    "add_business": "إضافة منشأة",
+    "profile": "الملف الشخصي",
+    "settings": "الإعدادات",
+    "help": "المساعدة والدعم",
+    "inventory": "المخزون",
+    "orders": "الطلبات",
+    "customers": "العملاء",
+    "analytics": "التحليلات",
+    "accounting": "المحاسبة",
+    "billing": "الفواتير",
+    "team": "الفريق",
+    "more": "المزيد",
+    "toggle_sidebar": "إظهار/إخفاء الشريط الجانبي",
+    "toggle_menu": "إظهار/إخفاء القائمة",
+    "managing": "إدارة",
+    "select_business_to_start": "اختر منشأة لبدء إدارة لوحة التحكم",
+    "revenue": "الإيرادات",
+    "this_month": "هذا الشهر",
+    "pending": "قيد الانتظار",
+    "low_stock": "مخزون منخفض"
   }
 }

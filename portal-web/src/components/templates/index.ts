@@ -2,4 +2,4 @@
 // Export your template components here
 // Examples: DashboardLayout, AuthLayout, SettingsLayout, etc.
 
-export {};
+export { DashboardLayout } from "./DashboardLayout";

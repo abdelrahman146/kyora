@@ -10,3 +10,6 @@ export {
   type SkeletonProps,
   type SkeletonTextProps,
 } from "./Skeleton";
+export { Avatar, type AvatarProps } from "./Avatar";
+export { IconButton, type IconButtonProps } from "./IconButton";
+export { Logo, type LogoProps } from "./Logo";
