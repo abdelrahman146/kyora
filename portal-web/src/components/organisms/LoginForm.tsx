@@ -32,6 +32,7 @@ interface LoginFormProps {
  */
 export function LoginForm({ onSubmit, onGoogleLogin }: LoginFormProps) {
   const { t } = useTranslation();
+  const { t: tErrors } = useTranslation("errors");
 
   const {
     register,
@@ -54,7 +55,7 @@ export function LoginForm({ onSubmit, onGoogleLogin }: LoginFormProps) {
         type="email"
         label={t("auth.email")}
         placeholder={t("auth.email_placeholder")}
-        error={errors.email?.message ? t(errors.email.message) : undefined}
+        error={errors.email?.message ? tErrors(errors.email.message) : undefined}
         startIcon={<Mail size={20} />}
         autoComplete="email"
         disabled={isSubmitting}
@@ -67,7 +68,7 @@ export function LoginForm({ onSubmit, onGoogleLogin }: LoginFormProps) {
         type="password"
         label={t("auth.password")}
         placeholder={t("auth.password_placeholder")}
-        error={errors.password?.message ? t(errors.password.message) : undefined}
+        error={errors.password?.message ? tErrors(errors.password.message) : undefined}
         startIcon={<Lock size={20} />}
         autoComplete="current-password"
         disabled={isSubmitting}
