@@ -166,7 +166,7 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
             type="button"
             onClick={onGoogleLogin}
             disabled={isSubmitting || isGoogleLoading}
-            className="btn btn-outline btn-lg w-full h-[52px] rounded-xl border-2 border-neutral-200 hover:border-neutral-300 hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
+            className="btn btn-outline btn-lg w-full h-13 rounded-xl border-2 border-neutral-200 hover:border-neutral-300 hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isGoogleLoading ? (
               <>

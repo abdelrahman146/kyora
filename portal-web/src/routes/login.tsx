@@ -95,7 +95,7 @@ export default function LoginPage() {
       {/* Main Login Layout */}
       <div className="min-h-screen bg-base-100 flex flex-col lg:flex-row">
         {/* Left Side - Branding (Hidden on mobile) */}
-        <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary-600 to-primary-800 items-center justify-center p-12">
+        <div className="hidden lg:flex lg:w-1/2 bg-linear-to-br from-primary-600 to-primary-800 items-center justify-center p-12">
           <div className="max-w-md text-center">
             <h1 className="text-5xl font-bold text-white mb-6">Kyora</h1>
             <p className="text-xl text-primary-100 leading-relaxed">

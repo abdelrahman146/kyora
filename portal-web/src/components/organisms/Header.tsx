@@ -5,6 +5,7 @@ import { BusinessSwitcher } from "../molecules/BusinessSwitcher";
 import { UserMenu } from "../molecules/UserMenu";
 import { useBusinessStore } from "../../stores/businessStore";
 import { useLanguage } from "../../hooks/useLanguage";
+import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
 interface HeaderProps {
@@ -18,57 +19,63 @@ interface HeaderProps {
  *
  * Features:
  * - Business switcher dropdown
- * - Page title (responsive)
+ * - Page title (responsive, hidden on mobile if space is tight)
  * - User profile menu
- * - Mobile hamburger menu
- * - RTL support
+ * - Mobile: Hamburger menu to open sidebar drawer
+ * - Desktop: No hamburger (sidebar is always visible)
+ * - RTL support with logical properties
  * - Responsive padding based on sidebar state
+ * - Fixed positioning with proper z-index stacking
  */
 export function Header({ title }: HeaderProps) {
   const { t } = useTranslation();
   const { toggleLanguage } = useLanguage();
-  const { isSidebarCollapsed, toggleSidebar } = useBusinessStore();
+  const isDesktop = useMediaQuery("(min-width: 768px)");
+  const { isSidebarCollapsed, openSidebar } = useBusinessStore();
 
   return (
     <header
       className={cn(
         "fixed top-0 end-0 h-16 bg-base-100 border-b border-base-300 z-30 transition-all duration-300",
-        "md:start-64",
-        isSidebarCollapsed && "md:start-20",
+        // Desktop: Adjust start position based on sidebar width
+        isDesktop && !isSidebarCollapsed && "md:start-64",
+        isDesktop && isSidebarCollapsed && "md:start-20",
+        // Mobile: Full width
         "start-0"
       )}
     >
-      <div className="h-full flex items-center justify-between gap-4 px-4">
+      <div className="h-full flex items-center justify-between gap-2 px-4">
         {/* Left Section: Mobile Menu + Title */}
-        <div className="flex items-center gap-3">
-          {/* Mobile Menu Toggle */}
-          <IconButton
-            icon={Menu}
-            size="md"
-            variant="ghost"
-            onClick={toggleSidebar}
-            aria-label={t("dashboard.toggle_menu")}
-            className="md:hidden"
-          />
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Mobile Menu Toggle - Opens Sidebar Drawer */}
+          {!isDesktop && (
+            <IconButton
+              icon={Menu}
+              size="md"
+              variant="ghost"
+              onClick={openSidebar}
+              aria-label={t("dashboard.open_menu")}
+            />
+          )}
 
-          {/* Page Title */}
+          {/* Page Title - Hidden on small screens to save space */}
           {title && (
-            <h1 className="text-lg font-bold text-base-content hidden sm:block">
+            <h1 className="text-lg font-bold text-base-content truncate">
               {title}
             </h1>
           )}
         </div>
 
         {/* Right Section: Business Switcher + Language Toggle + User Menu */}
-        <div className="flex items-center gap-2">
-          {/* Business Switcher */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Business Switcher - Compact on mobile */}
           <BusinessSwitcher />
 
-          {/* Language Toggle */}
+          {/* Language Toggle - Show only on desktop or larger mobile */}
           <button
             type="button"
             onClick={toggleLanguage}
-            className="btn btn-ghost btn-sm"
+            className="btn btn-ghost btn-sm hidden sm:flex"
           >
             <span className="text-sm font-medium">عربي / EN</span>
           </button>

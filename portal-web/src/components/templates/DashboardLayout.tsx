@@ -1,4 +1,4 @@
-import { type ReactNode } from "react";
+import { type ReactNode, useEffect } from "react";
 import { Header } from "../organisms/Header";
 import { Sidebar } from "../organisms/Sidebar";
 import { BottomNav } from "../organisms/BottomNav";
@@ -14,37 +14,49 @@ interface DashboardLayoutProps {
 /**
  * DashboardLayout Component
  *
- * Main application layout wrapping all dashboard pages.
+ * Mobile-first application layout with responsive behavior.
  *
  * Features:
- * - Responsive layout (Desktop: Sidebar + Header, Mobile: Bottom Nav + Header)
- * - Automatic sidebar collapse handling
+ * - Mobile: Fixed header + Bottom nav + Drawer sidebar (overlay)
+ * - Desktop: Fixed sidebar + Header (no bottom nav)
+ * - Collapsible sidebar on desktop
+ * - Overlay with backdrop on mobile when sidebar opens
  * - Safe area padding for mobile devices
- * - RTL support
- * - Business context management
+ * - RTL support with logical properties
+ * - Smooth transitions and animations
+ * - Thumb-friendly touch targets (minimum 44px)
  *
  * Layout Structure:
  * ```
- * Desktop:
+ * Desktop (≥768px):
  * ┌─────────────┬──────────────────────────┐
  * │   Sidebar   │         Header           │
- * │             ├──────────────────────────┤
+ * │  (Fixed)    ├──────────────────────────┤
  * │             │                          │
- * │  Navigation │        Content           │
- * │             │                          │
+ * │  Collapsible│        Content           │
+ * │  64→20px    │      (Responsive)        │
  * │             │                          │
  * └─────────────┴──────────────────────────┘
  *
- * Mobile:
+ * Mobile (<768px):
  * ┌──────────────────────────────────────┐
- * │             Header                   │
+ * │         Header (Fixed)               │
  * ├──────────────────────────────────────┤
  * │                                      │
- * │            Content                   │
+ * │          Content Area                │
+ * │      (Scrollable, Safe)              │
  * │                                      │
  * ├──────────────────────────────────────┤
- * │          Bottom Nav                  │
+ * │       Bottom Nav (Fixed)             │
  * └──────────────────────────────────────┘
+ *
+ * Mobile Sidebar (Drawer Overlay):
+ * ┌──────────────┬───────────────────────┐
+ * │   Sidebar    │   Backdrop (Blur)     │
+ * │   (Drawer)   │                       │
+ * │   Slide-in   │   Tap to Close        │
+ * │              │                       │
+ * └──────────────┴───────────────────────┘
  * ```
  *
  * @example
@@ -56,31 +68,69 @@ interface DashboardLayoutProps {
  */
 export function DashboardLayout({ children, title }: DashboardLayoutProps) {
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { isSidebarCollapsed } = useBusinessStore();
+  const { isSidebarCollapsed, isSidebarOpen, closeSidebar } = useBusinessStore();
+
+  // Close sidebar when switching to desktop
+  useEffect(() => {
+    if (isDesktop && isSidebarOpen) {
+      closeSidebar();
+    }
+  }, [isDesktop, isSidebarOpen, closeSidebar]);
+
+  // Prevent body scroll when mobile sidebar is open
+  useEffect(() => {
+    if (!isDesktop && isSidebarOpen) {
+      document.body.style.overflow = "hidden";
+    } else {
+      document.body.style.overflow = "";
+    }
+
+    return () => {
+      document.body.style.overflow = "";
+    };
+  }, [isDesktop, isSidebarOpen]);
 
   return (
     <div className="min-h-screen bg-base-100">
-      {/* Desktop Sidebar */}
-      {isDesktop && <Sidebar />}
+      {/* Sidebar - Desktop: Fixed, Mobile: Drawer Overlay */}
+      <Sidebar />
 
-      {/* Header */}
+      {/* Mobile Sidebar Backdrop */}
+      {!isDesktop && isSidebarOpen && (
+        <div
+          className="fixed inset-0 bg-base-content/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
+          onClick={closeSidebar}
+          onKeyDown={(e) => {
+            if (e.key === "Escape") closeSidebar();
+          }}
+          role="button"
+          tabIndex={0}
+          aria-label="Close sidebar"
+        />
+      )}
+
+      {/* Header - Fixed at top, adjusts based on sidebar state */}
       <Header title={title} />
 
-      {/* Main Content */}
+      {/* Main Content Area */}
       <main
         className={cn(
-          "pt-16 transition-all duration-300",
-          // Desktop: Add sidebar width padding
-          isDesktop && !isSidebarCollapsed && "md:ps-64",
-          isDesktop && isSidebarCollapsed && "md:ps-20",
-          // Mobile: Add bottom nav height padding
-          !isDesktop && "pb-16"
+          // Base: Content below header
+          "min-h-screen pt-16 transition-all duration-300",
+          // Desktop: Adjust for sidebar width
+          isDesktop && !isSidebarCollapsed && "md:ms-64",
+          isDesktop && isSidebarCollapsed && "md:ms-20",
+          // Mobile: Add bottom nav padding
+          !isDesktop && "pb-20"
         )}
       >
-        <div className="container mx-auto p-4 max-w-7xl">{children}</div>
+        {/* Content Container with max-width and padding */}
+        <div className="container mx-auto px-4 py-6 max-w-7xl">
+          {children}
+        </div>
       </main>
 
-      {/* Mobile Bottom Navigation */}
+      {/* Mobile Bottom Navigation - Only visible on mobile */}
       {!isDesktop && <BottomNav />}
     </div>
   );

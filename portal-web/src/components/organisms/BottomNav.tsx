@@ -5,8 +5,9 @@ import {
   Package,
   ShoppingCart,
   Users,
-  MoreHorizontal,
+  Menu,
 } from "lucide-react";
+import { useBusinessStore } from "../../stores/businessStore";
 import { cn } from "@/lib/utils";
 
 interface NavItem {
@@ -20,7 +21,6 @@ const navItems: NavItem[] = [
   { key: "inventory", icon: Package, path: "/inventory" },
   { key: "orders", icon: ShoppingCart, path: "/orders" },
   { key: "customers", icon: Users, path: "/customers" },
-  { key: "more", icon: MoreHorizontal, path: "/more" },
 ];
 
 /**
@@ -29,23 +29,28 @@ const navItems: NavItem[] = [
  * Fixed bottom navigation bar for mobile devices.
  *
  * Features:
- * - Shows 5 core navigation items
+ * - Shows 4 core navigation items + More button (opens drawer)
  * - Active route highlighting
- * - Touch-friendly (44px+ target)
- * - RTL support
+ * - Touch-friendly targets (min 44px height)
+ * - Safe area padding for devices with notches
+ * - RTL support with logical properties
+ * - Smooth press feedback
+ *
+ * Design Pattern:
+ * - Primary actions (Dashboard, Inventory, Orders, Customers)
+ * - "More" button opens the full sidebar drawer
  */
 export function BottomNav() {
   const { t } = useTranslation();
   const location = useLocation();
+  const { openSidebar } = useBusinessStore();
 
   return (
-    <nav className="fixed bottom-0 start-0 end-0 h-16 bg-base-200 border-t border-base-300 z-50 md:hidden">
+    <nav className="fixed bottom-0 start-0 end-0 h-16 bg-base-100 border-t border-base-300 z-40 md:hidden safe-area-pb">
       <div className="h-full flex items-center justify-around px-2">
+        {/* Core Navigation Items */}
         {navItems.map((item) => {
-          const isActive =
-            item.path === "/more"
-              ? false // "More" is not a direct route
-              : location.pathname.startsWith(item.path);
+          const isActive = location.pathname.startsWith(item.path);
           const Icon = item.icon;
 
           return (
@@ -54,18 +59,38 @@ export function BottomNav() {
               to={item.path}
               className={cn(
                 "flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0",
-                "transition-colors active:scale-95",
-                isActive && "text-primary-600",
-                !isActive && "text-base-content/60"
+                "transition-all active:scale-95 rounded-lg",
+                // Min touch target
+                "min-h-11",
+                // Active state
+                isActive && "text-primary",
+                !isActive && "text-base-content/70"
               )}
             >
-              <Icon size={20} className="flex-shrink-0" />
+              <Icon size={22} className="shrink-0" />
               <span className="text-xs font-medium truncate">
                 {t(`dashboard.${item.key}`)}
               </span>
             </Link>
           );
         })}
+
+        {/* More Button - Opens Sidebar Drawer */}
+        <button
+          type="button"
+          onClick={openSidebar}
+          className={cn(
+            "flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0",
+            "transition-all active:scale-95 rounded-lg",
+            "min-h-11",
+            "text-base-content/70"
+          )}
+        >
+          <Menu size={22} className="shrink-0" />
+          <span className="text-xs font-medium truncate">
+            {t("dashboard.more")}
+          </span>
+        </button>
       </div>
     </nav>
   );
