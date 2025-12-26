@@ -31,6 +31,12 @@ applyTo: "portal-web/**,storefront-web/**"
 
 All AI agents must strictly utilize these tokens. Do not hardcode magic numbers.
 
+**Source of truth in this repo (storefront-web):**
+
+- daisyUI theme tokens are defined in `storefront-web/src/index.css` via `@plugin "daisyui/theme"`.
+- KDS raw CSS variables (e.g. `--primary-600`) also exist in `storefront-web/src/index.css` under `:root`.
+- Prefer daisyUI semantic tokens in components: `bg-base-100`, `text-base-content`, `btn btn-primary`, etc.
+
 ### 2.1. Color Palette
 
 The palette is inspired by the Middle East landscape (Teal/Sea) and Modern Fintech (Trust).
@@ -63,6 +69,10 @@ The palette is inspired by the Middle East landscape (Teal/Sea) and Modern Finte
 - `success`: `#10B981` (Completed orders, Paid invoices)
 - `error`: `#EF4444` (Failed payment, Out of stock)
 - `warning`: `#F59E0B` (Low stock, Subscription ending)
+
+**Third-party brand colors (exception):**
+
+- WhatsApp green `#25D366` is allowed only for WhatsApp-specific UI (e.g., the floating WhatsApp button).
 
 ### 2.2. Typography (Arabic First)
 
@@ -121,7 +131,7 @@ Since Arabic is 1st class, the AI **must** implement logical properties.
 
 ### 3.2. Navigation Topology (The "Thumb Zone")
 
-- **Primary Navigation:** Bottom Tab Bar (Fixed). Labels must be present (Icons + Text).
+- **Primary Navigation:** Prefer simple, thumb-friendly navigation. If a tab bar exists, labels must be present (Icons + Text).
 - **Secondary Actions:** Floating Action Button (FAB) or Sticky Bottom Bar.
 - **Back Navigation:** Top-Right (in RTL) header arrow.
 - **Modals:** DO NOT use centered modals. Use **Bottom Sheets** (Slide up panels) for filters, confirmations, and quick forms. This is easier for thumb reach.
@@ -160,6 +170,8 @@ AI Agents: Implement components exactly as described below.
 - Bg: Transparent
 - Text: `neutral-500`
 
+**Implementation note (storefront-web):** Prefer daisyUI button variants (`btn`, `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-outline`) and reuse the shared interaction utilities (`focus-ring`, `active-scale`).
+
 ### 4.2. Cards (`Card`)
 
 - **Container:** `bg-white`, `rounded-lg`, `border border-neutral-100`, `shadow-sm`.
@@ -184,10 +196,12 @@ Used for Inventory lists, Customer lists, etc.
 
 ### 4.5. Bottom Sheet (`BottomSheet`)
 
-- **Behavior:** Slides up from bottom. Backdop blur.
+- **Behavior:** Slides up from bottom. Backdrop blur.
 - **Handle:** Gray pill at the top center (`w-12 h-1 bg-neutral-300 rounded-full`).
 - **Content:** Scrollable content area.
 - **Footer:** Sticky container for "Save" or "Apply" buttons.
+
+**Implementation note (storefront-web):** Keep it keyboard accessible (Escape to close) and restore scroll on close via effect cleanup.
 
 ### 4.6. Skeleton Loaders
 
@@ -201,10 +215,12 @@ The User-Facing Storefront (`storefront-web`) needs to feel like a high-end nati
 
 ### 5.1. Storefront Header
 
-- **Left (RTL):** Hamburger Menu (Categories).
-- **Center:** Brand Logo.
-- **Right (RTL):** Search Icon + Cart Bag (with Badge).
-- **Behavior:** Sticky on scroll. transforms to valid title on scroll down.
+Current implementation uses a minimal, safe-area-aware header with:
+
+- Language switcher on one side
+- Cart button (with badge) on the other side
+
+Brand identity (logo/name) is displayed in a separate centered brand header below.
 
 ### 5.2. Product Card (The Grid)
 
@@ -222,9 +238,11 @@ The User-Facing Storefront (`storefront-web`) needs to feel like a high-end nati
 
 ### 5.4. WhatsApp Integration (Critical)
 
-- **Floating Button:** Fixed bottom-left (RTL) or bottom-right depending on layout.
+- **Floating Button:** Use logical positioning (Tailwind `end-*`) so it naturally flips in RTL.
 - **Product Page:** "Order via WhatsApp" button variant (secondary action).
 - **Message Pre-fill:** "Hi [Store Name], I am interested in [Product Name]..."
+
+**Implementation note (storefront-web):** The floating WhatsApp FAB uses WhatsApp green `#25D366` (allowed exception).
 
 ### 5.5. Checkout Flow
 
@@ -243,57 +261,20 @@ The User-Facing Storefront (`storefront-web`) needs to feel like a high-end nati
 
 When writing code (React SPA):
 
-1. **Tailwind Config:** Use the color tokens defined above in `tailwind.config.js`.
-2. **Icons:** Use `lucide-react`.
-
-- _Rule:_ For RTL, wrap icons in a component that applies `transform: scaleX(-1)` only for directional icons (arrow-left, chevron-right, etc.).
-
-3. **Dates/Currency:**
+1. **Tailwind + daisyUI (storefront-web):** Tailwind v4 is configured CSS-first. Use daisyUI semantic tokens and the theme defined in `storefront-web/src/index.css`. Do not introduce new colors in component classNames.
+2. **Icons:** Prefer `lucide-react` for consistency.
+3. **RTL & logical properties:** Prefer logical utilities (`start-*`, `end-*`, `text-start`). For directional icons, apply the existing `rtl-mirror` class.
+4. **Dates/Currency:**
 
 - Use `Intl.NumberFormat` with `ar-AE` (or relevant country) for currency (e.g., "د.إ.‏ 150.00").
 - Use Hijri/Gregorian toggle if requested, but Gregorian (English numbers) is standard for business in most GCC apps.
 
-4. **Error Handling:**
+5. **Error Handling:**
 
 - Network Error -> Show "Retry" button component.
 - 404 -> Friendly illustration + "Go Home" button.
 
-5. **Files:** When creating a component, strictly separate logic (hook) from view (JSX).
-
-### Example Component Structure (React + Tailwind)
-
-```tsx
-// components/Button.tsx
-import { cva } from "class-variance-authority";
-import { Loader2 } from "lucide-react";
-
-// Define variants strictly based on Design System
-const buttonVariants = cva(
-  "inline-flex items-center justify-center rounded-xl text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary-500 disabled:pointer-events-none disabled:opacity-50 h-12 px-6 w-full active:scale-95",
-  {
-    variants: {
-      variant: {
-        primary: "bg-primary-600 text-white hover:bg-primary-700 shadow-sm",
-        secondary: "bg-primary-50 text-primary-900 hover:bg-primary-100",
-        outline:
-          "border border-neutral-200 bg-transparent hover:bg-neutral-50 text-neutral-900",
-        ghost: "hover:bg-neutral-100 text-neutral-700",
-      },
-      size: {
-        default: "h-12 px-6",
-        sm: "h-9 rounded-lg px-3",
-        lg: "h-14 rounded-2xl px-8 text-base", // Fat finger friendly
-      },
-    },
-    defaultVariants: {
-      variant: "primary",
-      size: "default",
-    },
-  }
-);
-
-// ... implementation details
-```
+6. **Files:** Keep components small and composable; prefer shared atoms/molecules/organisms where they already exist.
 
 ---
 
@@ -305,34 +286,7 @@ const buttonVariants = cva(
 
 ---
 
-## 8. Dashboard / Merchant App Specifics
-
-The "Admin" side for the merchant.
-
-### 8.1. Dashboard Home
-
-- **Greeting:** "Sabah el Kheir, [Name]" (Time aware).
-- **Quick Actions Grid:** 4 buttons at top (New Sale, Add Product, Share Store, Expenses).
-- **Stats Cards:** Scrolled horizontally. (Sales Today, Orders Pending).
-
-### 8.2. Inventory Management
-
-- **Visuals:** Small thumbnails are mandatory.
-- **Stock Levels:** Color coded.
-- 0: Red background/text badge "Out of Stock".
-- < 5: Orange badge "Low Stock".
-- 5+: Green text.
-
-### 8.3. Order Processing
-
-- **Status Timeline:** Vertical stepper (RTL).
-- Pending (Yellow) -> Processing (Blue) -> Shipped (Purple) -> Delivered (Green).
-
-- **WhatsApp Action:** Button to "Send Receipt" or "Ask Location" via WhatsApp directly from the Order Detail view.
-
----
-
-## 9. Animation Guidelines
+## 8. Animation Guidelines
 
 - **Page Transitions:** Fade in + Slide Up slightly (`y-4` to `y-0`).
 - **Modals/Sheets:** Spring physics (damping: 20, stiffness: 300).

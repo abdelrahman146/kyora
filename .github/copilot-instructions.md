@@ -77,12 +77,20 @@ kyora/
 │   ├── go.mod           # Go dependencies
 │   ├── .air.toml        # Hot reload config
 │   └── .kyora.yaml      # Backend configuration
+├── storefront-web/       # Customer-facing storefront (React)
+│   ├── src/             # App code
+│   ├── public/
+│   ├── package.json
+│   └── DESIGN_SYSTEM.md
 ├── Makefile             # Root-level build commands
 ├── README.md            # Monorepo overview
 └── STRUCTURE.md         # Monorepo guidelines
 ```
 
-**Important**: All Go backend code is in the `backend/` directory. When referencing files or paths, always include the `backend/` prefix.
+**Important**:
+
+- All Go backend code is in the `backend/` directory. When referencing files or paths, always include the `backend/` prefix.
+- All storefront web code is in the `storefront-web/` directory. When referencing files or paths, always include the `storefront-web/` prefix.
 
 **General Instructions**
 
@@ -109,3 +117,16 @@ kyora/
 - never ever brief any implementation. always provide complete and thorough implementations.
 - never ever settle on examples or partial implementations. always provide complete and thorough implementations.
 - always aim for high-quality code that is secure, robust, maintainable, and production-ready
+
+## Project-specific notes
+
+### Backend (Go)
+
+- Follow the rules in `.github/instructions/backend.instructions.md` for architecture, patterns, and multi-tenancy scoping.
+- Prefer domain services for business logic and keep HTTP handlers thin.
+
+### Storefront Web (React)
+
+- Tech stack: React 19, React Router v7, Tailwind CSS v4 (CSS-first), daisyUI v5, TanStack Query, Zustand, i18next.
+- Styling rules: follow `.github/instructions/branding.instructions.md`, `storefront-web/DESIGN_SYSTEM.md`, and the theme/tokens in `storefront-web/src/index.css`.
+- RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
