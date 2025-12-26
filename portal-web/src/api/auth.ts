@@ -192,6 +192,31 @@ export const authApi = {
   },
 
   // ==========================================================================
+  // Get Google OAuth URL - GET /v1/auth/google/url
+  // ==========================================================================
+
+  /**
+   * Gets the Google OAuth authorization URL for user authentication
+   * @returns Object containing the authorization URL
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async getGoogleAuthUrl(): Promise<{ url: string }> {
+    // Make API call
+    const response = await apiClient.get("v1/auth/google/url").json();
+
+    // Validate response structure
+    if (
+      typeof response !== "object" ||
+      response === null ||
+      !("url" in response)
+    ) {
+      throw new Error("Invalid response from Google OAuth URL endpoint");
+    }
+
+    return response as { url: string };
+  },
+
+  // ==========================================================================
   // Request Email Verification - POST /v1/auth/request-email-verification
   // ==========================================================================
 

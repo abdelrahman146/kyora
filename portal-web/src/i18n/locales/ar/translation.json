@@ -28,7 +28,16 @@
     "welcome_back": "مرحباً بعودتك",
     "login_description": "أدخل بياناتك للوصول إلى لوحة التحكم",
     "no_account": "ليس لديك حساب؟",
-    "sign_up": "إنشاء حساب"
+    "sign_up": "إنشاء حساب",
+    "connecting_google": "جاري الاتصال بـ Google...",
+    "oauth_processing": "جاري معالجة المصادقة",
+    "oauth_processing_description": "يرجى الانتظار بينما نكمل تسجيل دخولك...",
+    "oauth_success": "تمت المصادقة بنجاح!",
+    "oauth_success_description": "جاري تحويلك إلى لوحة التحكم...",
+    "oauth_failed": "فشلت المصادقة",
+    "oauth_error": "خطأ OAuth: {{error}}",
+    "oauth_missing_code": "رمز المصادقة مفقود. يرجى المحاولة مرة أخرى.",
+    "return_to_login": "العودة إلى تسجيل الدخول"
   },
   "dashboard": {
     "title": "لوحة التحكم",

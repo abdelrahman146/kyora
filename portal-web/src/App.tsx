@@ -6,6 +6,7 @@ import { useLanguage } from './hooks/useLanguage';
 import DesignSystem from './routes/design-system';
 import LoginPage from './routes/login';
 import DashboardPage from './routes/dashboard';
+import OAuthCallbackPage from './routes/oauth-callback';
 
 function Home() {
   const { t } = useTranslation();
@@ -61,6 +62,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
+          <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
           <Route path="/design-system" element={<DesignSystem />} />
           <Route
             path="/dashboard"

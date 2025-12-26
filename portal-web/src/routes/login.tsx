@@ -1,10 +1,12 @@
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import toast, { Toaster } from "react-hot-toast";
+import { useState } from "react";
 import { LoginForm } from "../components/organisms/LoginForm";
 import { useAuth } from "../hooks/useAuth";
 import { useLanguage } from "../hooks/useLanguage";
 import { translateErrorAsync } from "../lib/translateError";
+import { authApi } from "../api/auth";
 import type { LoginFormData } from "../schemas/auth";
 
 /**
@@ -31,6 +33,7 @@ export default function LoginPage() {
   const location = useLocation();
   const { t } = useTranslation();
   const { language, toggleLanguage, isRTL } = useLanguage();
+  const [isGoogleLoading, setIsGoogleLoading] = useState(false);
 
   // Redirect if already authenticated
   if (!isLoading && isAuthenticated) {
@@ -62,13 +65,30 @@ export default function LoginPage() {
   };
 
   // Handle Google OAuth
-  const handleGoogleLogin = () => {
-    toast.error(t("auth.google_coming_soon"), {
-      duration: 3000,
-      position: isRTL ? "top-right" : "top-left",
-    });
-    // Implement Google OAuth flow when backend is ready
-    // window.location.href = `${API_BASE_URL}/v1/auth/google`;
+  const handleGoogleLogin = async () => {
+    try {
+      setIsGoogleLoading(true);
+
+      // Get OAuth URL from backend
+      const { url } = await authApi.getGoogleAuthUrl();
+
+      // Prepare state parameter with redirect destination
+      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
+      const state = encodeURIComponent(JSON.stringify({ from }));
+
+      // Append state to OAuth URL if not already present
+      const oauthUrl = url.includes("state=") ? url : `${url}&state=${state}`;
+
+      // Redirect to Google OAuth
+      window.location.href = oauthUrl;
+    } catch (error) {
+      setIsGoogleLoading(false);
+      const message = await translateErrorAsync(error, t);
+      toast.error(message, {
+        duration: 4000,
+        position: isRTL ? "top-right" : "top-left",
+      });
+    }
   };
 
   // Show loading while checking auth status
@@ -155,7 +175,11 @@ export default function LoginPage() {
             </div>
 
             {/* Login Form */}
-            <LoginForm onSubmit={handleLogin} onGoogleLogin={handleGoogleLogin} />
+            <LoginForm 
+              onSubmit={handleLogin} 
+              onGoogleLogin={() => { void handleGoogleLogin(); }}
+              isGoogleLoading={isGoogleLoading}
+            />
 
             {/* Sign Up Link */}
             <div className="mt-8 text-center">

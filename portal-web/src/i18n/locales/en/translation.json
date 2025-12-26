@@ -28,7 +28,16 @@
     "welcome_back": "Welcome Back",
     "login_description": "Enter your credentials to access your dashboard",
     "no_account": "Don't have an account?",
-    "sign_up": "Sign Up"
+    "sign_up": "Sign Up",
+    "connecting_google": "Connecting to Google...",
+    "oauth_processing": "Processing Authentication",
+    "oauth_processing_description": "Please wait while we complete your login...",
+    "oauth_success": "Authentication Successful!",
+    "oauth_success_description": "Redirecting you to your dashboard...",
+    "oauth_failed": "Authentication Failed",
+    "oauth_error": "OAuth error: {{error}}",
+    "oauth_missing_code": "Missing authentication code. Please try again.",
+    "return_to_login": "Return to Login"
   },
   "dashboard": {
     "title": "Dashboard",
