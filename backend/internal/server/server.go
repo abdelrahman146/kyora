@@ -7,6 +7,7 @@ import (
 	"log/slog"
 	"net"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -27,6 +28,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	"github.com/abdelrahman146/kyora/internal/platform/logger"
+	"github.com/abdelrahman146/kyora/internal/platform/middleware"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/gin-gonic/gin"
@@ -211,6 +213,19 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 	// health endpoint
 	r.GET("/healthz", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
 	r.GET("/livez", func(c *gin.Context) { response.SuccessText(c, 200, "ok") })
+
+	// CORS preflight handler
+	// Browsers send OPTIONS requests (preflight) for non-simple cross-origin requests.
+	// Gin does not automatically provide OPTIONS routes for POST endpoints, so we
+	// add a catch-all that applies the right CORS policy and returns 204.
+	r.OPTIONS("/*path", func(c *gin.Context) {
+		path := c.Request.URL.Path
+		if strings.HasPrefix(path, "/v1/storefront") {
+			middleware.NewPublicCORSMiddleware()(c)
+		} else {
+			middleware.NewCORSMiddleware()(c)
+		}
+	})
 
 	// register domain routes under /api
 	registerBillingRoutes(r, billing.NewHttpHandler(billingSvc, accountSvc), accountSvc)

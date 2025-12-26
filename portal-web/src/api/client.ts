@@ -15,7 +15,7 @@ import { getCookie, setCookie, deleteCookie } from "../lib/cookies";
 
 const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  "http://localhost:8080";
+  (import.meta.env.DEV ? window.location.origin : "http://localhost:8080");
 
 const REFRESH_TOKEN_COOKIE_NAME = "kyora_refresh_token";
 
