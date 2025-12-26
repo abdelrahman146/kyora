@@ -30,7 +30,6 @@ const (
 	HTTPTraceIDHeader = "http.trace_id_header"
 	HTTPMaxBodyBytes  = "http.max_body_bytes"
 	// CORS configuration
-	CORSEnabled        = "cors.enabled"
 	CORSAllowedOrigins = "cors.allowed_origins"
 	// database configuration
 	DatabaseDSN          = "database.dsn"
@@ -106,9 +105,8 @@ func Configure() {
 	viper.SetDefault(DatabaseAutoMigrate, true)
 	viper.SetDefault(StorageProvider, "local")
 	viper.SetDefault(UploadsMaxBytes, int64(5*1024*1024)) // 5 MiB per upload default
-	// CORS defaults - disabled in development for simplicity
-	viper.SetDefault(CORSEnabled, false)
-	viper.SetDefault(CORSAllowedOrigins, []string{}) // empty = allow all when enabled
+	// CORS defaults - allow all origins in development
+	viper.SetDefault(CORSAllowedOrigins, []string{"*"})
 	// Auth defaults
 	// Refresh tokens are long-lived and rotated; keep configurable.
 	viper.SetDefault(RefreshTokenExpirySeconds, int64(30*24*60*60)) // 30 days

@@ -13,14 +13,9 @@ http:
   # Increase if using `storage.provider: local` and uploading file bytes to the API.
   max_body_bytes: 6291456
 cors:
-  # Set to false to completely disable CORS (recommended for local development)
-  enabled: false
-  # Origins to allow (leave empty to allow all origins when enabled)
-  # For production, list specific origins:
-  # allowed_origins:
-  #   - "https://portal.kyora.io"
-  #   - "https://app.kyora.io"
-  allowed_origins: []
+  # Use "*" to allow all origins (local development)
+  # For production, list specific origins like ["https://portal.kyora.io", "https://app.kyora.io"]
+  allowed_origins: ["*"]
 database:
   dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=UTC"
   max_open_conns: 25
