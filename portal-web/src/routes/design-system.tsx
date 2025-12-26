@@ -1,10 +1,14 @@
 import { useState } from 'react';
-import { Search, Mail, Eye, EyeOff } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Search, Mail, Eye, EyeOff, Languages } from 'lucide-react';
 import { Button, Input, Badge, Skeleton, SkeletonText } from '@/components/atoms';
+import { useLanguage } from '@/hooks/useLanguage';
 
 export default function DesignSystem() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const { t } = useTranslation();
+  const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
 
   const handleLoadingDemo = () => {
     setLoading(true);
@@ -24,6 +28,59 @@ export default function DesignSystem() {
             Portal Web App - Atomic Components
           </p>
         </div>
+
+        {/* Language Switcher */}
+        <section className="mb-12">
+          <div className="bg-base-100 rounded-lg p-6">
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <Languages size={24} />
+                <div>
+                  <h3 className="text-lg font-semibold">Internationalization (i18n)</h3>
+                  <p className="text-sm text-neutral-500">
+                    Current Language: <span className="font-medium">{currentLanguage === 'ar' ? 'العربية' : 'English'}</span>
+                  </p>
+                </div>
+              </div>
+              <div className="flex gap-2">
+                {supportedLanguages.map((lang) => {
+                  return (
+                    <Button
+                      key={lang}
+                      variant={currentLanguage === lang ? 'primary' : 'outline'}
+                      size="sm"
+                      onClick={() => {
+                        changeLanguage(lang);
+                      }}
+                    >
+                      {lang === 'ar' ? 'العربية' : 'English'}
+                    </Button>
+                  );
+                })}
+              </div>
+            </div>
+            <div className="mt-4 pt-4 border-t border-base-300">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div className="text-center p-3 bg-base-200 rounded">
+                  <p className="text-xs text-neutral-500 mb-1">Save</p>
+                  <p className="font-medium">{t('save')}</p>
+                </div>
+                <div className="text-center p-3 bg-base-200 rounded">
+                  <p className="text-xs text-neutral-500 mb-1">Cancel</p>
+                  <p className="font-medium">{t('cancel')}</p>
+                </div>
+                <div className="text-center p-3 bg-base-200 rounded">
+                  <p className="text-xs text-neutral-500 mb-1">Loading</p>
+                  <p className="font-medium">{t('loading')}</p>
+                </div>
+                <div className="text-center p-3 bg-base-200 rounded">
+                  <p className="text-xs text-neutral-500 mb-1">Search</p>
+                  <p className="font-medium">{t('search')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </section>
 
         {/* Color Palette */}
         <section className="mb-12">
