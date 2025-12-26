@@ -1,13 +1,23 @@
 @import "tailwindcss";
+@plugin "daisyui";
+
+@theme {
+  /* Kyora Brand Colors */
+  --color-primary: #4F46E5;
+  --color-secondary: #10B981;
+  --color-accent: #F59E0B;
+  --color-neutral: #1F2937;
+  --color-base-100: #FFFFFF;
+  --color-base-200: #F3F4F6;
+  --color-base-300: #E5E7EB;
+  --color-info: #3B82F6;
+  --color-success: #10B981;
+  --color-warning: #F59E0B;
+  --color-error: #EF4444;
+}
 
 @layer base {
-  * {
-    border-color: var(--fallback-bc, oklch(var(--bc) / 0.2));
-  }
-  
   body {
-    background-color: var(--fallback-b1, oklch(var(--b1)));
-    color: var(--fallback-bc, oklch(var(--bc)));
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
