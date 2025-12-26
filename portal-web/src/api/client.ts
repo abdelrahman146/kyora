@@ -1,11 +1,12 @@
 import ky from "ky";
 import { parseProblemDetails } from "../lib/errorParser";
+import { getCookie, setCookie, deleteCookie } from "../lib/cookies";
 
 /**
  * Centralized API Client for Kyora Portal Web
  *
  * Features:
- * - JWT Bearer token authentication
+ * - JWT Bearer token authentication (Access token in memory, Refresh token in secure cookie)
  * - Automatic token refresh on 401 responses
  * - Retry logic with exponential backoff
  * - Comprehensive error handling with ProblemDetails parsing
@@ -16,12 +17,15 @@ const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
   "http://localhost:8080";
 
+const REFRESH_TOKEN_COOKIE_NAME = "kyora_refresh_token";
+
 // ============================================================================
-// Token Management (In-Memory Storage)
+// Token Management
+// Access Token: In-Memory (more secure, cleared on tab close/refresh)
+// Refresh Token: Secure Cookie (persistent, HttpOnly-like with Secure flag in production)
 // ============================================================================
 
 let accessToken: string | null = null;
-let refreshToken: string | null = null;
 let isRefreshing = false;
 let refreshPromise: Promise<string | null> | null = null;
 
@@ -30,17 +34,20 @@ export function getAccessToken(): string | null {
 }
 
 export function getRefreshToken(): string | null {
-  return refreshToken;
+  return getCookie(REFRESH_TOKEN_COOKIE_NAME);
 }
 
 export function setTokens(access: string, refresh: string): void {
   accessToken = access;
-  refreshToken = refresh;
+  // Store refresh token in secure cookie (365 days)
+  // Note: For true HttpOnly, this should be set by backend via Set-Cookie header
+  // This is client-side cookie with Secure flag in production
+  setCookie(REFRESH_TOKEN_COOKIE_NAME, refresh, 365);
 }
 
 export function clearTokens(): void {
   accessToken = null;
-  refreshToken = null;
+  deleteCookie(REFRESH_TOKEN_COOKIE_NAME);
   isRefreshing = false;
   refreshPromise = null;
 }

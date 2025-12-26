@@ -1,7 +1,19 @@
+/**
+ * Sets a cookie with secure options
+ * In production, includes Secure flag for HTTPS-only transmission
+ *
+ * @param name - Cookie name
+ * @param value - Cookie value
+ * @param days - Expiration in days (default: 365)
+ */
 export function setCookie(name: string, value: string, days = 365): void {
   const expires = new Date();
   expires.setTime(expires.getTime() + days * 24 * 60 * 60 * 1000);
-  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax`;
+
+  // Add Secure flag in production for HTTPS-only transmission
+  const secureFlag = import.meta.env.PROD ? ";Secure" : "";
+
+  document.cookie = `${name}=${value};expires=${expires.toUTCString()};path=/;SameSite=Lax${secureFlag}`;
 }
 
 export function getCookie(name: string): string | null {
