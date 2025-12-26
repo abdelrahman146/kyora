@@ -1,6 +1,7 @@
 import { useAuth } from "../hooks/useAuth";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { useLanguage } from "../hooks/useLanguage";
 
 /**
  * Dashboard Page (Placeholder)
@@ -11,7 +12,8 @@ import { useTranslation } from "react-i18next";
 export default function DashboardPage() {
   const { user, logout } = useAuth();
   const navigate = useNavigate();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { language, toggleLanguage } = useLanguage();
 
   const handleLogout = () => {
     void logout()
@@ -24,11 +26,6 @@ export default function DashboardPage() {
       });
   };
 
-  const toggleLanguage = () => {
-    const newLang = i18n.language === "ar" ? "en" : "ar";
-    void i18n.changeLanguage(newLang);
-  };
-
   return (
     <div className="min-h-screen bg-base-100">
       <div className="container mx-auto p-8">
@@ -38,7 +35,7 @@ export default function DashboardPage() {
           </h1>
           <div className="flex gap-4">
             <button onClick={toggleLanguage} className="btn btn-ghost">
-              {i18n.language === "ar" ? "English" : "العربية"}
+              {language === "ar" ? "English" : "العربية"}
             </button>
             <button onClick={handleLogout} className="btn btn-error">
               Logout

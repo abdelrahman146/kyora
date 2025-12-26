@@ -3,6 +3,7 @@ import { useTranslation } from "react-i18next";
 import toast, { Toaster } from "react-hot-toast";
 import { LoginForm } from "../components/organisms/LoginForm";
 import { useAuth } from "../hooks/useAuth";
+import { useLanguage } from "../hooks/useLanguage";
 import { translateErrorAsync } from "../lib/translateError";
 import type { LoginFormData } from "../schemas/auth";
 
@@ -28,7 +29,8 @@ export default function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
+  const { language, toggleLanguage, isRTL } = useLanguage();
 
   // Redirect if already authenticated
   if (!isLoading && isAuthenticated) {
@@ -43,7 +45,7 @@ export default function LoginPage() {
       // Show success toast
       toast.success(t("auth.login_success"), {
         duration: 2000,
-        position: i18n.language === "ar" ? "top-right" : "top-left",
+        position: isRTL ? "top-right" : "top-left",
       });
 
       // Redirect to intended destination or dashboard
@@ -54,7 +56,7 @@ export default function LoginPage() {
       const message = await translateErrorAsync(error, t);
       toast.error(message, {
         duration: 4000,
-        position: i18n.language === "ar" ? "top-right" : "top-left",
+        position: isRTL ? "top-right" : "top-left",
       });
     }
   };
@@ -63,7 +65,7 @@ export default function LoginPage() {
   const handleGoogleLogin = () => {
     toast.error(t("auth.google_coming_soon"), {
       duration: 3000,
-      position: i18n.language === "ar" ? "top-right" : "top-left",
+      position: isRTL ? "top-right" : "top-left",
     });
     // Implement Google OAuth flow when backend is ready
     // window.location.href = `${API_BASE_URL}/v1/auth/google`;
@@ -85,7 +87,7 @@ export default function LoginPage() {
     <>
       {/* Toast Container */}
       <Toaster
-        position={i18n.language === "ar" ? "top-right" : "top-left"}
+        position={isRTL ? "top-right" : "top-left"}
         toastOptions={{
           // Custom styles matching KDS
           style: {
@@ -171,13 +173,10 @@ export default function LoginPage() {
             {/* Language Switcher */}
             <div className="mt-8 text-center">
               <button
-                onClick={() => {
-                  const newLang = i18n.language === "ar" ? "en" : "ar";
-                  void i18n.changeLanguage(newLang);
-                }}
+                onClick={toggleLanguage}
                 className="btn btn-ghost btn-sm"
               >
-                {i18n.language === "ar" ? "English" : "العربية"}
+                {language === "ar" ? "English" : "العربية"}
               </button>
             </div>
           </div>

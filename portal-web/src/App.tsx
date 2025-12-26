@@ -2,17 +2,14 @@ import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { AuthProvider } from './contexts/AuthContext';
 import { RequireAuth } from './components/routing/RequireAuth';
+import { useLanguage } from './hooks/useLanguage';
 import DesignSystem from './routes/design-system';
 import LoginPage from './routes/login';
 import DashboardPage from './routes/dashboard';
 
 function Home() {
-  const { t, i18n } = useTranslation();
-
-  const toggleLanguage = () => {
-    const newLang = i18n.language === 'ar' ? 'en' : 'ar';
-    void i18n.changeLanguage(newLang);
-  };
+  const { t } = useTranslation();
+  const { language, toggleLanguage } = useLanguage();
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -32,7 +29,7 @@ function Home() {
               onClick={toggleLanguage}
               className="btn btn-primary"
             >
-              {i18n.language === 'ar' ? 'English' : 'عربي'}
+              {language === 'ar' ? 'English' : 'عربي'}
             </button>
           </div>
         </div>
