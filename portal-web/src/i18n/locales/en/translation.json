@@ -12,25 +12,23 @@
     "confirm": "Confirm"
   },
   "auth": {
-    "login": {
-      "title": "Login",
-      "email": "Email",
-      "password": "Password",
-      "submit": "Login",
-      "forgotPassword": "Forgot Password?",
-      "noAccount": "Don't have an account?",
-      "register": "Sign Up"
-    },
-    "register": {
-      "title": "Create Account",
-      "name": "Name",
-      "email": "Email",
-      "password": "Password",
-      "confirmPassword": "Confirm Password",
-      "submit": "Create Account",
-      "hasAccount": "Already have an account?",
-      "login": "Login"
-    }
+    "email": "Email Address",
+    "email_placeholder": "Enter your email",
+    "password": "Password",
+    "password_placeholder": "Enter your password",
+    "login": "Login",
+    "logging_in": "Logging in...",
+    "forgot_password": "Forgot Password?",
+    "or_continue_with": "Or continue with",
+    "continue_with_google": "Continue with Google",
+    "login_success": "Login successful! Redirecting...",
+    "google_coming_soon": "Google login coming soon",
+    "login_welcome_message": "Manage your business effortlessly with powerful insights and simple tools",
+    "login_subtitle": "Business Management Made Simple",
+    "welcome_back": "Welcome Back",
+    "login_description": "Enter your credentials to access your dashboard",
+    "no_account": "Don't have an account?",
+    "sign_up": "Sign Up"
   },
   "dashboard": {
     "title": "Dashboard",

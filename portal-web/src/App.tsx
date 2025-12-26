@@ -1,6 +1,10 @@
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { AuthProvider } from './contexts/AuthContext';
+import { RequireAuth } from './components/routing/RequireAuth';
 import DesignSystem from './routes/design-system';
+import LoginPage from './routes/login';
+import DashboardPage from './routes/dashboard';
 
 function Home() {
   const { t, i18n } = useTranslation();
@@ -18,6 +22,9 @@ function Home() {
             Kyora Portal
           </h1>
           <div className="flex gap-4">
+            <Link to="/login" className="btn btn-primary">
+              Login
+            </Link>
             <Link to="/design-system" className="btn btn-secondary">
               Design System
             </Link>
@@ -52,12 +59,23 @@ function Home() {
 
 function App() {
   return (
-    <BrowserRouter>
-      <Routes>
-        <Route path="/" element={<Home />} />
-        <Route path="/design-system" element={<DesignSystem />} />
-      </Routes>
-    </BrowserRouter>
+    <AuthProvider>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Home />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/design-system" element={<DesignSystem />} />
+          <Route
+            path="/dashboard"
+            element={
+              <RequireAuth>
+                <DashboardPage />
+              </RequireAuth>
+            }
+          />
+        </Routes>
+      </BrowserRouter>
+    </AuthProvider>
   );
 }
 
