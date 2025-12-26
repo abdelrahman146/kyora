@@ -72,8 +72,8 @@ func TestNullableString_UnmarshalJSON(t *testing.T) {
 
 func TestNullableString_InStruct(t *testing.T) {
 	type TestStruct struct {
-		Name   string          `json:"name"`
-		Street nullable.String `json:"street"`
+		Name    string          `json:"name"`
+		Street  nullable.String `json:"street"`
 		ZipCode nullable.String `json:"zipCode"`
 	}
 
@@ -91,11 +91,11 @@ func TestNullableString_InStruct(t *testing.T) {
 
 	t.Run("unmarshal with valid and null values", func(t *testing.T) {
 		input := `{"name":"Test","street":"123 Main St","zipCode":null}`
-		
+
 		var result TestStruct
 		err := json.Unmarshal([]byte(input), &result)
 		require.NoError(t, err)
-		
+
 		assert.Equal(t, "Test", result.Name)
 		assert.True(t, result.Street.Valid)
 		assert.Equal(t, "123 Main St", result.Street.String)

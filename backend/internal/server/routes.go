@@ -1,8 +1,6 @@
 package server
 
 import (
-	"time"
-
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/accounting"
 	"github.com/abdelrahman146/kyora/internal/domain/analytics"
@@ -15,8 +13,8 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/domain/storefront"
 	"github.com/abdelrahman146/kyora/internal/platform/auth"
+	"github.com/abdelrahman146/kyora/internal/platform/middleware"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
-	"github.com/gin-contrib/cors"
 	"github.com/gin-gonic/gin"
 )
 
@@ -25,19 +23,7 @@ func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
 	{
 		// Public storefront endpoints must be callable from arbitrary storefront origins (custom domains,
 		// link-in-bio pages, local dev). These endpoints do not rely on cookies/credentials.
-		group.Use(cors.New(cors.Config{
-			AllowAllOrigins: true,
-			AllowMethods:    []string{"GET", "POST", "OPTIONS"},
-			AllowHeaders: []string{
-				"Origin",
-				"Content-Type",
-				"Accept",
-				"Idempotency-Key",
-				"X-Trace-ID",
-			},
-			ExposeHeaders: []string{"X-Trace-ID"},
-			MaxAge:        12 * time.Hour,
-		}))
+		group.Use(middleware.NewPublicCORSMiddleware())
 
 		group.GET("/:storefrontPublicId/catalog", h.GetCatalog)
 		group.GET("/:storefrontPublicId/shipping-zones", h.ListShippingZones)
@@ -47,6 +33,7 @@ func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
 
 func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 	group := r.Group("/api/onboarding")
+	group.Use(middleware.NewCORSMiddleware())
 	group.POST("/start", h.Start)
 	group.POST("/email/otp", h.SendEmailOTP)
 	group.POST("/email/verify", h.VerifyEmail)
@@ -59,6 +46,7 @@ func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService *account.Service, billingService *billing.Service) {
 	// Public authentication endpoints (no auth required)
 	authGroup := r.Group("/v1/auth")
+	authGroup.Use(middleware.NewCORSMiddleware())
 	{
 		authGroup.POST("/login", h.Login)
 		authGroup.POST("/refresh", h.Refresh)
@@ -75,6 +63,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 
 	// Public invitation acceptance endpoints (no auth required)
 	invitationGroup := r.Group("/v1/invitations")
+	invitationGroup.Use(middleware.NewCORSMiddleware())
 	{
 		invitationGroup.POST("/accept", h.AcceptInvitation)
 		invitationGroup.GET("/accept/google", h.AcceptInvitationWithGoogle)
@@ -82,7 +71,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 
 	// Protected user profile endpoints
 	userGroup := r.Group("/v1/users")
-	userGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService))
+	userGroup.Use(middleware.NewCORSMiddleware(), auth.EnforceAuthentication, account.EnforceValidActor(accountService))
 	{
 		userGroup.GET("/me", h.GetCurrentUser)
 		userGroup.PATCH("/me", h.UpdateCurrentUser)
@@ -90,7 +79,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 
 	// Protected workspace endpoints
 	workspaceGroup := r.Group("/v1/workspaces")
-	workspaceGroup.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+	workspaceGroup.Use(middleware.NewCORSMiddleware(), auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 	{
 		// Workspace info (all authenticated users)
 		workspaceGroup.GET("/me", h.GetCurrentWorkspace)
@@ -127,6 +116,7 @@ func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService
 
 func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService *account.Service) {
 	group := r.Group("/v1/billing")
+	group.Use(middleware.NewCORSMiddleware())
 
 	// Plan Operations (Public).
 	group.GET("/plans", h.ListPlans)
@@ -199,7 +189,7 @@ func registerBillingRoutes(r *gin.Engine, h *billing.HttpHandler, accountService
 
 func registerBusinessRoutes(r *gin.Engine, h *business.HttpHandler, accountService *account.Service, billingService *billing.Service, businessService *business.Service) {
 	group := r.Group("/v1/businesses")
-	group.Use(auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
+	group.Use(middleware.NewCORSMiddleware(), auth.EnforceAuthentication, account.EnforceValidActor(accountService), account.EnforceWorkspaceMembership(accountService))
 
 	group.GET("", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.ListBusinesses)
 	group.GET("/descriptor/availability", account.EnforceActorPermissions(role.ActionView, role.ResourceBusiness), h.CheckDescriptorAvailability)
@@ -232,6 +222,7 @@ func registerBusinessScopedRoutes(
 ) {
 	group := r.Group("/v1/businesses/:businessDescriptor")
 	group.Use(
+		middleware.NewCORSMiddleware(),
 		auth.EnforceAuthentication,
 		account.EnforceValidActor(accountService),
 		account.EnforceWorkspaceMembership(accountService),
@@ -459,6 +450,7 @@ func registerBusinessScopedRoutes(
 
 func registerPublicAssetRoutes(r *gin.Engine, h *asset.HttpHandler) {
 	group := r.Group("/v1/public")
+	group.Use(middleware.NewPublicCORSMiddleware())
 	{
 		group.GET("/assets/:assetId", h.GetPublicAsset)
 	}

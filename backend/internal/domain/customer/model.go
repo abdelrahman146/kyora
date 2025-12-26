@@ -29,22 +29,22 @@ const (
 
 type Customer struct {
 	gorm.Model
-	ID                string              `gorm:"column:id;primaryKey;type:text" json:"id"`
-	BusinessID        string              `gorm:"column:business_id;type:text;not null;index;uniqueIndex:idx_business_email" json:"businessId"`
-	Business          *business.Business  `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
-	Name              string              `gorm:"column:name;type:text;not null" json:"name"`
-	CountryCode       string              `gorm:"column:country_code;type:text;not null" json:"countryCode"`
-	Gender            CustomerGender      `gorm:"column:gender;type:text;not null" json:"gender"`
-	Email             nullable.String     `gorm:"column:email;type:text;not null;uniqueIndex:idx_business_email" json:"email"`
-	PhoneNumber       nullable.String     `gorm:"column:phone_number;type:text" json:"phoneNumber,omitempty"`
-	PhoneCode         nullable.String     `gorm:"column:phone_code;type:text" json:"phoneCode,omitempty"`
-	TikTokUsername    nullable.String     `gorm:"column:tiktok_username;type:text" json:"tiktokUsername,omitempty"`
-	InstagramUsername nullable.String     `gorm:"column:instagram_username;type:text" json:"instagramUsername,omitempty"`
-	FacebookUsername  nullable.String     `gorm:"column:facebook_username;type:text" json:"facebookUsername,omitempty"`
-	XUsername         nullable.String     `gorm:"column:x_username;type:text" json:"xUsername,omitempty"`
-	SnapchatUsername  nullable.String     `gorm:"column:snapchat_username;type:text" json:"snapchatUsername,omitempty"`
-	WhatsappNumber    nullable.String     `gorm:"column:whatsapp_number;type:text" json:"whatsappNumber,omitempty"`
-	JoinedAt          time.Time           `gorm:"column:joined_at;type:timestamptz;not null;default:now()" json:"joinedAt"`
+	ID                string             `gorm:"column:id;primaryKey;type:text" json:"id"`
+	BusinessID        string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:idx_business_email" json:"businessId"`
+	Business          *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
+	Name              string             `gorm:"column:name;type:text;not null" json:"name"`
+	CountryCode       string             `gorm:"column:country_code;type:text;not null" json:"countryCode"`
+	Gender            CustomerGender     `gorm:"column:gender;type:text;not null" json:"gender"`
+	Email             nullable.String    `gorm:"column:email;type:text;not null;uniqueIndex:idx_business_email" json:"email"`
+	PhoneNumber       nullable.String    `gorm:"column:phone_number;type:text" json:"phoneNumber,omitempty"`
+	PhoneCode         nullable.String    `gorm:"column:phone_code;type:text" json:"phoneCode,omitempty"`
+	TikTokUsername    nullable.String    `gorm:"column:tiktok_username;type:text" json:"tiktokUsername,omitempty"`
+	InstagramUsername nullable.String    `gorm:"column:instagram_username;type:text" json:"instagramUsername,omitempty"`
+	FacebookUsername  nullable.String    `gorm:"column:facebook_username;type:text" json:"facebookUsername,omitempty"`
+	XUsername         nullable.String    `gorm:"column:x_username;type:text" json:"xUsername,omitempty"`
+	SnapchatUsername  nullable.String    `gorm:"column:snapchat_username;type:text" json:"snapchatUsername,omitempty"`
+	WhatsappNumber    nullable.String    `gorm:"column:whatsapp_number;type:text" json:"whatsappNumber,omitempty"`
+	JoinedAt          time.Time          `gorm:"column:joined_at;type:timestamptz;not null;default:now()" json:"joinedAt"`
 	Addresses         []*CustomerAddress `gorm:"foreignKey:CustomerID;references:ID" json:"addresses,omitempty"`
 	Notes             []*CustomerNote    `gorm:"foreignKey:CustomerID;references:ID" json:"notes,omitempty"`
 }

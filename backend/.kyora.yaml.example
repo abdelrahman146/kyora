@@ -12,6 +12,35 @@ http:
   trace_id_header: "X-Trace-ID"
   # Increase if using `storage.provider: local` and uploading file bytes to the API.
   max_body_bytes: 6291456
+cors:
+  # Origins allowed to make authenticated requests to the API
+  # In development, these should match your local dev servers
+  # In production, these should be your deployed portal and storefront URLs
+  allowed_origins:
+    - "http://localhost:5173" # portal-web dev server
+    - "http://localhost:5174" # storefront-web dev server
+    # - "https://portal.kyora.io" # production portal
+    # - "https://app.kyora.io"    # production app
+  allowed_methods:
+    - "GET"
+    - "POST"
+    - "PUT"
+    - "PATCH"
+    - "DELETE"
+    - "OPTIONS"
+  allowed_headers:
+    - "Origin"
+    - "Content-Type"
+    - "Accept"
+    - "Authorization"
+    - "Idempotency-Key"
+    - "X-Trace-ID"
+  expose_headers:
+    - "X-Trace-ID"
+  max_age: 43200 # 12 hours in seconds
+  # Set to true to allow all origins (NOT recommended for production)
+  # When true, credentials (cookies/auth headers) will NOT be supported
+  allow_all_origins: false
 database:
   dsn: "host=localhost user=postgres password=postgres dbname=kyora port=5432 sslmode=disable TimeZone=UTC"
   max_open_conns: 25
