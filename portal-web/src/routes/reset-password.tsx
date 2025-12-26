@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Lock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { z } from "zod";
-import toast from "react-hot-toast";
 import { Input } from "../components/atoms/Input";
 import { Button } from "../components/atoms/Button";
 import { authApi } from "../api/auth";
@@ -17,13 +16,13 @@ const resetPasswordSchema = z
   .object({
     newPassword: z
       .string()
-      .min(1, "errors.validation.required")
-      .min(8, "errors.validation.invalid_password"),
-    confirmPassword: z.string().min(1, "errors.validation.required"),
+      .min(1, "validation.required")
+      .min(8, "validation.invalid_password"),
+    confirmPassword: z.string().min(1, "validation.required"),
   })
   .refine((data) => data.newPassword === data.confirmPassword, {
-    message: "errors.validation.password_mismatch",
     path: ["confirmPassword"],
+    message: "validation.password_mismatch",
   });
 
 type ResetPasswordFormData = z.infer<typeof resetPasswordSchema>;
@@ -52,12 +51,13 @@ type PageStatus = "loading" | "ready" | "success" | "error";
 export default function ResetPasswordPage() {
   const { t } = useTranslation();
   const { t: tErrors } = useTranslation("errors");
-  const { isRTL } = useLanguage();
+  useLanguage();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const [pageStatus, setPageStatus] = useState<PageStatus>("loading");
   const [errorMessage, setErrorMessage] = useState("");
   const [token, setToken] = useState("");
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string>("");
 
   const {
     register,
@@ -91,6 +91,7 @@ export default function ResetPasswordPage() {
 
   const onSubmit = async (data: ResetPasswordFormData) => {
     try {
+      setSubmitErrorMessage("");
       await authApi.resetPassword({
         token,
         password: data.newPassword,
@@ -98,21 +99,13 @@ export default function ResetPasswordPage() {
 
       setPageStatus("success");
 
-      void toast.success(t("auth.password_reset_success"), {
-        duration: 5000,
-        position: isRTL ? "top-right" : "top-left",
-      });
-
       // Redirect to login after 2 seconds
       void setTimeout(() => {
         void navigate("/login", { replace: true });
       }, 2000);
     } catch (error) {
       const message = await translateErrorAsync(error, t);
-      void toast.error(message, {
-        duration: 4000,
-        position: isRTL ? "top-right" : "top-left",
-      });
+      setSubmitErrorMessage(message);
     }
   };
 
@@ -251,6 +244,12 @@ export default function ResetPasswordPage() {
               className="space-y-6"
               noValidate
             >
+              {submitErrorMessage ? (
+                <div role="alert" className="alert alert-error">
+                  <span>{submitErrorMessage}</span>
+                </div>
+              ) : null}
+
               {/* New Password Input */}
               <Input
                 {...register("newPassword")}

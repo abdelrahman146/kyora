@@ -31,7 +31,7 @@ export async function parseProblemDetails(
   error: unknown
 ): Promise<ErrorResult> {
   if (!error) {
-    return { key: "errors.generic.unexpected" };
+    return { key: "errors:generic.unexpected" };
   }
 
   // Handle HTTPError from ky
@@ -46,7 +46,7 @@ export async function parseProblemDetails(
       // Try to parse JSON response body
       const body = await httpError.response.json();
 
-      // If backend provides a detail message, use it as fallback but return status-based key
+      // If backend provides a detail message, use it as fallback.
       const fallback =
         body &&
         typeof body === "object" &&
@@ -54,6 +54,17 @@ export async function parseProblemDetails(
         typeof body.detail === "string"
           ? body.detail
           : undefined;
+
+      // Special-case: invalid credentials on login should show a friendly auth message.
+      // Backend returns 401 for invalid login, which is expected and should not be treated
+      // as a generic "unauthorized"/"session expired" error.
+      if (
+        httpError.response.status === 401 &&
+        typeof httpError.response.url === "string" &&
+        httpError.response.url.endsWith("/v1/auth/login")
+      ) {
+        return { key: "errors:auth.invalid_credentials", fallback };
+      }
 
       // Return translation key based on status code
       return {
@@ -68,25 +79,25 @@ export async function parseProblemDetails(
 
   // Handle TimeoutError
   if (error instanceof Error && error.name === "TimeoutError") {
-    return { key: "errors.network.timeout" };
+    return { key: "errors:network.timeout" };
   }
 
   // Handle network errors
   if (error instanceof Error && error.name === "TypeError") {
-    return { key: "errors.network.connection" };
+    return { key: "errors:network.connection" };
   }
 
   // Handle generic Error objects
   if (error instanceof Error && error.message) {
     return {
-      key: "errors.generic.message",
+      key: "errors:generic.message",
       params: { message: error.message },
       fallback: error.message,
     };
   }
 
   // Fallback for unknown error types
-  return { key: "errors.generic.unexpected" };
+  return { key: "errors:generic.unexpected" };
 }
 
 /**
@@ -95,35 +106,35 @@ export async function parseProblemDetails(
 function getStatusErrorKey(status: number): ErrorResult {
   switch (status) {
     case 400:
-      return { key: "errors.http.400" };
+      return { key: "errors:http.400" };
     case 401:
-      return { key: "errors.http.401" };
+      return { key: "errors:http.401" };
     case 403:
-      return { key: "errors.http.403" };
+      return { key: "errors:http.403" };
     case 404:
-      return { key: "errors.http.404" };
+      return { key: "errors:http.404" };
     case 409:
-      return { key: "errors.http.409" };
+      return { key: "errors:http.409" };
     case 422:
-      return { key: "errors.http.422" };
+      return { key: "errors:http.422" };
     case 429:
-      return { key: "errors.http.429" };
+      return { key: "errors:http.429" };
     case 500:
-      return { key: "errors.http.500" };
+      return { key: "errors:http.500" };
     case 502:
-      return { key: "errors.http.502" };
+      return { key: "errors:http.502" };
     case 503:
-      return { key: "errors.http.503" };
+      return { key: "errors:http.503" };
     case 504:
-      return { key: "errors.http.504" };
+      return { key: "errors:http.504" };
     default:
       if (status >= 400 && status < 500) {
-        return { key: "errors.http.4xx", params: { status } };
+        return { key: "errors:http.4xx", params: { status } };
       }
       if (status >= 500) {
-        return { key: "errors.http.5xx", params: { status } };
+        return { key: "errors:http.5xx", params: { status } };
       }
-      return { key: "errors.http.unknown", params: { status } };
+      return { key: "errors:http.unknown", params: { status } };
   }
 }
 

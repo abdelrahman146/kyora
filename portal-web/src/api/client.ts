@@ -146,7 +146,21 @@ export const apiClient = ky.create({
         }
 
         // Handle 401 Unauthorized - Try to refresh token
+        // IMPORTANT: Auth endpoints intentionally return 401 for invalid credentials.
+        // We must not treat those as "session expired" or we'll cause redirects/retries
+        // on the login page.
         if (response.status === 401) {
+          let pathname = "";
+          try {
+            pathname = new URL(request.url).pathname;
+          } catch {
+            // ignore
+          }
+
+          if (pathname.startsWith("/v1/auth/")) {
+            return response;
+          }
+
           // Prevent multiple simultaneous refresh requests
           if (!isRefreshing) {
             isRefreshing = true;

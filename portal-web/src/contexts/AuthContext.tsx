@@ -91,8 +91,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
    * Login with email and password
    */
   const login = useCallback(async (credentials: LoginRequest) => {
-    setIsLoading(true);
-
     try {
       const response = await authApi.login(credentials);
 
@@ -106,8 +104,6 @@ export function AuthProvider({ children }: AuthProviderProps) {
       clearTokens();
       setUser(null);
       throw error; // Re-throw for component error handling
-    } finally {
-      setIsLoading(false);
     }
   }, []);
 

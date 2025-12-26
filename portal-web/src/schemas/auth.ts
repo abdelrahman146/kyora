@@ -7,9 +7,9 @@ import { z } from "zod";
 export const loginSchema = z.object({
   email: z
     .string()
-    .min(1, "errors.validation.required")
-    .pipe(z.email("errors.validation.invalid_email")),
-  password: z.string().min(1, "errors.validation.required"),
+    .min(1, "validation.required")
+    .pipe(z.email("validation.invalid_email")),
+  password: z.string().min(1, "validation.required"),
 });
 
 export type LoginFormData = z.infer<typeof loginSchema>;

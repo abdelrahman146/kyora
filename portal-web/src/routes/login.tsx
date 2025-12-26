@@ -1,6 +1,5 @@
 import { useNavigate, useLocation, Navigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import toast, { Toaster } from "react-hot-toast";
 import { useState } from "react";
 import { LoginForm } from "../components/organisms/LoginForm";
 import { useAuth } from "../hooks/useAuth";
@@ -16,7 +15,7 @@ import type { LoginFormData } from "../schemas/auth";
  * - Email/password login with validation
  * - Google OAuth integration
  * - Redirect to intended destination after login
- * - Toast notifications for errors
+ * - Inline error messages for auth flows
  * - RTL support
  * - Responsive layout (mobile-first)
  *
@@ -25,15 +24,16 @@ import type { LoginFormData } from "../schemas/auth";
  * 2. Form validates with Zod
  * 3. API call to /v1/auth/login
  * 4. On success: Save tokens, redirect to dashboard or intended destination
- * 5. On error: Show translated error message in toast
+ * 5. On error: Show translated error message within the form
  */
 export default function LoginPage() {
   const { login, isAuthenticated, isLoading } = useAuth();
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { language, toggleLanguage, isRTL } = useLanguage();
+  const { language, toggleLanguage } = useLanguage();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
+  const [googleErrorMessage, setGoogleErrorMessage] = useState<string>("");
 
   // Redirect if already authenticated
   if (!isLoading && isAuthenticated) {
@@ -42,32 +42,22 @@ export default function LoginPage() {
 
   // Handle login submission
   const handleLogin = async (data: LoginFormData) => {
-    try {
-      await login(data);
+    setGoogleErrorMessage("");
 
-      // Show success toast
-      toast.success(t("auth.login_success"), {
-        duration: 2000,
-        position: isRTL ? "top-right" : "top-left",
-      });
+    await login(data);
 
-      // Redirect to intended destination or dashboard
-      const from = (location.state as { from?: { pathname?: string } } | null)?.from?.pathname ?? "/dashboard";
-      void navigate(from, { replace: true });
-    } catch (error) {
-      // Translate and show error
-      const message = await translateErrorAsync(error, t);
-      toast.error(message, {
-        duration: 4000,
-        position: isRTL ? "top-right" : "top-left",
-      });
-    }
+    // Redirect to intended destination or dashboard
+    const from =
+      (location.state as { from?: { pathname?: string } } | null)?.from
+        ?.pathname ?? "/dashboard";
+    void navigate(from, { replace: true });
   };
 
   // Handle Google OAuth
   const handleGoogleLogin = async () => {
     try {
       setIsGoogleLoading(true);
+      setGoogleErrorMessage("");
 
       // Get OAuth URL from backend
       const { url } = await authApi.getGoogleAuthUrl();
@@ -84,10 +74,7 @@ export default function LoginPage() {
     } catch (error) {
       setIsGoogleLoading(false);
       const message = await translateErrorAsync(error, t);
-      toast.error(message, {
-        duration: 4000,
-        position: isRTL ? "top-right" : "top-left",
-      });
+      setGoogleErrorMessage(message);
     }
   };
 
@@ -105,40 +92,6 @@ export default function LoginPage() {
 
   return (
     <>
-      {/* Toast Container */}
-      <Toaster
-        position={isRTL ? "top-right" : "top-left"}
-        toastOptions={{
-          // Custom styles matching KDS
-          style: {
-            borderRadius: "12px",
-            padding: "16px",
-            fontSize: "14px",
-            fontFamily: "IBM Plex Sans Arabic, sans-serif",
-          },
-          success: {
-            style: {
-              background: "#10B981",
-              color: "#FFFFFF",
-            },
-            iconTheme: {
-              primary: "#FFFFFF",
-              secondary: "#10B981",
-            },
-          },
-          error: {
-            style: {
-              background: "#EF4444",
-              color: "#FFFFFF",
-            },
-            iconTheme: {
-              primary: "#FFFFFF",
-              secondary: "#EF4444",
-            },
-          },
-        }}
-      />
-
       {/* Main Login Layout */}
       <div className="min-h-screen bg-base-100 flex flex-col lg:flex-row">
         {/* Left Side - Branding (Hidden on mobile) */}
@@ -173,6 +126,12 @@ export default function LoginPage() {
                 {t("auth.login_description")}
               </p>
             </div>
+
+            {googleErrorMessage ? (
+              <div role="alert" className="alert alert-error mb-6">
+                <span>{googleErrorMessage}</span>
+              </div>
+            ) : null}
 
             {/* Login Form */}
             <LoginForm 

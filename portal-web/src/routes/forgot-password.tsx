@@ -5,7 +5,6 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
 import { Mail, ArrowLeft, CheckCircle } from "lucide-react";
 import { z } from "zod";
-import toast from "react-hot-toast";
 import { Input } from "../components/atoms/Input";
 import { Button } from "../components/atoms/Button";
 import { authApi } from "../api/auth";
@@ -16,8 +15,8 @@ import { translateErrorAsync } from "../lib/translateError";
 const forgotPasswordSchema = z.object({
   email: z
     .string()
-    .min(1, "errors.validation.required")
-    .pipe(z.email("errors.validation.invalid_email")),
+    .min(1, "validation.required")
+    .pipe(z.email("validation.invalid_email")),
 });
 
 type ForgotPasswordFormData = z.infer<typeof forgotPasswordSchema>;
@@ -40,6 +39,7 @@ export default function ForgotPasswordPage() {
   const navigate = useNavigate();
   const [isSuccess, setIsSuccess] = useState(false);
   const [submittedEmail, setSubmittedEmail] = useState("");
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string>("");
 
   const {
     register,
@@ -54,22 +54,15 @@ export default function ForgotPasswordPage() {
 
   const onSubmit = async (data: ForgotPasswordFormData) => {
     try {
+      setSubmitErrorMessage("");
       await authApi.forgotPassword({ email: data.email });
 
       // Show success state (even if email doesn't exist - security best practice)
       setSubmittedEmail(data.email);
       setIsSuccess(true);
-
-      void toast.success(t("auth.password_reset_email_sent"), {
-        duration: 5000,
-        position: isRTL ? "top-right" : "top-left",
-      });
     } catch (error) {
       const message = await translateErrorAsync(error, t);
-      void toast.error(message, {
-        duration: 4000,
-        position: isRTL ? "top-right" : "top-left",
-      });
+      setSubmitErrorMessage(message);
     }
   };
 
@@ -165,6 +158,12 @@ export default function ForgotPasswordPage() {
               className="space-y-6"
               noValidate
             >
+              {submitErrorMessage ? (
+                <div role="alert" className="alert alert-error">
+                  <span>{submitErrorMessage}</span>
+                </div>
+              ) : null}
+
               {/* Email Input */}
               <Input
                 {...register("email")}

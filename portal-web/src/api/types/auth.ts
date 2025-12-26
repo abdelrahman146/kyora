@@ -12,32 +12,59 @@ import { z } from "zod";
 export const RoleSchema = z.enum(["user", "admin"]);
 export type Role = z.infer<typeof RoleSchema>;
 
-export const UserSchema = z.object({
-  id: z.uuid(),
-  email: z.email(),
-  firstName: z.string(),
-  lastName: z.string(),
-  isEmailVerified: z.boolean(),
-  role: RoleSchema,
-  workspaceId: z.uuid(),
-  createdAt: z.iso.datetime(),
-  updatedAt: z.iso.datetime(),
-  deletedAt: z
-    .object({
-      time: z.iso.datetime(),
-      valid: z.boolean(),
-    })
-    .nullable()
-    .optional(),
-  workspace: z
-    .object({
-      id: z.uuid(),
-      name: z.string(),
-      createdAt: z.iso.datetime(),
-      updatedAt: z.iso.datetime(),
-    })
-    .optional(),
-});
+const NullableStringSchema = z
+  .object({
+    String: z.string().optional(),
+    Valid: z.boolean().optional(),
+  })
+  .loose();
+
+const WorkspaceSchema = z
+  .object({
+    // backend returns ids like "wrk..." not UUIDs
+    id: z.string().min(1),
+    ownerId: z.string().min(1).optional(),
+    // name is not present in the login response today
+    name: z.string().optional(),
+
+    // timestamps are returned in PascalCase on some endpoints/structs
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    CreatedAt: z.string().optional(),
+    UpdatedAt: z.string().optional(),
+
+    stripeCustomerId: NullableStringSchema.optional(),
+    stripePaymentMethodId: NullableStringSchema.optional(),
+  })
+  .loose();
+
+export const UserSchema = z
+  .object({
+    // backend returns ids like "usr..." not UUIDs
+    id: z.string().min(1),
+    email: z.email(),
+    firstName: z.string(),
+    lastName: z.string(),
+    isEmailVerified: z.boolean(),
+    role: RoleSchema,
+    workspaceId: z.string().min(1),
+
+    // Allow both camelCase and PascalCase timestamp keys.
+    createdAt: z.string().optional(),
+    updatedAt: z.string().optional(),
+    CreatedAt: z.string().optional(),
+    UpdatedAt: z.string().optional(),
+
+    // gorm.DeletedAt sometimes comes as null.
+    deletedAt: z.unknown().optional().nullable(),
+    DeletedAt: z.unknown().optional().nullable(),
+
+    workspace: WorkspaceSchema.optional(),
+
+    // gorm also returns these, ignore them
+    ID: z.number().optional(),
+  })
+  .loose();
 
 export type User = z.infer<typeof UserSchema>;
 

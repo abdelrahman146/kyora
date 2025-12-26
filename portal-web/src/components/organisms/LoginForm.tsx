@@ -39,6 +39,8 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
   const {
     register,
     handleSubmit,
+    setError,
+    clearErrors,
     formState: { errors, isSubmitting },
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
@@ -48,8 +50,62 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
     },
   });
 
+  const handleFormSubmit = async (data: LoginFormData) => {
+    clearErrors();
+
+    try {
+      await onSubmit(data);
+    } catch (err: unknown) {
+      // Login-specific UX:
+      // - 400/401: show invalid credentials within the form
+      // - 500: show a generic error message
+      if (
+        err &&
+        typeof err === "object" &&
+        "response" in err &&
+        (err as { response?: unknown }).response instanceof Response
+      ) {
+        const response = (err as { response: Response }).response;
+        const status = response.status;
+
+        if (status === 400 || status === 401) {
+          setError("password", {
+            type: "server",
+            message: "auth.invalid_credentials",
+          });
+          return;
+        }
+
+        if (status >= 500) {
+          setError("root", {
+            type: "server",
+            message: "generic.unexpected",
+          });
+          return;
+        }
+      }
+
+      setError("root", {
+        type: "server",
+        message: "generic.unexpected",
+      });
+    }
+  };
+
   return (
-    <form onSubmit={(e) => { void handleSubmit(onSubmit)(e); }} className="space-y-6" noValidate>
+    <form
+      onSubmit={(e) => {
+        void handleSubmit(handleFormSubmit)(e);
+      }}
+      className="space-y-6"
+      noValidate
+    >
+      {errors.root?.message ? (
+        <div role="alert" className="alert alert-error">
+          <span>{tErrors(errors.root.message)}</span>
+        </div>
+      ) : null}
+
       {/* Email Input */}
       <Input
         {...register("email")}
@@ -95,14 +151,7 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
         loading={isSubmitting}
         disabled={isSubmitting}
       >
-        {isSubmitting ? (
-          <>
-            <Loader2 className="animate-spin" size={20} />
-            {t("auth.logging_in")}
-          </>
-        ) : (
-          t("auth.login")
-        )}
+        {isSubmitting ? t("auth.logging_in") : t("auth.login")}
       </Button>
 
       {/* Divider */}

@@ -20,7 +20,7 @@ import type { ErrorResult } from "./errorParser";
 export function translateError(errorResult: ErrorResult, t: TFunction): string {
   // Try to get translation with interpolation params
   const translated = t(errorResult.key, {
-    defaultValue: errorResult.fallback ?? t("errors.generic.unexpected"),
+    defaultValue: errorResult.fallback ?? t("errors:generic.unexpected"),
     ...errorResult.params,
   });
 
