@@ -1,10 +1,10 @@
 import { useMemo, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { QRCodeCanvas } from 'qrcode.react';
-import type { CreateOrderRequest, CreateOrderResponse, PublicBusiness } from '../api/types';
-import { storefrontApi } from '../api/storefront';
-import { ApiError } from '../api/client';
-import { buildWhatsAppLink, isProbablyMobileDevice } from '../utils/whatsapp';
+import type { CreateOrderRequest, CreateOrderResponse, PublicBusiness } from '../../api/types';
+import { storefrontApi } from '../../api/storefront';
+import { ApiError } from '../../api/client';
+import { buildWhatsAppLink, isProbablyMobileDevice } from '../../utils/whatsapp';
 
 function randomIdempotencyKey(): string {
   if (typeof crypto !== 'undefined' && 'randomUUID' in crypto) {

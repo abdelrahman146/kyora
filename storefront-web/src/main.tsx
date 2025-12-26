@@ -5,7 +5,7 @@ import { BrowserRouter } from 'react-router-dom'
 import './index.css'
 import App from './App.tsx'
 import { initI18n } from './i18n/init'
-import { ErrorBoundary } from './components/ErrorBoundary'
+import { ErrorBoundary } from './components/atoms';
 
 initI18n()
 

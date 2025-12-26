@@ -93,23 +93,23 @@ export function applyBrandTheme(theme: StorefrontTheme | undefined): void {
     setVar("--color-accent-content", bestContentColor(theme.accentColor));
 
   // Base surfaces
-  if (theme.backgroundColor) {
-    setVar("--color-base-100", theme.backgroundColor);
-    // Keep base surfaces consistent even if only base-100 is provided.
-    // This reduces "mismatched" borders and section backgrounds.
-    setVar(
-      "--color-base-200",
-      `color-mix(in oklab, ${theme.backgroundColor} 94%, black 6%)`
-    );
-    setVar(
-      "--color-base-300",
-      `color-mix(in oklab, ${theme.backgroundColor} 88%, black 12%)`
-    );
-  }
-  setVar("--color-base-content", theme.textColor);
+  // if (theme.backgroundColor) {
+  //   setVar("--color-base-100", theme.backgroundColor);
+  //   // Keep base surfaces consistent even if only base-100 is provided.
+  //   // This reduces "mismatched" borders and section backgrounds.
+  //   setVar(
+  //     "--color-base-200",
+  //     `color-mix(in oklab, ${theme.backgroundColor} 94%, black 6%)`
+  //   );
+  //   setVar(
+  //     "--color-base-300",
+  //     `color-mix(in oklab, ${theme.backgroundColor} 88%, black 12%)`
+  //   );
+  // }
+  // setVar("--color-base-content", theme.textColor);
 
-  // Typography (optional): prefer system fonts unless explicitly configured.
-  if (theme.fontFamily) setVar("--font-family", theme.fontFamily);
-  if (theme.headingFontFamily)
-    setVar("--font-family-heading", theme.headingFontFamily);
+  // // Typography (optional): prefer system fonts unless explicitly configured.
+  // if (theme.fontFamily) setVar("--font-family", theme.fontFamily);
+  // if (theme.headingFontFamily)
+  //   setVar("--font-family-heading", theme.headingFontFamily);
 }
