@@ -197,13 +197,17 @@ export const apiClient = ky.create({
 
     // ========================================================================
     // Before Error Hook: Parse ProblemDetails and enhance error messages
+    // Note: Error messages are now translation keys. Use translateError()
+    // in components to get localized messages.
     // ========================================================================
     beforeError: [
       async (error) => {
         // Parse backend ProblemDetails error format
         try {
-          const userFriendlyMessage = await parseProblemDetails(error);
-          error.message = userFriendlyMessage;
+          const errorResult = await parseProblemDetails(error);
+          // Store translation key in error message for now
+          // Components should use translateError(errorResult, t) for proper i18n
+          error.message = errorResult.fallback ?? errorResult.key;
         } catch {
           // If parsing fails, keep original error message
         }

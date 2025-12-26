@@ -14,12 +14,24 @@ export interface ProblemDetails {
 }
 
 /**
- * Parses backend ProblemDetails error responses into user-friendly messages
- * Falls back to generic messages if parsing fails
+ * Result of parsing an error with i18n translation key and optional interpolation params
  */
-export async function parseProblemDetails(error: unknown): Promise<string> {
+export interface ErrorResult {
+  key: string;
+  params?: Record<string, string | number>;
+  fallback?: string;
+}
+
+/**
+ * Parses backend ProblemDetails error responses into translation keys
+ * Returns an ErrorResult with the i18n key and optional interpolation params
+ * Falls back to generic error keys if parsing fails
+ */
+export async function parseProblemDetails(
+  error: unknown
+): Promise<ErrorResult> {
   if (!error) {
-    return "An unexpected error occurred. Please try again.";
+    return { key: "errors.generic.unexpected" };
   }
 
   // Handle HTTPError from ky
@@ -34,87 +46,84 @@ export async function parseProblemDetails(error: unknown): Promise<string> {
       // Try to parse JSON response body
       const body = await httpError.response.json();
 
-      // Prioritize detail, then title, then status code message
-      if (
+      // If backend provides a detail message, use it as fallback but return status-based key
+      const fallback =
         body &&
         typeof body === "object" &&
         "detail" in body &&
         typeof body.detail === "string"
-      ) {
-        return body.detail;
-      }
+          ? body.detail
+          : undefined;
 
-      if (
-        body &&
-        typeof body === "object" &&
-        "title" in body &&
-        typeof body.title === "string"
-      ) {
-        return body.title;
-      }
-
-      // Generate message from status code
-      return getStatusMessage(httpError.response.status);
+      // Return translation key based on status code
+      return {
+        ...getStatusErrorKey(httpError.response.status),
+        fallback,
+      };
     } catch {
       // Response body is not JSON or failed to parse
-      return getStatusMessage(httpError.response.status);
+      return getStatusErrorKey(httpError.response.status);
     }
   }
 
   // Handle TimeoutError
   if (error instanceof Error && error.name === "TimeoutError") {
-    return "Request timed out. Please check your connection and try again.";
+    return { key: "errors.network.timeout" };
   }
 
   // Handle network errors
   if (error instanceof Error && error.name === "TypeError") {
-    return "Network error. Please check your internet connection.";
+    return { key: "errors.network.connection" };
   }
 
   // Handle generic Error objects
   if (error instanceof Error && error.message) {
-    return error.message;
+    return {
+      key: "errors.generic.message",
+      params: { message: error.message },
+      fallback: error.message,
+    };
   }
 
   // Fallback for unknown error types
-  return "An unexpected error occurred. Please try again.";
+  return { key: "errors.generic.unexpected" };
 }
 
 /**
- * Generates user-friendly messages for HTTP status codes
+ * Returns translation key and params for HTTP status codes
  */
-function getStatusMessage(status: number): string {
+function getStatusErrorKey(status: number): ErrorResult {
   switch (status) {
     case 400:
-      return "Invalid request. Please check your input and try again.";
+      return { key: "errors.http.400" };
     case 401:
-      return "You are not authorized. Please log in again.";
+      return { key: "errors.http.401" };
     case 403:
-      return "You don't have permission to perform this action.";
+      return { key: "errors.http.403" };
     case 404:
-      return "The requested resource was not found.";
+      return { key: "errors.http.404" };
     case 409:
-      return "This operation conflicts with existing data.";
+      return { key: "errors.http.409" };
     case 422:
-      return "The provided data is invalid. Please check and try again.";
+      return { key: "errors.http.422" };
     case 429:
-      return "Too many requests. Please wait a moment and try again.";
+      return { key: "errors.http.429" };
     case 500:
-      return "Server error. Please try again later.";
+      return { key: "errors.http.500" };
     case 502:
-      return "Service temporarily unavailable. Please try again later.";
+      return { key: "errors.http.502" };
     case 503:
-      return "Service is currently under maintenance. Please try again later.";
+      return { key: "errors.http.503" };
     case 504:
-      return "Request timed out. Please try again.";
+      return { key: "errors.http.504" };
     default:
       if (status >= 400 && status < 500) {
-        return "Client error. Please check your request and try again.";
+        return { key: "errors.http.4xx", params: { status } };
       }
       if (status >= 500) {
-        return "Server error. Please try again later.";
+        return { key: "errors.http.5xx", params: { status } };
       }
-      return `Request failed with status ${String(status)}.`;
+      return { key: "errors.http.unknown", params: { status } };
   }
 }
 
