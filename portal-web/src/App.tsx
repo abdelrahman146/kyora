@@ -7,7 +7,7 @@ function Home() {
 
   const toggleLanguage = () => {
     const newLang = i18n.language === 'ar' ? 'en' : 'ar';
-    i18n.changeLanguage(newLang);
+    void i18n.changeLanguage(newLang);
   };
 
   return (

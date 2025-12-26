@@ -24,8 +24,8 @@ export const Skeleton = ({
   };
 
   const inlineStyles: React.CSSProperties = {
-    width: width ? (typeof width === 'number' ? `${width}px` : width) : undefined,
-    height: height ? (typeof height === 'number' ? `${height}px` : height) : undefined,
+    width: width ? (typeof width === 'number' ? `${String(width)}px` : width) : undefined,
+    height: height ? (typeof height === 'number' ? `${String(height)}px` : height) : undefined,
     ...style,
   };
 

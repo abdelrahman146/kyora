@@ -2,18 +2,18 @@
 
 export type Role = "admin" | "member";
 
-export type PaginatedResponse<T> = {
+export interface PaginatedResponse<T> {
   data: T[];
   total: number;
   page: number;
   perPage: number;
   totalPages: number;
-};
+}
 
-export type ProblemDetails = {
+export interface ProblemDetails {
   type: string;
   title: string;
   status: number;
   detail: string;
   instance: string;
-};
+}

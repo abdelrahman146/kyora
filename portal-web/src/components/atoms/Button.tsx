@@ -42,7 +42,7 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
     return (
       <button
         ref={ref}
-        disabled={disabled || loading}
+        disabled={disabled ?? loading}
         className={cn(
           baseClasses,
           variantClasses[variant],
