@@ -1,3 +1,8 @@
+---
+description: React Router v7
+applyTo: "portal-web/**,storefront-web/**"
+---
+
 # React Router v7
 
 > React Router v7 is a powerful, multi-strategy routing library for React, bridging the gap from React 18 to React 19. It enables developers to build client-side, server-side, or statically pre-rendered web applications with robust data loading, mutations, and navigation features. You can use it maximally as a React framework or as minimally as you want.

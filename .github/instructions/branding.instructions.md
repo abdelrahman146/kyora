@@ -1,3 +1,8 @@
+---
+description: KYORA DESIGN SYSTEM (KDS)
+applyTo: "portal-web/**,storefront-web/**"
+---
+
 # KYORA DESIGN SYSTEM (KDS) v1.0
 
 **Target Platform:** Mobile Web (PWA) & Mobile Native (React Native)

@@ -1,3 +1,8 @@
+---
+description: Stripe API
+applyTo: "portal-web/**,backend/**"
+---
+
 # Stripe Documentation
 
 ## Docs

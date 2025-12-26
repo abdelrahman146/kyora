@@ -1,3 +1,8 @@
+---
+description: Resend API
+applyTo: "backend/**"
+---
+
 # Create API key
 
 Source: https://resend.com/docs/api-reference/api-keys/create-api-key
