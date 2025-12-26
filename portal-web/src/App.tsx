@@ -7,6 +7,8 @@ import DesignSystem from './routes/design-system';
 import LoginPage from './routes/login';
 import DashboardPage from './routes/dashboard';
 import OAuthCallbackPage from './routes/oauth-callback';
+import ForgotPasswordPage from './routes/forgot-password';
+import ResetPasswordPage from './routes/reset-password';
 
 function Home() {
   const { t } = useTranslation();
@@ -63,6 +65,8 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+          <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/design-system" element={<DesignSystem />} />
           <Route
             path="/dashboard"
