@@ -1,6 +1,7 @@
 package e2e_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 	"time"
@@ -39,8 +40,13 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_Success() {
 	}
 	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
-	defer resp.Body.Close()
-	s.Equal(http.StatusNoContent, resp.StatusCode)
+	s.Equal(http.StatusOK, resp.StatusCode)
+	var body struct {
+		RetryAfterSeconds int `json:"retryAfterSeconds"`
+	}
+	err = testutils.DecodeJSON(resp, &body)
+	s.NoError(err)
+	s.GreaterOrEqual(body.RetryAfterSeconds, 1)
 }
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_MissingToken() {
@@ -90,21 +96,30 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_RateLimit() {
 	// First request should succeed
 	resp1, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
-	defer resp1.Body.Close()
-	s.Equal(http.StatusNoContent, resp1.StatusCode)
+	s.Equal(http.StatusOK, resp1.StatusCode)
+	_ = resp1.Body.Close()
 
 	// Second request immediately after should be rate limited
 	resp2, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
-	defer resp2.Body.Close()
 	s.Equal(http.StatusTooManyRequests, resp2.StatusCode)
+	var p2 struct {
+		Extensions map[string]any `json:"extensions"`
+	}
+	decErr := json.NewDecoder(resp2.Body).Decode(&p2)
+	_ = resp2.Body.Close()
+	s.NoError(decErr)
+	seconds, ok := p2.Extensions["retryAfterSeconds"].(float64)
+	s.True(ok)
+	s.GreaterOrEqual(seconds, float64(0))
+	s.LessOrEqual(seconds, float64(120))
 
-	// Wait 1 second and retry - should still be rate limited (30s minimum)
+	// Wait 1 second and retry - should still be rate limited (2m cooldown)
 	time.Sleep(1 * time.Second)
 	resp3, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
-	defer resp3.Body.Close()
 	s.Equal(http.StatusTooManyRequests, resp3.StatusCode)
+	_ = resp3.Body.Close()
 }
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_ExpiredSession() {

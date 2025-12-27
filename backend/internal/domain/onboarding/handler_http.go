@@ -71,6 +71,10 @@ type otpRequest struct {
 	SessionToken string `json:"sessionToken" binding:"required"`
 }
 
+type otpResponse struct {
+	RetryAfterSeconds int `json:"retryAfterSeconds"`
+}
+
 // SendEmailOTP generates and sends an OTP to the user's email.
 //
 // @Summary      Send email OTP
@@ -78,9 +82,10 @@ type otpRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request body otpRequest true "OTP request"
-// @Success      204
+// @Success      200 {object} otpResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/onboarding/email/otp [post]
 func (h *HttpHandler) SendEmailOTP(c *gin.Context) {
@@ -88,11 +93,12 @@ func (h *HttpHandler) SendEmailOTP(c *gin.Context) {
 	if err := request.ValidBody(c, &req); err != nil {
 		return
 	}
-	if err := h.svc.GenerateEmailOTP(c.Request.Context(), req.SessionToken); err != nil {
+	retryAfter, err := h.svc.GenerateEmailOTP(c.Request.Context(), req.SessionToken)
+	if err != nil {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessEmpty(c, http.StatusNoContent)
+	response.SuccessJSON(c, http.StatusOK, otpResponse{RetryAfterSeconds: int(retryAfter.Seconds())})
 }
 
 type verifyEmailRequest struct {

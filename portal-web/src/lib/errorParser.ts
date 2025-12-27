@@ -44,15 +44,15 @@ export async function parseProblemDetails(
 
     try {
       // Try to parse JSON response body
-      const body = await httpError.response.json();
+      const body: unknown = await httpError.response.clone().json();
 
       // If backend provides a detail message, use it as fallback.
       const fallback =
         body &&
         typeof body === "object" &&
         "detail" in body &&
-        typeof body.detail === "string"
-          ? body.detail
+        typeof (body as { detail?: unknown }).detail === "string"
+          ? (body as { detail: string }).detail
           : undefined;
 
       // Special-case: invalid credentials on login should show a friendly auth message.
@@ -158,21 +158,23 @@ export async function parseValidationErrors(
     const httpError = error as HTTPError;
 
     try {
-      const body = await httpError.response.json();
+      const body: unknown = await httpError.response.clone().json();
 
       // Check if extensions contains validation errors
       if (
         body &&
         typeof body === "object" &&
         "extensions" in body &&
-        body.extensions &&
-        typeof body.extensions === "object"
+        (body as { extensions?: unknown }).extensions &&
+        typeof (body as { extensions: unknown }).extensions === "object"
       ) {
         // Common patterns: errors, validationErrors, fieldErrors
+        const extensions = (body as { extensions: Record<string, unknown> })
+          .extensions;
         const validationData =
-          (body.extensions as Record<string, unknown>).errors ??
-          (body.extensions as Record<string, unknown>).validationErrors ??
-          (body.extensions as Record<string, unknown>).fieldErrors;
+          extensions.errors ??
+          extensions.validationErrors ??
+          extensions.fieldErrors;
 
         if (validationData && typeof validationData === "object") {
           return validationData as Record<string, string>;

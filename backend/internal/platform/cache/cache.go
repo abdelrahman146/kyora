@@ -38,6 +38,18 @@ func (m *Cache) SetX(key string, value []byte, expiration int32) error {
 	return m.mc.Set(item)
 }
 
+// AddX adds a value to the cache only if it does not already exist.
+//
+// This is useful for atomic "first one wins" use-cases (e.g., cooldown locks).
+func (m *Cache) AddX(key string, value []byte, expiration int32) error {
+	item := &memcache.Item{
+		Key:        key,
+		Value:      value,
+		Expiration: expiration,
+	}
+	return m.mc.Add(item)
+}
+
 // Set sets a value in the cache without expiration.
 func (m *Cache) Set(key string, value []byte) error {
 	item := &memcache.Item{
@@ -81,4 +93,8 @@ func (m *Cache) Increment(key string, delta uint64) error {
 		return m.mc.Set(item)
 	}
 	return err
+}
+
+func IsNotStored(err error) bool {
+	return errors.Is(err, memcache.ErrNotStored)
 }

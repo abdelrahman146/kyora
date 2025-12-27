@@ -3,10 +3,12 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Mail, Check } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
+import { ResendCountdownButton } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { authApi } from "@/api/auth";
 import { translateErrorAsync } from "@/lib/translateError";
+import { formatCountdownDuration } from "@/lib/utils";
 
 /**
  * Email Verification Step - Step 2 of Onboarding
@@ -52,8 +54,7 @@ export default function VerifyEmailPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
-  const [canResend, setCanResend] = useState(false);
-  const [resendCooldown, setResendCooldown] = useState(0);
+  const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -72,22 +73,35 @@ export default function VerifyEmailPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Start resend cooldown
-  useEffect(() => {
-    let timer: ReturnType<typeof setTimeout> | undefined;
-
-    if (resendCooldown > 0) {
-      timer = setTimeout(() => {
-        setResendCooldown(resendCooldown - 1);
-      }, 1000);
-    } else {
-      setCanResend(true);
+  const extractRetryAfterSeconds = async (err: unknown): Promise<number | null> => {
+    if (
+      typeof err === "object" &&
+      err !== null &&
+      "response" in err &&
+      (err as { response?: unknown }).response instanceof Response
+    ) {
+      const resp = (err as { response: Response }).response;
+      try {
+        const body = (await resp.clone().json()) as unknown;
+        if (
+          body &&
+          typeof body === "object" &&
+          "extensions" in body &&
+          (body as { extensions?: unknown }).extensions &&
+          typeof (body as { extensions: unknown }).extensions === "object"
+        ) {
+          const ext = (body as { extensions: Record<string, unknown> }).extensions;
+          const v = (ext as { retryAfterSeconds?: unknown }).retryAfterSeconds;
+          if (typeof v === "number" && Number.isFinite(v)) {
+            return Math.max(0, Math.floor(v));
+          }
+        }
+      } catch {
+        // ignore
+      }
     }
-
-    return () => {
-      if (timer) clearTimeout(timer);
-    };
-  }, [resendCooldown]);
+    return null;
+  };
 
   const sendOTP = async () => {
     if (!sessionToken) return;
@@ -95,11 +109,16 @@ export default function VerifyEmailPage() {
     try {
       setError("");
       setIsSubmitting(true);
-      await onboardingApi.sendEmailOTP({ sessionToken });
+      const { retryAfterSeconds } = await onboardingApi.sendEmailOTP({
+        sessionToken,
+      });
       setSuccess(t("onboarding:verify.otpSent"));
-      setCanResend(false);
-      setResendCooldown(30);
+      setResendCooldownSeconds(retryAfterSeconds);
     } catch (err) {
+      const retryAfterSeconds = await extractRetryAfterSeconds(err);
+      if (retryAfterSeconds !== null && retryAfterSeconds > 0) {
+        setResendCooldownSeconds(retryAfterSeconds);
+      }
       const message = await translateErrorAsync(err, t);
       setError(message);
     } finally {
@@ -271,26 +290,29 @@ export default function VerifyEmailPage() {
 
               {/* Verify Button */}
               <button
+                type="button"
                 onClick={handleVerifyOtp}
-                disabled={otpCode.join("").length !== 6 || isSubmitting}
-                className="btn btn-primary btn-block mb-4"
+                disabled={isSubmitting}
+                className="btn btn-primary btn-block"
               >
                 {t("onboarding:verify.verifyCode")}
               </button>
 
-              {/* Resend OTP */}
-              <div className="text-center">
-                <button
-                  onClick={() => {
-                    void sendOTP();
-                  }}
-                  disabled={!canResend || isSubmitting}
+              {/* Resend Button */}
+              <div className="text-center mt-4">
+                <ResendCountdownButton
+                  cooldownSeconds={resendCooldownSeconds}
+                  isBusy={isSubmitting}
+                  onResend={sendOTP}
                   className="btn btn-ghost btn-sm"
-                >
-                  {canResend
-                    ? t("onboarding:verify.resendCode")
-                    : t("onboarding:verify.resendIn", { seconds: resendCooldown })}
-                </button>
+                  renderLabel={({ remainingSeconds, canResend }) =>
+                    canResend
+                      ? t("onboarding:verify.resendCode")
+                      : t("onboarding:verify.resendIn", {
+                          time: formatCountdownDuration(remainingSeconds),
+                        })
+                  }
+                />
               </div>
 
               {/* Divider */}

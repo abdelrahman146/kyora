@@ -1,8 +1,9 @@
-import { get, post, postVoid } from "./client";
+import { get, post } from "./client";
 import {
   StartSessionRequestSchema,
   StartSessionResponseSchema,
   SendOTPRequestSchema,
+  SendOTPResponseSchema,
   VerifyEmailRequestSchema,
   VerifyEmailResponseSchema,
   OAuthGoogleRequestSchema,
@@ -17,6 +18,7 @@ import {
   type StartSessionRequest,
   type StartSessionResponse,
   type SendOTPRequest,
+  type SendOTPResponse,
   type VerifyEmailRequest,
   type VerifyEmailResponse,
   type OAuthGoogleRequest,
@@ -73,10 +75,14 @@ export const onboardingApi = {
    * Generates a 6-digit OTP and sends it to the user's email
    * @throws HTTPError with parsed ProblemDetails on failure
    */
-  async sendEmailOTP(data: SendOTPRequest): Promise<void> {
+  async sendEmailOTP(data: SendOTPRequest): Promise<SendOTPResponse> {
     const validatedRequest = SendOTPRequestSchema.parse(data);
 
-    await postVoid("v1/onboarding/email/otp", { json: validatedRequest });
+    const response = await post<unknown>("v1/onboarding/email/otp", {
+      json: validatedRequest,
+    });
+
+    return SendOTPResponseSchema.parse(response);
   },
 
   // ==========================================================================

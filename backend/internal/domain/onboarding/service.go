@@ -108,40 +108,47 @@ func (s *Service) StartSession(ctx context.Context, emailStr, planDescriptor str
 }
 
 // GenerateEmailOTP issues a 6-digit code and emails it. Stores hash + expiry.
-func (s *Service) GenerateEmailOTP(ctx context.Context, token string) error {
+func (s *Service) GenerateEmailOTP(ctx context.Context, token string) (time.Duration, error) {
 	sess, err := s.storage.GetByToken(ctx, token)
 	if err != nil || sess == nil {
-		return ErrSessionNotFound(err)
+		return 0, ErrSessionNotFound(err)
 	}
 	if time.Now().After(sess.ExpiresAt) {
-		return ErrSessionExpired(nil)
+		return 0, ErrSessionExpired(nil)
 	}
 	if sess.Stage != StagePlanSelected && sess.Stage != StageIdentityPending {
-		return ErrInvalidStage(nil, string(StagePlanSelected))
+		return 0, ErrInvalidStage(nil, string(StagePlanSelected))
 	}
-	// rate limit: max 5 per hour and at least 30s between requests
-	if !throttle.Allow(s.storage.cache, "rl:otp:"+sess.Email, time.Hour, 5, 30*time.Second) {
-		return ErrRateLimited(nil)
+	// Cooldown strategy: per email, allow one OTP request then block resends for 2 minutes.
+	// This is intentionally simpler and more predictable than token-bucket throttling.
+	cooldown := 2 * time.Minute
+	cooldownKey := "cd:onboarding:otp:" + strings.ToLower(strings.TrimSpace(sess.Email))
+	allowed, retryAfter := throttle.Cooldown(s.storage.cache, cooldownKey, cooldown)
+	if !allowed {
+		return 0, ErrRateLimitedRetryAfter(nil, retryAfter)
 	}
 	code, err := id.RandomNumber(6)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	hashed, err := hash.Password(code)
 	if err != nil {
-		return err
+		return 0, err
 	}
 	exp := time.Now().Add(15 * time.Minute)
 	sess.OTPHash = hashed
 	sess.OTPExpiry = &exp
 	sess.Stage = StageIdentityPending
 	if err := s.storage.UpdateSession(ctx, sess); err != nil {
-		return err
+		return 0, err
 	}
 	// Send OTP code email for onboarding. This must include the OTP code.
 	// We intentionally avoid linking to the account /verify-email flow because onboarding uses a different API.
 	if s.emailClient == nil {
-		return fmt.Errorf("email client not available")
+		if s.storage.cache != nil {
+			_ = s.storage.cache.Delete(cooldownKey)
+		}
+		return 0, fmt.Errorf("email client not available")
 	}
 	userName := strings.TrimSpace(strings.Join([]string{sess.FirstName, sess.LastName}, " "))
 	if userName == "" {
@@ -163,10 +170,13 @@ func (s *Service) GenerateEmailOTP(ctx context.Context, token string) error {
 		"currentYear":  fmt.Sprintf("%d", time.Now().Year()),
 	})
 	if err != nil {
-		return err
+		if s.storage.cache != nil {
+			_ = s.storage.cache.Delete(cooldownKey)
+		}
+		return 0, err
 	}
 	logger.FromContext(ctx).Info("onboarding email OTP generated", "session", sess.ID)
-	return nil
+	return cooldown, nil
 }
 
 // VerifyEmailOTP validates code and stores password+profile

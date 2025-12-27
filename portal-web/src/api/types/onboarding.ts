@@ -109,6 +109,12 @@ export const SendOTPRequestSchema = z.object({
 
 export type SendOTPRequest = z.infer<typeof SendOTPRequestSchema>;
 
+export const SendOTPResponseSchema = z.object({
+  retryAfterSeconds: z.number().int().nonnegative(),
+});
+
+export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>;
+
 // ============================================================================
 // Verify Email - POST /v1/onboarding/email/verify
 // ============================================================================

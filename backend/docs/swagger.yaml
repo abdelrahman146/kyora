@@ -2382,6 +2382,11 @@ definitions:
     required:
     - sessionToken
     type: object
+  onboarding.otpResponse:
+    properties:
+      retryAfterSeconds:
+        type: integer
+    type: object
   onboarding.paymentStartRequest:
     properties:
       cancelUrl:
@@ -27691,14 +27696,20 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.otpResponse'
         "400":
           description: Bad Request
           schema:
             $ref: '#/definitions/problem.Problem'
         "404":
           description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
           schema:
             $ref: '#/definitions/problem.Problem'
         "500":

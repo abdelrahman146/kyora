@@ -1,6 +1,11 @@
 package onboarding
 
-import "github.com/abdelrahman146/kyora/internal/platform/types/problem"
+import (
+	"math"
+	"time"
+
+	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
+)
 
 func ErrEmailAlreadyExists(err error) error {
 	return problem.Conflict("email already registered").WithError(err)
@@ -48,4 +53,12 @@ func ErrCommitRace(err error) error {
 }
 func ErrRateLimited(err error) error {
 	return problem.TooManyRequests("please try again later").WithError(err)
+}
+
+func ErrRateLimitedRetryAfter(err error, retryAfter time.Duration) error {
+	seconds := int(math.Ceil(retryAfter.Seconds()))
+	if seconds < 0 {
+		seconds = 0
+	}
+	return problem.TooManyRequests("please try again later").WithError(err).With("retryAfterSeconds", seconds)
 }

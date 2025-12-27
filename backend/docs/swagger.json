@@ -9055,8 +9055,11 @@
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "No Content"
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.otpResponse"
+                        }
                     },
                     "400": {
                         "description": "Bad Request",
@@ -9066,6 +9069,12 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -13302,6 +13311,14 @@
             "properties": {
                 "sessionToken": {
                     "type": "string"
+                }
+            }
+        },
+        "onboarding.otpResponse": {
+            "type": "object",
+            "properties": {
+                "retryAfterSeconds": {
+                    "type": "integer"
                 }
             }
         },

@@ -57,7 +57,7 @@
     "invalidCode": "يرجى إدخال رمز صحيح مكون من 6 أرقام",
     "verifyCode": "تحقق من الرمز",
     "resendCode": "إعادة إرسال الرمز",
-    "resendIn": "إعادة الإرسال خلال {{seconds}} ثانية",
+    "resendIn": "إعادة الإرسال خلال {{time}}",
     "continueWithGoogle": "المتابعة باستخدام Google",
     "completeProfile": "أكمل ملفك الشخصي",
     "passwordHint": "يجب أن تكون 8 أحرف على الأقل",

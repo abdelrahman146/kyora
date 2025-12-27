@@ -57,7 +57,7 @@
     "invalidCode": "Please enter a valid 6-digit code",
     "verifyCode": "Verify Code",
     "resendCode": "Resend Code",
-    "resendIn": "Resend in {{seconds}}s",
+    "resendIn": "Resend in {{time}}",
     "continueWithGoogle": "Continue with Google",
     "completeProfile": "Complete Your Profile",
     "passwordHint": "Must be at least 8 characters",
