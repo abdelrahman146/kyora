@@ -1,4 +1,11 @@
-import apiClient, { setTokens, clearTokens, getRefreshToken } from "./client";
+import {
+  get,
+  post,
+  postVoid,
+  setTokens,
+  clearTokens,
+  getRefreshToken,
+} from "./client";
 import {
   LoginRequestSchema,
   LoginResponseSchema,
@@ -46,9 +53,9 @@ export const authApi = {
     const validatedRequest = LoginRequestSchema.parse(credentials);
 
     // Make API call
-    const response = await apiClient
-      .post("v1/auth/login", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/auth/login", {
+      json: validatedRequest,
+    });
 
     // Validate response data
     const validatedResponse = LoginResponseSchema.parse(response);
@@ -73,9 +80,9 @@ export const authApi = {
     const validatedRequest = RefreshRequestSchema.parse(request);
 
     // Make API call
-    const response = await apiClient
-      .post("v1/auth/refresh", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/auth/refresh", {
+      json: validatedRequest,
+    });
 
     // Validate response data
     const validatedResponse = RefreshResponseSchema.parse(response);
@@ -100,7 +107,7 @@ export const authApi = {
     const validatedRequest = LogoutRequestSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/logout", { json: validatedRequest });
+    await postVoid("v1/auth/logout", { json: validatedRequest });
 
     // Clear tokens from memory
     clearTokens();
@@ -120,7 +127,7 @@ export const authApi = {
     const validatedRequest = LogoutAllRequestSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/logout-all", { json: validatedRequest });
+    await postVoid("v1/auth/logout-all", { json: validatedRequest });
 
     // Clear tokens from memory
     clearTokens();
@@ -140,9 +147,7 @@ export const authApi = {
     const validatedRequest = ForgotPasswordRequestSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/forgot-password", {
-      json: validatedRequest,
-    });
+    await postVoid("v1/auth/forgot-password", { json: validatedRequest });
   },
 
   // ==========================================================================
@@ -159,9 +164,7 @@ export const authApi = {
     const validatedRequest = ResetPasswordRequestSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/reset-password", {
-      json: validatedRequest,
-    });
+    await postVoid("v1/auth/reset-password", { json: validatedRequest });
   },
 
   // ==========================================================================
@@ -178,9 +181,9 @@ export const authApi = {
     const validatedRequest = GoogleLoginRequestSchema.parse(request);
 
     // Make API call
-    const response = await apiClient
-      .post("v1/auth/google/login", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/auth/google/login", {
+      json: validatedRequest,
+    });
 
     // Validate response data
     const validatedResponse = LoginResponseSchema.parse(response);
@@ -202,7 +205,7 @@ export const authApi = {
    */
   async getGoogleAuthUrl(): Promise<{ url: string }> {
     // Make API call
-    const response = await apiClient.get("v1/auth/google/url").json();
+    const response = await get<unknown>("v1/auth/google/url");
 
     // Validate response structure
     if (
@@ -232,7 +235,7 @@ export const authApi = {
     const validatedRequest = RequestEmailVerificationSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/request-email-verification", {
+    await postVoid("v1/auth/request-email-verification", {
       json: validatedRequest,
     });
   },
@@ -251,9 +254,7 @@ export const authApi = {
     const validatedRequest = VerifyEmailRequestSchema.parse(request);
 
     // Make API call
-    await apiClient.post("v1/auth/verify-email", {
-      json: validatedRequest,
-    });
+    await postVoid("v1/auth/verify-email", { json: validatedRequest });
   },
 
   // ==========================================================================

@@ -1,4 +1,4 @@
-import { apiClient } from "./client";
+import { get, patch } from "./client";
 import type { User } from "./types/auth";
 
 /**
@@ -11,7 +11,7 @@ export const userApi = {
    * GET /v1/users/me
    */
   async getCurrentUser(): Promise<User> {
-    return apiClient.get("v1/users/me").json<User>();
+    return get<User>("v1/users/me");
   },
 
   /**
@@ -22,6 +22,6 @@ export const userApi = {
     firstName?: string;
     lastName?: string;
   }): Promise<User> {
-    return apiClient.patch("v1/users/me", { json: data }).json<User>();
+    return patch<User>("v1/users/me", { json: data });
   },
 };

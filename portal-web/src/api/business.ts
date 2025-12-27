@@ -1,4 +1,4 @@
-import apiClient from "./client";
+import { get, post } from "./client";
 import {
   ListBusinessesResponseSchema,
   BusinessSchema,
@@ -26,7 +26,7 @@ export const businessApi = {
    * @throws HTTPError with parsed ProblemDetails on failure
    */
   async listBusinesses(): Promise<Business[]> {
-    const response = await apiClient.get("v1/businesses").json();
+    const response = await get<unknown>("v1/businesses");
 
     // Backend returns { businesses: [...] }
     const validatedResponse = ListBusinessesResponseSchema.parse(response);
@@ -45,7 +45,7 @@ export const businessApi = {
    * @throws HTTPError with parsed ProblemDetails on failure
    */
   async getBusiness(descriptor: string): Promise<Business> {
-    const response = await apiClient.get(`v1/businesses/${descriptor}`).json();
+    const response = await get<unknown>(`v1/businesses/${descriptor}`);
 
     // Backend returns { business: {...} }
     const validated = z.object({ business: BusinessSchema }).parse(response);
@@ -67,9 +67,9 @@ export const businessApi = {
     // Validate input
     const validatedInput = CreateBusinessInputSchema.parse(input);
 
-    const response = await apiClient
-      .post("v1/businesses", { json: validatedInput })
-      .json();
+    const response = await post<unknown>("v1/businesses", {
+      json: validatedInput,
+    });
 
     // Backend returns { business: {...} }
     const validated = z.object({ business: BusinessSchema }).parse(response);

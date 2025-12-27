@@ -248,6 +248,99 @@ export const apiClient = ky.create({
 // Typed API Client Methods (Optional Convenience Wrappers)
 // ============================================================================
 
+type KyOptions = Parameters<typeof apiClient.get>[1];
+
+const inFlight = new Map<string, Promise<unknown>>();
+
+function stableStringify(value: unknown): string {
+  if (value === null) return "null";
+  if (value === undefined) return "undefined";
+
+  const t = typeof value;
+  if (t === "string") return JSON.stringify(value);
+  if (t === "number" || t === "boolean") return JSON.stringify(value);
+  if (t === "function") return '"[function]"';
+
+  if (Array.isArray(value)) {
+    return `[${value.map(stableStringify).join(",")}]`;
+  }
+
+  if (value instanceof URLSearchParams) {
+    const entries = Array.from(value.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+    return `URLSearchParams(${stableStringify(entries)})`;
+  }
+
+  if (value instanceof Headers) {
+    const entries = Array.from(value.entries()).sort(([a], [b]) =>
+      a.localeCompare(b)
+    );
+    return `Headers(${stableStringify(entries)})`;
+  }
+
+  if (t === "object") {
+    const obj = value as Record<string, unknown>;
+    const keys = Object.keys(obj).sort();
+    const parts = keys.map(
+      (k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`
+    );
+    return `{${parts.join(",")}}`;
+  }
+
+  try {
+    return JSON.stringify(value);
+  } catch {
+    return "[unstringifiable]";
+  }
+}
+
+function buildDedupeKey(
+  method: string,
+  url: string,
+  options?: KyOptions
+): string {
+  const token = getAccessToken() ?? "";
+
+  const searchParams = (options as { searchParams?: unknown } | undefined)
+    ?.searchParams;
+  const jsonPayload = (options as { json?: unknown } | undefined)?.json;
+  const body = (options as { body?: unknown } | undefined)?.body;
+
+  return [
+    method.toUpperCase(),
+    url,
+    `token:${token}`,
+    searchParams !== undefined ? `sp:${stableStringify(searchParams)}` : "",
+    jsonPayload !== undefined ? `json:${stableStringify(jsonPayload)}` : "",
+    body !== undefined ? `body:${stableStringify(body)}` : "",
+  ]
+    .filter(Boolean)
+    .join("|");
+}
+
+async function deduped<T>(
+  method: string,
+  url: string,
+  options: KyOptions | undefined,
+  fn: () => Promise<T>
+): Promise<T> {
+  const key = buildDedupeKey(method, url, options);
+  const existing = inFlight.get(key);
+  if (existing) {
+    if (import.meta.env.DEV) {
+      console.log(`[API] ⇉ DEDUPED ${method.toUpperCase()} ${url}`);
+    }
+    return existing as Promise<T>;
+  }
+
+  const promise = fn().finally(() => {
+    inFlight.delete(key);
+  });
+  inFlight.set(key, promise as Promise<unknown>);
+  return promise;
+}
+
 /**
  * Type-safe GET request
  */
@@ -255,7 +348,9 @@ export async function get<T>(
   url: string,
   options?: Parameters<typeof apiClient.get>[1]
 ): Promise<T> {
-  return apiClient.get(url, options).json<T>();
+  return deduped("get", url, options, () =>
+    apiClient.get(url, options).json<T>()
+  );
 }
 
 /**
@@ -265,7 +360,21 @@ export async function post<T>(
   url: string,
   options?: Parameters<typeof apiClient.post>[1]
 ): Promise<T> {
-  return apiClient.post(url, options).json<T>();
+  return deduped("post", url, options, () =>
+    apiClient.post(url, options).json<T>()
+  );
+}
+
+/**
+ * POST request with no JSON body expected (e.g., 204 No Content)
+ */
+export async function postVoid(
+  url: string,
+  options?: Parameters<typeof apiClient.post>[1]
+): Promise<void> {
+  await deduped("post", url, options, async () => {
+    await apiClient.post(url, options);
+  });
 }
 
 /**
@@ -275,7 +384,9 @@ export async function put<T>(
   url: string,
   options?: Parameters<typeof apiClient.put>[1]
 ): Promise<T> {
-  return apiClient.put(url, options).json<T>();
+  return deduped("put", url, options, () =>
+    apiClient.put(url, options).json<T>()
+  );
 }
 
 /**
@@ -285,7 +396,9 @@ export async function patch<T>(
   url: string,
   options?: Parameters<typeof apiClient.patch>[1]
 ): Promise<T> {
-  return apiClient.patch(url, options).json<T>();
+  return deduped("patch", url, options, () =>
+    apiClient.patch(url, options).json<T>()
+  );
 }
 
 /**
@@ -295,7 +408,21 @@ export async function del<T>(
   url: string,
   options?: Parameters<typeof apiClient.delete>[1]
 ): Promise<T> {
-  return apiClient.delete(url, options).json<T>();
+  return deduped("delete", url, options, () =>
+    apiClient.delete(url, options).json<T>()
+  );
+}
+
+/**
+ * DELETE request with no JSON body expected
+ */
+export async function delVoid(
+  url: string,
+  options?: Parameters<typeof apiClient.delete>[1]
+): Promise<void> {
+  await deduped("delete", url, options, async () => {
+    await apiClient.delete(url, options);
+  });
 }
 
 export default apiClient;

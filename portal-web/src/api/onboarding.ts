@@ -1,4 +1,4 @@
-import apiClient from "./client";
+import { get, post, postVoid } from "./client";
 import {
   StartSessionRequestSchema,
   StartSessionResponseSchema,
@@ -58,9 +58,9 @@ export const onboardingApi = {
   async startSession(data: StartSessionRequest): Promise<StartSessionResponse> {
     const validatedRequest = StartSessionRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/start", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/start", {
+      json: validatedRequest,
+    });
 
     return StartSessionResponseSchema.parse(response);
   },
@@ -76,9 +76,7 @@ export const onboardingApi = {
   async sendEmailOTP(data: SendOTPRequest): Promise<void> {
     const validatedRequest = SendOTPRequestSchema.parse(data);
 
-    await apiClient.post("v1/onboarding/email/otp", {
-      json: validatedRequest,
-    });
+    await postVoid("v1/onboarding/email/otp", { json: validatedRequest });
   },
 
   // ==========================================================================
@@ -93,9 +91,9 @@ export const onboardingApi = {
   async verifyEmail(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
     const validatedRequest = VerifyEmailRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/email/verify", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/email/verify", {
+      json: validatedRequest,
+    });
 
     return VerifyEmailResponseSchema.parse(response);
   },
@@ -112,9 +110,9 @@ export const onboardingApi = {
   async oauthGoogle(data: OAuthGoogleRequest): Promise<OAuthGoogleResponse> {
     const validatedRequest = OAuthGoogleRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/oauth/google", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/oauth/google", {
+      json: validatedRequest,
+    });
 
     return OAuthGoogleResponseSchema.parse(response);
   },
@@ -131,9 +129,9 @@ export const onboardingApi = {
   async setBusiness(data: SetBusinessRequest): Promise<SetBusinessResponse> {
     const validatedRequest = SetBusinessRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/business", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/business", {
+      json: validatedRequest,
+    });
 
     return SetBusinessResponseSchema.parse(response);
   },
@@ -150,9 +148,9 @@ export const onboardingApi = {
   async startPayment(data: PaymentStartRequest): Promise<PaymentStartResponse> {
     const validatedRequest = PaymentStartRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/payment/start", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/payment/start", {
+      json: validatedRequest,
+    });
 
     return PaymentStartResponseSchema.parse(response);
   },
@@ -171,9 +169,9 @@ export const onboardingApi = {
   ): Promise<CompleteOnboardingResponse> {
     const validatedRequest = CompleteOnboardingRequestSchema.parse(data);
 
-    const response = await apiClient
-      .post("v1/onboarding/complete", { json: validatedRequest })
-      .json();
+    const response = await post<unknown>("v1/onboarding/complete", {
+      json: validatedRequest,
+    });
 
     return CompleteOnboardingResponseSchema.parse(response);
   },
@@ -188,7 +186,7 @@ export const onboardingApi = {
    * @throws HTTPError with parsed ProblemDetails on failure
    */
   async listPlans(): Promise<Plan[]> {
-    const response = await apiClient.get("v1/billing/plans").json();
+    const response = await get<unknown>("v1/billing/plans");
 
     return z.array(PlanSchema).parse(response);
   },
@@ -204,9 +202,7 @@ export const onboardingApi = {
    * @throws HTTPError with parsed ProblemDetails on failure
    */
   async getPlan(descriptor: string): Promise<Plan> {
-    const response = await apiClient
-      .get(`v1/billing/plans/${descriptor}`)
-      .json();
+    const response = await get<unknown>(`v1/billing/plans/${descriptor}`);
 
     return PlanSchema.parse(response);
   },
