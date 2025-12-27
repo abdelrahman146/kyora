@@ -19,7 +19,7 @@ import { translateErrorAsync } from "@/lib/translateError";
  *
  * Flow:
  * 1. User provides business details
- * 2. POST /api/onboarding/business
+ * 2. POST /v1/onboarding/business
  * 3. Navigate to /onboarding/payment (paid) or /onboarding/complete (free)
  */
 
@@ -77,7 +77,7 @@ export default function BusinessSetupPage() {
   // Redirect if not verified
   useEffect(() => {
     if (!sessionToken || stage !== "identity_verified") {
-      navigate("/onboarding/verify", { replace: true });
+      void navigate("/onboarding/verify", { replace: true });
     }
   }, [sessionToken, stage, navigate]);
 
@@ -97,9 +97,9 @@ export default function BusinessSetupPage() {
   useEffect(() => {
     if (descriptor) {
       if (descriptor.length < 3) {
-        setDescriptorError(t("onboarding.business.descriptorTooShort"));
+        setDescriptorError(t("onboarding:business.descriptorTooShort"));
       } else if (!/^[a-z0-9-]+$/.test(descriptor)) {
-        setDescriptorError(t("onboarding.business.descriptorInvalidFormat"));
+        setDescriptorError(t("onboarding:business.descriptorInvalidFormat"));
       } else {
         setDescriptorError("");
       }
@@ -108,17 +108,16 @@ export default function BusinessSetupPage() {
     }
   }, [descriptor, t]);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitBusiness = async () => {
     setError("");
 
     if (!businessName.trim()) {
-      setError(t("onboarding.business.nameRequired"));
+      setError(t("onboarding:business.nameRequired"));
       return;
     }
 
     if (!descriptor.trim()) {
-      setError(t("onboarding.business.descriptorRequired"));
+      setError(t("onboarding:business.descriptorRequired"));
       return;
     }
 
@@ -128,12 +127,12 @@ export default function BusinessSetupPage() {
     }
 
     if (!country) {
-      setError(t("onboarding.business.countryRequired"));
+      setError(t("onboarding:business.countryRequired"));
       return;
     }
 
     if (!currency) {
-      setError(t("onboarding.business.currencyRequired"));
+      setError(t("onboarding:business.currencyRequired"));
       return;
     }
 
@@ -154,9 +153,9 @@ export default function BusinessSetupPage() {
 
       // Navigate to payment if paid plan, otherwise complete
       if (isPaidPlan) {
-        navigate("/onboarding/payment");
+        void navigate("/onboarding/payment");
       } else {
-        navigate("/onboarding/complete");
+        void navigate("/onboarding/complete");
       }
     } catch (err) {
       const message = await translateErrorAsync(err, t);
@@ -166,8 +165,13 @@ export default function BusinessSetupPage() {
     }
   };
 
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    void submitBusiness();
+  };
+
   return (
-    <OnboardingLayout currentStep={2} totalSteps={5}>
+    <OnboardingLayout currentStep={3} totalSteps={5}>
       <div className="max-w-2xl mx-auto">
         <div className="card bg-base-100 border border-base-300 shadow-xl">
           <div className="card-body">
@@ -179,10 +183,10 @@ export default function BusinessSetupPage() {
                 </div>
               </div>
               <h2 className="text-2xl font-bold">
-                {t("onboarding.business.title")}
+                {t("onboarding:business.title")}
               </h2>
               <p className="text-base-content/70 mt-2">
-                {t("onboarding.business.subtitle")}
+                {t("onboarding:business.subtitle")}
               </p>
             </div>
 
@@ -191,7 +195,7 @@ export default function BusinessSetupPage() {
               <div className="form-control">
                 <label htmlFor="businessName" className="label">
                   <span className="label-text font-medium">
-                    {t("onboarding.business.name")}
+                    {t("onboarding:business.name")}
                   </span>
                   <span className="label-text-alt text-error">*</span>
                 </label>
@@ -199,15 +203,17 @@ export default function BusinessSetupPage() {
                   type="text"
                   id="businessName"
                   value={businessName}
-                  onChange={(e) => setBusinessName(e.target.value)}
-                  placeholder={t("onboarding.business.namePlaceholder")}
+                  onChange={(e) => {
+                    setBusinessName(e.target.value);
+                  }}
+                  placeholder={t("onboarding:business.namePlaceholder")}
                   className="input input-bordered"
                   required
                   disabled={isSubmitting}
                 />
                 <label className="label">
                   <span className="label-text-alt">
-                    {t("onboarding.business.nameHint")}
+                    {t("onboarding:business.nameHint")}
                   </span>
                 </label>
               </div>
@@ -216,7 +222,7 @@ export default function BusinessSetupPage() {
               <div className="form-control">
                 <label htmlFor="descriptor" className="label">
                   <span className="label-text font-medium">
-                    {t("onboarding.business.descriptor")}
+                    {t("onboarding:business.descriptor")}
                   </span>
                   <span className="label-text-alt text-error">*</span>
                 </label>
@@ -224,8 +230,10 @@ export default function BusinessSetupPage() {
                   type="text"
                   id="descriptor"
                   value={descriptor}
-                  onChange={(e) => setDescriptor(e.target.value.toLowerCase())}
-                  placeholder={t("onboarding.business.descriptorPlaceholder")}
+                  onChange={(e) => {
+                    setDescriptor(e.target.value.toLowerCase());
+                  }}
+                  placeholder={t("onboarding:business.descriptorPlaceholder")}
                   className={`input input-bordered ${
                     descriptorError ? "input-error" : ""
                   }`}
@@ -237,7 +245,7 @@ export default function BusinessSetupPage() {
                 />
                 <label className="label">
                   <span className={`label-text-alt ${descriptorError ? "text-error" : ""}`}>
-                    {descriptorError || t("onboarding.business.descriptorHint")}
+                    {descriptorError || t("onboarding:business.descriptorHint")}
                   </span>
                 </label>
               </div>
@@ -249,20 +257,22 @@ export default function BusinessSetupPage() {
                   <label htmlFor="country" className="label">
                     <span className="label-text font-medium flex items-center gap-2">
                       <Globe className="w-4 h-4" />
-                      {t("onboarding.business.country")}
+                      {t("onboarding:business.country")}
                     </span>
                     <span className="label-text-alt text-error">*</span>
                   </label>
                   <select
                     id="country"
                     value={country}
-                    onChange={(e) => setCountry(e.target.value)}
+                    onChange={(e) => {
+                      setCountry(e.target.value);
+                    }}
                     className="select select-bordered"
                     required
                     disabled={isSubmitting}
                   >
                     <option value="">
-                      {t("onboarding.business.selectCountry")}
+                      {t("onboarding:business.selectCountry")}
                     </option>
                     {COUNTRIES.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -277,20 +287,22 @@ export default function BusinessSetupPage() {
                   <label htmlFor="currency" className="label">
                     <span className="label-text font-medium flex items-center gap-2">
                       <DollarSign className="w-4 h-4" />
-                      {t("onboarding.business.currency")}
+                      {t("onboarding:business.currency")}
                     </span>
                     <span className="label-text-alt text-error">*</span>
                   </label>
                   <select
                     id="currency"
                     value={currency}
-                    onChange={(e) => setCurrency(e.target.value)}
+                    onChange={(e) => {
+                      setCurrency(e.target.value);
+                    }}
                     className="select select-bordered"
                     required
                     disabled={isSubmitting}
                   >
                     <option value="">
-                      {t("onboarding.business.selectCurrency")}
+                      {t("onboarding:business.selectCurrency")}
                     </option>
                     {CURRENCIES.map((c) => (
                       <option key={c.code} value={c.code}>
@@ -311,11 +323,13 @@ export default function BusinessSetupPage() {
               <div className="flex gap-3">
                 <button
                   type="button"
-                  onClick={() => navigate("/onboarding/verify")}
+                  onClick={() => {
+                    void navigate("/onboarding/verify");
+                  }}
                   className="btn btn-ghost"
                   disabled={isSubmitting}
                 >
-                  {t("common.back")}
+                  {t("common:back")}
                 </button>
                 <button
                   type="submit"
@@ -325,10 +339,10 @@ export default function BusinessSetupPage() {
                   {isSubmitting ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      {t("common.loading")}
+                      {t("common:loading")}
                     </>
                   ) : (
-                    t("common.continue")
+                    t("common:continue")
                   )}
                 </button>
               </div>

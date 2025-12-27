@@ -1,7 +1,6 @@
 import { type ReactNode } from "react";
 import { useTranslation } from "react-i18next";
 import { useLanguage } from "@/hooks/useLanguage";
-import { cn } from "@/lib/utils";
 
 interface OnboardingLayoutProps {
   children: ReactNode;
@@ -100,17 +99,17 @@ export function OnboardingLayout({
           <div className="container mx-auto px-4 py-3 max-w-7xl">
             <div className="flex items-center gap-3">
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
-                {t("onboarding.progress.step", { current: currentStep, total: totalSteps })}
+                {t("onboarding:progress.step", { current: currentStep, total: totalSteps })}
               </span>
               <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
                 <div
                   className="h-full bg-linear-to-r from-primary to-secondary transition-all duration-500 ease-out rounded-full"
-                  style={{ width: `${progressPercentage}%` }}
+                  style={{ width: `${progressPercentage.toString()}%` }}
                   role="progressbar"
                   aria-valuenow={currentStep}
                   aria-valuemin={0}
                   aria-valuemax={totalSteps}
-                  aria-label={t("onboarding.progress.label", { percentage: Math.round(progressPercentage) })}
+                  aria-label={t("onboarding:progress.label", { percentage: Math.round(progressPercentage) })}
                 />
               </div>
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
@@ -122,7 +121,7 @@ export function OnboardingLayout({
       )}
 
       {/* Main Content */}
-      <main className="flex-1 container mx-auto px-4 py-8 max-w-4xl">
+      <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
           <div className="w-full">
             {children}

@@ -3,6 +3,7 @@ package onboarding
 import (
 	"net/http"
 
+	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/gin-gonic/gin"
@@ -22,6 +23,37 @@ type startRequest struct {
 	PlanDescriptor string `json:"planDescriptor" binding:"required"`
 }
 
+type startResponse struct {
+	SessionToken string       `json:"sessionToken"`
+	Stage        SessionStage `json:"stage"`
+	IsPaid       bool         `json:"isPaid"`
+}
+
+type stageResponse struct {
+	Stage SessionStage `json:"stage"`
+}
+
+type paymentStartResponse struct {
+	CheckoutURL string `json:"checkoutUrl"`
+}
+
+type completeResponse struct {
+	User         account.User `json:"user"`
+	Token        string       `json:"token"`
+	RefreshToken string       `json:"refreshToken"`
+}
+
+// Start initializes an onboarding session.
+//
+// @Summary      Start onboarding session
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body startRequest true "Start session request"
+// @Success      200 {object} startResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/start [post]
 func (h *HttpHandler) Start(c *gin.Context) {
 	var req startRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -39,6 +71,18 @@ type otpRequest struct {
 	SessionToken string `json:"sessionToken" binding:"required"`
 }
 
+// SendEmailOTP generates and sends an OTP to the user's email.
+//
+// @Summary      Send email OTP
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body otpRequest true "OTP request"
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/email/otp [post]
 func (h *HttpHandler) SendEmailOTP(c *gin.Context) {
 	var req otpRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -59,6 +103,18 @@ type verifyEmailRequest struct {
 	Password     string `json:"password" binding:"required,min=8"`
 }
 
+// VerifyEmail verifies an email OTP and stages user profile data.
+//
+// @Summary      Verify email with OTP
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body verifyEmailRequest true "Verify email request"
+// @Success      200 {object} stageResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/email/verify [post]
 func (h *HttpHandler) VerifyEmail(c *gin.Context) {
 	var req verifyEmailRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -77,6 +133,18 @@ type oauthRequest struct {
 	Code         string `json:"code" binding:"required"`
 }
 
+// OAuthGoogle exchanges a Google OAuth code for an identity and stages it on the session.
+//
+// @Summary      Verify identity with Google OAuth
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body oauthRequest true "OAuth Google request"
+// @Success      200 {object} stageResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/oauth/google [post]
 func (h *HttpHandler) OAuthGoogle(c *gin.Context) {
 	var req oauthRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -98,6 +166,19 @@ type businessRequest struct {
 	Currency     string `json:"currency" binding:"required,len=3"`
 }
 
+// SetBusiness stages business details for the session.
+//
+// @Summary      Set business details
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body businessRequest true "Business request"
+// @Success      200 {object} stageResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      409 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/business [post]
 func (h *HttpHandler) SetBusiness(c *gin.Context) {
 	var req businessRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -117,6 +198,18 @@ type paymentStartRequest struct {
 	CancelURL    string `json:"cancelUrl" binding:"required,url"`
 }
 
+// PaymentStart creates a Stripe checkout session for paid tiers.
+//
+// @Summary      Start payment
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body paymentStartRequest true "Payment start request"
+// @Success      200 {object} paymentStartResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/payment/start [post]
 func (h *HttpHandler) PaymentStart(c *gin.Context) {
 	var req paymentStartRequest
 	if err := request.ValidBody(c, &req); err != nil {
@@ -134,6 +227,19 @@ type completeRequest struct {
 	SessionToken string `json:"sessionToken" binding:"required"`
 }
 
+// Complete finalizes the onboarding and returns JWT tokens.
+//
+// @Summary      Complete onboarding
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body completeRequest true "Complete request"
+// @Success      200 {object} completeResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/complete [post]
 func (h *HttpHandler) Complete(c *gin.Context) {
 	var req completeRequest
 	if err := request.ValidBody(c, &req); err != nil {

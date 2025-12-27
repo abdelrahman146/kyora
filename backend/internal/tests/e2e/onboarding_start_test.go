@@ -7,7 +7,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/tests/testutils"
 	"github.com/stretchr/testify/suite"
-) // OnboardingStartSuite tests POST /api/onboarding/start endpoint
+) // OnboardingStartSuite tests POST /v1/onboarding/start endpoint
 type OnboardingStartSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -73,7 +73,7 @@ func (s *OnboardingStartSuite) TestStart_ValidFreePlan() {
 				"email":          tt.email,
 				"planDescriptor": tt.planDescriptor,
 			}
-			resp, err := s.client.Post("/api/onboarding/start", payload)
+			resp, err := s.client.Post("/v1/onboarding/start", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(tt.expectedStatus, resp.StatusCode)
@@ -94,7 +94,7 @@ func (s *OnboardingStartSuite) TestStart_ValidPaidPlan() {
 		"email":          "paiduser@example.com",
 		"planDescriptor": "professional",
 	}
-	resp, err := s.client.Post("/api/onboarding/start", payload)
+	resp, err := s.client.Post("/v1/onboarding/start", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -119,7 +119,7 @@ func (s *OnboardingStartSuite) TestStart_ResumeExistingSession() {
 		"email":          "resume@example.com",
 		"planDescriptor": "starter",
 	}
-	resp1, err := s.client.Post("/api/onboarding/start", payload)
+	resp1, err := s.client.Post("/v1/onboarding/start", payload)
 	s.NoError(err)
 	defer resp1.Body.Close()
 	s.Equal(http.StatusOK, resp1.StatusCode)
@@ -129,7 +129,7 @@ func (s *OnboardingStartSuite) TestStart_ResumeExistingSession() {
 	token1 := result1["sessionToken"].(string)
 
 	// Create another session with same email - should resume
-	resp2, err := s.client.Post("/api/onboarding/start", payload)
+	resp2, err := s.client.Post("/v1/onboarding/start", payload)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusOK, resp2.StatusCode)
@@ -152,7 +152,7 @@ func (s *OnboardingStartSuite) TestStart_EmailAlreadyRegistered() {
 		"email":          "existing@example.com",
 		"planDescriptor": "starter",
 	}
-	resp, err := s.client.Post("/api/onboarding/start", payload)
+	resp, err := s.client.Post("/v1/onboarding/start", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusConflict, resp.StatusCode, "should reject already registered email")
@@ -178,7 +178,7 @@ func (s *OnboardingStartSuite) TestStart_InvalidEmail() {
 				"email":          tt.email,
 				"planDescriptor": "starter",
 			}
-			resp, err := s.client.Post("/api/onboarding/start", payload)
+			resp, err := s.client.Post("/v1/onboarding/start", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -201,7 +201,7 @@ func (s *OnboardingStartSuite) TestStart_InvalidPlan() {
 				"email":          "test@example.com",
 				"planDescriptor": tt.planDescriptor,
 			}
-			resp, err := s.client.Post("/api/onboarding/start", payload)
+			resp, err := s.client.Post("/v1/onboarding/start", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -221,7 +221,7 @@ func (s *OnboardingStartSuite) TestStart_MissingFields() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/start", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/start", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -245,7 +245,7 @@ func (s *OnboardingStartSuite) TestStart_SQLInjectionAttempts() {
 				"email":          injection,
 				"planDescriptor": "starter",
 			}
-			resp, err := s.client.Post("/api/onboarding/start", payload)
+			resp, err := s.client.Post("/v1/onboarding/start", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			// Should reject as invalid email or handle safely
@@ -267,7 +267,7 @@ func (s *OnboardingStartSuite) TestStart_XSSAttempts() {
 			"email":          xss,
 			"planDescriptor": "starter",
 		}
-		resp, err := s.client.Post("/api/onboarding/start", payload)
+		resp, err := s.client.Post("/v1/onboarding/start", payload)
 		s.NoError(err)
 		defer resp.Body.Close()
 		// Should reject as invalid email or sanitize

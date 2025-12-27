@@ -23,14 +23,14 @@ import { translateErrorAsync } from "@/lib/translateError";
  * 1. Send OTP to email
  * 2. User enters 6-digit code
  * 3. User provides first name, last name, password
- * 4. POST /api/onboarding/email/verify
+ * 4. POST /v1/onboarding/email/verify
  * 5. Navigate to /onboarding/business
  *
  * Alternative Flow (Google OAuth):
  * 1. User clicks "Continue with Google"
  * 2. Redirect to Google OAuth
  * 3. Callback with code
- * 4. POST /api/onboarding/oauth/google
+ * 4. POST /v1/onboarding/oauth/google
  * 5. Navigate to /onboarding/business
  */
 export default function VerifyEmailPage() {
@@ -60,7 +60,7 @@ export default function VerifyEmailPage() {
   // Redirect if no session token
   useEffect(() => {
     if (!sessionToken || !email) {
-      navigate("/onboarding/plan", { replace: true });
+      void navigate("/onboarding/plan", { replace: true });
     }
   }, [sessionToken, email, navigate]);
 
@@ -74,14 +74,19 @@ export default function VerifyEmailPage() {
 
   // Start resend cooldown
   useEffect(() => {
+    let timer: ReturnType<typeof setTimeout> | undefined;
+
     if (resendCooldown > 0) {
-      const timer = setTimeout(() => {
+      timer = setTimeout(() => {
         setResendCooldown(resendCooldown - 1);
       }, 1000);
-      return () => clearTimeout(timer);
     } else {
       setCanResend(true);
     }
+
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
   }, [resendCooldown]);
 
   const sendOTP = async () => {
@@ -91,7 +96,7 @@ export default function VerifyEmailPage() {
       setError("");
       setIsSubmitting(true);
       await onboardingApi.sendEmailOTP({ sessionToken });
-      setSuccess(t("onboarding.verify.otpSent"));
+      setSuccess(t("onboarding:verify.otpSent"));
       setCanResend(false);
       setResendCooldown(30);
     } catch (err) {
@@ -133,10 +138,10 @@ export default function VerifyEmailPage() {
     }
   };
 
-  const handleVerifyOtp = async () => {
+  const handleVerifyOtp = () => {
     const code = otpCode.join("");
     if (code.length !== 6) {
-      setError(t("onboarding.verify.invalidCode"));
+      setError(t("onboarding:verify.invalidCode"));
       return;
     }
 
@@ -145,17 +150,16 @@ export default function VerifyEmailPage() {
     setSuccess("");
   };
 
-  const handleSubmitProfile = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const submitProfile = async () => {
     setError("");
 
     if (password !== confirmPassword) {
-      setError(t("onboarding.verify.passwordMismatch"));
+      setError(t("onboarding:verify.passwordMismatch"));
       return;
     }
 
     if (password.length < 8) {
-      setError(t("onboarding.verify.passwordTooShort"));
+      setError(t("onboarding:verify.passwordTooShort"));
       return;
     }
 
@@ -173,7 +177,7 @@ export default function VerifyEmailPage() {
       });
 
       markEmailVerified();
-      navigate("/onboarding/business");
+      void navigate("/onboarding/business");
     } catch (err) {
       const message = await translateErrorAsync(err, t);
       setError(message);
@@ -182,13 +186,18 @@ export default function VerifyEmailPage() {
     }
   };
 
+  const handleSubmitProfile: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault();
+    void submitProfile();
+  };
+
   const handleGoogleOAuth = async () => {
     try {
       setIsSubmitting(true);
       const { url } = await authApi.getGoogleAuthUrl();
       
       // Store session token in sessionStorage for callback
-      sessionStorage.setItem("kyora_onboarding_google_session", sessionToken || "");
+      sessionStorage.setItem("kyora_onboarding_google_session", sessionToken ?? "");
       
       // Redirect to Google OAuth
       window.location.href = url;
@@ -200,7 +209,7 @@ export default function VerifyEmailPage() {
   };
 
   return (
-    <OnboardingLayout currentStep={1} totalSteps={5}>
+    <OnboardingLayout currentStep={2} totalSteps={5}>
       <div className="max-w-lg mx-auto">
         {step === "otp" ? (
           <div className="card bg-base-100 border border-base-300 shadow-xl">
@@ -213,10 +222,10 @@ export default function VerifyEmailPage() {
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold">
-                  {t("onboarding.verify.title")}
+                  {t("onboarding:verify.title")}
                 </h2>
                 <p className="text-base-content/70 mt-2">
-                  {t("onboarding.verify.subtitle", { email })}
+                  {t("onboarding:verify.subtitle", { email })}
                 </p>
               </div>
 
@@ -247,8 +256,12 @@ export default function VerifyEmailPage() {
                     inputMode="numeric"
                     maxLength={1}
                     value={digit}
-                    onChange={(e) => handleOtpChange(index, e.target.value)}
-                    onKeyDown={(e) => handleOtpKeyDown(index, e)}
+                    onChange={(e) => {
+                      handleOtpChange(index, e.target.value);
+                    }}
+                    onKeyDown={(e) => {
+                      handleOtpKeyDown(index, e);
+                    }}
                     onPaste={index === 0 ? handleOtpPaste : undefined}
                     className="input input-bordered w-12 h-14 text-center text-xl font-bold"
                     disabled={isSubmitting}
@@ -262,28 +275,32 @@ export default function VerifyEmailPage() {
                 disabled={otpCode.join("").length !== 6 || isSubmitting}
                 className="btn btn-primary btn-block mb-4"
               >
-                {t("onboarding.verify.verifyCode")}
+                {t("onboarding:verify.verifyCode")}
               </button>
 
               {/* Resend OTP */}
               <div className="text-center">
                 <button
-                  onClick={sendOTP}
+                  onClick={() => {
+                    void sendOTP();
+                  }}
                   disabled={!canResend || isSubmitting}
                   className="btn btn-ghost btn-sm"
                 >
                   {canResend
-                    ? t("onboarding.verify.resendCode")
-                    : t("onboarding.verify.resendIn", { seconds: resendCooldown })}
+                    ? t("onboarding:verify.resendCode")
+                    : t("onboarding:verify.resendIn", { seconds: resendCooldown })}
                 </button>
               </div>
 
               {/* Divider */}
-              <div className="divider">{t("common.or")}</div>
+              <div className="divider">{t("common:or")}</div>
 
               {/* Google OAuth */}
               <button
-                onClick={handleGoogleOAuth}
+                onClick={() => {
+                  void handleGoogleOAuth();
+                }}
                 disabled={isSubmitting}
                 className="btn btn-outline btn-block gap-2"
               >
@@ -305,7 +322,7 @@ export default function VerifyEmailPage() {
                     d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
                   />
                 </svg>
-                {t("onboarding.verify.continueWithGoogle")}
+                {t("onboarding:verify.continueWithGoogle")}
               </button>
             </div>
           </div>
@@ -313,7 +330,7 @@ export default function VerifyEmailPage() {
           <div className="card bg-base-100 border border-base-300 shadow-xl">
             <div className="card-body">
               <h2 className="text-2xl font-bold mb-4">
-                {t("onboarding.verify.completeProfile")}
+                {t("onboarding:verify.completeProfile")}
               </h2>
 
               <form onSubmit={handleSubmitProfile} className="space-y-4">
@@ -321,14 +338,16 @@ export default function VerifyEmailPage() {
                 <div className="form-control">
                   <label htmlFor="firstName" className="label">
                     <span className="label-text font-medium">
-                      {t("common.firstName")}
+                      {t("common:firstName")}
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    id="firstName"
-                    value={firstName}
-                    onChange={(e) => setFirstName(e.target.value)}
+                    <input
+                      type="text"
+                      id="firstName"
+                      value={firstName}
+                      onChange={(e) => {
+                        setFirstName(e.target.value);
+                      }}
                     className="input input-bordered"
                     required
                     disabled={isSubmitting}
@@ -339,14 +358,16 @@ export default function VerifyEmailPage() {
                 <div className="form-control">
                   <label htmlFor="lastName" className="label">
                     <span className="label-text font-medium">
-                      {t("common.lastName")}
+                      {t("common:lastName")}
                     </span>
                   </label>
-                  <input
-                    type="text"
-                    id="lastName"
-                    value={lastName}
-                    onChange={(e) => setLastName(e.target.value)}
+                    <input
+                      type="text"
+                      id="lastName"
+                      value={lastName}
+                      onChange={(e) => {
+                        setLastName(e.target.value);
+                      }}
                     className="input input-bordered"
                     required
                     disabled={isSubmitting}
@@ -357,14 +378,16 @@ export default function VerifyEmailPage() {
                 <div className="form-control">
                   <label htmlFor="password" className="label">
                     <span className="label-text font-medium">
-                      {t("common.password")}
+                      {t("common:password")}
                     </span>
                   </label>
-                  <input
-                    type="password"
-                    id="password"
-                    value={password}
-                    onChange={(e) => setPassword(e.target.value)}
+                    <input
+                      type="password"
+                      id="password"
+                      value={password}
+                      onChange={(e) => {
+                        setPassword(e.target.value);
+                      }}
                     className="input input-bordered"
                     minLength={8}
                     required
@@ -372,7 +395,7 @@ export default function VerifyEmailPage() {
                   />
                   <label className="label">
                     <span className="label-text-alt">
-                      {t("onboarding.verify.passwordHint")}
+                      {t("onboarding:verify.passwordHint")}
                     </span>
                   </label>
                 </div>
@@ -381,14 +404,16 @@ export default function VerifyEmailPage() {
                 <div className="form-control">
                   <label htmlFor="confirmPassword" className="label">
                     <span className="label-text font-medium">
-                      {t("common.confirmPassword")}
+                      {t("common:confirmPassword")}
                     </span>
                   </label>
-                  <input
-                    type="password"
-                    id="confirmPassword"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
+                    <input
+                      type="password"
+                      id="confirmPassword"
+                      value={confirmPassword}
+                      onChange={(e) => {
+                        setConfirmPassword(e.target.value);
+                      }}
                     className="input input-bordered"
                     minLength={8}
                     required
@@ -410,10 +435,10 @@ export default function VerifyEmailPage() {
                   {isSubmitting ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      {t("common.loading")}
+                      {t("common:loading")}
                     </>
                   ) : (
-                    t("common.continue")
+                    t("common:continue")
                   )}
                 </button>
               </form>

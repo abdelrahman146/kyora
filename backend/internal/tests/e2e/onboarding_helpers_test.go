@@ -142,7 +142,7 @@ func (h *OnboardingTestHelper) CreateOnboardingSession(email, planDescriptor str
 		"email":          email,
 		"planDescriptor": planDescriptor,
 	}
-	resp, err := h.client.Post("/api/onboarding/start", payload)
+	resp, err := h.client.Post("/v1/onboarding/start", payload)
 	if err != nil {
 		return "", err
 	}

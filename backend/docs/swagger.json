@@ -4861,6 +4861,78 @@
                 }
             }
         },
+        "/v1/businesses/{businessDescriptor}/assets/{assetId}": {
+            "delete": {
+                "description": "Deletes an uploaded asset if it belongs to the business and is not referenced.",
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Delete uploaded asset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/businesses/{businessDescriptor}/customers": {
             "get": {
                 "security": [
@@ -8845,6 +8917,366 @@
                 }
             }
         },
+        "/v1/onboarding/business": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Set business details",
+                "parameters": [
+                    {
+                        "description": "Business request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.businessRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.stageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/complete": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Complete onboarding",
+                "parameters": [
+                    {
+                        "description": "Complete request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.completeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.completeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/email/otp": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Send email OTP",
+                "parameters": [
+                    {
+                        "description": "OTP request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.otpRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/email/verify": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Verify email with OTP",
+                "parameters": [
+                    {
+                        "description": "Verify email request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.verifyEmailRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.stageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/oauth/google": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Verify identity with Google OAuth",
+                "parameters": [
+                    {
+                        "description": "OAuth Google request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.oauthRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.stageResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/payment/start": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Start payment",
+                "parameters": [
+                    {
+                        "description": "Payment start request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.paymentStartRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.paymentStartResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/onboarding/start": {
+            "post": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Start onboarding session",
+                "parameters": [
+                    {
+                        "description": "Start session request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.startRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.startResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/public/assets/{assetId}": {
             "get": {
                 "description": "Serves public assets. For local provider, streams bytes. For S3, redirects to the public URL.",
@@ -12166,6 +12598,7 @@
             "required": [
                 "code",
                 "costPrice",
+                "photos",
                 "salePrice",
                 "stockQuantity",
                 "stockQuantityAlert"
@@ -12176,6 +12609,13 @@
                 },
                 "costPrice": {
                     "type": "number"
+                },
+                "photos": {
+                    "type": "array",
+                    "maxItems": 10,
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "salePrice": {
                     "type": "number"
@@ -12754,6 +13194,206 @@
                 "valid": {
                     "description": "Valid is true if String is not NULL",
                     "type": "boolean"
+                }
+            }
+        },
+        "onboarding.SessionStage": {
+            "type": "string",
+            "enum": [
+                "plan_selected",
+                "identity_pending",
+                "identity_verified",
+                "business_staged",
+                "payment_pending",
+                "payment_confirmed",
+                "ready_to_commit",
+                "committed"
+            ],
+            "x-enum-comments": {
+                "StageCommitted": "finalized \u0026 removed logically",
+                "StageIdentityPending": "after plan, before verification",
+                "StagePaymentConfirmed": "stripe checkout finished",
+                "StagePaymentPending": "only for paid tiers",
+                "StageReadyToCommit": "all prerequisites satisfied"
+            },
+            "x-enum-varnames": [
+                "StagePlanSelected",
+                "StageIdentityPending",
+                "StageIdentityVerified",
+                "StageBusinessStaged",
+                "StagePaymentPending",
+                "StagePaymentConfirmed",
+                "StageReadyToCommit",
+                "StageCommitted"
+            ]
+        },
+        "onboarding.businessRequest": {
+            "type": "object",
+            "required": [
+                "country",
+                "currency",
+                "descriptor",
+                "name",
+                "sessionToken"
+            ],
+            "properties": {
+                "country": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "descriptor": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sessionToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.completeRequest": {
+            "type": "object",
+            "required": [
+                "sessionToken"
+            ],
+            "properties": {
+                "sessionToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.completeResponse": {
+            "type": "object",
+            "properties": {
+                "refreshToken": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/account.User"
+                }
+            }
+        },
+        "onboarding.oauthRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "sessionToken"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "sessionToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.otpRequest": {
+            "type": "object",
+            "required": [
+                "sessionToken"
+            ],
+            "properties": {
+                "sessionToken": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.paymentStartRequest": {
+            "type": "object",
+            "required": [
+                "cancelUrl",
+                "sessionToken",
+                "successUrl"
+            ],
+            "properties": {
+                "cancelUrl": {
+                    "type": "string"
+                },
+                "sessionToken": {
+                    "type": "string"
+                },
+                "successUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.paymentStartResponse": {
+            "type": "object",
+            "properties": {
+                "checkoutUrl": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.stageResponse": {
+            "type": "object",
+            "properties": {
+                "stage": {
+                    "$ref": "#/definitions/onboarding.SessionStage"
+                }
+            }
+        },
+        "onboarding.startRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "planDescriptor"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "planDescriptor": {
+                    "type": "string"
+                }
+            }
+        },
+        "onboarding.startResponse": {
+            "type": "object",
+            "properties": {
+                "isPaid": {
+                    "type": "boolean"
+                },
+                "sessionToken": {
+                    "type": "string"
+                },
+                "stage": {
+                    "$ref": "#/definitions/onboarding.SessionStage"
+                }
+            }
+        },
+        "onboarding.verifyEmailRequest": {
+            "type": "object",
+            "required": [
+                "code",
+                "firstName",
+                "lastName",
+                "password",
+                "sessionToken"
+            ],
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "password": {
+                    "type": "string",
+                    "minLength": 8
+                },
+                "sessionToken": {
+                    "type": "string"
                 }
             }
         },

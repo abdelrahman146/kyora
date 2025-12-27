@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingEmailVerifySuite tests POST /api/onboarding/email/verify endpoint
+// OnboardingEmailVerifySuite tests POST /v1/onboarding/email/verify endpoint
 type OnboardingEmailVerifySuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -41,7 +41,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_Success() {
 		"firstName":    "John",
 		"lastName":     "Doe",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -85,7 +85,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_InvalidOTP() {
 				"firstName":    "John",
 				"lastName":     "Doe",
 			}
-			resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+			resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.True(resp.StatusCode >= 400, "should reject invalid OTP: %s", tt.name)
@@ -109,7 +109,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_ExpiredOTP() {
 		"firstName":    "John",
 		"lastName":     "Doe",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -144,7 +144,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_WeakPasswords() {
 				"firstName":    "John",
 				"lastName":     "Doe",
 			}
-			resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+			resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			if tt.shouldFail {
@@ -199,7 +199,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_MissingFields() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/email/verify", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/email/verify", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode, "should require all fields: %s", tt.name)
@@ -215,7 +215,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_InvalidToken() {
 		"firstName":    "John",
 		"lastName":     "Doe",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -233,7 +233,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_InvalidStage() {
 		"firstName":    "John",
 		"lastName":     "Doe",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -259,7 +259,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_XSSAttempts() {
 			"firstName":    xss,
 			"lastName":     "Doe",
 		}
-		resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+		resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 		s.NoError(err)
 		defer resp.Body.Close()
 
@@ -296,7 +296,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_NameValidation() {
 				"firstName":    tt.firstName,
 				"lastName":     tt.lastName,
 			}
-			resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+			resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 
@@ -322,7 +322,7 @@ func (s *OnboardingEmailVerifySuite) TestVerifyEmail_ExpiredSession() {
 		"firstName":    "John",
 		"lastName":     "Doe",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/verify", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/verify", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)

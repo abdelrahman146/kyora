@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingPaymentStartSuite tests POST /api/onboarding/payment/start endpoint.
+// OnboardingPaymentStartSuite tests POST /v1/onboarding/payment/start endpoint.
 type OnboardingPaymentStartSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -76,7 +76,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/payment/start", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/payment/start", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(tt.expectedStatus, resp.StatusCode)
@@ -92,7 +92,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_ValidationErrors() {
 }
 
 func (s *OnboardingPaymentStartSuite) TestPaymentStart_SessionNotFound() {
-	resp, err := s.client.Post("/api/onboarding/payment/start", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/payment/start", map[string]interface{}{
 		"sessionToken": "sess_does_not_exist",
 		"successUrl":   "https://example.com/success",
 		"cancelUrl":    "https://example.com/cancel",
@@ -107,7 +107,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_FreePlan_ReturnsEmptyChec
 	s.NoError(err)
 	s.NotEmpty(token)
 
-	resp, err := s.client.Post("/api/onboarding/payment/start", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/payment/start", map[string]interface{}{
 		"sessionToken": token,
 		"successUrl":   "https://example.com/success",
 		"cancelUrl":    "https://example.com/cancel",
@@ -142,7 +142,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingPaymentStartSuite tests POST /api/onboarding/payment/start endpoint.
+// OnboardingPaymentStartSuite tests POST /v1/onboarding/payment/start endpoint.
 type OnboardingPaymentStartSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -210,7 +210,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/payment/start", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/payment/start", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(tt.expectedStatus, resp.StatusCode)
@@ -226,7 +226,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_ValidationErrors() {
 }
 
 func (s *OnboardingPaymentStartSuite) TestPaymentStart_SessionNotFound() {
-	resp, err := s.client.Post("/api/onboarding/payment/start", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/payment/start", map[string]interface{}{
 		"sessionToken": "sess_does_not_exist",
 		"successUrl":   "https://example.com/success",
 		"cancelUrl":    "https://example.com/cancel",
@@ -241,7 +241,7 @@ func (s *OnboardingPaymentStartSuite) TestPaymentStart_FreePlan_ReturnsEmptyChec
 	s.NoError(err)
 	s.NotEmpty(token)
 
-	resp, err := s.client.Post("/api/onboarding/payment/start", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/payment/start", map[string]interface{}{
 		"sessionToken": token,
 		"successUrl":   "https://example.com/success",
 		"cancelUrl":    "https://example.com/cancel",

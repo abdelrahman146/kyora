@@ -9,8 +9,6 @@ import { onboardingApi } from "@/api/onboarding";
 import { translateErrorAsync } from "@/lib/translateError";
 import type { Plan } from "@/api/types/onboarding";
 
-/* eslint-disable @typescript-eslint/no-unsafe-member-access, @typescript-eslint/no-unsafe-call */
-
 /**
  * Plan Selection Step - Step 1 of Onboarding
  * 
@@ -67,7 +65,7 @@ export default function PlanSelectionPage() {
       return;
     }
 
-    setSelectedPlan?.(plan);
+    setSelectedPlan(plan);
     void navigate("/onboarding/email");
   };
 
@@ -193,30 +191,30 @@ export default function PlanSelectionPage() {
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 md:w-5 md:h-5 text-success mt-0.5 shrink-0" />
                       <span className="text-xs md:text-sm line-clamp-2">
-                        {(plan.limits?.maxTeamMembers ?? 0) === -1
+                        {plan.limits.maxTeamMembers === -1
                           ? t("onboarding:plan.unlimitedTeamMembers")
                           : t("onboarding:plan.maxTeamMembers", {
-                              count: plan.limits?.maxTeamMembers ?? 0,
+                              count: plan.limits.maxTeamMembers,
                             })}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 md:w-5 md:h-5 text-success mt-0.5 shrink-0" />
                       <span className="text-xs md:text-sm line-clamp-2">
-                        {(plan.limits?.maxBusinesses ?? 0) === -1
+                        {plan.limits.maxBusinesses === -1
                           ? t("onboarding:plan.unlimitedBusinesses")
                           : t("onboarding:plan.maxBusinesses", {
-                              count: plan.limits?.maxBusinesses ?? 0,
+                              count: plan.limits.maxBusinesses,
                             })}
                       </span>
                     </li>
                     <li className="flex items-start gap-2">
                       <Check className="w-4 h-4 md:w-5 md:h-5 text-success mt-0.5 shrink-0" />
                       <span className="text-xs md:text-sm line-clamp-2">
-                        {(plan.limits?.maxOrdersPerMonth ?? 0) === -1
+                        {plan.limits.maxOrdersPerMonth === -1
                           ? t("onboarding:plan.unlimitedOrders")
                           : t("onboarding:plan.maxMonthlyOrders", {
-                              count: plan.limits?.maxOrdersPerMonth ?? 0,
+                              count: plan.limits.maxOrdersPerMonth,
                             })}
                       </span>
                     </li>
@@ -353,10 +351,10 @@ export default function PlanSelectionPage() {
                   <div>
                     <div className="font-semibold">{t("onboarding:plan.teamMembers")}</div>
                     <div className="text-sm text-base-content/70">
-                      {(viewingPlan.limits?.maxTeamMembers ?? 0) === -1
+                      {viewingPlan.limits.maxTeamMembers === -1
                         ? t("onboarding:plan.unlimitedTeamMembers")
                         : t("onboarding:plan.maxTeamMembers", {
-                            count: viewingPlan.limits?.maxTeamMembers ?? 0,
+                            count: viewingPlan.limits.maxTeamMembers,
                           })}
                     </div>
                   </div>
@@ -366,10 +364,10 @@ export default function PlanSelectionPage() {
                   <div>
                     <div className="font-semibold">{t("onboarding:plan.businesses")}</div>
                     <div className="text-sm text-base-content/70">
-                      {(viewingPlan.limits?.maxBusinesses ?? 0) === -1
+                      {viewingPlan.limits.maxBusinesses === -1
                         ? t("onboarding:plan.unlimitedBusinesses")
                         : t("onboarding:plan.maxBusinesses", {
-                            count: viewingPlan.limits?.maxBusinesses ?? 0,
+                            count: viewingPlan.limits.maxBusinesses,
                           })}
                     </div>
                   </div>
@@ -379,10 +377,10 @@ export default function PlanSelectionPage() {
                   <div>
                     <div className="font-semibold">{t("onboarding:plan.orders")}</div>
                     <div className="text-sm text-base-content/70">
-                      {(viewingPlan.limits?.maxOrdersPerMonth ?? 0) === -1
+                      {viewingPlan.limits.maxOrdersPerMonth === -1
                         ? t("onboarding:plan.unlimitedOrders")
                         : t("onboarding:plan.maxMonthlyOrders", {
-                            count: viewingPlan.limits?.maxOrdersPerMonth ?? 0,
+                            count: viewingPlan.limits.maxOrdersPerMonth,
                           })}
                     </div>
                   </div>

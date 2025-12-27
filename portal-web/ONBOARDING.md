@@ -17,7 +17,7 @@ The onboarding flow is a multi-step process that guides new users through:
 - **Session token** - Backend tracks progress via token
 
 ### Backend Integration
-- **API Endpoints**: `/api/onboarding/*`
+- **API Endpoints**: `/v1/onboarding/*`
 - **Session-based** - All staged data stored in `onboarding_sessions` table
 - **Atomic commit** - Final step commits everything in a transaction
 - **Stripe integration** - Checkout sessions for paid plans
@@ -53,30 +53,30 @@ Simple, focused layout without sidebar:
 
 ```typescript
 // 1. Start session
-POST /api/onboarding/start
+POST /v1/onboarding/start
 → { sessionToken, stage, isPaid }
 
 // 2. Verify identity (Email)
-POST /api/onboarding/email/otp
-POST /api/onboarding/email/verify
+POST /v1/onboarding/email/otp
+POST /v1/onboarding/email/verify
 → { stage: "identity_verified" }
 
 // 2. Verify identity (Google OAuth)
-POST /api/onboarding/oauth/google
+POST /v1/onboarding/oauth/google
 → { stage: "identity_verified" }
 
 // 3. Set business details
-POST /api/onboarding/business
+POST /v1/onboarding/business
 → { stage: "business_staged" | "ready_to_commit" }
 
 // 4. Payment (paid plans only)
-POST /api/onboarding/payment/start
+POST /v1/onboarding/payment/start
 → { checkoutUrl }
 // User completes Stripe checkout
 // Webhook updates stage to "ready_to_commit"
 
 // 5. Complete onboarding
-POST /api/onboarding/complete
+POST /v1/onboarding/complete
 → { user, token, refreshToken }
 ```
 

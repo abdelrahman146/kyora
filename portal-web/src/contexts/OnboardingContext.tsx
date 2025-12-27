@@ -5,10 +5,12 @@ import {
   useCallback,
   type ReactNode,
 } from "react";
-import type {
-  SessionStage,
-  Plan,
-  StartSessionResponse,
+import {
+  PlanSchema,
+  SessionStageSchema,
+  type SessionStage,
+  type Plan,
+  type StartSessionResponse,
 } from "@/api/types/onboarding";
 
 /**
@@ -97,6 +99,46 @@ const INITIAL_STATE: OnboardingState = {
   checkoutUrl: null,
 };
 
+function restoreOnboardingState(raw: string): OnboardingState {
+  const parsed: unknown = JSON.parse(raw);
+  if (!parsed || typeof parsed !== "object") return INITIAL_STATE;
+
+  const obj = parsed as Record<string, unknown>;
+
+  const sessionToken = typeof obj.sessionToken === "string" ? obj.sessionToken : null;
+
+  const stageResult = SessionStageSchema.safeParse(obj.stage);
+  const stage = stageResult.success ? stageResult.data : null;
+
+  const planResult = PlanSchema.safeParse(obj.selectedPlan);
+  const selectedPlan = planResult.success ? planResult.data : null;
+
+  const isPaidPlan = typeof obj.isPaidPlan === "boolean" ? obj.isPaidPlan : false;
+  const email = typeof obj.email === "string" ? obj.email : null;
+  const isEmailVerified = typeof obj.isEmailVerified === "boolean" ? obj.isEmailVerified : false;
+  const businessName = typeof obj.businessName === "string" ? obj.businessName : null;
+  const businessDescriptor = typeof obj.businessDescriptor === "string" ? obj.businessDescriptor : null;
+  const businessCountry = typeof obj.businessCountry === "string" ? obj.businessCountry : null;
+  const businessCurrency = typeof obj.businessCurrency === "string" ? obj.businessCurrency : null;
+  const isPaymentComplete = typeof obj.isPaymentComplete === "boolean" ? obj.isPaymentComplete : false;
+  const checkoutUrl = typeof obj.checkoutUrl === "string" ? obj.checkoutUrl : null;
+
+  return {
+    sessionToken,
+    stage,
+    selectedPlan,
+    isPaidPlan,
+    email,
+    isEmailVerified,
+    businessName,
+    businessDescriptor,
+    businessCountry,
+    businessCurrency,
+    isPaymentComplete,
+    checkoutUrl,
+  };
+}
+
 /**
  * OnboardingProvider Component
  *
@@ -116,7 +158,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     const stored = sessionStorage.getItem("kyora_onboarding_state");
     if (stored) {
       try {
-        return JSON.parse(stored);
+        return restoreOnboardingState(stored);
       } catch {
         return INITIAL_STATE;
       }
@@ -199,7 +241,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const canProceedToNextStep = useCallback((): boolean => {
-    const { stage, isPaidPlan, isPaymentComplete } = state;
+    const { stage } = state;
 
     switch (stage) {
       case "plan_selected":

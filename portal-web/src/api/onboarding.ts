@@ -47,7 +47,7 @@ import { z } from "zod";
 
 export const onboardingApi = {
   // ==========================================================================
-  // Start Session - POST /api/onboarding/start
+  // Start Session - POST /v1/onboarding/start
   // ==========================================================================
 
   /**
@@ -59,14 +59,14 @@ export const onboardingApi = {
     const validatedRequest = StartSessionRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/start", { json: validatedRequest })
+      .post("v1/onboarding/start", { json: validatedRequest })
       .json();
 
     return StartSessionResponseSchema.parse(response);
   },
 
   // ==========================================================================
-  // Send Email OTP - POST /api/onboarding/email/otp
+  // Send Email OTP - POST /v1/onboarding/email/otp
   // ==========================================================================
 
   /**
@@ -76,13 +76,13 @@ export const onboardingApi = {
   async sendEmailOTP(data: SendOTPRequest): Promise<void> {
     const validatedRequest = SendOTPRequestSchema.parse(data);
 
-    await apiClient.post("api/onboarding/email/otp", {
+    await apiClient.post("v1/onboarding/email/otp", {
       json: validatedRequest,
     });
   },
 
   // ==========================================================================
-  // Verify Email - POST /api/onboarding/email/verify
+  // Verify Email - POST /v1/onboarding/email/verify
   // ==========================================================================
 
   /**
@@ -94,14 +94,14 @@ export const onboardingApi = {
     const validatedRequest = VerifyEmailRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/email/verify", { json: validatedRequest })
+      .post("v1/onboarding/email/verify", { json: validatedRequest })
       .json();
 
     return VerifyEmailResponseSchema.parse(response);
   },
 
   // ==========================================================================
-  // OAuth Google - POST /api/onboarding/oauth/google
+  // OAuth Google - POST /v1/onboarding/oauth/google
   // ==========================================================================
 
   /**
@@ -113,14 +113,14 @@ export const onboardingApi = {
     const validatedRequest = OAuthGoogleRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/oauth/google", { json: validatedRequest })
+      .post("v1/onboarding/oauth/google", { json: validatedRequest })
       .json();
 
     return OAuthGoogleResponseSchema.parse(response);
   },
 
   // ==========================================================================
-  // Set Business - POST /api/onboarding/business
+  // Set Business - POST /v1/onboarding/business
   // ==========================================================================
 
   /**
@@ -132,14 +132,14 @@ export const onboardingApi = {
     const validatedRequest = SetBusinessRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/business", { json: validatedRequest })
+      .post("v1/onboarding/business", { json: validatedRequest })
       .json();
 
     return SetBusinessResponseSchema.parse(response);
   },
 
   // ==========================================================================
-  // Payment Start - POST /api/onboarding/payment/start
+  // Payment Start - POST /v1/onboarding/payment/start
   // ==========================================================================
 
   /**
@@ -151,14 +151,14 @@ export const onboardingApi = {
     const validatedRequest = PaymentStartRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/payment/start", { json: validatedRequest })
+      .post("v1/onboarding/payment/start", { json: validatedRequest })
       .json();
 
     return PaymentStartResponseSchema.parse(response);
   },
 
   // ==========================================================================
-  // Complete Onboarding - POST /api/onboarding/complete
+  // Complete Onboarding - POST /v1/onboarding/complete
   // ==========================================================================
 
   /**
@@ -172,7 +172,7 @@ export const onboardingApi = {
     const validatedRequest = CompleteOnboardingRequestSchema.parse(data);
 
     const response = await apiClient
-      .post("api/onboarding/complete", { json: validatedRequest })
+      .post("v1/onboarding/complete", { json: validatedRequest })
       .json();
 
     return CompleteOnboardingResponseSchema.parse(response);

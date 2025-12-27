@@ -216,7 +216,7 @@ func (s *MySuite) TestUserRegistration() {
         "email": "test@example.com",
         "password": "SecurePass123!",
     }
-    resp, err := s.postJSON("/api/onboarding/start", payload)
+    resp, err := s.postJSON("/v1/onboarding/start", payload)
     s.NoError(err)
     s.Equal(http.StatusCreated, resp.StatusCode)
     defer resp.Body.Close()

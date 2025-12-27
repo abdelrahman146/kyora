@@ -19,7 +19,7 @@ import { translateErrorAsync } from "@/lib/translateError";
  * - Auto-redirects to dashboard
  *
  * Flow:
- * 1. POST /api/onboarding/complete
+ * 1. POST /v1/onboarding/complete
  * 2. Receive user data and tokens
  * 3. Set tokens in auth context
  * 4. Clear onboarding state
@@ -114,7 +114,7 @@ export default function CompletePage() {
             <div className="card-body">
               <div className="text-center">
                 <h2 className="text-2xl font-bold text-error mb-3">
-                  {t("onboarding.complete.errorTitle")}
+                  {t("onboarding:complete.errorTitle")}
                 </h2>
                 <p className="text-base-content/70 mb-6">{error}</p>
                 <button
@@ -125,10 +125,10 @@ export default function CompletePage() {
                   {isCompleting ? (
                     <>
                       <span className="loading loading-spinner loading-sm"></span>
-                      {t("common.loading")}
+                      {t("common:loading")}
                     </>
                   ) : (
-                    t("common.retry")
+                    t("common:retry")
                   )}
                 </button>
               </div>
@@ -158,10 +158,10 @@ export default function CompletePage() {
 
                 {/* Welcome Message */}
                 <h1 className="text-4xl font-bold mb-3">
-                  {t("onboarding.complete.welcomeTitle")}
+                  {t("onboarding:complete.welcomeTitle")}
                 </h1>
                 <p className="text-xl text-base-content/80 mb-6">
-                  {t("onboarding.complete.welcomeMessage", { businessName })}
+                  {t("onboarding:complete.welcomeMessage", { businessName })}
                 </p>
 
                 {/* Features Highlight */}
@@ -169,28 +169,28 @@ export default function CompletePage() {
                   <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
                     <div className="text-2xl mb-2">📦</div>
                     <h3 className="font-semibold mb-1">
-                      {t("onboarding.complete.feature1Title")}
+                      {t("onboarding:complete.feature1Title")}
                     </h3>
                     <p className="text-sm text-base-content/70">
-                      {t("onboarding.complete.feature1Desc")}
+                      {t("onboarding:complete.feature1Desc")}
                     </p>
                   </div>
                   <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
                     <div className="text-2xl mb-2">📊</div>
                     <h3 className="font-semibold mb-1">
-                      {t("onboarding.complete.feature2Title")}
+                      {t("onboarding:complete.feature2Title")}
                     </h3>
                     <p className="text-sm text-base-content/70">
-                      {t("onboarding.complete.feature2Desc")}
+                      {t("onboarding:complete.feature2Desc")}
                     </p>
                   </div>
                   <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
                     <div className="text-2xl mb-2">🚀</div>
                     <h3 className="font-semibold mb-1">
-                      {t("onboarding.complete.feature3Title")}
+                      {t("onboarding:complete.feature3Title")}
                     </h3>
                     <p className="text-sm text-base-content/70">
-                      {t("onboarding.complete.feature3Desc")}
+                      {t("onboarding:complete.feature3Desc")}
                     </p>
                   </div>
                 </div>
@@ -198,7 +198,7 @@ export default function CompletePage() {
                 {/* Redirect Notice */}
                 <div className="flex items-center justify-center gap-2 text-base-content/60">
                   <span className="loading loading-spinner loading-sm"></span>
-                  <span>{t("onboarding.complete.redirecting")}</span>
+                  <span>{t("onboarding:complete.redirecting")}</span>
                   <ArrowRight className="w-4 h-4 animate-pulse" />
                 </div>
               </div>
@@ -219,23 +219,23 @@ export default function CompletePage() {
                 <span className="loading loading-spinner loading-lg text-primary"></span>
               </div>
               <h2 className="text-2xl font-bold mb-3">
-                {t("onboarding.complete.processingTitle")}
+                {t("onboarding:complete.processingTitle")}
               </h2>
               <p className="text-base-content/70">
-                {t("onboarding.complete.processingMessage")}
+                {t("onboarding:complete.processingMessage")}
               </p>
               <div className="mt-6 space-y-2">
                 <div className="flex items-center gap-3 justify-center text-sm">
                   <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding.complete.creatingWorkspace")}</span>
+                  <span>{t("onboarding:complete.creatingWorkspace")}</span>
                 </div>
                 <div className="flex items-center gap-3 justify-center text-sm">
                   <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding.complete.settingUpBusiness")}</span>
+                  <span>{t("onboarding:complete.settingUpBusiness")}</span>
                 </div>
                 <div className="flex items-center gap-3 justify-center text-sm">
                   <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding.complete.preparingDashboard")}</span>
+                  <span>{t("onboarding:complete.preparingDashboard")}</span>
                 </div>
               </div>
             </div>

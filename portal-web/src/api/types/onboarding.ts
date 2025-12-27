@@ -81,11 +81,11 @@ export const PlanSchema = z.object({
 export type Plan = z.infer<typeof PlanSchema>;
 
 // ============================================================================
-// Start Session - POST /api/onboarding/start
+// Start Session - POST /v1/onboarding/start
 // ============================================================================
 
 export const StartSessionRequestSchema = z.object({
-  email: z.string().email("Invalid email address"),
+  email: z.email({ message: "Invalid email address" }),
   planDescriptor: z.string().min(1, "Plan is required"),
 });
 
@@ -100,7 +100,7 @@ export const StartSessionResponseSchema = z.object({
 export type StartSessionResponse = z.infer<typeof StartSessionResponseSchema>;
 
 // ============================================================================
-// Send Email OTP - POST /api/onboarding/email/otp
+// Send Email OTP - POST /v1/onboarding/email/otp
 // ============================================================================
 
 export const SendOTPRequestSchema = z.object({
@@ -110,7 +110,7 @@ export const SendOTPRequestSchema = z.object({
 export type SendOTPRequest = z.infer<typeof SendOTPRequestSchema>;
 
 // ============================================================================
-// Verify Email - POST /api/onboarding/email/verify
+// Verify Email - POST /v1/onboarding/email/verify
 // ============================================================================
 
 export const VerifyEmailRequestSchema = z.object({
@@ -130,7 +130,7 @@ export const VerifyEmailResponseSchema = z.object({
 export type VerifyEmailResponse = z.infer<typeof VerifyEmailResponseSchema>;
 
 // ============================================================================
-// OAuth Google - POST /api/onboarding/oauth/google
+// OAuth Google - POST /v1/onboarding/oauth/google
 // ============================================================================
 
 export const OAuthGoogleRequestSchema = z.object({
@@ -147,7 +147,7 @@ export const OAuthGoogleResponseSchema = z.object({
 export type OAuthGoogleResponse = z.infer<typeof OAuthGoogleResponseSchema>;
 
 // ============================================================================
-// Set Business - POST /api/onboarding/business
+// Set Business - POST /v1/onboarding/business
 // ============================================================================
 
 export const SetBusinessRequestSchema = z.object({
@@ -174,25 +174,25 @@ export const SetBusinessResponseSchema = z.object({
 export type SetBusinessResponse = z.infer<typeof SetBusinessResponseSchema>;
 
 // ============================================================================
-// Payment Start - POST /api/onboarding/payment/start
+// Payment Start - POST /v1/onboarding/payment/start
 // ============================================================================
 
 export const PaymentStartRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
-  successUrl: z.string().url("Invalid success URL"),
-  cancelUrl: z.string().url("Invalid cancel URL"),
+  successUrl: z.url({ message: "Invalid success URL" }),
+  cancelUrl: z.url({ message: "Invalid cancel URL" }),
 });
 
 export type PaymentStartRequest = z.infer<typeof PaymentStartRequestSchema>;
 
 export const PaymentStartResponseSchema = z.object({
-  checkoutUrl: z.string().url().optional().nullable(),
+  checkoutUrl: z.url().optional().nullable(),
 });
 
 export type PaymentStartResponse = z.infer<typeof PaymentStartResponseSchema>;
 
 // ============================================================================
-// Complete Onboarding - POST /api/onboarding/complete
+// Complete Onboarding - POST /v1/onboarding/complete
 // ============================================================================
 
 export const CompleteOnboardingRequestSchema = z.object({

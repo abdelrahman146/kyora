@@ -1906,6 +1906,11 @@ definitions:
         type: string
       costPrice:
         type: number
+      photos:
+        items:
+          type: string
+        maxItems: 10
+        type: array
       salePrice:
         type: number
       sku:
@@ -1919,6 +1924,7 @@ definitions:
     required:
     - code
     - costPrice
+    - photos
     - salePrice
     - stockQuantity
     - stockQuantityAlert
@@ -2297,6 +2303,146 @@ definitions:
       valid:
         description: Valid is true if String is not NULL
         type: boolean
+    type: object
+  onboarding.SessionStage:
+    enum:
+    - plan_selected
+    - identity_pending
+    - identity_verified
+    - business_staged
+    - payment_pending
+    - payment_confirmed
+    - ready_to_commit
+    - committed
+    type: string
+    x-enum-comments:
+      StageCommitted: finalized & removed logically
+      StageIdentityPending: after plan, before verification
+      StagePaymentConfirmed: stripe checkout finished
+      StagePaymentPending: only for paid tiers
+      StageReadyToCommit: all prerequisites satisfied
+    x-enum-varnames:
+    - StagePlanSelected
+    - StageIdentityPending
+    - StageIdentityVerified
+    - StageBusinessStaged
+    - StagePaymentPending
+    - StagePaymentConfirmed
+    - StageReadyToCommit
+    - StageCommitted
+  onboarding.businessRequest:
+    properties:
+      country:
+        type: string
+      currency:
+        type: string
+      descriptor:
+        type: string
+      name:
+        type: string
+      sessionToken:
+        type: string
+    required:
+    - country
+    - currency
+    - descriptor
+    - name
+    - sessionToken
+    type: object
+  onboarding.completeRequest:
+    properties:
+      sessionToken:
+        type: string
+    required:
+    - sessionToken
+    type: object
+  onboarding.completeResponse:
+    properties:
+      refreshToken:
+        type: string
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/account.User'
+    type: object
+  onboarding.oauthRequest:
+    properties:
+      code:
+        type: string
+      sessionToken:
+        type: string
+    required:
+    - code
+    - sessionToken
+    type: object
+  onboarding.otpRequest:
+    properties:
+      sessionToken:
+        type: string
+    required:
+    - sessionToken
+    type: object
+  onboarding.paymentStartRequest:
+    properties:
+      cancelUrl:
+        type: string
+      sessionToken:
+        type: string
+      successUrl:
+        type: string
+    required:
+    - cancelUrl
+    - sessionToken
+    - successUrl
+    type: object
+  onboarding.paymentStartResponse:
+    properties:
+      checkoutUrl:
+        type: string
+    type: object
+  onboarding.stageResponse:
+    properties:
+      stage:
+        $ref: '#/definitions/onboarding.SessionStage'
+    type: object
+  onboarding.startRequest:
+    properties:
+      email:
+        type: string
+      planDescriptor:
+        type: string
+    required:
+    - email
+    - planDescriptor
+    type: object
+  onboarding.startResponse:
+    properties:
+      isPaid:
+        type: boolean
+      sessionToken:
+        type: string
+      stage:
+        $ref: '#/definitions/onboarding.SessionStage'
+    type: object
+  onboarding.verifyEmailRequest:
+    properties:
+      code:
+        type: string
+      firstName:
+        type: string
+      lastName:
+        type: string
+      password:
+        minLength: 8
+        type: string
+      sessionToken:
+        type: string
+    required:
+    - code
+    - firstName
+    - lastName
+    - password
+    - sessionToken
     type: object
   order.CreateOrderItemRequest:
     properties:
@@ -24382,6 +24528,55 @@ paths:
       summary: Archive business
       tags:
       - business
+  /v1/businesses/{businessDescriptor}/assets/{assetId}:
+    delete:
+      description: Deletes an uploaded asset if it belongs to the business and is
+        not referenced.
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Delete uploaded asset
+      tags:
+      - assets
   /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/business_logo:
     post:
       parameters:
@@ -27408,6 +27603,239 @@ paths:
       summary: Accept invitation with Google
       tags:
       - invitations
+  /v1/onboarding/business:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Business request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.businessRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.stageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Set business details
+      tags:
+      - onboarding
+  /v1/onboarding/complete:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Complete request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.completeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.completeResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Complete onboarding
+      tags:
+      - onboarding
+  /v1/onboarding/email/otp:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: OTP request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.otpRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Send email OTP
+      tags:
+      - onboarding
+  /v1/onboarding/email/verify:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Verify email request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.verifyEmailRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.stageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Verify email with OTP
+      tags:
+      - onboarding
+  /v1/onboarding/oauth/google:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: OAuth Google request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.oauthRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.stageResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Verify identity with Google OAuth
+      tags:
+      - onboarding
+  /v1/onboarding/payment/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Payment start request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.paymentStartRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.paymentStartResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Start payment
+      tags:
+      - onboarding
+  /v1/onboarding/start:
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Start session request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.startRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.startResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Start onboarding session
+      tags:
+      - onboarding
   /v1/public/assets/{assetId}:
     get:
       description: Serves public assets. For local provider, streams bytes. For S3,

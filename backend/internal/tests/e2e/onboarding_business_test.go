@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingBusinessSuite tests POST /api/onboarding/business endpoint
+// OnboardingBusinessSuite tests POST /v1/onboarding/business endpoint
 type OnboardingBusinessSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -40,7 +40,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_Success() {
 		"country":      "AE",
 		"currency":     "AED",
 	}
-	resp, err := s.client.Post("/api/onboarding/business", payload)
+	resp, err := s.client.Post("/v1/onboarding/business", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -67,7 +67,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_PaidPlan() {
 		"country":      "AE",
 		"currency":     "AED",
 	}
-	resp, err := s.client.Post("/api/onboarding/business", payload)
+	resp, err := s.client.Post("/v1/onboarding/business", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -91,7 +91,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_InvalidStage() {
 		"country":      "AE",
 		"currency":     "AED",
 	}
-	resp, err := s.client.Post("/api/onboarding/business", payload)
+	resp, err := s.client.Post("/v1/onboarding/business", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -124,7 +124,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_InvalidCountryCode() {
 				"country":      tt.country,
 				"currency":     "AED",
 			}
-			resp, err := s.client.Post("/api/onboarding/business", payload)
+			resp, err := s.client.Post("/v1/onboarding/business", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			if tt.shouldFail {
@@ -163,7 +163,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_InvalidCurrencyCode() {
 				"country":      "AE",
 				"currency":     tt.currency,
 			}
-			resp, err := s.client.Post("/api/onboarding/business", payload)
+			resp, err := s.client.Post("/v1/onboarding/business", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			if tt.shouldFail {
@@ -223,7 +223,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_MissingFields() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/business", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/business", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -250,7 +250,7 @@ func (s *OnboardingBusinessSuite) TestSetBusiness_SQLInjection() {
 				"country":      "AE",
 				"currency":     "AED",
 			}
-			resp, err := s.client.Post("/api/onboarding/business", payload)
+			resp, err := s.client.Post("/v1/onboarding/business", payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			// Should handle safely

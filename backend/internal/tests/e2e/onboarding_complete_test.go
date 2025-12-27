@@ -11,7 +11,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingCompleteSuite tests POST /api/onboarding/complete endpoint
+// OnboardingCompleteSuite tests POST /v1/onboarding/complete endpoint
 type OnboardingCompleteSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -38,7 +38,7 @@ func (s *OnboardingCompleteSuite) TestComplete_Success() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -77,7 +77,7 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesWorkspace() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -101,7 +101,7 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesBusiness() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -120,7 +120,7 @@ func (s *OnboardingCompleteSuite) TestComplete_CreatesDefaultShippingZone() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -155,7 +155,7 @@ func (s *OnboardingCompleteSuite) TestComplete_InvalidToken() {
 	payload := map[string]interface{}{
 		"sessionToken": "invalid_token_12345",
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -168,7 +168,7 @@ func (s *OnboardingCompleteSuite) TestComplete_WrongStage() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -184,7 +184,7 @@ func (s *OnboardingCompleteSuite) TestComplete_ExpiredSession() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -192,7 +192,7 @@ func (s *OnboardingCompleteSuite) TestComplete_ExpiredSession() {
 
 func (s *OnboardingCompleteSuite) TestComplete_MissingToken() {
 	payload := map[string]interface{}{}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -205,7 +205,7 @@ func (s *OnboardingCompleteSuite) TestComplete_ValidJWTToken() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -237,13 +237,13 @@ func (s *OnboardingCompleteSuite) TestComplete_IdempotencySafety() {
 	}
 
 	// First completion should succeed
-	resp1, err := s.client.Post("/api/onboarding/complete", payload)
+	resp1, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp1.Body.Close()
 	s.Equal(http.StatusOK, resp1.StatusCode)
 
 	// Second completion with same token should fail
-	resp2, err := s.client.Post("/api/onboarding/complete", payload)
+	resp2, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.True(resp2.StatusCode >= 400, "should not allow duplicate completion")
@@ -256,7 +256,7 @@ func (s *OnboardingCompleteSuite) TestComplete_DatabaseConsistency() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)
@@ -281,7 +281,7 @@ func (s *OnboardingCompleteSuite) TestComplete_SessionCleanedUp() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/complete", payload)
+	resp, err := s.client.Post("/v1/onboarding/complete", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusOK, resp.StatusCode)

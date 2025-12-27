@@ -17,7 +17,7 @@ import { translateErrorAsync } from "@/lib/translateError";
  * - Polls payment status after return
  *
  * Flow:
- * 1. POST /api/onboarding/payment/start
+ * 1. POST /v1/onboarding/payment/start
  * 2. Redirect to Stripe Checkout
  * 3. User completes payment
  * 4. Stripe redirects to /onboarding/payment?status=success
@@ -53,7 +53,7 @@ export default function PaymentPage() {
       
       // Auto-redirect after 2 seconds
       setTimeout(() => {
-        navigate("/onboarding/complete");
+        void navigate("/onboarding/complete");
       }, 2000);
     } else if (status === "cancelled") {
       setPaymentStatus("cancelled");
@@ -63,17 +63,17 @@ export default function PaymentPage() {
   // Redirect if not at business_staged or payment_pending stage
   useEffect(() => {
     if (!sessionToken) {
-      navigate("/onboarding/plan", { replace: true });
+      void navigate("/onboarding/plan", { replace: true });
       return;
     }
 
     if (!isPaidPlan) {
-      navigate("/onboarding/complete", { replace: true });
+      void navigate("/onboarding/complete", { replace: true });
       return;
     }
 
     if (stage !== "business_staged" && stage !== "payment_pending" && stage !== "ready_to_commit") {
-      navigate("/onboarding/business", { replace: true });
+      void navigate("/onboarding/business", { replace: true });
     }
   }, [sessionToken, isPaidPlan, stage, navigate]);
 
@@ -99,7 +99,7 @@ export default function PaymentPage() {
         // Redirect to Stripe Checkout
         window.location.href = response.checkoutUrl;
       } else {
-        setError(t("onboarding.payment.noCheckoutUrl"));
+        setError(t("onboarding:payment.noCheckoutUrl"));
       }
     } catch (err) {
       const message = await translateErrorAsync(err, t);
@@ -129,15 +129,15 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-success mb-3">
-                  {t("onboarding.payment.successTitle")}
+                  {t("onboarding:payment.successTitle")}
                 </h2>
                 <p className="text-base-content/70">
-                  {t("onboarding.payment.successMessage")}
+                  {t("onboarding:payment.successMessage")}
                 </p>
                 <div className="mt-6">
                   <span className="loading loading-spinner loading-sm"></span>
                   <span className="ms-2 text-sm text-base-content/60">
-                    {t("onboarding.payment.redirecting")}
+                    {t("onboarding:payment.redirecting")}
                   </span>
                 </div>
               </div>
@@ -150,7 +150,7 @@ export default function PaymentPage() {
 
   if (paymentStatus === "cancelled") {
     return (
-      <OnboardingLayout currentStep={3} totalSteps={5}>
+      <OnboardingLayout currentStep={4} totalSteps={5}>
         <div className="max-w-lg mx-auto">
           <div className="card bg-base-100 border border-warning shadow-xl">
             <div className="card-body">
@@ -161,30 +161,34 @@ export default function PaymentPage() {
                   </div>
                 </div>
                 <h2 className="text-2xl font-bold text-warning mb-3">
-                  {t("onboarding.payment.cancelledTitle")}
+                  {t("onboarding:payment.cancelledTitle")}
                 </h2>
                 <p className="text-base-content/70 mb-6">
-                  {t("onboarding.payment.cancelledMessage")}
+                  {t("onboarding:payment.cancelledMessage")}
                 </p>
                 <div className="flex gap-3 justify-center">
                   <button
-                    onClick={() => navigate("/onboarding/plan")}
+                    onClick={() => {
+                      void navigate("/onboarding/plan");
+                    }}
                     className="btn btn-ghost"
                   >
-                    {t("onboarding.payment.changePlan")}
+                    {t("onboarding:payment.changePlan")}
                   </button>
                   <button
-                    onClick={initiatePayment}
+                    onClick={() => {
+                      void initiatePayment();
+                    }}
                     className="btn btn-primary"
                     disabled={isLoading}
                   >
                     {isLoading ? (
                       <>
                         <span className="loading loading-spinner loading-sm"></span>
-                        {t("common.loading")}
+                        {t("common:loading")}
                       </>
                     ) : (
-                      t("onboarding.payment.tryAgain")
+                      t("onboarding:payment.tryAgain")
                     )}
                   </button>
                 </div>
@@ -197,7 +201,7 @@ export default function PaymentPage() {
   }
 
   return (
-    <OnboardingLayout currentStep={3} totalSteps={5}>
+    <OnboardingLayout currentStep={4} totalSteps={5}>
       <div className="max-w-lg mx-auto">
         <div className="card bg-base-100 border border-base-300 shadow-xl">
           <div className="card-body">
@@ -209,10 +213,10 @@ export default function PaymentPage() {
                 </div>
               </div>
               <h2 className="text-2xl font-bold">
-                {t("onboarding.payment.title")}
+                {t("onboarding:payment.title")}
               </h2>
               <p className="text-base-content/70 mt-2">
-                {t("onboarding.payment.subtitle")}
+                {t("onboarding:payment.subtitle")}
               </p>
             </div>
 
@@ -249,45 +253,49 @@ export default function PaymentPage() {
             <div className="space-y-3 mb-6">
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding.payment.securePayment")}</span>
+                <span>{t("onboarding:payment.securePayment")}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding.payment.cancelAnytime")}</span>
+                <span>{t("onboarding:payment.cancelAnytime")}</span>
               </div>
               <div className="flex items-center gap-3 text-sm">
                 <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding.payment.instantAccess")}</span>
+                <span>{t("onboarding:payment.instantAccess")}</span>
               </div>
             </div>
 
             {/* Actions */}
             <div className="flex gap-3">
               <button
-                onClick={() => navigate("/onboarding/business")}
+                onClick={() => {
+                  void navigate("/onboarding/business");
+                }}
                 className="btn btn-ghost"
                 disabled={isLoading}
               >
-                {t("common.back")}
+                {t("common:back")}
               </button>
               <button
-                onClick={initiatePayment}
+                onClick={() => {
+                  void initiatePayment();
+                }}
                 className="btn btn-primary flex-1"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
                     <span className="loading loading-spinner loading-sm"></span>
-                    {t("common.loading")}
+                    {t("common:loading")}
                   </>
                 ) : (
-                  t("onboarding.payment.proceedToPayment")
+                  t("onboarding:payment.proceedToPayment")
                 )}
               </button>
             </div>
 
             <p className="text-xs text-center text-base-content/50 mt-4">
-              {t("onboarding.payment.poweredByStripe")}
+              {t("onboarding:payment.poweredByStripe")}
             </p>
           </div>
         </div>

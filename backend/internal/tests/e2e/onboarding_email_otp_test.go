@@ -9,7 +9,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingEmailOTPSuite tests POST /api/onboarding/email/otp endpoint
+// OnboardingEmailOTPSuite tests POST /v1/onboarding/email/otp endpoint
 type OnboardingEmailOTPSuite struct {
 	suite.Suite
 	client *testutils.HTTPClient
@@ -37,7 +37,7 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_Success() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNoContent, resp.StatusCode)
@@ -45,7 +45,7 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_Success() {
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_MissingToken() {
 	payload := map[string]interface{}{}
-	resp, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -55,7 +55,7 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidToken() {
 	payload := map[string]interface{}{
 		"sessionToken": "invalid_token_12345",
 	}
-	resp, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
@@ -72,7 +72,7 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidStage() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
@@ -88,20 +88,20 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_RateLimit() {
 	}
 
 	// First request should succeed
-	resp1, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp1, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp1.Body.Close()
 	s.Equal(http.StatusNoContent, resp1.StatusCode)
 
 	// Second request immediately after should be rate limited
-	resp2, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp2, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp2.Body.Close()
 	s.Equal(http.StatusTooManyRequests, resp2.StatusCode)
 
 	// Wait 1 second and retry - should still be rate limited (30s minimum)
 	time.Sleep(1 * time.Second)
-	resp3, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp3, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp3.Body.Close()
 	s.Equal(http.StatusTooManyRequests, resp3.StatusCode)
@@ -118,7 +118,7 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_ExpiredSession() {
 	payload := map[string]interface{}{
 		"sessionToken": token,
 	}
-	resp, err := s.client.Post("/api/onboarding/email/otp", payload)
+	resp, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)

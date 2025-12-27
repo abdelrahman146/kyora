@@ -11,7 +11,7 @@ import { translateErrorAsync } from "@/lib/translateError";
  * Handles the OAuth callback during onboarding flow:
  * 1. Extracts OAuth code from URL
  * 2. Retrieves session token from sessionStorage
- * 3. Calls POST /api/onboarding/oauth/google
+ * 3. Calls POST /v1/onboarding/oauth/google
  * 4. Updates onboarding state
  * 5. Redirects to /onboarding/business
  */
@@ -29,7 +29,7 @@ export default function OnboardingOAuthCallbackPage() {
       const errorParam = searchParams.get("error");
 
       if (errorParam) {
-        setError(t("onboarding.oauth.error", { error: errorParam }));
+        setError(t("onboarding:oauth.error", { error: errorParam }));
         setTimeout(() => {
           void navigate("/onboarding/verify", { replace: true });
         }, 3000);
@@ -37,7 +37,7 @@ export default function OnboardingOAuthCallbackPage() {
       }
 
       if (!code) {
-        setError(t("onboarding.oauth.noCode"));
+        setError(t("onboarding:oauth.noCode"));
         setTimeout(() => {
           void navigate("/onboarding/verify", { replace: true });
         }, 3000);
@@ -50,7 +50,7 @@ export default function OnboardingOAuthCallbackPage() {
         sessionStorage.getItem("kyora_onboarding_google_session");
 
       if (!storedToken) {
-        setError(t("onboarding.oauth.noSession"));
+        setError(t("onboarding:oauth.noSession"));
         setTimeout(() => {
           void navigate("/onboarding/plan", { replace: true });
         }, 3000);
@@ -109,21 +109,21 @@ export default function OnboardingOAuthCallbackPage() {
                   </div>
                 </div>
                 <h2 className="text-xl font-bold text-error mb-3">
-                  {t("onboarding.oauth.errorTitle")}
+                  {t("onboarding:oauth.errorTitle")}
                 </h2>
                 <p className="text-base-content/70 mb-4">{error}</p>
                 <p className="text-sm text-base-content/50">
-                  {t("onboarding.oauth.redirecting")}
+                  {t("onboarding:oauth.redirecting")}
                 </p>
               </>
             ) : (
               <>
                 <span className="loading loading-spinner loading-lg text-primary mb-4"></span>
                 <h2 className="text-xl font-bold mb-2">
-                  {t("onboarding.oauth.processing")}
+                  {t("onboarding:oauth.processing")}
                 </h2>
                 <p className="text-base-content/70">
-                  {t("onboarding.oauth.pleaseWait")}
+                  {t("onboarding:oauth.pleaseWait")}
                 </p>
               </>
             )}

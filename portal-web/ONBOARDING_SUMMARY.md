@@ -49,7 +49,7 @@ A production-grade, multi-step onboarding flow has been successfully implemented
 - **Step 5**: Workspace creation and automatic login
 
 ### 2. Backend Integration
-- All endpoints integrated: `/api/onboarding/*`
+- All endpoints integrated: `/v1/onboarding/*`
 - Session-based progress tracking
 - Atomic transaction on completion
 - Stripe checkout session creation
@@ -99,13 +99,13 @@ A production-grade, multi-step onboarding flow has been successfully implemented
 ## 🔌 API Endpoints Used
 
 ```
-POST /api/onboarding/start
-POST /api/onboarding/email/otp
-POST /api/onboarding/email/verify
-POST /api/onboarding/oauth/google
-POST /api/onboarding/business
-POST /api/onboarding/payment/start
-POST /api/onboarding/complete
+POST /v1/onboarding/start
+POST /v1/onboarding/email/otp
+POST /v1/onboarding/email/verify
+POST /v1/onboarding/oauth/google
+POST /v1/onboarding/business
+POST /v1/onboarding/payment/start
+POST /v1/onboarding/complete
 GET  /v1/billing/plans
 GET  /v1/billing/plans/:descriptor
 GET  /v1/auth/google/url
@@ -120,7 +120,7 @@ GET  /v1/auth/google/url
 │                                                             │
 │  1. User selects plan                                       │
 │  2. User enters email                                       │
-│  3. POST /api/onboarding/start                             │
+│  3. POST /v1/onboarding/start                             │
 │     → receives sessionToken                                 │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
@@ -147,7 +147,7 @@ GET  /v1/auth/google/url
 │  1. User enters business name                               │
 │  2. Auto-generates descriptor (validates format)            │
 │  3. User selects country & currency                         │
-│  4. POST /api/onboarding/business                          │
+│  4. POST /v1/onboarding/business                          │
 │                                                             │
 └──────────────────────┬──────────────────────────────────────┘
                        │
@@ -171,7 +171,7 @@ GET  /v1/auth/google/url
 │                                                             │
 │                /onboarding/complete                         │
 │                                                             │
-│  1. POST /api/onboarding/complete                          │
+│  1. POST /v1/onboarding/complete                          │
 │  2. Creates workspace, user, business, subscription         │
 │  3. Returns JWT tokens                                      │
 │  4. Auto-login and redirect to dashboard                    │

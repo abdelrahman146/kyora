@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/suite"
 )
 
-// OnboardingOAuthGoogleSuite tests POST /api/onboarding/oauth/google endpoint.
+// OnboardingOAuthGoogleSuite tests POST /v1/onboarding/oauth/google endpoint.
 // Note: Test environment might not have Google OAuth configured; we focus on validation and session gating.
 type OnboardingOAuthGoogleSuite struct {
 	suite.Suite
@@ -59,7 +59,7 @@ func (s *OnboardingOAuthGoogleSuite) TestOAuthGoogle_ValidationErrors() {
 
 	for _, tt := range tests {
 		s.Run(tt.name, func() {
-			resp, err := s.client.Post("/api/onboarding/oauth/google", tt.payload)
+			resp, err := s.client.Post("/v1/onboarding/oauth/google", tt.payload)
 			s.NoError(err)
 			defer resp.Body.Close()
 			s.Equal(tt.expectedStatus, resp.StatusCode)
@@ -75,7 +75,7 @@ func (s *OnboardingOAuthGoogleSuite) TestOAuthGoogle_ValidationErrors() {
 }
 
 func (s *OnboardingOAuthGoogleSuite) TestOAuthGoogle_SessionNotFound() {
-	resp, err := s.client.Post("/api/onboarding/oauth/google", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/oauth/google", map[string]interface{}{
 		"sessionToken": "sess_does_not_exist",
 		"code":         "any",
 	})
@@ -97,7 +97,7 @@ func (s *OnboardingOAuthGoogleSuite) TestOAuthGoogle_InvalidCode_Rejected() {
 	s.NoError(err)
 	s.NotEmpty(token)
 
-	resp, err := s.client.Post("/api/onboarding/oauth/google", map[string]interface{}{
+	resp, err := s.client.Post("/v1/onboarding/oauth/google", map[string]interface{}{
 		"sessionToken": token,
 		"code":         "<script>alert('xss')</script>",
 	})

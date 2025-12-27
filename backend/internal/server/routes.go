@@ -32,7 +32,7 @@ func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
 }
 
 func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
-	group := r.Group("/api/onboarding")
+	group := r.Group("/v1/onboarding")
 	group.Use(middleware.NewCORSMiddleware())
 	group.POST("/start", h.Start)
 	group.POST("/email/otp", h.SendEmailOTP)
