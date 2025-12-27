@@ -1,0 +1,213 @@
+import apiClient from "./client";
+import {
+  StartSessionRequestSchema,
+  StartSessionResponseSchema,
+  SendOTPRequestSchema,
+  VerifyEmailRequestSchema,
+  VerifyEmailResponseSchema,
+  OAuthGoogleRequestSchema,
+  OAuthGoogleResponseSchema,
+  SetBusinessRequestSchema,
+  SetBusinessResponseSchema,
+  PaymentStartRequestSchema,
+  PaymentStartResponseSchema,
+  CompleteOnboardingRequestSchema,
+  CompleteOnboardingResponseSchema,
+  PlanSchema,
+  type StartSessionRequest,
+  type StartSessionResponse,
+  type SendOTPRequest,
+  type VerifyEmailRequest,
+  type VerifyEmailResponse,
+  type OAuthGoogleRequest,
+  type OAuthGoogleResponse,
+  type SetBusinessRequest,
+  type SetBusinessResponse,
+  type PaymentStartRequest,
+  type PaymentStartResponse,
+  type CompleteOnboardingRequest,
+  type CompleteOnboardingResponse,
+  type Plan,
+} from "./types/onboarding";
+import { z } from "zod";
+
+/**
+ * Onboarding API Service
+ *
+ * All methods validate request/response data using Zod schemas
+ * and provide type-safe interfaces to backend onboarding endpoints.
+ *
+ * Onboarding Flow:
+ * 1. Start Session - Select plan and provide email
+ * 2. Verify Identity - Email OTP or Google OAuth
+ * 3. Set Business - Business name, descriptor, country, currency
+ * 4. Payment - Stripe checkout for paid plans (skipped for free)
+ * 5. Complete - Finalize onboarding and receive JWT tokens
+ */
+
+export const onboardingApi = {
+  // ==========================================================================
+  // Start Session - POST /api/onboarding/start
+  // ==========================================================================
+
+  /**
+   * Initializes or resumes an onboarding session for an email and plan.
+   * @returns Session token and stage information
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async startSession(data: StartSessionRequest): Promise<StartSessionResponse> {
+    const validatedRequest = StartSessionRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/start", { json: validatedRequest })
+      .json();
+
+    return StartSessionResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // Send Email OTP - POST /api/onboarding/email/otp
+  // ==========================================================================
+
+  /**
+   * Generates a 6-digit OTP and sends it to the user's email
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async sendEmailOTP(data: SendOTPRequest): Promise<void> {
+    const validatedRequest = SendOTPRequestSchema.parse(data);
+
+    await apiClient.post("api/onboarding/email/otp", {
+      json: validatedRequest,
+    });
+  },
+
+  // ==========================================================================
+  // Verify Email - POST /api/onboarding/email/verify
+  // ==========================================================================
+
+  /**
+   * Validates OTP code and stores user profile and password
+   * @returns Updated session stage
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async verifyEmail(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
+    const validatedRequest = VerifyEmailRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/email/verify", { json: validatedRequest })
+      .json();
+
+    return VerifyEmailResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // OAuth Google - POST /api/onboarding/oauth/google
+  // ==========================================================================
+
+  /**
+   * Sets OAuth identity from Google and stages user profile
+   * @returns Updated session stage
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async oauthGoogle(data: OAuthGoogleRequest): Promise<OAuthGoogleResponse> {
+    const validatedRequest = OAuthGoogleRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/oauth/google", { json: validatedRequest })
+      .json();
+
+    return OAuthGoogleResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // Set Business - POST /api/onboarding/business
+  // ==========================================================================
+
+  /**
+   * Stages business details for the onboarding session
+   * @returns Updated session stage
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async setBusiness(data: SetBusinessRequest): Promise<SetBusinessResponse> {
+    const validatedRequest = SetBusinessRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/business", { json: validatedRequest })
+      .json();
+
+    return SetBusinessResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // Payment Start - POST /api/onboarding/payment/start
+  // ==========================================================================
+
+  /**
+   * Creates Stripe checkout session for paid plans
+   * @returns Checkout URL (null for free plans)
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async startPayment(data: PaymentStartRequest): Promise<PaymentStartResponse> {
+    const validatedRequest = PaymentStartRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/payment/start", { json: validatedRequest })
+      .json();
+
+    return PaymentStartResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // Complete Onboarding - POST /api/onboarding/complete
+  // ==========================================================================
+
+  /**
+   * Finalizes onboarding and commits all staged data to permanent tables
+   * @returns User data and JWT tokens
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async complete(
+    data: CompleteOnboardingRequest
+  ): Promise<CompleteOnboardingResponse> {
+    const validatedRequest = CompleteOnboardingRequestSchema.parse(data);
+
+    const response = await apiClient
+      .post("api/onboarding/complete", { json: validatedRequest })
+      .json();
+
+    return CompleteOnboardingResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // List Plans - GET /v1/billing/plans
+  // ==========================================================================
+
+  /**
+   * Fetches all available billing plans
+   * @returns Array of plans
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async listPlans(): Promise<Plan[]> {
+    const response = await apiClient.get("v1/billing/plans").json();
+
+    return z.array(PlanSchema).parse(response);
+  },
+
+  // ==========================================================================
+  // Get Plan - GET /v1/billing/plans/:descriptor
+  // ==========================================================================
+
+  /**
+   * Fetches a specific plan by descriptor
+   * @param descriptor - Plan descriptor (e.g., "free", "starter", "professional")
+   * @returns Plan details
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async getPlan(descriptor: string): Promise<Plan> {
+    const response = await apiClient
+      .get(`v1/billing/plans/${descriptor}`)
+      .json();
+
+    return PlanSchema.parse(response);
+  },
+};

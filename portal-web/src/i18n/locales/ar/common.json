@@ -39,5 +39,21 @@
   "viewDetails": "عرض التفاصيل",
   "noData": "لا توجد بيانات",
   "somethingWentWrong": "حدث خطأ ما",
-  "tryAgain": "يرجى المحاولة مرة أخرى"
+  "tryAgain": "يرجى المحاولة مرة أخرى",
+  "continue": "متابعة",
+  "email": "البريد الإلكتروني",
+  "password": "كلمة المرور",
+  "confirmPassword": "تأكيد كلمة المرور",
+  "firstName": "الاسم الأول",
+  "lastName": "اسم العائلة",
+  "free": "مجاني",
+  "selected": "محدد",
+  "select": "اختر",
+  "change": "تغيير",
+  "or": "أو",
+  "switchLanguage": "تبديل اللغة",
+  "copyright": "© {{year}} {{company}}. جميع الحقوق محفوظة.",
+  "privacy": "سياسة الخصوصية",
+  "terms": "شروط الخدمة",
+  "support": "الدعم"
 }

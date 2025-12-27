@@ -9,6 +9,14 @@ import DashboardPage from './routes/dashboard';
 import OAuthCallbackPage from './routes/oauth-callback';
 import ForgotPasswordPage from './routes/forgot-password';
 import ResetPasswordPage from './routes/reset-password';
+import OnboardingRoot from './routes/onboarding';
+import PlanSelectionPage from './routes/onboarding/plan';
+import EmailEntryPage from './routes/onboarding/email';
+import VerifyEmailPage from './routes/onboarding/verify';
+import BusinessSetupPage from './routes/onboarding/business';
+import PaymentPage from './routes/onboarding/payment';
+import CompletePage from './routes/onboarding/complete';
+import OnboardingOAuthCallbackPage from './routes/onboarding/oauth-callback';
 
 function Home() {
   const { t } = useTranslation();
@@ -22,6 +30,9 @@ function Home() {
             Kyora Portal
           </h1>
           <div className="flex gap-4">
+            <Link to="/onboarding/plan" className="btn btn-accent">
+              Get Started
+            </Link>
             <Link to="/login" className="btn btn-primary">
               Login
             </Link>
@@ -65,6 +76,19 @@ function App() {
           <Route path="/" element={<Home />} />
           <Route path="/login" element={<LoginPage />} />
           <Route path="/oauth/callback" element={<OAuthCallbackPage />} />
+          
+          {/* Onboarding Routes */}
+          <Route path="/onboarding" element={<OnboardingRoot />}>
+            <Route index element={<PlanSelectionPage />} />
+            <Route path="plan" element={<PlanSelectionPage />} />
+            <Route path="email" element={<EmailEntryPage />} />
+            <Route path="verify" element={<VerifyEmailPage />} />
+            <Route path="business" element={<BusinessSetupPage />} />
+            <Route path="payment" element={<PaymentPage />} />
+            <Route path="complete" element={<CompletePage />} />
+            <Route path="oauth-callback" element={<OnboardingOAuthCallbackPage />} />
+          </Route>
+          
           <Route path="/forgot-password" element={<ForgotPasswordPage />} />
           <Route path="/reset-password" element={<ResetPasswordPage />} />
           <Route path="/design-system" element={<DesignSystem />} />

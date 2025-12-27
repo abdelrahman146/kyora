@@ -14,3 +14,4 @@ export { Avatar, type AvatarProps } from "./Avatar";
 export { IconButton, type IconButtonProps } from "./IconButton";
 export { Logo, type LogoProps } from "./Logo";
 export { Dropdown, type DropdownProps } from "./Dropdown";
+export { Modal, type ModalProps } from "./Modal";

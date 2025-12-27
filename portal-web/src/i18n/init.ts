@@ -4,6 +4,10 @@ import ar from "./locales/ar/translation.json";
 import en from "./locales/en/translation.json";
 import arErrors from "./locales/ar/errors.json";
 import enErrors from "./locales/en/errors.json";
+import arCommon from "./locales/ar/common.json";
+import enCommon from "./locales/en/common.json";
+import arOnboarding from "./locales/ar/onboarding.json";
+import enOnboarding from "./locales/en/onboarding.json";
 import { getCookie } from "../lib/cookies";
 
 /**
@@ -50,15 +54,20 @@ void i18n.use(initReactI18next).init({
     ar: {
       translation: ar,
       errors: arErrors,
+      common: arCommon,
+      onboarding: arOnboarding,
     },
     en: {
       translation: en,
       errors: enErrors,
+      common: enCommon,
+      onboarding: enOnboarding,
     },
   },
   lng: detectedLanguage,
   fallbackLng: "en",
   defaultNS: "translation",
+  ns: ["translation", "errors", "common", "onboarding"],
   interpolation: {
     escapeValue: false,
   },

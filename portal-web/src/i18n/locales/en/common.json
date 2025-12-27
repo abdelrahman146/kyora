@@ -39,5 +39,21 @@
   "viewDetails": "View Details",
   "noData": "No data available",
   "somethingWentWrong": "Something went wrong",
-  "tryAgain": "Please try again"
+  "tryAgain": "Please try again",
+  "continue": "Continue",
+  "email": "Email",
+  "password": "Password",
+  "confirmPassword": "Confirm Password",
+  "firstName": "First Name",
+  "lastName": "Last Name",
+  "free": "Free",
+  "selected": "Selected",
+  "select": "Select",
+  "change": "Change",
+  "or": "OR",
+  "switchLanguage": "Switch Language",
+  "copyright": "© {{year}} {{company}}. All rights reserved.",
+  "privacy": "Privacy Policy",
+  "terms": "Terms of Service",
+  "support": "Support"
 }
