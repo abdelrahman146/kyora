@@ -36,6 +36,9 @@ export const useMetadataStore = create<MetadataState>()(
             loadedAt &&
             Date.now() - loadedAt < ONE_DAY_MS
           ) {
+            if (status !== "loaded") {
+              set({ status: "loaded", error: null });
+            }
             return;
           }
         }

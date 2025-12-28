@@ -24,6 +24,7 @@ import { CustomerCard } from "../../components/molecules/CustomerCard";
 import { InfiniteScroll } from "../../components/molecules/InfiniteScroll";
 import { Pagination } from "../../components/molecules/Pagination";
 import { FilterDrawer } from "../../components/organisms/FilterDrawer";
+import { AddCustomerSheet } from "../../components/organisms";
 import { Table } from "../../components/organisms/Table";
 import type { TableColumn } from "../../components/organisms/Table";
 import { Avatar } from "../../components/atoms/Avatar";
@@ -57,6 +58,7 @@ export default function CustomersPage() {
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
+  const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
 
   // URL params
   const page = parseInt(searchParams.get("page") ?? "1", 10);
@@ -157,6 +159,8 @@ export default function CustomersPage() {
     console.log("Customer clicked:", customer.id);
   };
 
+  const businessCountryCode = selectedBusiness?.countryCode ?? "AE";
+
   // Table columns for desktop
   const tableColumns: TableColumn<Customer>[] = [
     {
@@ -241,7 +245,15 @@ export default function CustomersPage() {
               {t("customers.subtitle")}
             </p>
           </div>
-          <button className="btn btn-primary gap-2">
+          <button
+            type="button"
+            className="btn btn-primary gap-2"
+            onClick={() => {
+              setIsAddCustomerOpen(true);
+            }}
+            disabled={!businessDescriptor}
+            aria-disabled={!businessDescriptor}
+          >
             <Plus size={20} />
             {t("customers.add_customer")}
           </button>
@@ -349,6 +361,18 @@ export default function CustomersPage() {
           </p>
         </div>
       </FilterDrawer>
+
+      <AddCustomerSheet
+        isOpen={isAddCustomerOpen}
+        onClose={() => {
+          setIsAddCustomerOpen(false);
+        }}
+        businessDescriptor={businessDescriptor}
+        businessCountryCode={businessCountryCode}
+        onCreated={async () => {
+          await fetchCustomers(false);
+        }}
+      />
     </DashboardLayout>
   );
 }

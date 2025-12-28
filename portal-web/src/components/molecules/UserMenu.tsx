@@ -10,7 +10,6 @@ import {
 import { Avatar } from "../atoms/Avatar";
 import { Dropdown } from "../atoms/Dropdown";
 import { useAuth } from "../../hooks/useAuth";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
 
 /**
  * UserMenu Component

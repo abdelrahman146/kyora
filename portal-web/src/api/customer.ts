@@ -8,7 +8,9 @@
 import { get, post, put, delVoid } from "./client";
 import type {
   Customer,
+  CustomerAddress,
   CreateCustomerRequest,
+  CreateCustomerAddressRequest,
   UpdateCustomerRequest,
   ListCustomersParams,
   ListCustomersResponse,
@@ -68,6 +70,22 @@ export async function createCustomer(
   return post<Customer>(`v1/businesses/${businessDescriptor}/customers`, {
     json: data,
   });
+}
+
+/**
+ * Create a new address for a customer
+ */
+export async function createCustomerAddress(
+  businessDescriptor: string,
+  customerId: string,
+  data: CreateCustomerAddressRequest
+): Promise<CustomerAddress> {
+  return post<CustomerAddress>(
+    `v1/businesses/${businessDescriptor}/customers/${customerId}/addresses`,
+    {
+      json: data,
+    }
+  );
 }
 
 /**

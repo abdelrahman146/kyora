@@ -26,6 +26,10 @@
   "validation": {
     "required": "هذا الحقل مطلوب.",
     "invalid_email": "يرجى إدخال عنوان بريد إلكتروني صالح.",
+    "invalid_country": "دولة غير صالحة.",
+    "invalid_phone": "يرجى إدخال رقم هاتف صالح.",
+    "invalid_phone_code": "يرجى إدخال رمز اتصال دولي صالح.",
+    "address_requires_phone": "رقم الهاتف مطلوب عند إضافة عنوان.",
     "invalid_password": "يجب أن تكون كلمة المرور 8 أحرف على الأقل.",
     "password_mismatch": "كلمات المرور غير متطابقة.",
     "invalid_format": "تنسيق غير صالح. يرجى التحقق من إدخالك."

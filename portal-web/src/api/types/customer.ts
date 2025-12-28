@@ -31,6 +31,18 @@ export interface CustomerNote {
   deletedAt: string | null;
 }
 
+// Matches swagger: customer.CreateCustomerAddressRequest
+export interface CreateCustomerAddressRequest {
+  street?: string;
+  city: string;
+  state: string;
+  zipCode?: string;
+  countryCode: string;
+  phoneCode: string;
+  /** Full phone number string as expected by the backend */
+  phone: string;
+}
+
 export interface Customer {
   id: string;
   businessId: string;
@@ -61,12 +73,12 @@ export interface Customer {
 
 export interface CreateCustomerRequest {
   name: string;
-  email?: string;
+  email: string;
   phoneCode?: string;
   phoneNumber?: string;
   countryCode: string;
   whatsappNumber?: string;
-  gender?: CustomerGender;
+  gender: CustomerGender;
   joinedAt?: string;
   instagramUsername?: string;
   facebookUsername?: string;

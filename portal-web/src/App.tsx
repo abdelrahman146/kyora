@@ -17,11 +17,28 @@ import CompletePage from './routes/onboarding/complete';
 import OnboardingOAuthCallbackPage from './routes/onboarding/oauth-callback';
 import CustomersPage from './routes/dashboard/customers';
 import HomePage from './routes/home';
+import { Toaster } from 'react-hot-toast';
+import { useMediaQuery } from './hooks/useMediaQuery';
+
+function AppToaster() {
+  const isDesktop = useMediaQuery('(min-width: 768px)');
+  const position = isDesktop ? 'top-right' : 'bottom-center';
+
+  return (
+    <Toaster
+      position={position}
+      toastOptions={{
+        duration: 4000,
+      }}
+    />
+  );
+}
 
 function App() {
   return (
     <AuthProvider>
       <BrowserRouter>
+        <AppToaster />
         <Routes>
           {/* Public Home (Unauthenticated) */}
           <Route path="/welcome" element={<DesignSystem />} />

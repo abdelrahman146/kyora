@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Sparkles, ArrowRight } from "lucide-react";
@@ -71,11 +71,11 @@ export default function CompletePage() {
       }
     };
 
-    void restoreSession();
-    return () => {
-      isCancelled = true;
-    };
-  }, [sessionToken, loadSessionFromStorage, navigate, isAuthenticated]);
+      void restoreSession();
+      return () => {
+        isCancelled = true;
+      };
+    }, [sessionToken, loadSessionFromStorage, navigate, isAuthenticated]);
 
   // Redirect if prerequisites not met
   useEffect(() => {
@@ -99,7 +99,7 @@ export default function CompletePage() {
     }
   }, [hasValidatedSession, isCompleting, isComplete, sessionToken, isPaidPlan, isPaymentComplete, stage, navigate]);
 
-  const completeOnboarding = async () => {
+    const completeOnboarding = useCallback(async () => {
     if (!sessionToken) return;
 
     try {
@@ -129,7 +129,7 @@ export default function CompletePage() {
     } finally {
       setIsCompleting(false);
     }
-  };
+    }, [navigate, resetOnboarding, sessionToken, setSession, t]);
 
   // Auto-complete on mount if ready
   useEffect(() => {
