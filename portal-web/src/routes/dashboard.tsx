@@ -1,3 +1,5 @@
+import { useEffect } from "react";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";
 import { useTranslation } from "react-i18next";
 import { DashboardLayout } from "../components/templates";
@@ -11,7 +13,18 @@ import { useBusinessStore } from "../stores/businessStore";
 export default function DashboardPage() {
   const { user } = useAuth();
   const { t } = useTranslation();
-  const { selectedBusiness } = useBusinessStore();
+  const { businessDescriptor: urlBusinessDescriptor } = useParams<{ businessDescriptor: string }>();
+  const { selectedBusiness, setSelectedBusinessId, businesses } = useBusinessStore();
+
+  // Sync URL business descriptor with state on mount
+  useEffect(() => {
+    if (urlBusinessDescriptor && businesses.length > 0) {
+      const business = businesses.find((b) => b.descriptor === urlBusinessDescriptor);
+      if (business && business.id !== selectedBusiness?.id) {
+        setSelectedBusinessId(business.id);
+      }
+    }
+  }, [urlBusinessDescriptor, businesses, selectedBusiness, setSelectedBusinessId]);
 
   return (
     <DashboardLayout title={t("dashboard.title")}>

@@ -37,7 +37,7 @@ export default function LoginPage() {
 
   // Redirect if already authenticated
   if (!isLoading && isAuthenticated) {
-    return <Navigate to="/dashboard" replace />;
+    return <Navigate to="/" replace />;
   }
 
   // Handle login submission

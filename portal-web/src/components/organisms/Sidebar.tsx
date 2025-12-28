@@ -51,6 +51,7 @@ const navItems: NavItem[] = [
  * - RTL support with proper directional logic
  * - Smooth transitions
  * - Touch-friendly targets (min 44px)
+ * - Business descriptor from state for navigation
  */
 export function Sidebar() {
   const { t } = useTranslation();
@@ -127,8 +128,9 @@ export function Sidebar() {
       {/* Navigation Links */}
       <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
         {navItems.map((item) => {
-          const itemPath = selectedBusiness && item.key !== "dashboard" 
-            ? `/dashboard/${selectedBusiness.descriptor}${item.path}`
+          // Build full path using state business descriptor
+          const itemPath = selectedBusiness 
+            ? `/businesses/${selectedBusiness.descriptor}${item.path}`
             : item.path;
           const isActive = location.pathname.startsWith(itemPath);
           const Icon = item.icon;

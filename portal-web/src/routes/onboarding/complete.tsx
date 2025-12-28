@@ -63,7 +63,7 @@ export default function CompletePage() {
         // If the user is already authenticated (e.g. refreshed after completion),
         // prefer taking them to the dashboard instead of restarting onboarding.
         if (isAuthenticated) {
-          void navigate("/dashboard", { replace: true });
+          void navigate("/", { replace: true });
           return;
         }
 

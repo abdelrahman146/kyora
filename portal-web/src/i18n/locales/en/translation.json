@@ -13,7 +13,9 @@
     "filter": "Filter",
     "apply": "Apply",
     "reset": "Reset",
-    "loading_more": "Loading more..."
+    "loading_more": "Loading more...",
+    "coming_soon": "Coming Soon",
+    "close": "Close"
   },
   "auth": {
     "email": "Email Address",
@@ -114,5 +116,24 @@
     "no_more_customers": "No more customers",
     "filters": "Filter Customers",
     "filters_coming_soon": "Filter options coming soon"
+  },
+  "home": {
+    "welcome": "Welcome",
+    "select_business_or_manage": "Select a business to manage or access workspace and account settings",
+    "your_businesses": "Your Businesses",
+    "add_business": "Add Business",
+    "no_businesses": "No businesses yet",
+    "no_businesses_desc": "Get started by creating your first business to manage your operations",
+    "create_first_business": "Create First Business",
+    "quick_links": "Quick Links",
+    "workspace_settings": "Workspace Settings",
+    "workspace_settings_desc": "Manage members, roles, and permissions",
+    "account_settings": "Account Settings",
+    "account_settings_desc": "Update your profile and preferences",
+    "billing": "Billing & Subscriptions",
+    "billing_desc": "Manage your plan, payment methods, and invoices",
+    "support": "Support & Help",
+    "help_center": "Help Center",
+    "documentation": "Documentation"
   }
 }

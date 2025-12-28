@@ -17,6 +17,7 @@ import { useSearchParams, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Filter } from "lucide-react";
 import { DashboardLayout } from "../../components/templates";
+import { useBusinessStore } from "../../stores/businessStore";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { SearchInput } from "../../components/molecules/SearchInput";
 import { CustomerCard } from "../../components/molecules/CustomerCard";
@@ -30,9 +31,23 @@ import type { Customer } from "../../api/types/customer";
 
 export default function CustomersPage() {
   const { t } = useTranslation();
-  const { businessDescriptor } = useParams<{ businessDescriptor: string }>();
+  const { businessDescriptor: urlBusinessDescriptor } = useParams<{ businessDescriptor: string }>();
+  const { selectedBusiness, setSelectedBusinessId, businesses } = useBusinessStore();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [searchParams, setSearchParams] = useSearchParams();
+
+  // Sync URL business descriptor with state on mount
+  useEffect(() => {
+    if (urlBusinessDescriptor && businesses.length > 0) {
+      const business = businesses.find((b) => b.descriptor === urlBusinessDescriptor);
+      if (business && business.id !== selectedBusiness?.id) {
+        setSelectedBusinessId(business.id);
+      }
+    }
+  }, [urlBusinessDescriptor, businesses, selectedBusiness, setSelectedBusinessId]);
+
+  // Use selected business descriptor from state for operations
+  const businessDescriptor = selectedBusiness?.descriptor ?? urlBusinessDescriptor;
 
   // State
   const [customers, setCustomers] = useState<Customer[]>([]);

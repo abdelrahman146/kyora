@@ -95,7 +95,7 @@ export default function OAuthCallbackPage() {
 
   // Retry button handler
   const handleRetry = () => {
-    void navigate("/login", { replace: true });
+    void navigate("/auth/login", { replace: true });
   };
 
   return (

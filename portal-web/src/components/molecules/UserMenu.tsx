@@ -40,11 +40,11 @@ export function UserMenu() {
   const handleLogout = () => {
     void logout()
       .then(() => {
-        void navigate("/login", { replace: true });
+        void navigate("/auth/login", { replace: true });
       })
       .catch((error: unknown) => {
         console.error("Logout failed:", error);
-        void navigate("/login", { replace: true });
+        void navigate("/auth/login", { replace: true });
       });
   };
 

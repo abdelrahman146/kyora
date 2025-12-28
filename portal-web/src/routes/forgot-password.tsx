@@ -67,7 +67,7 @@ export default function ForgotPasswordPage() {
   };
 
   const handleBackToLogin = () => {
-    void navigate("/login", { replace: true });
+    void navigate("/auth/login", { replace: true });
   };
 
   // Success State

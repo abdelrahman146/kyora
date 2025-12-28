@@ -452,7 +452,7 @@ export default function VerifyEmailPage() {
                           type="button"
                           className="btn btn-outline btn-sm self-start"
                           onClick={() => {
-                            void navigate("/login");
+                            void navigate("/auth/login");
                           }}
                         >
                           {t("translation:login")}

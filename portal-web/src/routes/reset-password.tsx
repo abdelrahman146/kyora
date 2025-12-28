@@ -101,7 +101,7 @@ export default function ResetPasswordPage() {
 
       // Redirect to login after 2 seconds
       void setTimeout(() => {
-        void navigate("/login", { replace: true });
+        void navigate("/auth/login", { replace: true });
       }, 2000);
     } catch (error) {
       const message = await translateErrorAsync(error, t);
