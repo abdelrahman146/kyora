@@ -78,7 +78,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         
         <div className="relative">
           {startIcon && (
-            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-base-content/50">
+            <div className="absolute inset-y-0 start-0 z-10 flex items-center ps-3 pointer-events-none text-base-content/50">
               {startIcon}
             </div>
           )}
@@ -89,7 +89,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             disabled={disabled}
             required={required}
             className={cn(
-              "input w-full transition-all duration-200",
+              "input relative z-0 w-full transition-all duration-200",
               sizeClasses[size],
               variantClasses[variant],
               "text-start placeholder:text-base-content/40",
@@ -109,7 +109,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           />
           
           {endIcon && (
-            <div className="absolute inset-y-0 end-0 flex items-center pe-3 text-base-content/50">
+            <div className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50">
               {endIcon}
             </div>
           )}

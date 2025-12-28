@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useMemo, useState, useEffect, type ReactNode } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Building2, Globe, DollarSign } from "lucide-react";
@@ -7,6 +7,7 @@ import { FormInput, FormSelect } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { translateErrorAsync } from "@/lib/translateError";
+import { useMetadataStore } from "@/stores/metadataStore";
 
 /**
  * Business Setup Step - Step 3 of Onboarding
@@ -24,41 +25,8 @@ import { translateErrorAsync } from "@/lib/translateError";
  * 3. Navigate to /onboarding/payment (paid) or /onboarding/complete (free)
  */
 
-// Common countries for business registration
-const COUNTRIES = [
-  { code: "US", name: "United States" },
-  { code: "GB", name: "United Kingdom" },
-  { code: "CA", name: "Canada" },
-  { code: "AU", name: "Australia" },
-  { code: "DE", name: "Germany" },
-  { code: "FR", name: "France" },
-  { code: "ES", name: "Spain" },
-  { code: "IT", name: "Italy" },
-  { code: "NL", name: "Netherlands" },
-  { code: "SE", name: "Sweden" },
-  { code: "AE", name: "United Arab Emirates" },
-  { code: "SA", name: "Saudi Arabia" },
-  { code: "EG", name: "Egypt" },
-  { code: "JO", name: "Jordan" },
-  { code: "LB", name: "Lebanon" },
-];
-
-// Common currencies
-const CURRENCIES = [
-  { code: "USD", name: "US Dollar", symbol: "$" },
-  { code: "EUR", name: "Euro", symbol: "€" },
-  { code: "GBP", name: "British Pound", symbol: "£" },
-  { code: "CAD", name: "Canadian Dollar", symbol: "C$" },
-  { code: "AUD", name: "Australian Dollar", symbol: "A$" },
-  { code: "AED", name: "UAE Dirham", symbol: "د.إ" },
-  { code: "SAR", name: "Saudi Riyal", symbol: "﷼" },
-  { code: "EGP", name: "Egyptian Pound", symbol: "E£" },
-  { code: "JOD", name: "Jordanian Dinar", symbol: "د.ا" },
-  { code: "LBP", name: "Lebanese Pound", symbol: "ل.ل" },
-];
-
 export default function BusinessSetupPage() {
-  const { t } = useTranslation(["onboarding", "common"]);
+  const { t, i18n } = useTranslation(["onboarding", "common"]);
   const navigate = useNavigate();
   const {
     sessionToken,
@@ -75,6 +43,50 @@ export default function BusinessSetupPage() {
   const [error, setError] = useState("");
   const [descriptorError, setDescriptorError] = useState("");
   const [isDescriptorManuallyEdited, setIsDescriptorManuallyEdited] = useState(false);
+
+  const countries = useMetadataStore((s) => s.countries);
+  const countriesStatus = useMetadataStore((s) => s.status);
+  const loadCountries = useMetadataStore((s) => s.loadCountries);
+
+  const isArabic = i18n.language?.toLowerCase().startsWith("ar");
+
+  useEffect(() => {
+    void loadCountries();
+  }, [loadCountries]);
+
+  const countryByCode = useMemo(() => {
+    const map = new Map<string, (typeof countries)[number]>();
+    for (const c of countries) {
+      map.set(c.code, c);
+    }
+    return map;
+  }, [countries]);
+
+  const countryOptions = useMemo(() => {
+    return countries.map((c) => {
+      const label = `${c.flag ? `${c.flag} ` : ""}${isArabic ? c.nameAr : c.name}`;
+      return {
+        value: c.code,
+        label,
+        icon: <Globe className="w-4 h-4" />,
+      };
+    });
+  }, [countries, isArabic]);
+
+  const currencyOptions = useMemo(() => {
+    const seen = new Set<string>();
+    const options: Array<{ value: string; label: string; icon: ReactNode }> = [];
+    for (const c of countries) {
+      if (!c.currencyCode || seen.has(c.currencyCode)) continue;
+      seen.add(c.currencyCode);
+      options.push({
+        value: c.currencyCode,
+        label: c.currencyLabel || c.currencyCode,
+        icon: <DollarSign className="w-4 h-4" />,
+      });
+    }
+    return options;
+  }, [countries]);
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -255,17 +267,18 @@ export default function BusinessSetupPage() {
                 {/* Country */}
                 <FormSelect<string>
                   label={t("onboarding:business.country")}
-                  options={COUNTRIES.map((c) => ({
-                    value: c.code,
-                    label: c.name,
-                    icon: <Globe className="w-4 h-4" />,
-                  }))}
+                  options={countryOptions}
                   value={country}
                   onChange={(value) => {
-                    setCountry(value as string);
+                    const code = value as string;
+                    setCountry(code);
+                    const selected = countryByCode.get(code);
+                    if (selected?.currencyCode) {
+                      setCurrency(selected.currencyCode);
+                    }
                   }}
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || countriesStatus !== "loaded"}
                   placeholder={t("onboarding:business.selectCountry")}
                   searchable
                 />
@@ -273,17 +286,13 @@ export default function BusinessSetupPage() {
                 {/* Currency */}
                 <FormSelect<string>
                   label={t("onboarding:business.currency")}
-                  options={CURRENCIES.map((c) => ({
-                    value: c.code,
-                    label: `${c.symbol} ${c.name} (${c.code})`,
-                    icon: <DollarSign className="w-4 h-4" />,
-                  }))}
+                  options={currencyOptions}
                   value={currency}
                   onChange={(value) => {
                     setCurrency(value as string);
                   }}
                   required
-                  disabled={isSubmitting}
+                  disabled={isSubmitting || countriesStatus !== "loaded"}
                   placeholder={t("onboarding:business.selectCurrency")}
                   searchable
                 />

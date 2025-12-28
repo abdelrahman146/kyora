@@ -8,6 +8,7 @@ import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { authApi } from "@/api/auth";
 import { translateErrorAsync } from "@/lib/translateError";
+import { isHTTPError } from "@/lib/errorParser";
 import { formatCountdownDuration } from "@/lib/utils";
 
 /**
@@ -36,7 +37,7 @@ import { formatCountdownDuration } from "@/lib/utils";
  * 5. Navigate to /onboarding/business
  */
 export default function VerifyEmailPage() {
-  const { t } = useTranslation(["onboarding", "common"]);
+  const { t } = useTranslation(["onboarding", "common", "translation"]);
   const navigate = useNavigate();
   const {
     sessionToken,
@@ -56,6 +57,7 @@ export default function VerifyEmailPage() {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
+  const [showLoginCta, setShowLoginCta] = useState(false);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
 
@@ -185,6 +187,7 @@ export default function VerifyEmailPage() {
 
   const submitProfile = async () => {
     setError("");
+    setShowLoginCta(false);
 
     if (password !== confirmPassword) {
       setError(t("onboarding:verify.passwordMismatch"));
@@ -215,6 +218,14 @@ export default function VerifyEmailPage() {
       // Navigate to business setup
       void navigate("/onboarding/business");
     } catch (err) {
+      if (
+        isHTTPError(err) &&
+        err.response.status === 409 &&
+        typeof err.response.url === "string" &&
+        err.response.url.endsWith("/v1/onboarding/email/verify")
+      ) {
+        setShowLoginCta(true);
+      }
       const message = await translateErrorAsync(err, t);
       setError(message);
     } finally {
@@ -434,7 +445,20 @@ export default function VerifyEmailPage() {
 
                 {error && (
                   <div className="alert alert-error">
-                    <span className="text-sm">{error}</span>
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm">{error}</span>
+                      {showLoginCta && (
+                        <button
+                          type="button"
+                          className="btn btn-outline btn-sm self-start"
+                          onClick={() => {
+                            void navigate("/login");
+                          }}
+                        >
+                          {t("translation:login")}
+                        </button>
+                      )}
+                    </div>
                   </div>
                 )}
 

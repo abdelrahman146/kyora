@@ -66,6 +66,16 @@ export async function parseProblemDetails(
         return { key: "errors:auth.invalid_credentials", fallback };
       }
 
+      // Special-case: onboarding verify email can return 409 when the email is already registered.
+      // Show a friendly message that nudges the user to login instead of a generic conflict.
+      if (
+        httpError.response.status === 409 &&
+        typeof httpError.response.url === "string" &&
+        httpError.response.url.endsWith("/v1/onboarding/email/verify")
+      ) {
+        return { key: "errors:onboarding.email_already_exists", fallback };
+      }
+
       // Return translation key based on status code
       return {
         ...getStatusErrorKey(httpError.response.status),

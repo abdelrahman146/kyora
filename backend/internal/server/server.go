@@ -18,6 +18,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/metadata"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/domain/storefront"
@@ -238,6 +239,9 @@ func New(opts ...func(*ServerConfig)) (*Server, error) {
 
 	// Register onboarding routes
 	registerOnboardingRoutes(r, onboarding.NewHttpHandler(onboardingSvc))
+
+	// Public metadata routes (no auth required)
+	registerMetadataRoutes(r, metadata.NewHttpHandler())
 
 	accountingHandler := accounting.NewHttpHandler(accountingSvc, orderSvc)
 	analyticsHandler := analytics.NewHttpHandler(analyticsSvc)

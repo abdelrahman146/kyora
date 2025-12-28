@@ -9,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/domain/customer"
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
+	"github.com/abdelrahman146/kyora/internal/domain/metadata"
 	"github.com/abdelrahman146/kyora/internal/domain/onboarding"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/domain/storefront"
@@ -43,6 +44,12 @@ func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 	group.POST("/business", h.SetBusiness)
 	group.POST("/payment/start", h.PaymentStart)
 	group.POST("/complete", h.Complete)
+}
+
+func registerMetadataRoutes(r *gin.Engine, h *metadata.HttpHandler) {
+	group := r.Group("/v1/metadata")
+	group.Use(middleware.NewCORSMiddleware())
+	group.GET("/countries", h.ListCountries)
 }
 
 func registerAccountRoutes(r *gin.Engine, h *account.HttpHandler, accountService *account.Service, billingService *billing.Service) {
