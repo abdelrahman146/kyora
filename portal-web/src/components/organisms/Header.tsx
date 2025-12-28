@@ -3,8 +3,8 @@ import { Menu } from "lucide-react";
 import { IconButton } from "../atoms/IconButton";
 import { BusinessSwitcher } from "../molecules/BusinessSwitcher";
 import { UserMenu } from "../molecules/UserMenu";
+import { LanguageSwitcher } from "../molecules/LanguageSwitcher";
 import { useBusinessStore } from "../../stores/businessStore";
-import { useLanguage } from "../../hooks/useLanguage";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { cn } from "@/lib/utils";
 
@@ -29,7 +29,6 @@ interface HeaderProps {
  */
 export function Header({ title }: HeaderProps) {
   const { t } = useTranslation();
-  const { toggleLanguage } = useLanguage();
   const isDesktop = useMediaQuery("(min-width: 768px)");
   const { isSidebarCollapsed, openSidebar } = useBusinessStore();
 
@@ -71,10 +70,8 @@ export function Header({ title }: HeaderProps) {
           {/* Business Switcher - Compact on mobile */}
           <BusinessSwitcher />
 
-          {/* Language Toggle - Show only on desktop or larger mobile */}
-          <div className="hidden sm:block">
-            <LanguageSwitcher variant="compact" />
-          </div>
+          {/* Language Toggle - Always visible, compact variant */}
+          <LanguageSwitcher variant="compact" />
 
           {/* User Menu */}
           <UserMenu />

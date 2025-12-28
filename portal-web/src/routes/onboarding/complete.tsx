@@ -141,7 +141,7 @@ export default function CompletePage() {
     if (!isReady) return;
 
     void completeOnboarding();
-  }, [hasValidatedSession, sessionToken, isComplete, isCompleting, error, isPaidPlan, isPaymentComplete]);
+  }, [hasValidatedSession, sessionToken, isComplete, isCompleting, error, isPaidPlan, isPaymentComplete, completeOnboarding]);
 
   if (error) {
     return (

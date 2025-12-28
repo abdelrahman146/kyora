@@ -11,7 +11,6 @@ import { Avatar } from "../atoms/Avatar";
 import { Dropdown } from "../atoms/Dropdown";
 import { useAuth } from "../../hooks/useAuth";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { LanguageSwitcher } from "./LanguageSwitcher";
 
 /**
  * UserMenu Component
@@ -33,7 +32,6 @@ export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const isMobile = useMediaQuery("(max-width: 640px)");
 
   const handleLogout = () => {
     void logout()
@@ -88,13 +86,6 @@ export function UserMenu() {
 
         {/* Menu Items */}
         <div className="py-1">
-          {/* Language Switcher - Mobile Only */}
-          {isMobile && (
-            <div className="px-2 py-1.5">
-              <LanguageSwitcher variant="compact" />
-            </div>
-          )}
-
           <button
             type="button"
             onClick={() => { void navigate("/profile"); }}

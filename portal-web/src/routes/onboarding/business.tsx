@@ -48,7 +48,7 @@ export default function BusinessSetupPage() {
   const countriesStatus = useMetadataStore((s) => s.status);
   const loadCountries = useMetadataStore((s) => s.loadCountries);
 
-  const isArabic = i18n.language?.toLowerCase().startsWith("ar");
+  const isArabic = i18n.language.toLowerCase().startsWith("ar");
 
   useEffect(() => {
     void loadCountries();
@@ -75,7 +75,7 @@ export default function BusinessSetupPage() {
 
   const currencyOptions = useMemo(() => {
     const seen = new Set<string>();
-    const options: Array<{ value: string; label: string; icon: ReactNode }> = [];
+    const options: { value: string; label: string; icon: ReactNode }[] = [];
     for (const c of countries) {
       if (!c.currencyCode || seen.has(c.currencyCode)) continue;
       seen.add(c.currencyCode);

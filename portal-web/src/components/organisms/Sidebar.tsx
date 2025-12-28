@@ -69,13 +69,11 @@ export function Sidebar() {
       className={cn(
         "fixed top-0 h-screen bg-base-100 border-base-300 z-50",
         // Desktop: Always visible, collapsible width, smooth transition
-        isDesktop && "border-e transition-all duration-300",
+        isDesktop && "start-0 border-e transition-all duration-300",
         isDesktop && !isSidebarCollapsed && "w-64",
         isDesktop && isSidebarCollapsed && "w-20",
         // Mobile: Drawer from start with slide animation
-        !isDesktop && "w-64 shadow-2xl transition-transform duration-300",
-        !isDesktop && !isRTL && "start-0",
-        !isDesktop && isRTL && "end-0",
+        !isDesktop && "start-0 w-64 shadow-2xl transition-transform duration-300",
         // Mobile animation states
         !isDesktop && !isRTL && !isSidebarOpen && "-translate-x-full",
         !isDesktop && isRTL && !isSidebarOpen && "translate-x-full"

@@ -23,6 +23,7 @@ import { LanguageSwitcher } from "@/components/molecules/LanguageSwitcher";
 ## Variants
 
 ### Dropdown (Default)
+
 Full-featured dropdown with language names, native names, and flags. Best for settings pages or dedicated language selection areas.
 
 ```tsx
@@ -30,6 +31,7 @@ Full-featured dropdown with language names, native names, and flags. Best for se
 ```
 
 ### Compact
+
 Compact version perfect for navbars and tight spaces. Shows current language code and flag.
 
 ```tsx
@@ -37,6 +39,7 @@ Compact version perfect for navbars and tight spaces. Shows current language cod
 ```
 
 ### Icon Only
+
 Shows only a globe icon. Dropdown opens on click with full language list.
 
 ```tsx
@@ -44,6 +47,7 @@ Shows only a globe icon. Dropdown opens on click with full language list.
 ```
 
 ### Toggle
+
 Simple toggle button to switch between 2 languages. Best when you have exactly 2 supported languages.
 
 ```tsx
@@ -53,7 +57,7 @@ Simple toggle button to switch between 2 languages. Best when you have exactly 2
 ## Props
 
 | Prop | Type | Default | Description |
-|------|------|---------|-------------|
+| ------ | ------ | ------- | ----------- |
 | `variant` | `"dropdown" \| "toggle" \| "compact" \| "iconOnly"` | `"dropdown"` | Design variant to use |
 | `className` | `string` | `""` | Additional CSS classes |
 | `showLabel` | `boolean` | `true` | Show language name label |
@@ -65,40 +69,40 @@ To add a new language:
 
 1. Add the language configuration in `LanguageSwitcher.tsx`:
 
-```tsx
-const LANGUAGE_CONFIG = {
-  // ... existing languages
-  fr: {
-    code: "fr",
-    name: "French",
-    nativeName: "Français",
-    flag: "🇫🇷",
-    direction: "ltr",
-  },
-} as const;
-```
+   ```tsx
+   const LANGUAGE_CONFIG = {
+     // ... existing languages
+     fr: {
+       code: "fr",
+       name: "French",
+       nativeName: "Français",
+       flag: "🇫🇷",
+       direction: "ltr",
+     },
+   } as const;
+   ```
 
-2. Update `useLanguage` hook to include the new language in `SUPPORTED_LANGUAGES`:
+1. Update `useLanguage` hook to include the new language in `SUPPORTED_LANGUAGES`:
 
-```tsx
-const SUPPORTED_LANGUAGES = ["en", "ar", "fr"] as const;
-```
+   ```tsx
+   const SUPPORTED_LANGUAGES = ["en", "ar", "fr"] as const;
+   ```
 
-3. Add translation files in `src/i18n/locales/fr/`
+1. Add translation files in `src/i18n/locales/fr/`
 
-4. Update i18n config in `src/i18n/config.ts`:
+1. Update i18n config in `src/i18n/config.ts`:
 
-```tsx
-import frCommon from "./locales/fr/common.json";
+   ```tsx
+   import frCommon from "./locales/fr/common.json";
 
-const resources = {
-  // ... existing languages
-  fr: {
-    common: frCommon,
-    // ... other namespaces
-  },
-};
-```
+   const resources = {
+     // ... existing languages
+     fr: {
+       common: frCommon,
+       // ... other namespaces
+     },
+   };
+   ```
 
 ## Features
 
@@ -116,6 +120,7 @@ const resources = {
 ## Examples
 
 ### In Navigation Header
+
 ```tsx
 <header>
   <Logo />
@@ -127,6 +132,7 @@ const resources = {
 ```
 
 ### In Settings Page
+
 ```tsx
 <div className="card">
   <h2>Language Preferences</h2>
@@ -135,6 +141,7 @@ const resources = {
 ```
 
 ### In Mobile Menu
+
 ```tsx
 <div className="drawer-side">
   <ul className="menu">

@@ -120,7 +120,7 @@ export default function PaymentPage() {
     } finally {
       setIsLoading(false);
     }
-  }, [sessionToken, t]);
+  }, [sessionToken, t, setCheckoutUrl]);
 
   // Auto-initiate payment if no checkout URL exists
   useEffect(() => {
