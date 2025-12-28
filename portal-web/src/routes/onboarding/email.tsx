@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
+import { Mail } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
+import { FormInput } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { translateErrorAsync } from "@/lib/translateError";
@@ -115,27 +117,20 @@ export default function EmailEntryPage() {
         {/* Email Form */}
         <div className="card bg-base-100 border border-base-300 shadow-lg">
           <div className="card-body">
-            <form onSubmit={(e) => void handleEmailSubmit(e)} className="space-y-4">
-              <div className="form-control">
-                <label htmlFor="email" className="label">
-                  <span className="label-text font-medium">
-                    {t("common:email")}
-                  </span>
-                </label>
-                <input
-                  type="email"
-                  id="email"
-                  value={email}
-                  onChange={(e) => {
-                    setEmail(e.target.value);
-                  }}
-                  placeholder={t("onboarding:email.emailPlaceholder")}
-                  className="input input-bordered w-full"
-                  required
-                  disabled={isSubmitting}
-                  autoFocus
-                />
-              </div>
+            <form onSubmit={(e) => void handleEmailSubmit(e)} className="space-y-6">
+              <FormInput
+                label={t("common:email")}
+                type="email"
+                value={email}
+                onChange={(e) => {
+                  setEmail(e.target.value);
+                }}
+                placeholder={t("onboarding:email.emailPlaceholder")}
+                required
+                disabled={isSubmitting}
+                autoFocus
+                startIcon={<Mail className="w-5 h-5" />}
+              />
 
               {error && (
                 <div className="alert alert-error">

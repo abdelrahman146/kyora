@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Building2, Globe, DollarSign } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
+import { FormInput, FormSelect } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { translateErrorAsync } from "@/lib/translateError";
@@ -192,125 +193,75 @@ export default function BusinessSetupPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               {/* Business Name */}
-              <div className="form-control">
-                <label htmlFor="businessName" className="label">
-                  <span className="label-text font-medium">
-                    {t("onboarding:business.name")}
-                  </span>
-                  <span className="label-text-alt text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="businessName"
-                  value={businessName}
-                  onChange={(e) => {
-                    setBusinessName(e.target.value);
-                  }}
-                  placeholder={t("onboarding:business.namePlaceholder")}
-                  className="input input-bordered"
-                  required
-                  disabled={isSubmitting}
-                />
-                <label className="label">
-                  <span className="label-text-alt">
-                    {t("onboarding:business.nameHint")}
-                  </span>
-                </label>
-              </div>
+              <FormInput
+                label={t("onboarding:business.name")}
+                type="text"
+                value={businessName}
+                onChange={(e) => {
+                  setBusinessName(e.target.value);
+                }}
+                placeholder={t("onboarding:business.namePlaceholder")}
+                required
+                disabled={isSubmitting}
+                startIcon={<Building2 className="w-5 h-5" />}
+                helperText={t("onboarding:business.nameHint")}
+              />
 
               {/* Business Descriptor */}
-              <div className="form-control">
-                <label htmlFor="descriptor" className="label">
-                  <span className="label-text font-medium">
-                    {t("onboarding:business.descriptor")}
-                  </span>
-                  <span className="label-text-alt text-error">*</span>
-                </label>
-                <input
-                  type="text"
-                  id="descriptor"
-                  value={descriptor}
-                  onChange={(e) => {
-                    setDescriptor(e.target.value.toLowerCase());
-                  }}
-                  placeholder={t("onboarding:business.descriptorPlaceholder")}
-                  className={`input input-bordered ${
-                    descriptorError ? "input-error" : ""
-                  }`}
-                  pattern="[a-z0-9-]+"
-                  minLength={3}
-                  maxLength={50}
-                  required
-                  disabled={isSubmitting}
-                />
-                <label className="label">
-                  <span className={`label-text-alt ${descriptorError ? "text-error" : ""}`}>
-                    {descriptorError || t("onboarding:business.descriptorHint")}
-                  </span>
-                </label>
-              </div>
+              <FormInput
+                label={t("onboarding:business.descriptor")}
+                type="text"
+                value={descriptor}
+                onChange={(e) => {
+                  setDescriptor(e.target.value.toLowerCase());
+                }}
+                placeholder={t("onboarding:business.descriptorPlaceholder")}
+                pattern="[a-z0-9-]+"
+                minLength={3}
+                maxLength={50}
+                required
+                disabled={isSubmitting}
+                error={descriptorError}
+                helperText={!descriptorError ? t("onboarding:business.descriptorHint") : undefined}
+              />
 
               {/* Country & Currency Grid */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 {/* Country */}
-                <div className="form-control">
-                  <label htmlFor="country" className="label">
-                    <span className="label-text font-medium flex items-center gap-2">
-                      <Globe className="w-4 h-4" />
-                      {t("onboarding:business.country")}
-                    </span>
-                    <span className="label-text-alt text-error">*</span>
-                  </label>
-                  <select
-                    id="country"
-                    value={country}
-                    onChange={(e) => {
-                      setCountry(e.target.value);
-                    }}
-                    className="select select-bordered"
-                    required
-                    disabled={isSubmitting}
-                  >
-                    <option value="">
-                      {t("onboarding:business.selectCountry")}
-                    </option>
-                    {COUNTRIES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.name}
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FormSelect<string>
+                  label={t("onboarding:business.country")}
+                  options={COUNTRIES.map((c) => ({
+                    value: c.code,
+                    label: c.name,
+                    icon: <Globe className="w-4 h-4" />,
+                  }))}
+                  value={country}
+                  onChange={(value) => {
+                    setCountry(value as string);
+                  }}
+                  required
+                  disabled={isSubmitting}
+                  placeholder={t("onboarding:business.selectCountry")}
+                  searchable
+                />
 
                 {/* Currency */}
-                <div className="form-control">
-                  <label htmlFor="currency" className="label">
-                    <span className="label-text font-medium flex items-center gap-2">
-                      <DollarSign className="w-4 h-4" />
-                      {t("onboarding:business.currency")}
-                    </span>
-                    <span className="label-text-alt text-error">*</span>
-                  </label>
-                  <select
-                    id="currency"
-                    value={currency}
-                    onChange={(e) => {
-                      setCurrency(e.target.value);
-                    }}
-                    className="select select-bordered"
-                    required
-                    disabled={isSubmitting}
-                  >
-                    <option value="">
-                      {t("onboarding:business.selectCurrency")}
-                    </option>
-                    {CURRENCIES.map((c) => (
-                      <option key={c.code} value={c.code}>
-                        {c.symbol} {c.name} ({c.code})
-                      </option>
-                    ))}
-                  </select>
-                </div>
+                <FormSelect<string>
+                  label={t("onboarding:business.currency")}
+                  options={CURRENCIES.map((c) => ({
+                    value: c.code,
+                    label: `${c.symbol} ${c.name} (${c.code})`,
+                    icon: <DollarSign className="w-4 h-4" />,
+                  }))}
+                  value={currency}
+                  onChange={(value) => {
+                    setCurrency(value as string);
+                  }}
+                  required
+                  disabled={isSubmitting}
+                  placeholder={t("onboarding:business.selectCurrency")}
+                  searchable
+                />
               </div>
 
               {error && (

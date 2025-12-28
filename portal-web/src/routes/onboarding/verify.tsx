@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Mail, Check } from "lucide-react";
+import { Mail, Check, Lock, User } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
-import { ResendCountdownButton } from "@/components";
+import { ResendCountdownButton, FormInput } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { authApi } from "@/api/auth";
@@ -355,93 +355,65 @@ export default function VerifyEmailPage() {
                 {t("onboarding:verify.completeProfile")}
               </h2>
 
-              <form onSubmit={handleSubmitProfile} className="space-y-4">
+              <form onSubmit={handleSubmitProfile} className="space-y-6">
                 {/* First Name */}
-                <div className="form-control">
-                  <label htmlFor="firstName" className="label">
-                    <span className="label-text font-medium">
-                      {t("common:firstName")}
-                    </span>
-                  </label>
-                    <input
-                      type="text"
-                      id="firstName"
-                      value={firstName}
-                      onChange={(e) => {
-                        setFirstName(e.target.value);
-                      }}
-                    className="input input-bordered"
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <FormInput
+                  label={t("common:firstName")}
+                  type="text"
+                  value={firstName}
+                  onChange={(e) => {
+                    setFirstName(e.target.value);
+                  }}
+                  required
+                  disabled={isSubmitting}
+                  startIcon={<User className="w-5 h-5" />}
+                  placeholder={t("common:firstName")}
+                />
 
                 {/* Last Name */}
-                <div className="form-control">
-                  <label htmlFor="lastName" className="label">
-                    <span className="label-text font-medium">
-                      {t("common:lastName")}
-                    </span>
-                  </label>
-                    <input
-                      type="text"
-                      id="lastName"
-                      value={lastName}
-                      onChange={(e) => {
-                        setLastName(e.target.value);
-                      }}
-                    className="input input-bordered"
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <FormInput
+                  label={t("common:lastName")}
+                  type="text"
+                  value={lastName}
+                  onChange={(e) => {
+                    setLastName(e.target.value);
+                  }}
+                  required
+                  disabled={isSubmitting}
+                  startIcon={<User className="w-5 h-5" />}
+                  placeholder={t("common:lastName")}
+                />
 
                 {/* Password */}
-                <div className="form-control">
-                  <label htmlFor="password" className="label">
-                    <span className="label-text font-medium">
-                      {t("common:password")}
-                    </span>
-                  </label>
-                    <input
-                      type="password"
-                      id="password"
-                      value={password}
-                      onChange={(e) => {
-                        setPassword(e.target.value);
-                      }}
-                    className="input input-bordered"
-                    minLength={8}
-                    required
-                    disabled={isSubmitting}
-                  />
-                  <label className="label">
-                    <span className="label-text-alt">
-                      {t("onboarding:verify.passwordHint")}
-                    </span>
-                  </label>
-                </div>
+                <FormInput
+                  label={t("common:password")}
+                  type="password"
+                  value={password}
+                  onChange={(e) => {
+                    setPassword(e.target.value);
+                  }}
+                  minLength={8}
+                  required
+                  disabled={isSubmitting}
+                  startIcon={<Lock className="w-5 h-5" />}
+                  placeholder={t("common:password")}
+                  helperText={t("onboarding:verify.passwordHint")}
+                />
 
                 {/* Confirm Password */}
-                <div className="form-control">
-                  <label htmlFor="confirmPassword" className="label">
-                    <span className="label-text font-medium">
-                      {t("common:confirmPassword")}
-                    </span>
-                  </label>
-                    <input
-                      type="password"
-                      id="confirmPassword"
-                      value={confirmPassword}
-                      onChange={(e) => {
-                        setConfirmPassword(e.target.value);
-                      }}
-                    className="input input-bordered"
-                    minLength={8}
-                    required
-                    disabled={isSubmitting}
-                  />
-                </div>
+                <FormInput
+                  label={t("common:confirmPassword")}
+                  type="password"
+                  value={confirmPassword}
+                  onChange={(e) => {
+                    setConfirmPassword(e.target.value);
+                  }}
+                  minLength={8}
+                  required
+                  disabled={isSubmitting}
+                  startIcon={<Lock className="w-5 h-5" />}
+                  placeholder={t("common:confirmPassword")}
+                />
 
                 {error && (
                   <div className="alert alert-error">
