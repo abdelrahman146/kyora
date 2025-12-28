@@ -145,7 +145,7 @@ export default function LoginPage() {
               <p className="text-base-content/60">
                 {t("auth.no_account")}{" "}
                 <a
-                  href="/register"
+                  href="/onboarding"
                   className="text-primary-600 hover:text-primary-700 font-semibold hover:underline transition-colors"
                 >
                   {t("auth.sign_up")}
