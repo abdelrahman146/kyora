@@ -4,8 +4,8 @@ import { useTranslation } from "react-i18next";
 import { Sparkles, ArrowRight } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
 import { useOnboarding } from "@/contexts/OnboardingContext";
+import { useAuth } from "@/hooks/useAuth";
 import { onboardingApi } from "@/api/onboarding";
-import { setTokens } from "@/api/client";
 import { translateErrorAsync } from "@/lib/translateError";
 
 /**
@@ -28,6 +28,7 @@ import { translateErrorAsync } from "@/lib/translateError";
 export default function CompletePage() {
   const { t } = useTranslation(["onboarding", "common"]);
   const navigate = useNavigate();
+  const { isAuthenticated, setSession } = useAuth();
   const {
     sessionToken,
     stage,
@@ -41,22 +42,46 @@ export default function CompletePage() {
   const [isCompleting, setIsCompleting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState("");
+  const [hasValidatedSession, setHasValidatedSession] = useState(false);
 
-  // Restore session from localStorage on mount
+  // Restore onboarding session from storage on mount (if needed)
   useEffect(() => {
+    let isCancelled = false;
+
     const restoreSession = async () => {
-      if (!sessionToken) {
-        const hasSession = await loadSessionFromStorage();
-        if (!hasSession) {
-          await navigate("/onboarding/plan", { replace: true });
+      if (sessionToken) {
+        setHasValidatedSession(true);
+        return;
+      }
+
+      const hasSession = await loadSessionFromStorage();
+      if (isCancelled) return;
+
+      setHasValidatedSession(true);
+
+      if (!hasSession) {
+        // If the user is already authenticated (e.g. refreshed after completion),
+        // prefer taking them to the dashboard instead of restarting onboarding.
+        if (isAuthenticated) {
+          void navigate("/dashboard", { replace: true });
+          return;
         }
+
+        void navigate("/onboarding/plan", { replace: true });
       }
     };
+
     void restoreSession();
-  }, [sessionToken, loadSessionFromStorage, navigate]);
+    return () => {
+      isCancelled = true;
+    };
+  }, [sessionToken, loadSessionFromStorage, navigate, isAuthenticated]);
 
   // Redirect if prerequisites not met
   useEffect(() => {
+    if (!hasValidatedSession) return;
+    if (isCompleting || isComplete) return;
+
     if (!sessionToken) {
       void navigate("/onboarding/plan", { replace: true });
       return;
@@ -72,7 +97,7 @@ export default function CompletePage() {
     if (!isPaidPlan && stage !== "business_staged" && stage !== "ready_to_commit") {
       void navigate("/onboarding/business", { replace: true });
     }
-  }, [sessionToken, isPaidPlan, isPaymentComplete, stage, navigate]);
+  }, [hasValidatedSession, isCompleting, isComplete, sessionToken, isPaidPlan, isPaymentComplete, stage, navigate]);
 
   const completeOnboarding = async () => {
     if (!sessionToken) return;
@@ -85,8 +110,8 @@ export default function CompletePage() {
         sessionToken,
       });
 
-      // Store tokens directly
-      setTokens(response.token, response.refreshToken);
+      // Hydrate auth immediately to avoid protected-route redirect flicker
+      setSession({ user: response.user, token: response.token, refreshToken: response.refreshToken });
 
       // Mark as complete
       setIsComplete(true);
@@ -108,17 +133,15 @@ export default function CompletePage() {
 
   // Auto-complete on mount if ready
   useEffect(() => {
-    if (
-      sessionToken &&
-      !isComplete &&
-      !isCompleting &&
-      !error &&
-      ((isPaidPlan && isPaymentComplete) || !isPaidPlan)
-    ) {
-      void completeOnboarding();
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+    if (!hasValidatedSession) return;
+    if (!sessionToken) return;
+    if (isComplete || isCompleting || error) return;
+
+    const isReady = (isPaidPlan && isPaymentComplete) || !isPaidPlan;
+    if (!isReady) return;
+
+    void completeOnboarding();
+  }, [hasValidatedSession, sessionToken, isComplete, isCompleting, error, isPaidPlan, isPaymentComplete]);
 
   if (error) {
     return (

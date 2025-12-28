@@ -17,6 +17,12 @@ export interface AuthContextType {
   /** Login with email and password */
   login: (credentials: LoginRequest) => Promise<void>;
 
+  /**
+   * Set authenticated session directly.
+   * Useful when an endpoint returns user + tokens (e.g. onboarding completion).
+   */
+  setSession: (session: { user: User; token: string; refreshToken: string }) => void;
+
   /** Logout current session (revoke refresh token) */
   logout: () => Promise<void>;
 

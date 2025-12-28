@@ -108,6 +108,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   }, []);
 
   /**
+   * Hydrate session directly when we already have user + tokens.
+   * This avoids UI flicker where protected routes redirect before the user state is set.
+   */
+  const setSession = useCallback(
+    (session: { user: User; token: string; refreshToken: string }) => {
+      setTokens(session.token, session.refreshToken);
+      setUser(session.user);
+    },
+    []
+  );
+
+  /**
    * Logout current session
    * Revokes the current refresh token on the backend
    */
@@ -150,6 +162,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     isLoading,
     isAuthenticated,
     login,
+    setSession,
     logout,
     logoutAll,
   };
