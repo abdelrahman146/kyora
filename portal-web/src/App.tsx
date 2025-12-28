@@ -17,6 +17,7 @@ import BusinessSetupPage from './routes/onboarding/business';
 import PaymentPage from './routes/onboarding/payment';
 import CompletePage from './routes/onboarding/complete';
 import OnboardingOAuthCallbackPage from './routes/onboarding/oauth-callback';
+import CustomersPage from './routes/dashboard/customers';
 
 function Home() {
   const { t } = useTranslation();
@@ -97,6 +98,14 @@ function App() {
             element={
               <RequireAuth>
                 <DashboardPage />
+              </RequireAuth>
+            }
+          />
+          <Route
+            path="/dashboard/customers"
+            element={
+              <RequireAuth>
+                <CustomersPage />
               </RequireAuth>
             }
           />

@@ -9,7 +9,11 @@
     "loading": "Loading...",
     "error": "Error",
     "success": "Success",
-    "confirm": "Confirm"
+    "confirm": "Confirm",
+    "filter": "Filter",
+    "apply": "Apply",
+    "reset": "Reset",
+    "loading_more": "Loading more..."
   },
   "auth": {
     "email": "Email Address",
@@ -95,5 +99,20 @@
     "this_month": "This Month",
     "pending": "Pending",
     "low_stock": "Low Stock"
+  },
+  "customers": {
+    "title": "Customers",
+    "subtitle": "Manage your customers and track purchase history",
+    "customers": "Customers",
+    "add_customer": "Add Customer",
+    "search_placeholder": "Search customers...",
+    "name": "Name",
+    "phone": "Phone",
+    "orders_count": "Orders Count",
+    "total_spent": "Total Spent",
+    "no_customers": "No customers yet",
+    "no_more_customers": "No more customers",
+    "filters": "Filter Customers",
+    "filters_coming_soon": "Filter options coming soon"
   }
 }

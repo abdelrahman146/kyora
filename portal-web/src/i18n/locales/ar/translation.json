@@ -9,7 +9,11 @@
     "loading": "جاري التحميل...",
     "error": "خطأ",
     "success": "نجح",
-    "confirm": "تأكيد"
+    "confirm": "تأكيد",
+    "filter": "تصفية",
+    "apply": "تطبيق",
+    "reset": "إعادة تعيين",
+    "loading_more": "جاري تحميل المزيد..."
   },
   "auth": {
     "email": "البريد الإلكتروني",
@@ -95,5 +99,20 @@
     "this_month": "هذا الشهر",
     "pending": "قيد الانتظار",
     "low_stock": "مخزون منخفض"
+  },
+  "customers": {
+    "title": "العملاء",
+    "subtitle": "إدارة عملائك وتتبع سجل المشتريات",
+    "customers": "العملاء",
+    "add_customer": "إضافة عميل",
+    "search_placeholder": "البحث عن عملاء...",
+    "name": "الاسم",
+    "phone": "رقم الهاتف",
+    "orders_count": "عدد الطلبات",
+    "total_spent": "إجمالي المشتريات",
+    "no_customers": "لا يوجد عملاء حتى الآن",
+    "no_more_customers": "لا يوجد المزيد من العملاء",
+    "filters": "تصفية العملاء",
+    "filters_coming_soon": "خيارات التصفية قريباً"
   }
 }

@@ -28,13 +28,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { key: "dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { key: "inventory", icon: Package, path: "/inventory" },
-  { key: "orders", icon: ShoppingCart, path: "/orders" },
-  { key: "customers", icon: Users, path: "/customers" },
-  { key: "analytics", icon: BarChart3, path: "/analytics" },
-  { key: "accounting", icon: Calculator, path: "/accounting" },
-  { key: "billing", icon: CreditCard, path: "/billing" },
-  { key: "team", icon: UsersRound, path: "/team" },
+  { key: "inventory", icon: Package, path: "/dashboard/inventory" },
+  { key: "orders", icon: ShoppingCart, path: "/dashboard/orders" },
+  { key: "customers", icon: Users, path: "/dashboard/customers" },
+  { key: "analytics", icon: BarChart3, path: "/dashboard/analytics" },
+  { key: "accounting", icon: Calculator, path: "/dashboard/accounting" },
+  { key: "billing", icon: CreditCard, path: "/dashboard/billing" },
+  { key: "team", icon: UsersRound, path: "/dashboard/team" },
 ];
 
 /**
