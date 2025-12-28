@@ -19,7 +19,7 @@ export default function OnboardingOAuthCallbackPage() {
   const { t } = useTranslation(["onboarding", "common"]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { sessionToken, markEmailVerified } = useOnboarding();
+  const { sessionToken, loadSession } = useOnboarding();
 
   const [error, setError] = useState("");
 
@@ -66,8 +66,8 @@ export default function OnboardingOAuthCallbackPage() {
         // Clear stored token
         sessionStorage.removeItem("kyora_onboarding_google_session");
 
-        // Update onboarding state
-        markEmailVerified();
+        // Reload session from backend to get updated state
+        await loadSession(storedToken);
 
         // Redirect to business setup
         void navigate("/onboarding/business", { replace: true });

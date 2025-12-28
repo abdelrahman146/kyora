@@ -260,3 +260,108 @@ func (h *HttpHandler) Complete(c *gin.Context) {
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"user": user, "token": token, "refreshToken": refreshToken})
 }
+
+type sessionResponse struct {
+	SessionToken       string         `json:"sessionToken"`
+	Email              string         `json:"email"`
+	Stage              SessionStage   `json:"stage"`
+	EmailVerified      bool           `json:"emailVerified"`
+	Method             IdentityMethod `json:"method"`
+	FirstName          string         `json:"firstName,omitempty"`
+	LastName           string         `json:"lastName,omitempty"`
+	PlanID             string         `json:"planId"`
+	PlanDescriptor     string         `json:"planDescriptor"`
+	IsPaidPlan         bool           `json:"isPaidPlan"`
+	BusinessName       string         `json:"businessName,omitempty"`
+	BusinessDescriptor string         `json:"businessDescriptor,omitempty"`
+	BusinessCountry    string         `json:"businessCountry,omitempty"`
+	BusinessCurrency   string         `json:"businessCurrency,omitempty"`
+	PaymentStatus      PaymentStatus  `json:"paymentStatus"`
+	CheckoutSessionID  string         `json:"checkoutSessionId,omitempty"`
+	OTPExpiry          *string        `json:"otpExpiry,omitempty"`
+	ExpiresAt          string         `json:"expiresAt"`
+}
+
+// GetSession retrieves the current onboarding session state by token.
+//
+// @Summary      Get onboarding session
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        sessionToken query string true "Session token"
+// @Success      200 {object} sessionResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/session [get]
+func (h *HttpHandler) GetSession(c *gin.Context) {
+	sessionToken := c.Query("sessionToken")
+	if sessionToken == "" {
+		response.Error(c, ErrSessionTokenRequired(nil))
+		return
+	}
+
+	sess, err := h.svc.GetSession(c.Request.Context(), sessionToken)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	var otpExpiry *string
+	if sess.OTPExpiry != nil {
+		expStr := sess.OTPExpiry.Format("2006-01-02T15:04:05Z07:00")
+		otpExpiry = &expStr
+	}
+
+	response.SuccessJSON(c, http.StatusOK, sessionResponse{
+		SessionToken:       sess.Token,
+		Email:              sess.Email,
+		Stage:              sess.Stage,
+		EmailVerified:      sess.EmailVerified,
+		Method:             sess.Method,
+		FirstName:          sess.FirstName,
+		LastName:           sess.LastName,
+		PlanID:             sess.PlanID,
+		PlanDescriptor:     sess.PlanDescriptor,
+		IsPaidPlan:         sess.IsPaidPlan,
+		BusinessName:       sess.BusinessName,
+		BusinessDescriptor: sess.BusinessDescriptor,
+		BusinessCountry:    sess.BusinessCountry,
+		BusinessCurrency:   sess.BusinessCurrency,
+		PaymentStatus:      sess.PaymentStatus,
+		CheckoutSessionID:  sess.CheckoutSessionID,
+		OTPExpiry:          otpExpiry,
+		ExpiresAt:          sess.ExpiresAt.Format("2006-01-02T15:04:05Z07:00"),
+	})
+}
+
+type deleteSessionRequest struct {
+	SessionToken string `json:"sessionToken" binding:"required"`
+}
+
+// DeleteSession cancels/deletes an onboarding session.
+//
+// @Summary      Delete onboarding session
+// @Tags         onboarding
+// @Accept       json
+// @Produce      json
+// @Param        request body deleteSessionRequest true "Delete session request"
+// @Success      204
+// @Failure      400 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/onboarding/session [delete]
+func (h *HttpHandler) DeleteSession(c *gin.Context) {
+	var req deleteSessionRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+
+	err := h.svc.DeleteSession(c.Request.Context(), req.SessionToken)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	response.SuccessEmpty(c, http.StatusNoContent)
+}

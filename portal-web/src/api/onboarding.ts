@@ -1,7 +1,8 @@
-import { get, post } from "./client";
+import { get, post, del } from "./client";
 import {
   StartSessionRequestSchema,
   StartSessionResponseSchema,
+  GetSessionResponseSchema,
   SendOTPRequestSchema,
   SendOTPResponseSchema,
   VerifyEmailRequestSchema,
@@ -17,6 +18,7 @@ import {
   PlanSchema,
   type StartSessionRequest,
   type StartSessionResponse,
+  type GetSessionResponse,
   type SendOTPRequest,
   type SendOTPResponse,
   type VerifyEmailRequest,
@@ -65,6 +67,24 @@ export const onboardingApi = {
     });
 
     return StartSessionResponseSchema.parse(response);
+  },
+
+  // ==========================================================================
+  // Get Session - GET /v1/onboarding/session
+  // ==========================================================================
+
+  /**
+   * Retrieves the current onboarding session state by token.
+   * Use this to restore/resume onboarding flow when user returns.
+   * @returns Complete session state including stage, user data, and business details
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async getSession(sessionToken: string): Promise<GetSessionResponse> {
+    const response = await get<unknown>(
+      `v1/onboarding/session?sessionToken=${sessionToken}`
+    );
+
+    return GetSessionResponseSchema.parse(response);
   },
 
   // ==========================================================================
@@ -211,5 +231,15 @@ export const onboardingApi = {
     const response = await get<unknown>(`v1/billing/plans/${descriptor}`);
 
     return PlanSchema.parse(response);
+  },
+
+  /**
+   * Deletes an onboarding session (cancel/restart flow).
+   * @throws HTTPError with parsed ProblemDetails on failure
+   */
+  async deleteSession(sessionToken: string): Promise<void> {
+    await del("v1/onboarding/session", {
+      searchParams: { sessionToken },
+    });
   },
 };

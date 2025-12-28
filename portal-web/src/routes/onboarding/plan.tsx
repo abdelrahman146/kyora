@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Check } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
 import { Modal } from "@/components/atoms";
+import { ResumeSessionDialog } from "@/components/molecules/ResumeSessionDialog";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { translateErrorAsync } from "@/lib/translateError";
@@ -23,13 +24,32 @@ export default function PlanSelectionPage() {
   const { t } = useTranslation(["onboarding", "common"]);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
-  const { setSelectedPlan } = useOnboarding();
+  const {
+    setSelectedPlan,
+    loadSessionFromStorage,
+    clearSession,
+    email,
+    stage,
+    isLoading: contextLoading,
+  } = useOnboarding();
 
   const [plans, setPlans] = useState<Plan[]>([]);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState("");
   const [viewingPlan, setViewingPlan] = useState<Plan | null>(null);
+  const [showResumeDialog, setShowResumeDialog] = useState(false);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const checkExistingSession = async () => {
+      const hasSession = await loadSessionFromStorage();
+      if (hasSession) {
+        setShowResumeDialog(true);
+      }
+    };
+    void checkExistingSession();
+  }, [loadSessionFromStorage]);
 
   // Load plans on mount
   useEffect(() => {
@@ -88,6 +108,44 @@ export default function PlanSelectionPage() {
     if (plan.features.exportAnalyticsData) features.push(t("onboarding:plan.features.exportAnalyticsData"));
     if (plan.features.aiBusinessAssistant) features.push(t("onboarding:plan.features.aiBusinessAssistant"));
     return features;
+  };
+
+  // Navigate to the appropriate step based on current stage
+  const navigateToCurrentStage = () => {
+    if (!stage) {
+      navigate("/onboarding/email");
+      return;
+    }
+
+    switch (stage) {
+      case "plan_selected":
+      case "identity_pending":
+        navigate("/onboarding/email");
+        break;
+      case "identity_verified":
+        navigate("/onboarding/business");
+        break;
+      case "business_staged":
+      case "payment_pending":
+        navigate("/onboarding/payment");
+        break;
+      case "payment_confirmed":
+      case "ready_to_commit":
+        navigate("/onboarding/complete");
+        break;
+      default:
+        navigate("/onboarding/email");
+    }
+  };
+
+  const handleResumeSession = () => {
+    setShowResumeDialog(false);
+    navigateToCurrentStage();
+  };
+
+  const handleStartFresh = async () => {
+    setShowResumeDialog(false);
+    await clearSession();
   };
 
   if (isLoading) {
@@ -401,6 +459,16 @@ export default function PlanSelectionPage() {
             </>
           )}
         </Modal>
+
+        {/* Resume Session Dialog */}
+        <ResumeSessionDialog
+          open={showResumeDialog}
+          onResume={handleResumeSession}
+          onStartFresh={handleStartFresh}
+          email={email ?? undefined}
+          stage={stage ?? undefined}
+          isLoading={contextLoading}
+        />
       </div>
     </OnboardingLayout>
   );

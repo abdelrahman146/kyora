@@ -9241,6 +9241,101 @@
                 }
             }
         },
+        "/v1/onboarding/session": {
+            "get": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Get onboarding session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session token",
+                        "name": "sessionToken",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.sessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "onboarding"
+                ],
+                "summary": "Delete onboarding session",
+                "parameters": [
+                    {
+                        "description": "Delete session request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/onboarding.deleteSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "No Content"
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/onboarding/start": {
             "post": {
                 "consumes": [
@@ -13206,6 +13301,35 @@
                 }
             }
         },
+        "onboarding.IdentityMethod": {
+            "type": "string",
+            "enum": [
+                "email",
+                "google"
+            ],
+            "x-enum-varnames": [
+                "IdentityEmail",
+                "IdentityGoogle"
+            ]
+        },
+        "onboarding.PaymentStatus": {
+            "type": "string",
+            "enum": [
+                "skipped",
+                "pending",
+                "succeeded"
+            ],
+            "x-enum-comments": {
+                "PaymentStatusPending": "checkout created, waiting",
+                "PaymentStatusSkipped": "free plan",
+                "PaymentStatusSucceeded": "confirmed via webhook / synchronous return"
+            },
+            "x-enum-varnames": [
+                "PaymentStatusSkipped",
+                "PaymentStatusPending",
+                "PaymentStatusSucceeded"
+            ]
+        },
         "onboarding.SessionStage": {
             "type": "string",
             "enum": [
@@ -13288,6 +13412,17 @@
                 }
             }
         },
+        "onboarding.deleteSessionRequest": {
+            "type": "object",
+            "required": [
+                "sessionToken"
+            ],
+            "properties": {
+                "sessionToken": {
+                    "type": "string"
+                }
+            }
+        },
         "onboarding.oauthRequest": {
             "type": "object",
             "required": [
@@ -13346,6 +13481,65 @@
             "properties": {
                 "checkoutUrl": {
                     "type": "string"
+                }
+            }
+        },
+        "onboarding.sessionResponse": {
+            "type": "object",
+            "properties": {
+                "businessCountry": {
+                    "type": "string"
+                },
+                "businessCurrency": {
+                    "type": "string"
+                },
+                "businessDescriptor": {
+                    "type": "string"
+                },
+                "businessName": {
+                    "type": "string"
+                },
+                "checkoutSessionId": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "emailVerified": {
+                    "type": "boolean"
+                },
+                "expiresAt": {
+                    "type": "string"
+                },
+                "firstName": {
+                    "type": "string"
+                },
+                "isPaidPlan": {
+                    "type": "boolean"
+                },
+                "lastName": {
+                    "type": "string"
+                },
+                "method": {
+                    "$ref": "#/definitions/onboarding.IdentityMethod"
+                },
+                "otpExpiry": {
+                    "type": "string"
+                },
+                "paymentStatus": {
+                    "$ref": "#/definitions/onboarding.PaymentStatus"
+                },
+                "planDescriptor": {
+                    "type": "string"
+                },
+                "planId": {
+                    "type": "string"
+                },
+                "sessionToken": {
+                    "type": "string"
+                },
+                "stage": {
+                    "$ref": "#/definitions/onboarding.SessionStage"
                 }
             }
         },

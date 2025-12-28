@@ -6,12 +6,13 @@ import {
   type ReactNode,
 } from "react";
 import {
-  PlanSchema,
-  SessionStageSchema,
   type SessionStage,
   type Plan,
   type StartSessionResponse,
+  type GetSessionResponse,
 } from "@/api/types/onboarding";
+import { onboardingApi } from "@/api/onboarding";
+import { sessionStorage as sessionTokenStorage } from "@/lib/sessionStorage";
 
 /**
  * Onboarding Context State
@@ -47,30 +48,25 @@ interface OnboardingState {
   // Payment
   isPaymentComplete: boolean;
   checkoutUrl: string | null;
+  
+  // Loading and error states
+  isLoading: boolean;
+  error: string | null;
 }
 
 interface OnboardingContextValue extends OnboardingState {
   // Session management
   startSession: (response: StartSessionResponse, email: string, plan: Plan) => void;
+  loadSession: (sessionToken: string) => Promise<void>;
+  loadSessionFromStorage: () => Promise<boolean>;
+  clearSession: () => Promise<void>;
   updateStage: (stage: SessionStage) => void;
   
   // Plan selection
   setSelectedPlan: (plan: Plan) => void;
   
-  // Email verification
-  markEmailVerified: () => void;
-  
-  // Business setup
-  setBusinessDetails: (
-    name: string,
-    descriptor: string,
-    country: string,
-    currency: string
-  ) => void;
-  
   // Payment
   setCheckoutUrl: (url: string | null) => void;
-  markPaymentComplete: () => void;
   
   // Reset
   resetOnboarding: () => void;
@@ -97,47 +93,9 @@ const INITIAL_STATE: OnboardingState = {
   businessCurrency: null,
   isPaymentComplete: false,
   checkoutUrl: null,
+  isLoading: false,
+  error: null,
 };
-
-function restoreOnboardingState(raw: string): OnboardingState {
-  const parsed: unknown = JSON.parse(raw);
-  if (!parsed || typeof parsed !== "object") return INITIAL_STATE;
-
-  const obj = parsed as Record<string, unknown>;
-
-  const sessionToken = typeof obj.sessionToken === "string" ? obj.sessionToken : null;
-
-  const stageResult = SessionStageSchema.safeParse(obj.stage);
-  const stage = stageResult.success ? stageResult.data : null;
-
-  const planResult = PlanSchema.safeParse(obj.selectedPlan);
-  const selectedPlan = planResult.success ? planResult.data : null;
-
-  const isPaidPlan = typeof obj.isPaidPlan === "boolean" ? obj.isPaidPlan : false;
-  const email = typeof obj.email === "string" ? obj.email : null;
-  const isEmailVerified = typeof obj.isEmailVerified === "boolean" ? obj.isEmailVerified : false;
-  const businessName = typeof obj.businessName === "string" ? obj.businessName : null;
-  const businessDescriptor = typeof obj.businessDescriptor === "string" ? obj.businessDescriptor : null;
-  const businessCountry = typeof obj.businessCountry === "string" ? obj.businessCountry : null;
-  const businessCurrency = typeof obj.businessCurrency === "string" ? obj.businessCurrency : null;
-  const isPaymentComplete = typeof obj.isPaymentComplete === "boolean" ? obj.isPaymentComplete : false;
-  const checkoutUrl = typeof obj.checkoutUrl === "string" ? obj.checkoutUrl : null;
-
-  return {
-    sessionToken,
-    stage,
-    selectedPlan,
-    isPaidPlan,
-    email,
-    isEmailVerified,
-    businessName,
-    businessDescriptor,
-    businessCountry,
-    businessCurrency,
-    isPaymentComplete,
-    checkoutUrl,
-  };
-}
 
 /**
  * OnboardingProvider Component
@@ -153,30 +111,18 @@ function restoreOnboardingState(raw: string): OnboardingState {
  * ```
  */
 export function OnboardingProvider({ children }: { children: ReactNode }) {
-  const [state, setState] = useState<OnboardingState>(() => {
-    // Try to restore session from sessionStorage
-    const stored = sessionStorage.getItem("kyora_onboarding_state");
-    if (stored) {
-      try {
-        return restoreOnboardingState(stored);
-      } catch {
-        return INITIAL_STATE;
-      }
-    }
-    return INITIAL_STATE;
-  });
+  const [state, setState] = useState<OnboardingState>(INITIAL_STATE);
 
-  // Persist state to sessionStorage whenever it changes
+  // Update state without persistence (backend is source of truth)
   const updateState = useCallback((updates: Partial<OnboardingState>) => {
-    setState((prev) => {
-      const newState = { ...prev, ...updates };
-      sessionStorage.setItem("kyora_onboarding_state", JSON.stringify(newState));
-      return newState;
-    });
+    setState((prev) => ({ ...prev, ...updates }));
   }, []);
 
   const startSession = useCallback(
     (response: StartSessionResponse, email: string, plan: Plan) => {
+      // Save token to localStorage for persistence
+      sessionTokenStorage.setToken(response.sessionToken);
+      
       updateState({
         sessionToken: response.sessionToken,
         stage: response.stage,
@@ -202,26 +148,110 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     [updateState]
   );
 
-  const markEmailVerified = useCallback(() => {
-    updateState({ isEmailVerified: true, stage: "identity_verified" });
-  }, [updateState]);
-
-  const setBusinessDetails = useCallback(
-    (
-      name: string,
-      descriptor: string,
-      country: string,
-      currency: string
-    ) => {
-      updateState({
-        businessName: name,
-        businessDescriptor: descriptor,
-        businessCountry: country,
-        businessCurrency: currency,
-      });
+  /**
+   * Load session from backend by token.
+   * Updates all state from backend response.
+   */
+  const loadSession = useCallback(
+    async (sessionToken: string) => {
+      updateState({ isLoading: true, error: null });
+      
+      try {
+        const session: GetSessionResponse = await onboardingApi.getSession(sessionToken);
+        
+        // Update state from backend session
+        updateState({
+          sessionToken: session.sessionToken,
+          stage: session.stage,
+          email: session.email,
+          isEmailVerified: session.emailVerified,
+          selectedPlan: session.planId
+            ? {
+                id: session.planId,
+                descriptor: session.planDescriptor,
+                name: session.planDescriptor, // Backend doesn't return name, use descriptor
+                price: "0", // Backend doesn't return price in session
+                currency: session.businessCurrency || "USD",
+                billingCycle: "monthly",
+                features: {
+                  customerManagement: false,
+                  inventoryManagement: false,
+                  orderManagement: false,
+                  expenseManagement: false,
+                  accounting: false,
+                  basicAnalytics: false,
+                  financialReports: false,
+                  dataImport: false,
+                  dataExport: false,
+                  advancedAnalytics: false,
+                  advancedFinancialReports: false,
+                  orderPaymentLinks: false,
+                  invoiceGeneration: false,
+                  exportAnalyticsData: false,
+                  aiBusinessAssistant: false,
+                },
+                limits: {
+                  maxTeamMembers: 1,
+                  maxBusinesses: 1,
+                  maxOrdersPerMonth: 100,
+                },
+                description: "",
+              }
+            : null,
+          isPaidPlan: session.isPaidPlan,
+          businessName: session.businessName,
+          businessDescriptor: session.businessDescriptor,
+          businessCountry: session.businessCountry,
+          businessCurrency: session.businessCurrency,
+          isPaymentComplete:
+            session.paymentStatus === "succeeded" ||
+            session.paymentStatus === "skipped",
+          checkoutUrl: null,
+          isLoading: false,
+          error: null,
+        });
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "Failed to load session";
+        updateState({ isLoading: false, error: message });
+        throw error;
+      }
     },
     [updateState]
   );
+
+  /**
+   * Load session from localStorage if it exists.
+   * Returns true if session was loaded successfully.
+   */
+  const loadSessionFromStorage = useCallback(async (): Promise<boolean> => {
+    const token = sessionTokenStorage.getToken();
+    if (!token) return false;
+
+    try {
+      await loadSession(token);
+      return true;
+    } catch {
+      // Token invalid or expired, clear it
+      sessionTokenStorage.clearToken();
+      return false;
+    }
+  }, [loadSession]);
+
+  /**
+   * Delete session from backend and clear localStorage.
+   * Used when user chooses "Start Fresh".
+   */
+  const clearSession = useCallback(async () => {
+    if (state.sessionToken) {
+      try {
+        await onboardingApi.deleteSession(state.sessionToken);
+      } catch (error) {
+        console.error("Failed to delete session:", error);
+      }
+    }
+    sessionTokenStorage.clearToken();
+    setState(INITIAL_STATE);
+  }, [state.sessionToken]);
 
   const setCheckoutUrl = useCallback(
     (url: string | null) => {
@@ -230,13 +260,9 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     [updateState]
   );
 
-  const markPaymentComplete = useCallback(() => {
-    updateState({ isPaymentComplete: true, stage: "ready_to_commit" });
-  }, [updateState]);
-
   const resetOnboarding = useCallback(() => {
+    sessionTokenStorage.clearToken();
     setState(INITIAL_STATE);
-    sessionStorage.removeItem("kyora_onboarding_state");
   }, []);
 
   const canProceedToNextStep = useCallback((): boolean => {
@@ -285,12 +311,12 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
   const value: OnboardingContextValue = {
     ...state,
     startSession,
+    loadSession,
+    loadSessionFromStorage,
+    clearSession,
     updateStage,
     setSelectedPlan,
-    markEmailVerified,
-    setBusinessDetails,
     setCheckoutUrl,
-    markPaymentComplete,
     resetOnboarding,
     canProceedToNextStep,
     getCurrentStepNumber,

@@ -42,7 +42,7 @@ export default function VerifyEmailPage() {
     sessionToken,
     email,
     stage,
-    markEmailVerified,
+    loadSessionFromStorage,
   } = useOnboarding();
 
   const [step, setStep] = useState<"otp" | "profile">("otp");
@@ -57,6 +57,19 @@ export default function VerifyEmailPage() {
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0);
 
   const otpInputRefs = useRef<(HTMLInputElement | null)[]>([]);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionToken) {
+        const hasSession = await loadSessionFromStorage();
+        if (!hasSession) {
+          navigate("/onboarding/plan", { replace: true });
+        }
+      }
+    };
+    void restoreSession();
+  }, [sessionToken, loadSessionFromStorage, navigate]);
 
   // Redirect if no session token
   useEffect(() => {
@@ -195,7 +208,7 @@ export default function VerifyEmailPage() {
         password,
       });
 
-      markEmailVerified();
+      // Backend updates the session automatically
       void navigate("/onboarding/business");
     } catch (err) {
       const message = await translateErrorAsync(err, t);

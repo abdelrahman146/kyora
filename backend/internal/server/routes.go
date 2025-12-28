@@ -34,6 +34,8 @@ func registerStorefrontRoutes(r *gin.Engine, h *storefront.HttpHandler) {
 func registerOnboardingRoutes(r *gin.Engine, h *onboarding.HttpHandler) {
 	group := r.Group("/v1/onboarding")
 	group.Use(middleware.NewCORSMiddleware())
+	group.GET("/session", h.GetSession)
+	group.DELETE("/session", h.DeleteSession)
 	group.POST("/start", h.Start)
 	group.POST("/email/otp", h.SendEmailOTP)
 	group.POST("/email/verify", h.VerifyEmail)

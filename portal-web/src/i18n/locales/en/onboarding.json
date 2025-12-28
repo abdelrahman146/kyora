@@ -3,6 +3,21 @@
     "step": "Step {{current}} of {{total}}",
     "label": "{{percentage}}% complete"
   },
+  "resumeSession": {
+    "title": "Continue Your Onboarding?",
+    "message": "We found an existing onboarding session. Would you like to continue where you left off or start fresh?"
+  },
+  "stages": {
+    "plan_selected": "Plan Selected",
+    "identity_pending": "Email Verification Pending",
+    "identity_verified": "Email Verified",
+    "business_staged": "Business Setup",
+    "payment_pending": "Payment Pending",
+    "payment_confirmed": "Payment Confirmed",
+    "ready_to_commit": "Ready to Complete",
+    "committed": "Completed"
+  },
+  "stage": "Current Step",
   "plan": {
     "title": "Choose Your Plan",
     "subtitle": "Select the perfect plan for your business needs",

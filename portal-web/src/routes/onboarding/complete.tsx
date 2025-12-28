@@ -35,11 +35,25 @@ export default function CompletePage() {
     isPaymentComplete,
     businessName,
     resetOnboarding,
+    loadSessionFromStorage,
   } = useOnboarding();
 
   const [isCompleting, setIsCompleting] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
   const [error, setError] = useState("");
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionToken) {
+        const hasSession = await loadSessionFromStorage();
+        if (!hasSession) {
+          navigate("/onboarding/plan", { replace: true });
+        }
+      }
+    };
+    void restoreSession();
+  }, [sessionToken, loadSessionFromStorage, navigate]);
 
   // Redirect if prerequisites not met
   useEffect(() => {

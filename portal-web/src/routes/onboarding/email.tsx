@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Mail } from "lucide-react";
@@ -19,21 +19,38 @@ import { authApi } from "@/api/auth";
 export default function EmailEntryPage() {
   const { t } = useTranslation(["onboarding", "common"]);
   const navigate = useNavigate();
-  const { selectedPlan, sessionToken, startSession } = useOnboarding();
+  const {
+    selectedPlan,
+    sessionToken,
+    startSession,
+    loadSessionFromStorage,
+  } = useOnboarding();
 
   const [email, setEmail] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
 
-  // If no plan selected, redirect back
-  if (!selectedPlan) {
-    void navigate("/onboarding/plan", { replace: true });
-    return null;
-  }
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionToken) {
+        const hasSession = await loadSessionFromStorage();
+        if (!hasSession && !selectedPlan) {
+          navigate("/onboarding/plan", { replace: true });
+        }
+      }
+    };
+    void restoreSession();
+  }, [sessionToken, selectedPlan, loadSessionFromStorage, navigate]);
 
   const handleEmailSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError("");
+
+    if (!selectedPlan) {
+      setError(t("onboarding:plan.selectPlanRequired"));
+      return;
+    }
 
     if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
       setError(t("onboarding:plan.invalidEmail"));
@@ -91,28 +108,30 @@ export default function EmailEntryPage() {
         </div>
 
         {/* Selected Plan Summary */}
-        <div className="card bg-base-200 mb-6">
-          <div className="card-body">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
-                <p className="text-sm text-base-content/70">
-                  {selectedPlan.price === "0" 
-                    ? t("common:free") 
-                    : `${selectedPlan.price} ${selectedPlan.currency.toUpperCase()}`}
-                  {selectedPlan.price !== "0" && ` / ${selectedPlan.billingCycle}`}
-                </p>
+        {selectedPlan && (
+          <div className="card bg-base-200 mb-6">
+            <div className="card-body">
+              <div className="flex justify-between items-center">
+                <div>
+                  <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
+                  <p className="text-sm text-base-content/70">
+                    {selectedPlan.price === "0" 
+                      ? t("common:free") 
+                      : `${selectedPlan.price} ${selectedPlan.currency.toUpperCase()}`}
+                    {selectedPlan.price !== "0" && ` / ${selectedPlan.billingCycle}`}
+                  </p>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => void navigate("/onboarding/plan")}
+                  className="btn btn-ghost btn-sm"
+                >
+                  {t("common:change")}
+                </button>
               </div>
-              <button
-                type="button"
-                onClick={() => void navigate("/onboarding/plan")}
-                className="btn btn-ghost btn-sm"
-              >
-                {t("common:change")}
-              </button>
             </div>
           </div>
-        </div>
+        )}
 
         {/* Email Form */}
         <div className="card bg-base-100 border border-base-300 shadow-lg">

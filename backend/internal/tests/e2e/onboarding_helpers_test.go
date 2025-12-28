@@ -354,3 +354,44 @@ func (h *OnboardingTestHelper) CreateBusinessStagedSession(email, planDescriptor
 	err = h.onboardingStorage.UpdateSession(ctx, sess)
 	return token, err
 }
+
+// CreateExpiredSession creates an expired onboarding session for testing
+func (h *OnboardingTestHelper) CreateExpiredSession(email, planDescriptor string, expiresAt time.Time) string {
+	ctx := context.Background()
+	h.EnsureTestPlan(planDescriptor, "Test Plan", 0.0)
+
+	// Get plan directly from database
+	var plan billing.Plan
+	if err := h.db.GetDB().Where("descriptor = ?", planDescriptor).First(&plan).Error; err != nil {
+		return ""
+	}
+
+	// Create expired session directly in database
+	token, _ := generateRandomToken(40)
+	sess := &onboarding.OnboardingSession{
+		ID:             "obs_expired_test",
+		Token:          token,
+		Email:          email,
+		EmailVerified:  false,
+		Method:         onboarding.IdentityEmail,
+		PlanID:         plan.ID,
+		PlanDescriptor: plan.Descriptor,
+		IsPaidPlan:     !plan.Price.IsZero(),
+		Stage:          onboarding.StagePlanSelected,
+		PaymentStatus:  onboarding.PaymentStatusSkipped,
+		ExpiresAt:      expiresAt,
+	}
+
+	h.onboardingStorage.CreateSession(ctx, sess)
+	return token
+}
+
+// Helper to generate random token
+func generateRandomToken(length int) (string, error) {
+	const charset = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789"
+	b := make([]byte, length)
+	for i := range b {
+		b[i] = charset[time.Now().UnixNano()%int64(len(charset))]
+	}
+	return string(b), nil
+}

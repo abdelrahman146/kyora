@@ -51,6 +51,8 @@
   "select": "Select",
   "change": "Change",
   "or": "OR",
+  "startFresh": "Start Fresh",
+  "unknown": "Unknown",
   "switchLanguage": "Switch Language",
   "copyright": "© {{year}} {{company}}. All rights reserved.",
   "privacy": "Privacy Policy",

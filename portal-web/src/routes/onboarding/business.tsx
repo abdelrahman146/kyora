@@ -64,8 +64,7 @@ export default function BusinessSetupPage() {
     sessionToken,
     stage,
     isPaidPlan,
-    setBusinessDetails,
-    updateStage,
+    loadSessionFromStorage,
   } = useOnboarding();
 
   const [businessName, setBusinessName] = useState("");
@@ -75,6 +74,19 @@ export default function BusinessSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [descriptorError, setDescriptorError] = useState("");
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionToken) {
+        const hasSession = await loadSessionFromStorage();
+        if (!hasSession) {
+          navigate("/onboarding/plan", { replace: true });
+        }
+      }
+    };
+    void restoreSession();
+  }, [sessionToken, loadSessionFromStorage, navigate]);
 
   // Redirect if not verified
   useEffect(() => {
@@ -151,12 +163,7 @@ export default function BusinessSetupPage() {
         currency,
       });
 
-      // Update context with business details
-      setBusinessDetails(businessName.trim(), descriptor.trim(), country, currency);
-      
-      // Update stage from API response
-      updateStage(response.stage);
-
+      // Backend updates the session automatically, just navigate based on response
       // Navigate based on the response stage
       if (response.stage === "ready_to_commit") {
         // Free plan - go directly to complete

@@ -100,6 +100,33 @@ export const StartSessionResponseSchema = z.object({
 export type StartSessionResponse = z.infer<typeof StartSessionResponseSchema>;
 
 // ============================================================================
+// Get Session - GET /v1/onboarding/session
+// ============================================================================
+
+export const GetSessionResponseSchema = z.object({
+  sessionToken: z.string(),
+  email: z.string(),
+  stage: SessionStageSchema,
+  emailVerified: z.boolean(),
+  method: IdentityMethodSchema,
+  firstName: z.string().optional(),
+  lastName: z.string().optional(),
+  planId: z.string(),
+  planDescriptor: z.string(),
+  isPaidPlan: z.boolean(),
+  businessName: z.string().optional(),
+  businessDescriptor: z.string().optional(),
+  businessCountry: z.string().optional(),
+  businessCurrency: z.string().optional(),
+  paymentStatus: PaymentStatusSchema,
+  checkoutSessionId: z.string().optional(),
+  otpExpiry: z.string().optional().nullable(),
+  expiresAt: z.string(),
+});
+
+export type GetSessionResponse = z.infer<typeof GetSessionResponseSchema>;
+
+// ============================================================================
 // Send Email OTP - POST /v1/onboarding/email/otp
 // ============================================================================
 

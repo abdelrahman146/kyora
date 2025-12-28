@@ -35,12 +35,25 @@ export default function PaymentPage() {
     selectedPlan,
     checkoutUrl,
     setCheckoutUrl,
-    markPaymentComplete,
+    loadSessionFromStorage,
   } = useOnboarding();
 
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
   const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "cancelled" | null>(null);
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      if (!sessionToken) {
+        const hasSession = await loadSessionFromStorage();
+        if (!hasSession) {
+          navigate("/onboarding/plan", { replace: true });
+        }
+      }
+    };
+    void restoreSession();
+  }, [sessionToken, loadSessionFromStorage, navigate]);
 
   // Check URL params for payment status
   useEffect(() => {
@@ -49,7 +62,7 @@ export default function PaymentPage() {
     
     if (status === "success") {
       setPaymentStatus("success");
-      markPaymentComplete();
+      // Backend automatically updates payment status
       
       // Auto-redirect after 2 seconds
       setTimeout(() => {
@@ -58,7 +71,7 @@ export default function PaymentPage() {
     } else if (status === "cancelled") {
       setPaymentStatus("cancelled");
     }
-  }, [markPaymentComplete, navigate]);
+  }, [navigate]);
 
   // Redirect if not at business_staged or payment_pending stage
   useEffect(() => {

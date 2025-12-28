@@ -457,3 +457,46 @@ func (s *Service) CompleteOnboarding(ctx context.Context, token, clientIP, userA
 
 // Expose selected helpers for other packages (webhooks)
 // removed EnsurePlanSynced wrapper (not needed externally yet)
+
+// GetSession retrieves an active onboarding session by token.
+// Returns error if session not found, expired, or already committed.
+func (s *Service) GetSession(ctx context.Context, sessionToken string) (*OnboardingSession, error) {
+	sess, err := s.storage.GetByToken(ctx, sessionToken)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return nil, ErrSessionNotFound(err)
+		}
+		return nil, err
+	}
+	
+	// Check expiry
+	if time.Now().After(sess.ExpiresAt) {
+		return nil, ErrSessionExpired(nil)
+	}
+	
+	// Check if already committed
+	if sess.Stage == StageCommitted || sess.CommittedAt != nil {
+		return nil, ErrSessionExpired(nil)
+	}
+	
+	return sess, nil
+}
+
+// DeleteSession deletes an onboarding session by token.
+// Allows users to cancel/restart onboarding flow.
+func (s *Service) DeleteSession(ctx context.Context, sessionToken string) error {
+	sess, err := s.storage.GetByToken(ctx, sessionToken)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return ErrSessionNotFound(err)
+		}
+		return err
+	}
+	
+	// Don't allow deleting already committed sessions
+if sess.Stage == StageCommitted || sess.CommittedAt != nil {
+return ErrSessionAlreadyCommitted(nil)
+}
+
+return s.storage.DeleteSession(ctx, sess)
+}

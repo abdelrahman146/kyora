@@ -10,6 +10,11 @@ import (
 func ErrEmailAlreadyExists(err error) error {
 	return problem.Conflict("email already registered").WithError(err)
 }
+
+func ErrSessionTokenRequired(err error) error {
+	return problem.BadRequest("session token is required").WithError(err)
+}
+
 func ErrActiveSessionExists(err error) error {
 	return problem.Conflict("an onboarding session already exists for this email").WithError(err)
 }
@@ -19,6 +24,11 @@ func ErrSessionNotFound(err error) error {
 func ErrSessionExpired(err error) error {
 	return problem.BadRequest("onboarding session expired").WithError(err)
 }
+
+func ErrSessionAlreadyCommitted(err error) error {
+	return problem.BadRequest("onboarding session already committed").WithError(err)
+}
+
 func ErrInvalidStage(err error, expected string) error {
 	return problem.BadRequest("invalid onboarding stage: expected " + expected).WithError(err)
 }
@@ -48,17 +58,18 @@ func ErrPaymentRequired(err error) error {
 func ErrStripeOperation(err error) error {
 	return problem.BadRequest("payment initialization failed").WithError(err)
 }
-func ErrCommitRace(err error) error {
-	return problem.Conflict("onboarding already finalized").WithError(err)
-}
-func ErrRateLimited(err error) error {
-	return problem.TooManyRequests("please try again later").WithError(err)
+
+// throttle error helpers
+func ErrRateLimitedRetryAfter(_ error, retryAfter time.Duration) error {
+	p := problem.TooManyRequests("OTP request rate limit exceeded")
+	// Rate limit error
+	seconds := int(math.Ceil(retryAfter.Seconds()))
+	p.Extensions = map[string]interface{}{"retryAfterSeconds": seconds}
+	return p
 }
 
-func ErrRateLimitedRetryAfter(err error, retryAfter time.Duration) error {
-	seconds := int(math.Ceil(retryAfter.Seconds()))
-	if seconds < 0 {
-		seconds = 0
-	}
-	return problem.TooManyRequests("please try again later").WithError(err).With("retryAfterSeconds", seconds)
+func ErrRateLimited(_ error) error {
+	p := problem.TooManyRequests("OTP request rate limit exceeded")
+	p.Detail = "too many failed OTP attempts, please restart onboarding"
+	return p
 }

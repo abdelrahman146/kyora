@@ -2304,6 +2304,28 @@ definitions:
         description: Valid is true if String is not NULL
         type: boolean
     type: object
+  onboarding.IdentityMethod:
+    enum:
+    - email
+    - google
+    type: string
+    x-enum-varnames:
+    - IdentityEmail
+    - IdentityGoogle
+  onboarding.PaymentStatus:
+    enum:
+    - skipped
+    - pending
+    - succeeded
+    type: string
+    x-enum-comments:
+      PaymentStatusPending: checkout created, waiting
+      PaymentStatusSkipped: free plan
+      PaymentStatusSucceeded: confirmed via webhook / synchronous return
+    x-enum-varnames:
+    - PaymentStatusSkipped
+    - PaymentStatusPending
+    - PaymentStatusSucceeded
   onboarding.SessionStage:
     enum:
     - plan_selected
@@ -2365,6 +2387,13 @@ definitions:
       user:
         $ref: '#/definitions/account.User'
     type: object
+  onboarding.deleteSessionRequest:
+    properties:
+      sessionToken:
+        type: string
+    required:
+    - sessionToken
+    type: object
   onboarding.oauthRequest:
     properties:
       code:
@@ -2404,6 +2433,45 @@ definitions:
     properties:
       checkoutUrl:
         type: string
+    type: object
+  onboarding.sessionResponse:
+    properties:
+      businessCountry:
+        type: string
+      businessCurrency:
+        type: string
+      businessDescriptor:
+        type: string
+      businessName:
+        type: string
+      checkoutSessionId:
+        type: string
+      email:
+        type: string
+      emailVerified:
+        type: boolean
+      expiresAt:
+        type: string
+      firstName:
+        type: string
+      isPaidPlan:
+        type: boolean
+      lastName:
+        type: string
+      method:
+        $ref: '#/definitions/onboarding.IdentityMethod'
+      otpExpiry:
+        type: string
+      paymentStatus:
+        $ref: '#/definitions/onboarding.PaymentStatus'
+      planDescriptor:
+        type: string
+      planId:
+        type: string
+      sessionToken:
+        type: string
+      stage:
+        $ref: '#/definitions/onboarding.SessionStage'
     type: object
   onboarding.stageResponse:
     properties:
@@ -27816,6 +27884,68 @@ paths:
           schema:
             $ref: '#/definitions/problem.Problem'
       summary: Start payment
+      tags:
+      - onboarding
+  /v1/onboarding/session:
+    delete:
+      consumes:
+      - application/json
+      parameters:
+      - description: Delete session request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/onboarding.deleteSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Delete onboarding session
+      tags:
+      - onboarding
+    get:
+      consumes:
+      - application/json
+      parameters:
+      - description: Session token
+        in: query
+        name: sessionToken
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/onboarding.sessionResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Get onboarding session
       tags:
       - onboarding
   /v1/onboarding/start:
