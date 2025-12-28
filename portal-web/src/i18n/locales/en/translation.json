@@ -119,6 +119,16 @@
     "filters": "Filter Customers",
     "filters_coming_soon": "Filter options coming soon"
   },
+  "pagination": {
+    "showing": "Showing {{start}} - {{end}} of {{total}} {{items}}",
+    "show": "Show",
+    "itemsPerPage": "Items per page",
+    "firstPage": "First page",
+    "previousPage": "Previous page",
+    "nextPage": "Next page",
+    "lastPage": "Last page",
+    "page": "Page {{number}}"
+  },
   "home": {
     "welcome": "Welcome",
     "select_business_or_manage": "Select a business to manage or access workspace and account settings",

@@ -429,6 +429,44 @@ func (s *CustomerCRUDSuite) TestListCustomers_CrossWorkspaceIsolation() {
 	s.Equal(float64(1), result2["totalCount"])
 }
 
+func (s *CustomerCRUDSuite) TestListCustomers_WithOrdersAggregation() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customer and order (this requires an analytics helper with CreateTestOrder)
+	// For now, just verify the fields exist and are zero when no orders
+	cust, err := s.customerHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	s.Contains(result, "items")
+
+	items := result["items"].([]interface{})
+	s.Len(items, 1)
+
+	customer := items[0].(map[string]interface{})
+	s.Equal(cust.ID, customer["id"])
+
+	// Verify aggregated fields exist
+	s.Contains(customer, "ordersCount")
+	s.Contains(customer, "totalSpent")
+
+	// Should be 0 when no orders
+	s.Equal(float64(0), customer["ordersCount"])
+	s.Equal(float64(0), customer["totalSpent"])
+}
+
 func (s *CustomerCRUDSuite) TestUpdateCustomer_Success() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)

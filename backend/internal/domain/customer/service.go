@@ -235,7 +235,7 @@ func (s *Service) DeleteCustomer(ctx context.Context, actor *account.User, biz *
 	return s.storage.customer.DeleteOne(ctx, customer)
 }
 
-func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Customer, int64, error) {
+func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*CustomerResponse, int64, error) {
 	scopes := []func(*gorm.DB) *gorm.DB{
 		s.storage.customer.ScopeBusinessID(biz.ID),
 	}
@@ -268,9 +268,36 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		s.storage.customer.WithPagination(req.Offset(), req.Limit()),
 		s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
 	)
+
+	// Fetch customers using repository
 	customers, err := s.storage.customer.FindMany(ctx, findOpts...)
 	if err != nil {
 		return nil, 0, err
+	}
+
+	// Fetch aggregations in single query
+	var aggMap map[string]CustomerAggregation
+	if len(customers) > 0 {
+		customerIDs := make([]string, len(customers))
+		for i, c := range customers {
+			customerIDs[i] = c.ID
+		}
+		aggMap, err = s.storage.GetCustomerAggregations(ctx, biz.ID, customerIDs)
+		if err != nil {
+			return nil, 0, err
+		}
+	}
+
+	// Build response DTOs with aggregation data
+	responses := make([]*CustomerResponse, len(customers))
+	for i, customer := range customers {
+		ordersCount := 0
+		totalSpent := 0.0
+		if agg, found := aggMap[customer.ID]; found {
+			ordersCount = agg.OrdersCount
+			totalSpent = agg.TotalSpent
+		}
+		responses[i] = customer.ToResponse(ordersCount, totalSpent)
 	}
 
 	// Count with same filters (excluding pagination)
@@ -279,7 +306,7 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		return nil, 0, err
 	}
 
-	return customers, totalCount, nil
+	return responses, totalCount, nil
 }
 
 func (s *Service) CountCustomers(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {

@@ -1683,6 +1683,8 @@ definitions:
         items:
           $ref: '#/definitions/customer.CustomerAddress'
         type: array
+      avatarUrl:
+        type: string
       business:
         $ref: '#/definitions/business.Business'
       businessId:
@@ -1711,6 +1713,10 @@ definitions:
         items:
           $ref: '#/definitions/customer.CustomerNote'
         type: array
+      ordersCount:
+        description: Computed fields (not stored in database, populated via aggregation
+          queries)
+        type: integer
       phoneCode:
         $ref: '#/definitions/nullable.String'
       phoneNumber:
@@ -1719,6 +1725,8 @@ definitions:
         $ref: '#/definitions/nullable.String'
       tiktokUsername:
         $ref: '#/definitions/nullable.String'
+      totalSpent:
+        type: number
       updatedAt:
         type: string
       whatsappNumber:

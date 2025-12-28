@@ -119,6 +119,16 @@
     "filters": "تصفية العملاء",
     "filters_coming_soon": "خيارات التصفية قريباً"
   },
+  "pagination": {
+    "showing": "عرض {{start}} - {{end}} من {{total}} {{items}}",
+    "show": "عرض",
+    "itemsPerPage": "العناصر في الصفحة",
+    "firstPage": "الصفحة الأولى",
+    "previousPage": "الصفحة السابقة",
+    "nextPage": "الصفحة التالية",
+    "lastPage": "الصفحة الأخيرة",
+    "page": "الصفحة {{number}}"
+  },
   "home": {
     "welcome": "مرحباً",
     "select_business_or_manage": "اختر منشأة لإدارتها أو قم بإدارة إعدادات مساحة العمل والحساب",

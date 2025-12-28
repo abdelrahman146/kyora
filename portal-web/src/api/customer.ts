@@ -5,7 +5,7 @@
  * Provides CRUD operations and search functionality for customers.
  */
 
-import { apiClient } from "./client";
+import { get, post, put, delVoid } from "./client";
 import type {
   Customer,
   CreateCustomerRequest,
@@ -41,11 +41,9 @@ export async function listCustomers(
     searchParams.append("search", search);
   }
 
-  return apiClient
-    .get(
-      `v1/businesses/${businessDescriptor}/customers?${searchParams.toString()}`
-    )
-    .json<ListCustomersResponse>();
+  return get<ListCustomersResponse>(
+    `v1/businesses/${businessDescriptor}/customers?${searchParams.toString()}`
+  );
 }
 
 /**
@@ -55,9 +53,9 @@ export async function getCustomer(
   businessDescriptor: string,
   customerId: string
 ): Promise<Customer> {
-  return apiClient
-    .get(`v1/businesses/${businessDescriptor}/customers/${customerId}`)
-    .json<Customer>();
+  return get<Customer>(
+    `v1/businesses/${businessDescriptor}/customers/${customerId}`
+  );
 }
 
 /**
@@ -67,11 +65,9 @@ export async function createCustomer(
   businessDescriptor: string,
   data: CreateCustomerRequest
 ): Promise<Customer> {
-  return apiClient
-    .post(`v1/businesses/${businessDescriptor}/customers`, {
-      json: data,
-    })
-    .json<Customer>();
+  return post<Customer>(`v1/businesses/${businessDescriptor}/customers`, {
+    json: data,
+  });
 }
 
 /**
@@ -82,11 +78,12 @@ export async function updateCustomer(
   customerId: string,
   data: UpdateCustomerRequest
 ): Promise<Customer> {
-  return apiClient
-    .put(`v1/businesses/${businessDescriptor}/customers/${customerId}`, {
+  return put<Customer>(
+    `v1/businesses/${businessDescriptor}/customers/${customerId}`,
+    {
       json: data,
-    })
-    .json<Customer>();
+    }
+  );
 }
 
 /**
@@ -96,7 +93,5 @@ export async function deleteCustomer(
   businessDescriptor: string,
   customerId: string
 ): Promise<void> {
-  await apiClient.delete(
-    `v1/businesses/${businessDescriptor}/customers/${customerId}`
-  );
+  await delVoid(`v1/businesses/${businessDescriptor}/customers/${customerId}`);
 }

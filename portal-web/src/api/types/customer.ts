@@ -52,6 +52,11 @@ export interface Customer {
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
+
+  // Computed fields from backend aggregation
+  ordersCount?: number;
+  totalSpent?: number;
+  avatarUrl?: string;
 }
 
 export interface CreateCustomerRequest {
@@ -96,8 +101,9 @@ export interface ListCustomersParams {
 
 export interface ListCustomersResponse {
   items: Customer[];
-  total: number;
+  totalCount: number;
   page: number;
   pageSize: number;
   totalPages: number;
+  hasMore: boolean;
 }

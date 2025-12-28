@@ -9,11 +9,12 @@
  * - Jump to first/last page
  * - Page size selector
  * - Current page indicator
- * - RTL-compatible
+ * - RTL-compatible (chevrons flip direction automatically)
  * - Responsive design
  */
 
 import { ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from "lucide-react";
+import { useTranslation } from "react-i18next";
 
 export interface PaginationProps {
   currentPage: number;
@@ -38,6 +39,8 @@ export function Pagination({
   showPageSizeSelector = true,
   itemsName = "items",
 }: PaginationProps) {
+  const { t, i18n } = useTranslation();
+  const isRTL = i18n.dir() === "rtl";
   const startItem = (currentPage - 1) * pageSize + 1;
   const endItem = Math.min(currentPage * pageSize, totalItems);
 
@@ -82,19 +85,24 @@ export function Pagination({
       {/* Info & Page Size Selector */}
       <div className="flex items-center gap-4 text-sm text-base-content/70">
         <span>
-          Showing {startItem} - {endItem} of {totalItems} {itemsName}
+          {t('pagination.showing', {
+            start: startItem,
+            end: endItem,
+            total: totalItems,
+            items: itemsName,
+          })}
         </span>
 
         {showPageSizeSelector && onPageSizeChange && (
           <div className="flex items-center gap-2">
-            <span>Show</span>
+            <span>{t('pagination.show')}</span>
             <select
               value={pageSize}
               onChange={(e) => {
                 onPageSizeChange(Number(e.target.value));
               }}
               className="select select-sm select-bordered"
-              aria-label="Items per page"
+              aria-label={t('pagination.itemsPerPage')}
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -116,9 +124,9 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className="btn btn-sm join-item"
-          aria-label="First page"
+          aria-label={t('pagination.firstPage')}
         >
-          <ChevronsLeft size={16} />
+          {isRTL ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
         </button>
 
         {/* Previous Page */}
@@ -129,9 +137,9 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className="btn btn-sm join-item"
-          aria-label="Previous page"
+          aria-label={t('pagination.previousPage')}
         >
-          <ChevronLeft size={16} />
+          {isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
 
         {/* Page Numbers */}
@@ -159,7 +167,7 @@ export function Pagination({
               className={`btn btn-sm join-item ${
                 currentPage === page ? "btn-active" : ""
               }`}
-              aria-label={`Page ${String(page)}`}
+              aria-label={t('pagination.page', { number: page })}
               aria-current={currentPage === page ? "page" : undefined}
             >
               {page}
@@ -175,9 +183,9 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages}
           className="btn btn-sm join-item"
-          aria-label="Next page"
+          aria-label={t('pagination.nextPage')}
         >
-          <ChevronRight size={16} />
+          {isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
 
         {/* Last Page */}
@@ -188,9 +196,9 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages}
           className="btn btn-sm join-item"
-          aria-label="Last page"
+          aria-label={t('pagination.lastPage')}
         >
-          <ChevronsRight size={16} />
+          {isRTL ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
         </button>
       </div>
     </div>

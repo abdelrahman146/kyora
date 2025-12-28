@@ -12,6 +12,7 @@
  */
 
 import { Phone, ShoppingBag, DollarSign } from "lucide-react";
+import { Avatar } from "../atoms/Avatar";
 import type { Customer } from "../../api/types/customer";
 
 export interface CustomerCardProps {
@@ -71,11 +72,12 @@ export function CustomerCard({
       <div className="card-body p-4">
         {/* Header: Avatar + Name */}
         <div className="flex items-center gap-3 mb-3">
-          <div className="avatar placeholder">
-            <div className="bg-primary text-primary-content rounded-full w-12 h-12">
-              <span className="text-sm font-medium">{getInitials(customer.name)}</span>
-            </div>
-          </div>
+          <Avatar
+            src={customer.avatarUrl}
+            alt={customer.name}
+            fallback={getInitials(customer.name)}
+            size="lg"
+          />
           <div className="flex-1 min-w-0">
             <h3 className="font-semibold text-base truncate">{customer.name}</h3>
             {formatPhone() && (

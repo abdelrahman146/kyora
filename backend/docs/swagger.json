@@ -12369,6 +12369,9 @@
                         "$ref": "#/definitions/customer.CustomerAddress"
                     }
                 },
+                "avatarUrl": {
+                    "type": "string"
+                },
                 "business": {
                     "$ref": "#/definitions/business.Business"
                 },
@@ -12411,6 +12414,10 @@
                         "$ref": "#/definitions/customer.CustomerNote"
                     }
                 },
+                "ordersCount": {
+                    "description": "Computed fields (not stored in database, populated via aggregation queries)",
+                    "type": "integer"
+                },
                 "phoneCode": {
                     "$ref": "#/definitions/nullable.String"
                 },
@@ -12422,6 +12429,9 @@
                 },
                 "tiktokUsername": {
                     "$ref": "#/definitions/nullable.String"
+                },
+                "totalSpent": {
+                    "type": "number"
                 },
                 "updatedAt": {
                     "type": "string"

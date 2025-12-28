@@ -53,6 +53,24 @@ func (m *Customer) TableName() string {
 	return CustomerTable
 }
 
+// CustomerResponse extends Customer with computed aggregation fields for API responses
+type CustomerResponse struct {
+	*Customer
+	OrdersCount int     `json:"ordersCount"`
+	TotalSpent  float64 `json:"totalSpent"`
+	AvatarUrl   *string `json:"avatarUrl,omitempty"`
+}
+
+// ToResponse converts Customer to CustomerResponse with aggregation data
+func (c *Customer) ToResponse(ordersCount int, totalSpent float64) *CustomerResponse {
+	return &CustomerResponse{
+		Customer:    c,
+		OrdersCount: ordersCount,
+		TotalSpent:  totalSpent,
+		AvatarUrl:   nil, // Can be populated later if needed
+	}
+}
+
 func (m *Customer) BeforeCreate(tx *gorm.DB) (err error) {
 	if m.ID == "" {
 		m.ID = id.KsuidWithPrefix(CustomerPrefix)

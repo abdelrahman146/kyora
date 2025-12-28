@@ -4,23 +4,27 @@ import enCommon from "./locales/en/common.json";
 import arCommon from "./locales/ar/common.json";
 import enOnboarding from "./locales/en/onboarding.json";
 import arOnboarding from "./locales/ar/onboarding.json";
+import enTranslation from "./locales/en/translation.json";
+import arTranslation from "./locales/ar/translation.json";
 
 const resources = {
   en: {
     common: enCommon,
     onboarding: enOnboarding,
+    translation: enTranslation,
   },
   ar: {
     common: arCommon,
     onboarding: arOnboarding,
+    translation: arTranslation,
   },
 };
 
 void i18n.use(initReactI18next).init({
   resources,
   fallbackLng: "en",
-  defaultNS: "common",
-  ns: ["common", "onboarding"],
+  defaultNS: "translation",
+  ns: ["common", "onboarding", "translation"],
   interpolation: {
     escapeValue: false,
   },

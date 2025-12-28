@@ -26,6 +26,7 @@ import { Pagination } from "../../components/molecules/Pagination";
 import { FilterDrawer } from "../../components/organisms/FilterDrawer";
 import { Table } from "../../components/organisms/Table";
 import type { TableColumn } from "../../components/organisms/Table";
+import { Avatar } from "../../components/atoms/Avatar";
 import { listCustomers } from "../../api/customer";
 import type { Customer } from "../../api/types/customer";
 
@@ -97,7 +98,7 @@ export default function CustomersPage() {
         setCustomers(response.items);
       }
 
-      setTotalItems(response.total);
+      setTotalItems(response.totalCount);
       setTotalPages(response.totalPages);
     } catch (error) {
       console.error("Failed to fetch customers:", error);
@@ -163,19 +164,18 @@ export default function CustomersPage() {
       label: t("customers.name"),
       sortable: true,
       render: (customer) => (
-        <div className="flex items-center gap-2">
-          <div className="avatar placeholder">
-            <div className="bg-primary text-primary-content rounded-full w-10 h-10">
-              <span className="text-xs">
-                {customer.name
-                  .split(" ")
-                  .map((w) => w[0])
-                  .join("")
-                  .toUpperCase()
-                  .slice(0, 2)}
-              </span>
-            </div>
-          </div>
+        <div className="flex items-center gap-3">
+          <Avatar
+            src={customer.avatarUrl}
+            alt={customer.name}
+            fallback={customer.name
+              .split(" ")
+              .map((w) => w[0])
+              .join("")
+              .toUpperCase()
+              .slice(0, 2)}
+            size="sm"
+          />
           <span className="font-medium">{customer.name}</span>
         </div>
       ),
@@ -195,8 +195,10 @@ export default function CustomersPage() {
       label: t("customers.orders_count"),
       sortable: true,
       align: "center",
-      render: () => (
-        <div className="badge badge-success badge-sm">0</div>
+      render: (customer) => (
+        <div className="badge badge-success badge-sm">
+          {customer.ordersCount ?? 0}
+        </div>
       ),
     },
     {
@@ -204,9 +206,16 @@ export default function CustomersPage() {
       label: t("customers.total_spent"),
       sortable: true,
       align: "end",
-      render: () => (
-        <span className="font-semibold">AED 0.00</span>
-      ),
+      render: (customer) => {
+        const spent = customer.totalSpent ?? 0;
+        // Get the business currency (default to AED for now)
+        const currency = selectedBusiness?.currency ?? "AED";
+        return (
+          <span className="font-semibold">
+            {currency} {spent.toFixed(2)}
+          </span>
+        );
+      },
     },
   ];
 
@@ -307,9 +316,9 @@ export default function CustomersPage() {
                     key={customer.id}
                     customer={customer}
                     onClick={handleCustomerClick}
-                    ordersCount={0}
-                    totalSpent={0}
-                    currency="AED"
+                    ordersCount={customer.ordersCount ?? 0}
+                    totalSpent={customer.totalSpent ?? 0}
+                    currency={selectedBusiness?.currency ?? "AED"}
                   />
                 ))
               )}
