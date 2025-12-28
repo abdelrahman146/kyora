@@ -13,11 +13,10 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Plus, Filter } from "lucide-react";
 import { DashboardLayout } from "../../components/templates";
-import { useBusinessStore } from "../../stores/businessStore";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
 import { SearchInput } from "../../components/molecules/SearchInput";
 import { CustomerCard } from "../../components/molecules/CustomerCard";
@@ -31,7 +30,7 @@ import type { Customer } from "../../api/types/customer";
 
 export default function CustomersPage() {
   const { t } = useTranslation();
-  const { selectedBusiness } = useBusinessStore();
+  const { businessDescriptor } = useParams<{ businessDescriptor: string }>();
   const isMobile = useMediaQuery("(max-width: 768px)");
   const [searchParams, setSearchParams] = useSearchParams();
 
@@ -52,7 +51,7 @@ export default function CustomersPage() {
 
   // Fetch customers
   const fetchCustomers = useCallback(async (append?: boolean) => {
-    if (!selectedBusiness) return;
+    if (!businessDescriptor) return;
 
     try {
       if (append) {
@@ -66,7 +65,7 @@ export default function CustomersPage() {
         : ["-createdAt"];
 
       const response = await listCustomers({
-        businessDescriptor: selectedBusiness.id,
+        businessDescriptor,
         page: append ? page + 1 : page,
         pageSize,
         search: search || undefined,
@@ -91,12 +90,12 @@ export default function CustomersPage() {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [selectedBusiness, page, pageSize, search, sortBy, sortOrder, searchParams, setSearchParams]);
+  }, [businessDescriptor, page, pageSize, search, sortBy, sortOrder, searchParams, setSearchParams]);
 
   // Initial load and when params change
   useEffect(() => {
     void fetchCustomers(false);
-  }, [selectedBusiness, page, pageSize, search, sortBy, sortOrder, fetchCustomers]);
+  }, [businessDescriptor, page, pageSize, search, sortBy, sortOrder, fetchCustomers]);
 
   // Handlers
   const handleSearch = (value: string) => {
@@ -196,8 +195,8 @@ export default function CustomersPage() {
     },
   ];
 
-  // Guard: No business selected
-  if (!selectedBusiness) {
+  // Guard: No business descriptor in URL
+  if (!businessDescriptor) {
     return (
       <DashboardLayout title={t("customers.title")}>
         <div className="alert alert-warning">

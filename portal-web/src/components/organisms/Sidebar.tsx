@@ -28,13 +28,13 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { key: "dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { key: "inventory", icon: Package, path: "/dashboard/inventory" },
-  { key: "orders", icon: ShoppingCart, path: "/dashboard/orders" },
-  { key: "customers", icon: Users, path: "/dashboard/customers" },
-  { key: "analytics", icon: BarChart3, path: "/dashboard/analytics" },
-  { key: "accounting", icon: Calculator, path: "/dashboard/accounting" },
-  { key: "billing", icon: CreditCard, path: "/dashboard/billing" },
-  { key: "team", icon: UsersRound, path: "/dashboard/team" },
+  { key: "inventory", icon: Package, path: "/inventory" },
+  { key: "orders", icon: ShoppingCart, path: "/orders" },
+  { key: "customers", icon: Users, path: "/customers" },
+  { key: "analytics", icon: BarChart3, path: "/analytics" },
+  { key: "accounting", icon: Calculator, path: "/accounting" },
+  { key: "billing", icon: CreditCard, path: "/billing" },
+  { key: "team", icon: UsersRound, path: "/team" },
 ];
 
 /**
@@ -57,7 +57,7 @@ export function Sidebar() {
   const location = useLocation();
   const { isRTL } = useLanguage();
   const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { isSidebarCollapsed, isSidebarOpen, toggleSidebar, closeSidebar } =
+  const { isSidebarCollapsed, isSidebarOpen, toggleSidebar, closeSidebar, selectedBusiness } =
     useBusinessStore();
 
   // On mobile, always render (CSS handles visibility with transform)
@@ -127,13 +127,16 @@ export function Sidebar() {
       {/* Navigation Links */}
       <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-4rem)]">
         {navItems.map((item) => {
-          const isActive = location.pathname.startsWith(item.path);
+          const itemPath = selectedBusiness && item.key !== "dashboard" 
+            ? `/dashboard/${selectedBusiness.descriptor}${item.path}`
+            : item.path;
+          const isActive = location.pathname.startsWith(itemPath);
           const Icon = item.icon;
 
           return (
             <Link
               key={item.key}
-              to={item.path}
+              to={itemPath}
               onClick={() => {
                 // Close drawer on mobile after navigation
                 if (!isDesktop) closeSidebar();

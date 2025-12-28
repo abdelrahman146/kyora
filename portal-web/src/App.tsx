@@ -102,7 +102,7 @@ function App() {
             }
           />
           <Route
-            path="/dashboard/customers"
+            path="/dashboard/:businessDescriptor/customers"
             element={
               <RequireAuth>
                 <CustomersPage />
