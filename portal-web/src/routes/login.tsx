@@ -3,7 +3,7 @@ import { useTranslation } from "react-i18next";
 import { useState } from "react";
 import { LoginForm } from "../components/organisms/LoginForm";
 import { useAuth } from "../hooks/useAuth";
-import { useLanguage } from "../hooks/useLanguage";
+import { LanguageSwitcher } from "../components/molecules/LanguageSwitcher";
 import { translateErrorAsync } from "../lib/translateError";
 import { authApi } from "../api/auth";
 import type { LoginFormData } from "../schemas/auth";
@@ -31,7 +31,6 @@ export default function LoginPage() {
   const navigate = useNavigate();
   const location = useLocation();
   const { t } = useTranslation();
-  const { language, toggleLanguage } = useLanguage();
   const [isGoogleLoading, setIsGoogleLoading] = useState(false);
   const [googleErrorMessage, setGoogleErrorMessage] = useState<string>("");
 
@@ -155,12 +154,7 @@ export default function LoginPage() {
 
             {/* Language Switcher */}
             <div className="mt-8 text-center">
-              <button
-                onClick={toggleLanguage}
-                className="btn btn-ghost btn-sm"
-              >
-                {language === "ar" ? "English" : "العربية"}
-              </button>
+              <LanguageSwitcher variant="toggle" showLabel />
             </div>
           </div>
         </div>

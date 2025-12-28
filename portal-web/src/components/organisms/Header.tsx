@@ -72,13 +72,9 @@ export function Header({ title }: HeaderProps) {
           <BusinessSwitcher />
 
           {/* Language Toggle - Show only on desktop or larger mobile */}
-          <button
-            type="button"
-            onClick={toggleLanguage}
-            className="btn btn-ghost btn-sm hidden sm:flex"
-          >
-            <span className="text-sm font-medium">عربي / EN</span>
-          </button>
+          <div className="hidden sm:block">
+            <LanguageSwitcher variant="compact" />
+          </div>
 
           {/* User Menu */}
           <UserMenu />

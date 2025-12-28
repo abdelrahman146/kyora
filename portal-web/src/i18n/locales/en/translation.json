@@ -15,7 +15,9 @@
     "reset": "Reset",
     "loading_more": "Loading more...",
     "coming_soon": "Coming Soon",
-    "close": "Close"
+    "close": "Close",
+    "changeLanguage": "Change Language",
+    "selectLanguage": "Select Language"
   },
   "auth": {
     "email": "Email Address",

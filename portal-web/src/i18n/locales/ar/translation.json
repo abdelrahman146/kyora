@@ -15,7 +15,9 @@
     "reset": "إعادة تعيين",
     "loading_more": "جاري تحميل المزيد...",
     "coming_soon": "قريباً",
-    "close": "إغلاق"
+    "close": "إغلاق",
+    "changeLanguage": "تغيير اللغة",
+    "selectLanguage": "اختر اللغة"
   },
   "auth": {
     "email": "البريد الإلكتروني",

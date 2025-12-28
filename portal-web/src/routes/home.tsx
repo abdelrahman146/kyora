@@ -29,6 +29,7 @@ import { useBusinessStore } from "../stores/businessStore";
 import { businessApi } from "../api/business";
 import type { Business } from "../api/types/business";
 import { Logo } from "../components/atoms/Logo";
+import { LanguageSwitcher } from "../components/molecules/LanguageSwitcher";
 
 /**
  * Home Page Component
@@ -113,7 +114,9 @@ export default function HomePage() {
         <div className="container mx-auto px-4 py-4">
           <div className="flex items-center justify-between">
             <Logo size="md" showText />
-            <div className="flex items-center gap-4">
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher variant="compact" />
+              <div className="divider divider-horizontal mx-0" />
               <span className="text-sm text-base-content/70 hidden sm:inline">
                 {user?.firstName} {user?.lastName}
               </span>

@@ -6,13 +6,12 @@ import {
   LogOut,
   ChevronDown,
   HelpCircle,
-  Languages,
 } from "lucide-react";
 import { Avatar } from "../atoms/Avatar";
 import { Dropdown } from "../atoms/Dropdown";
 import { useAuth } from "../../hooks/useAuth";
-import { useLanguage } from "../../hooks/useLanguage";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
+import { LanguageSwitcher } from "./LanguageSwitcher";
 
 /**
  * UserMenu Component
@@ -34,7 +33,6 @@ export function UserMenu() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user, logout } = useAuth();
-  const { toggleLanguage, currentLanguage } = useLanguage();
   const isMobile = useMediaQuery("(max-width: 640px)");
 
   const handleLogout = () => {
@@ -92,16 +90,9 @@ export function UserMenu() {
         <div className="py-1">
           {/* Language Switcher - Mobile Only */}
           {isMobile && (
-            <button
-              type="button"
-              onClick={toggleLanguage}
-              className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-            >
-              <Languages size={18} className="shrink-0" />
-              <span className="text-sm">
-                {currentLanguage === "ar" ? "English" : "عربي"}
-              </span>
-            </button>
+            <div className="px-2 py-1.5">
+              <LanguageSwitcher variant="compact" />
+            </div>
           )}
 
           <button

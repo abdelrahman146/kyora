@@ -1,14 +1,13 @@
 import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
-import { Search, Mail, Eye, EyeOff, Languages } from 'lucide-react';
+import { Search, Mail, Eye, EyeOff } from 'lucide-react';
 import { Button, Input, Badge, Skeleton, SkeletonText } from '@/components/atoms';
-import { useLanguage } from '@/hooks/useLanguage';
+import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher';
 
 export default function DesignSystem() {
   const [loading, setLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const { t } = useTranslation();
-  const { currentLanguage, changeLanguage, supportedLanguages } = useLanguage();
 
   const handleLoadingDemo = () => {
     setLoading(true);
@@ -32,31 +31,30 @@ export default function DesignSystem() {
         {/* Language Switcher */}
         <section className="mb-12">
           <div className="bg-base-100 rounded-lg p-6">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-3">
-                <Languages size={24} />
-                <div>
-                  <h3 className="text-lg font-semibold">Internationalization (i18n)</h3>
-                  <p className="text-sm text-neutral-500">
-                    Current Language: <span className="font-medium">{currentLanguage === 'ar' ? 'العربية' : 'English'}</span>
-                  </p>
-                </div>
+            <div className="space-y-4">
+              <div>
+                <h3 className="text-lg font-semibold mb-1">Language Switcher Variants</h3>
+                <p className="text-sm text-neutral-500">
+                  All available language switcher design variants
+                </p>
               </div>
-              <div className="flex gap-2">
-                {supportedLanguages.map((lang) => {
-                  return (
-                    <Button
-                      key={lang}
-                      variant={currentLanguage === lang ? 'primary' : 'outline'}
-                      size="sm"
-                      onClick={() => {
-                        changeLanguage(lang);
-                      }}
-                    >
-                      {lang === 'ar' ? 'العربية' : 'English'}
-                    </Button>
-                  );
-                })}
+              <div className="flex flex-wrap gap-6">
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-neutral-500 font-medium">Dropdown (Default)</p>
+                  <LanguageSwitcher variant="dropdown" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-neutral-500 font-medium">Compact</p>
+                  <LanguageSwitcher variant="compact" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-neutral-500 font-medium">Icon Only</p>
+                  <LanguageSwitcher variant="iconOnly" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <p className="text-xs text-neutral-500 font-medium">Toggle</p>
+                  <LanguageSwitcher variant="toggle" />
+                </div>
               </div>
             </div>
             <div className="mt-4 pt-4 border-t border-base-300">
