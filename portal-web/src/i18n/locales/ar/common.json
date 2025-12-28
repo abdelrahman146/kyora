@@ -51,6 +51,8 @@
   "select": "اختر",
   "change": "تغيير",
   "or": "أو",
+  "startFresh": "ابدأ من جديد",
+  "unknown": "غير معروف",
   "switchLanguage": "تبديل اللغة",
   "copyright": "© {{year}} {{company}}. جميع الحقوق محفوظة.",
   "privacy": "سياسة الخصوصية",

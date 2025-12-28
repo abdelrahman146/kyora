@@ -48,7 +48,7 @@ export default function CompletePage() {
       if (!sessionToken) {
         const hasSession = await loadSessionFromStorage();
         if (!hasSession) {
-          navigate("/onboarding/plan", { replace: true });
+          await navigate("/onboarding/plan", { replace: true });
         }
       }
     };

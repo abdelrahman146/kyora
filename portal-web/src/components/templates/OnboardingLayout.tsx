@@ -95,8 +95,8 @@ export function OnboardingLayout({
 
       {/* Progress Bar */}
       {showProgress && totalSteps > 0 && (
-        <div className="sticky top-18 z-40 bg-base-100/80 backdrop-blur-md border-b border-base-300">
-          <div className="container mx-auto px-4 py-3 max-w-7xl">
+        <div className="bg-base-100/80 backdrop-blur-md">
+          <div className="container mx-auto px-4 pb-4 max-w-7xl">
             <div className="flex items-center gap-3">
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
                 {t("onboarding:progress.step", { current: currentStep, total: totalSteps })}

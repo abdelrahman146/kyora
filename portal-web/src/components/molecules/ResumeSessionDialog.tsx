@@ -1,9 +1,10 @@
 import { useTranslation } from 'react-i18next';
+import { Dialog } from '@/components/atoms/Dialog';
 
 interface ResumeSessionDialogProps {
   open: boolean;
-  onResume: () => void;
-  onStartFresh: () => void;
+  onResume: () => void | Promise<void>;
+  onStartFresh: () => void | Promise<void>;
   email?: string;
   stage?: string;
   isLoading?: boolean;
@@ -23,57 +24,64 @@ export function ResumeSessionDialog({
 }: ResumeSessionDialogProps) {
   const { t } = useTranslation(['onboarding', 'common']);
 
-  if (!open) return null;
-
   // Format stage for display
   const stageLabel = stage
     ? t(`onboarding:stages.${stage}`, { defaultValue: stage })
     : t('common:unknown');
 
   return (
-    <dialog className="modal modal-open">
-      <div className="modal-box">
-        <h3 className="text-lg font-bold">
-          {t('onboarding:resumeSession.title')}
-        </h3>
-        
-        <div className="py-4">
-          <p className="mb-2">
-            {t('onboarding:resumeSession.message')}
-          </p>
-          
-          {email && (
-            <div className="mt-4 rounded-lg bg-base-200 p-3">
-              <p className="text-sm">
-                <span className="font-semibold">{t('common:email')}:</span>{' '}
-                {email}
-              </p>
-              <p className="text-sm">
-                <span className="font-semibold">{t('onboarding:stage')}:</span>{' '}
-                {stageLabel}
-              </p>
-            </div>
-          )}
-        </div>
-
-        <div className="modal-action">
+    <Dialog
+      open={open}
+      title={t('onboarding:resumeSession.title')}
+      size="md"
+      showCloseButton={false}
+      closeOnBackdrop={false}
+      footer={
+        <>
           <button
-            onClick={onStartFresh}
+            onClick={() => void onStartFresh()}
             className="btn btn-ghost"
             disabled={isLoading}
           >
             {t('common:startFresh')}
           </button>
           <button
-            onClick={onResume}
+            onClick={() => void onResume()}
             className="btn btn-primary"
             disabled={isLoading}
           >
             {isLoading && <span className="loading loading-spinner loading-sm"></span>}
             {t('common:continue')}
           </button>
-        </div>
+        </>
+      }
+    >
+      <div>
+        <p className="mb-4">
+          {t('onboarding:resumeSession.message')}
+        </p>
+        
+        {email && (
+          <div className="rounded-lg bg-base-200 p-4 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-base-content/70">
+                {t('common:email')}
+              </span>
+              <span className="text-sm text-base-content">
+                {email}
+              </span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-sm font-semibold text-base-content/70">
+                {t('onboarding:stage')}
+              </span>
+              <span className="text-sm text-base-content">
+                {stageLabel}
+              </span>
+            </div>
+          </div>
+        )}
       </div>
-    </dialog>
+    </Dialog>
   );
 }

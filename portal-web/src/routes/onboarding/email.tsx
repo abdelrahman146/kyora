@@ -36,7 +36,7 @@ export default function EmailEntryPage() {
       if (!sessionToken) {
         const hasSession = await loadSessionFromStorage();
         if (!hasSession && !selectedPlan) {
-          navigate("/onboarding/plan", { replace: true });
+          await navigate("/onboarding/plan", { replace: true });
         }
       }
     };

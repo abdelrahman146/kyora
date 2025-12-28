@@ -74,6 +74,7 @@ export default function BusinessSetupPage() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
   const [descriptorError, setDescriptorError] = useState("");
+  const [isDescriptorManuallyEdited, setIsDescriptorManuallyEdited] = useState(false);
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -81,7 +82,7 @@ export default function BusinessSetupPage() {
       if (!sessionToken) {
         const hasSession = await loadSessionFromStorage();
         if (!hasSession) {
-          navigate("/onboarding/plan", { replace: true });
+          await navigate("/onboarding/plan", { replace: true });
         }
       }
     };
@@ -95,9 +96,9 @@ export default function BusinessSetupPage() {
     }
   }, [sessionToken, stage, navigate]);
 
-  // Auto-generate descriptor from business name
+  // Auto-generate descriptor from business name (only if not manually edited)
   useEffect(() => {
-    if (businessName && !descriptor) {
+    if (businessName && !isDescriptorManuallyEdited) {
       const generated = businessName
         .toLowerCase()
         .replace(/[^a-z0-9\s-]/g, "")
@@ -105,7 +106,7 @@ export default function BusinessSetupPage() {
         .slice(0, 50);
       setDescriptor(generated);
     }
-  }, [businessName, descriptor]);
+  }, [businessName, isDescriptorManuallyEdited]);
 
   // Validate descriptor format
   useEffect(() => {
@@ -231,6 +232,13 @@ export default function BusinessSetupPage() {
                 value={descriptor}
                 onChange={(e) => {
                   setDescriptor(e.target.value.toLowerCase());
+                  setIsDescriptorManuallyEdited(true);
+                }}
+                onBlur={() => {
+                  // If descriptor is empty after blur, allow auto-sync again
+                  if (!descriptor.trim()) {
+                    setIsDescriptorManuallyEdited(false);
+                  }
                 }}
                 placeholder={t("onboarding:business.descriptorPlaceholder")}
                 pattern="[a-z0-9-]+"

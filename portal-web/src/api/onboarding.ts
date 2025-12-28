@@ -239,7 +239,7 @@ export const onboardingApi = {
    */
   async deleteSession(sessionToken: string): Promise<void> {
     await del("v1/onboarding/session", {
-      searchParams: { sessionToken },
+      json: { sessionToken },
     });
   },
 };

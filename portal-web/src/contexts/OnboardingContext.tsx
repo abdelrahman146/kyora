@@ -171,7 +171,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
                 descriptor: session.planDescriptor,
                 name: session.planDescriptor, // Backend doesn't return name, use descriptor
                 price: "0", // Backend doesn't return price in session
-                currency: session.businessCurrency || "USD",
+                currency: session.businessCurrency ?? "USD",
                 billingCycle: "monthly",
                 features: {
                   customerManagement: false,
@@ -341,6 +341,7 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
  * const { sessionToken, stage, updateStage } = useOnboarding();
  * ```
  */
+// eslint-disable-next-line react-refresh/only-export-components
 export function useOnboarding(): OnboardingContextValue {
   const context = useContext(OnboardingContext);
 

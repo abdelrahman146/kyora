@@ -81,7 +81,7 @@ export default function OnboardingOAuthCallbackPage() {
     };
 
     void handleCallback();
-  }, [searchParams, sessionToken, markEmailVerified, navigate, t]);
+  }, [searchParams, sessionToken, loadSession, navigate, t]);
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-base-100">

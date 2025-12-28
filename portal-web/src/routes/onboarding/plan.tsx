@@ -111,36 +111,36 @@ export default function PlanSelectionPage() {
   };
 
   // Navigate to the appropriate step based on current stage
-  const navigateToCurrentStage = () => {
+  const navigateToCurrentStage = async () => {
     if (!stage) {
-      navigate("/onboarding/email");
+      await navigate("/onboarding/email");
       return;
     }
 
     switch (stage) {
       case "plan_selected":
       case "identity_pending":
-        navigate("/onboarding/email");
+        await navigate("/onboarding/email");
         break;
       case "identity_verified":
-        navigate("/onboarding/business");
+        await navigate("/onboarding/business");
         break;
       case "business_staged":
       case "payment_pending":
-        navigate("/onboarding/payment");
+        await navigate("/onboarding/payment");
         break;
       case "payment_confirmed":
       case "ready_to_commit":
-        navigate("/onboarding/complete");
+        await navigate("/onboarding/complete");
         break;
       default:
-        navigate("/onboarding/email");
+        await navigate("/onboarding/email");
     }
   };
 
-  const handleResumeSession = () => {
+  const handleResumeSession = async () => {
     setShowResumeDialog(false);
-    navigateToCurrentStage();
+    await navigateToCurrentStage();
   };
 
   const handleStartFresh = async () => {

@@ -43,6 +43,7 @@ export default function VerifyEmailPage() {
     email,
     stage,
     loadSessionFromStorage,
+    loadSession,
   } = useOnboarding();
 
   const [step, setStep] = useState<"otp" | "profile">("otp");
@@ -64,7 +65,7 @@ export default function VerifyEmailPage() {
       if (!sessionToken) {
         const hasSession = await loadSessionFromStorage();
         if (!hasSession) {
-          navigate("/onboarding/plan", { replace: true });
+          await navigate("/onboarding/plan", { replace: true });
         }
       }
     };
@@ -208,7 +209,10 @@ export default function VerifyEmailPage() {
         password,
       });
 
-      // Backend updates the session automatically
+      // Reload session from backend to get updated state
+      await loadSession(sessionToken);
+      
+      // Navigate to business setup
       void navigate("/onboarding/business");
     } catch (err) {
       const message = await translateErrorAsync(err, t);

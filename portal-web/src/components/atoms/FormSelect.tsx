@@ -363,7 +363,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         ) : (
                           <>
                             {option.icon && (
-                              <span className="flex-shrink-0">{option.icon}</span>
+                              <span className="shrink-0">{option.icon}</span>
                             )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{option.label}</div>
@@ -374,10 +374,10 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                               )}
                             </div>
                             {multiSelect && isSelected && (
-                              <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                              <Check className="w-5 h-5 text-primary shrink-0" />
                             )}
                             {!multiSelect && isSelected && (
-                              <Check className="w-5 h-5 text-primary flex-shrink-0" />
+                              <Check className="w-5 h-5 text-primary shrink-0" />
                             )}
                           </>
                         )}

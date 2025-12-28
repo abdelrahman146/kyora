@@ -3,6 +3,21 @@
     "step": "الخطوة {{current}} من {{total}}",
     "label": "اكتمل {{percentage}}%"
   },
+  "resumeSession": {
+    "title": "متابعة التسجيل؟",
+    "message": "وجدنا جلسة تسجيل موجودة. هل تريد المتابعة من حيث توقفت أو البدء من جديد؟"
+  },
+  "stages": {
+    "plan_selected": "تم اختيار الباقة",
+    "identity_pending": "في انتظار التحقق من البريد الإلكتروني",
+    "identity_verified": "تم التحقق من البريد الإلكتروني",
+    "business_staged": "إعداد العمل",
+    "payment_pending": "في انتظار الدفع",
+    "payment_confirmed": "تم تأكيد الدفع",
+    "ready_to_commit": "جاهز للإكمال",
+    "committed": "مكتمل"
+  },
+  "stage": "الخطوة الحالية",
   "plan": {
     "title": "اختر باقتك",
     "subtitle": "اختر الباقة المثالية لاحتياجات عملك",

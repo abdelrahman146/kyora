@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
@@ -48,7 +48,7 @@ export default function PaymentPage() {
       if (!sessionToken) {
         const hasSession = await loadSessionFromStorage();
         if (!hasSession) {
-          navigate("/onboarding/plan", { replace: true });
+          await navigate("/onboarding/plan", { replace: true });
         }
       }
     };
@@ -90,7 +90,7 @@ export default function PaymentPage() {
     }
   }, [sessionToken, isPaidPlan, stage, navigate]);
 
-  const initiatePayment = async () => {
+  const initiatePayment = useCallback(async () => {
     if (!sessionToken) return;
 
     try {
@@ -120,14 +120,14 @@ export default function PaymentPage() {
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [sessionToken, t]);
 
   // Auto-initiate payment if no checkout URL exists
   useEffect(() => {
     if (!checkoutUrl && !paymentStatus && !error && sessionToken && isPaidPlan) {
       void initiatePayment();
     }
-  }, []);
+  }, [checkoutUrl, paymentStatus, error, sessionToken, isPaidPlan, initiatePayment]);
 
   if (paymentStatus === "success") {
     return (
