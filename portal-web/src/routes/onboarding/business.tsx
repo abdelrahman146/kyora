@@ -65,6 +65,7 @@ export default function BusinessSetupPage() {
     stage,
     isPaidPlan,
     setBusinessDetails,
+    updateStage,
   } = useOnboarding();
 
   const [businessName, setBusinessName] = useState("");
@@ -142,7 +143,7 @@ export default function BusinessSetupPage() {
     try {
       setIsSubmitting(true);
 
-      await onboardingApi.setBusiness({
+      const response = await onboardingApi.setBusiness({
         sessionToken,
         name: businessName.trim(),
         descriptor: descriptor.trim(),
@@ -150,12 +151,21 @@ export default function BusinessSetupPage() {
         currency,
       });
 
+      // Update context with business details
       setBusinessDetails(businessName.trim(), descriptor.trim(), country, currency);
+      
+      // Update stage from API response
+      updateStage(response.stage);
 
-      // Navigate to payment if paid plan, otherwise complete
-      if (isPaidPlan) {
+      // Navigate based on the response stage
+      if (response.stage === "ready_to_commit") {
+        // Free plan - go directly to complete
+        void navigate("/onboarding/complete");
+      } else if (response.stage === "business_staged" || isPaidPlan) {
+        // Paid plan - go to payment
         void navigate("/onboarding/payment");
       } else {
+        // Fallback to complete
         void navigate("/onboarding/complete");
       }
     } catch (err) {
@@ -271,20 +281,10 @@ export default function BusinessSetupPage() {
               )}
 
               {/* Actions */}
-              <div className="flex gap-3">
-                <button
-                  type="button"
-                  onClick={() => {
-                    void navigate("/onboarding/verify");
-                  }}
-                  className="btn btn-ghost"
-                  disabled={isSubmitting}
-                >
-                  {t("common:back")}
-                </button>
+              <div>
                 <button
                   type="submit"
-                  className="btn btn-primary flex-1"
+                  className="btn btn-primary w-full"
                   disabled={isSubmitting || !!descriptorError}
                 >
                   {isSubmitting ? (

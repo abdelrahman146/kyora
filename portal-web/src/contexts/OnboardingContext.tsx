@@ -218,7 +218,6 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
         businessDescriptor: descriptor,
         businessCountry: country,
         businessCurrency: currency,
-        stage: "business_staged",
       });
     },
     [updateState]

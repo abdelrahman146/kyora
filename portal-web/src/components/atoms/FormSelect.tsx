@@ -364,7 +364,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                           <>
                             {option.icon && (
                               <span className="flex-shrink-0">{option.icon}</span>
-                            )}String(option.label)
+                            )}
                             <div className="flex-1 min-w-0">
                               <div className="font-medium truncate">{option.label}</div>
                               {option.description && (

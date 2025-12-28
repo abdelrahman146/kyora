@@ -266,21 +266,12 @@ export default function PaymentPage() {
             </div>
 
             {/* Actions */}
-            <div className="flex gap-3">
-              <button
-                onClick={() => {
-                  void navigate("/onboarding/business");
-                }}
-                className="btn btn-ghost"
-                disabled={isLoading}
-              >
-                {t("common:back")}
-              </button>
+            <div>
               <button
                 onClick={() => {
                   void initiatePayment();
                 }}
-                className="btn btn-primary flex-1"
+                className="btn btn-primary w-full"
                 disabled={isLoading}
               >
                 {isLoading ? (
