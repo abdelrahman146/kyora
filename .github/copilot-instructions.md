@@ -91,6 +91,31 @@ kyora/
 
 - All Go backend code is in the `backend/` directory. When referencing files or paths, always include the `backend/` prefix.
 - All storefront web code is in the `storefront-web/` directory. When referencing files or paths, always include the `storefront-web/` prefix.
+- All portal web code is in the `portal-web/` directory. When referencing files or paths, always include the `portal-web/` prefix.
+
+**Project-Specific Reference Instructions**
+
+Before working on any task, always refer to the relevant instruction files based on the project you're working on:
+
+- **When working on `backend/` (Go API)**:
+
+  - Always refer to `.github/instructions/backend.instructions.md` for architecture, patterns, and conventions
+  - Refer to `.github/instructions/resend.instructions.md` when working with email functionality
+  - Refer to `.github/instructions/stripe.instructions.md` when working with billing/payments
+
+- **When working on `portal-web/` (React business dashboard)**:
+
+  - Always refer to `.github/instructions/portal_web.instructions.md` for architecture, patterns, and conventions
+  - Refer to `.github/instructions/ky.instructions.md` when making HTTP requests
+  - Refer to `.github/instructions/react-router.instructions.md` when working with routing
+  - Refer to `.github/instructions/branding.instructions.md` for design system and styling guidelines
+  - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
+
+- **When working on `storefront-web/` (Customer-facing storefront)**:
+  - Refer to `storefront-web/DESIGN_SYSTEM.md` for component and styling guidelines
+  - Refer to `.github/instructions/branding.instructions.md` for brand consistency
+  - Refer to `.github/instructions/react-router.instructions.md` when working with routing
+  - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
 
 **General Instructions**
 
