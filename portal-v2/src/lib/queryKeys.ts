@@ -1,52 +1,61 @@
 /**
  * Centralized Query Key Factory
  *
- * Provides consistent query key generation with business scoping and tiered staleTime configuration.
- * All query keys follow the pattern: [scope, resource, ...filters]
- *
- * Tiered staleTime Strategy (defined in main.tsx QueryClient defaults):
- * - User Profile: 5 minutes (changes infrequently)
- * - Businesses: 5 minutes (changes infrequently)
- * - Customers: 30 seconds (moderate change frequency)
- * - Orders: 15 seconds (frequent changes)
- * - Inventory: 1 minute (moderate change frequency)
- * - Analytics: 5 minutes (calculated data, can be cached longer)
- * - Metadata: 24 hours (rarely changes)
+ * Provides type-safe, hierarchical query keys for TanStack Query with documented staleTime strategy.
+ * Keys are nested to enable efficient invalidation (e.g., invalidate all customer queries at once).
  *
  * @example
- * ```tsx
- * // User-scoped query
- * const { data } = useQuery({
- *   queryKey: queryKeys.user.profile(),
- *   queryFn: () => userApi.getProfile(),
- *   staleTime: queryKeys.staleTime.user,
- * });
+ * ```ts
+ * // Invalidate all customer queries
+ * queryClient.invalidateQueries({ queryKey: queryKeys.customers.all })
  *
- * // Business-scoped query
- * const { data } = useQuery({
- *   queryKey: queryKeys.customers.list(businessId, filters),
- *   queryFn: () => customerApi.list(businessId, filters),
- *   staleTime: queryKeys.staleTime.customers,
- * });
+ * // Invalidate specific customer detail
+ * queryClient.invalidateQueries({ queryKey: queryKeys.customers.detail(customerId) })
+ *
+ * // Invalidate all business-scoped queries on business switch
+ * invalidateBusinessScopedQueries(queryClient, businessDescriptor)
  * ```
  */
 
 /**
- * Tiered staleTime configuration (in milliseconds)
- * Used consistently across all queries
+ * StaleTime Strategy (how long data is considered fresh):
+ *
+ * - User profile: 5 minutes (rarely changes during session)
+ * - Businesses list: 5 minutes (semi-static, only changes when creating new business)
+ * - Selected business: 5 minutes (semi-static)
+ * - Customers list: 30 seconds (business-critical, moderate update frequency)
+ * - Customer details: 30 seconds (business-critical)
+ * - Orders: 15 seconds (high priority, frequently updated)
+ * - Inventory: 1 minute (moderate priority, moderate update frequency)
+ * - Analytics: 5 minutes (computed data, acceptable staleness)
+ * - Metadata (countries/currencies): 24 hours (static reference data)
+ * - Onboarding session: 0 (always fresh, time-sensitive)
  */
+
+export const STALE_TIME = {
+  NEVER: 0,
+  FIFTEEN_SECONDS: 15 * 1000,
+  THIRTY_SECONDS: 30 * 1000,
+  ONE_MINUTE: 60 * 1000,
+  FIVE_MINUTES: 5 * 60 * 1000,
+  ONE_HOUR: 60 * 60 * 1000,
+  TWENTY_FOUR_HOURS: 24 * 60 * 60 * 1000,
+} as const
+
+// Legacy export for backwards compatibility
 export const staleTime = {
-  user: 1000 * 60 * 5, // 5 minutes
-  businesses: 1000 * 60 * 5, // 5 minutes
-  customers: 1000 * 30, // 30 seconds
-  orders: 1000 * 15, // 15 seconds
-  inventory: 1000 * 60, // 1 minute
-  analytics: 1000 * 60 * 5, // 5 minutes
-  metadata: 1000 * 60 * 60 * 24, // 24 hours
+  user: STALE_TIME.FIVE_MINUTES,
+  businesses: STALE_TIME.FIVE_MINUTES,
+  customers: STALE_TIME.THIRTY_SECONDS,
+  orders: STALE_TIME.FIFTEEN_SECONDS,
+  inventory: STALE_TIME.ONE_MINUTE,
+  analytics: STALE_TIME.FIVE_MINUTES,
+  metadata: STALE_TIME.TWENTY_FOUR_HOURS,
 } as const
 
 /**
- * User-scoped query keys
+ * User queries
+ * StaleTime: 5 minutes
  */
 export const user = {
   all: ['user'] as const,
@@ -55,9 +64,17 @@ export const user = {
 } as const
 
 /**
- * Business-scoped query keys
- * Use businessScoped() helper to automatically prefix with business ID
+ * Business queries
+ * StaleTime: 5 minutes (semi-static data)
  */
+export const businesses = {
+  all: ['businesses'] as const,
+  list: () => [...businesses.all, 'list'] as const,
+  detail: (descriptor: string) =>
+    [...businesses.all, 'detail', descriptor] as const,
+} as const
+
+// Legacy export for backwards compatibility
 export const business = {
   all: ['business'] as const,
   detail: (businessId: string) => [...business.all, businessId] as const,
@@ -66,31 +83,38 @@ export const business = {
 } as const
 
 /**
- * Customer-scoped query keys
+ * Customer queries (business-scoped)
+ * StaleTime: 30 seconds (business-critical data)
+ * Invalidated on business switch
  */
 export const customers = {
   all: ['customers'] as const,
+  businessScoped: true,
   lists: () => [...customers.all, 'list'] as const,
   list: (
-    businessId: string,
+    businessDescriptor: string,
     filters?: {
       search?: string
       page?: number
       limit?: number
     },
-  ) => [...customers.lists(), businessId, filters] as const,
-  detail: (businessId: string, customerId: string) =>
-    [...customers.all, businessId, 'detail', customerId] as const,
+  ) => [...customers.lists(), businessDescriptor, filters] as const,
+  details: () => [...customers.all, 'detail'] as const,
+  detail: (businessDescriptor: string, customerId: string) =>
+    [...customers.details(), businessDescriptor, customerId] as const,
 } as const
 
 /**
- * Order-scoped query keys
+ * Order queries (business-scoped)
+ * StaleTime: 15 seconds (high priority, frequently updated)
+ * Invalidated on business switch
  */
 export const orders = {
   all: ['orders'] as const,
+  businessScoped: true,
   lists: () => [...orders.all, 'list'] as const,
   list: (
-    businessId: string,
+    businessDescriptor: string,
     filters?: {
       status?: string
       customerId?: string
@@ -99,112 +123,117 @@ export const orders = {
       page?: number
       limit?: number
     },
-  ) => [...orders.lists(), businessId, filters] as const,
-  detail: (businessId: string, orderId: string) =>
-    [...orders.all, businessId, 'detail', orderId] as const,
+  ) => [...orders.lists(), businessDescriptor, filters] as const,
+  details: () => [...orders.all, 'detail'] as const,
+  detail: (businessDescriptor: string, orderId: string) =>
+    [...orders.details(), businessDescriptor, orderId] as const,
 } as const
 
 /**
- * Inventory-scoped query keys
+ * Inventory queries (business-scoped)
+ * StaleTime: 1 minute (moderate priority)
+ * Invalidated on business switch
  */
 export const inventory = {
   all: ['inventory'] as const,
+  businessScoped: true,
   lists: () => [...inventory.all, 'list'] as const,
   list: (
-    businessId: string,
+    businessDescriptor: string,
     filters?: {
       search?: string
       lowStock?: boolean
       page?: number
       limit?: number
     },
-  ) => [...inventory.lists(), businessId, filters] as const,
-  detail: (businessId: string, productId: string) =>
-    [...inventory.all, businessId, 'detail', productId] as const,
+  ) => [...inventory.lists(), businessDescriptor, filters] as const,
+  details: () => [...inventory.all, 'detail'] as const,
+  detail: (businessDescriptor: string, productId: string) =>
+    [...inventory.details(), businessDescriptor, productId] as const,
 } as const
 
 /**
- * Analytics-scoped query keys
+ * Analytics queries (business-scoped)
+ * StaleTime: 5 minutes (computed data, acceptable staleness)
+ * Invalidated on business switch
  */
 export const analytics = {
   all: ['analytics'] as const,
-  dashboard: (businessId: string, dateRange?: { from: string; to: string }) =>
-    [...analytics.all, businessId, 'dashboard', dateRange] as const,
-  revenue: (businessId: string, dateRange?: { from: string; to: string }) =>
-    [...analytics.all, businessId, 'revenue', dateRange] as const,
-  topProducts: (businessId: string, dateRange?: { from: string; to: string }) =>
-    [...analytics.all, businessId, 'topProducts', dateRange] as const,
-  topCustomers: (
-    businessId: string,
+  businessScoped: true,
+  dashboard: (
+    businessDescriptor: string,
     dateRange?: { from: string; to: string },
-  ) => [...analytics.all, businessId, 'topCustomers', dateRange] as const,
+  ) => [...analytics.all, 'dashboard', businessDescriptor, dateRange] as const,
+  revenue: (
+    businessDescriptor: string,
+    dateRange?: { from: string; to: string },
+  ) => [...analytics.all, 'revenue', businessDescriptor, dateRange] as const,
+  topProducts: (
+    businessDescriptor: string,
+    dateRange?: { from: string; to: string },
+  ) =>
+    [...analytics.all, 'topProducts', businessDescriptor, dateRange] as const,
+  topCustomers: (
+    businessDescriptor: string,
+    dateRange?: { from: string; to: string },
+  ) =>
+    [...analytics.all, 'topCustomers', businessDescriptor, dateRange] as const,
 } as const
 
 /**
- * Metadata query keys (plans, currencies, etc.)
+ * Metadata query keys (global, not business-scoped)
+ * StaleTime: 24 hours (static reference data)
  */
 export const metadata = {
   all: ['metadata'] as const,
-  plans: () => [...metadata.all, 'plans'] as const,
-  currencies: () => [...metadata.all, 'currencies'] as const,
   countries: () => [...metadata.all, 'countries'] as const,
+  currencies: () => [...metadata.all, 'currencies'] as const,
+  plans: () => [...metadata.all, 'plans'] as const,
 } as const
 
 /**
- * Onboarding query keys
+ * Onboarding queries (session-specific)
+ * StaleTime: 0 (always fresh, time-sensitive)
  */
 export const onboarding = {
   all: ['onboarding'] as const,
-  session: () => [...onboarding.all, 'session'] as const,
+  session: (sessionToken: string | null) =>
+    [...onboarding.all, 'session', sessionToken] as const,
+  plans: () => [...onboarding.all, 'plans'] as const,
 } as const
-
-/**
- * Helper to invalidate all queries scoped to a specific business
- * Use this when switching businesses or when business data changes significantly
- *
- * @example
- * ```tsx
- * // Invalidate all business-scoped queries when switching business
- * await queryClient.invalidateQueries({
- *   predicate: (query) => businessScoped.includes(query.queryKey, businessId)
- * });
- * ```
- */
-export const businessScoped = {
-  /**
-   * Check if a query key is scoped to a specific business
-   */
-  includes: (queryKey: ReadonlyArray<unknown>, businessId: string): boolean => {
-    // Business-scoped keys include the businessId as the second element
-    // e.g., ['customers', 'list', 'business-123', ...]
-    return (
-      queryKey.length >= 2 &&
-      typeof queryKey[1] === 'object' &&
-      queryKey[1] !== null &&
-      'businessId' in queryKey[1] &&
-      queryKey[1].businessId === businessId
-    )
-  },
-
-  /**
-   * Get all business-scoped resources for a specific business
-   * Useful for bulk invalidation
-   */
-  all: (businessId: string) => [businessId] as const,
-}
 
 /**
  * Export all query key factories
  */
 export const queryKeys = {
   user,
-  business,
+  businesses,
+  business, // Legacy compatibility
   customers,
   orders,
   inventory,
   analytics,
   metadata,
   onboarding,
-  businessScoped,
   staleTime,
 } as const
+
+/**
+ * Helper to identify if a query key belongs to business-scoped data
+ *
+ * Used by invalidateBusinessScopedQueries to determine which queries
+ * should be cleared when switching businesses.
+ */
+export function isBusinessScopedQuery(
+  queryKey: ReadonlyArray<unknown>,
+): boolean {
+  if (!Array.isArray(queryKey) || queryKey.length === 0) return false
+
+  const rootKey = queryKey[0]
+  return (
+    rootKey === 'customers' ||
+    rootKey === 'orders' ||
+    rootKey === 'inventory' ||
+    rootKey === 'analytics'
+  )
+}

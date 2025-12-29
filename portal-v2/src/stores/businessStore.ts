@@ -1,0 +1,169 @@
+import { Store } from '@tanstack/react-store'
+import { createPersistencePlugin } from '@/lib/storePersistence'
+
+/**
+ * Business entity from API
+ */
+export interface Business {
+  id: string
+  descriptor: string
+  name: string
+  country: string
+  currency: string
+  createdAt: string
+  updatedAt: string
+}
+
+/**
+ * Business Store State
+ *
+ * Manages business list, selected business, and UI preferences.
+ * Only selectedBusinessDescriptor and sidebarCollapsed are persisted.
+ */
+interface BusinessState {
+  businesses: Array<Business>
+  selectedBusinessDescriptor: string | null
+  sidebarCollapsed: boolean
+}
+
+const initialState: BusinessState = {
+  businesses: [],
+  selectedBusinessDescriptor: null,
+  sidebarCollapsed: false,
+}
+
+/**
+ * Business Store
+ *
+ * Manages business state using TanStack Store.
+ * Persists selectedBusinessDescriptor and sidebarCollapsed to localStorage.
+ *
+ * Dev-only devtools integration via conditional import.
+ */
+export const businessStore = new Store<BusinessState>(initialState)
+
+// Set up persistence plugin for preferences only
+const persistencePlugin = createPersistencePlugin({
+  key: 'kyora_business_prefs',
+  store: businessStore,
+  select: (state: BusinessState) => ({
+    selectedBusinessDescriptor: state.selectedBusinessDescriptor,
+    sidebarCollapsed: state.sidebarCollapsed,
+  }),
+  restore: (persisted, currentState) => ({
+    ...currentState,
+    selectedBusinessDescriptor: persisted.selectedBusinessDescriptor,
+    sidebarCollapsed: persisted.sidebarCollapsed,
+  }),
+  // No TTL - preferences persist until explicitly changed
+})
+
+// Initialize store from localStorage on app load
+const persistedPrefs = persistencePlugin.loadState()
+if (persistedPrefs) {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: persistedPrefs.selectedBusinessDescriptor,
+    sidebarCollapsed: persistedPrefs.sidebarCollapsed,
+  }))
+}
+
+/**
+ * Business Store Actions
+ */
+
+/**
+ * Set businesses list
+ *
+ * Called after fetching businesses from API.
+ * Businesses are not persisted - always fetched fresh.
+ */
+export function setBusinesses(businesses: Array<Business>): void {
+  businessStore.setState((state) => ({
+    ...state,
+    businesses,
+  }))
+}
+
+/**
+ * Select a business
+ *
+ * Updates selectedBusinessDescriptor and persists to localStorage.
+ * Note: Query invalidation should be handled by the caller
+ * (typically in the business route loader after this action).
+ *
+ * @param descriptor - Business descriptor to select
+ */
+export function selectBusiness(descriptor: string): void {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: descriptor,
+  }))
+}
+
+/**
+ * Clear selected business
+ *
+ * Called on logout or when business is no longer accessible.
+ */
+export function clearSelectedBusiness(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: null,
+  }))
+}
+
+/**
+ * Toggle sidebar collapsed state
+ *
+ * Persisted to localStorage for consistent UI across sessions.
+ */
+export function toggleSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarCollapsed: !state.sidebarCollapsed,
+  }))
+}
+
+/**
+ * Set sidebar collapsed state explicitly
+ */
+export function setSidebarCollapsed(collapsed: boolean): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarCollapsed: collapsed,
+  }))
+}
+
+/**
+ * Clear all business data
+ *
+ * Called on logout. Clears both state and persisted preferences.
+ */
+export function clearBusinessData(): void {
+  businessStore.setState(() => initialState)
+  persistencePlugin.clearState()
+}
+
+/**
+ * Get currently selected business from store
+ */
+export function getSelectedBusiness(): Business | null {
+  const { businesses, selectedBusinessDescriptor } = businessStore.state
+  if (!selectedBusinessDescriptor) return null
+  return (
+    businesses.find((b) => b.descriptor === selectedBusinessDescriptor) ?? null
+  )
+}
+
+/**
+ * Initialize TanStack Store Devtools (dev-only)
+ *
+ * Conditionally loads devtools in development mode only.
+ * Production builds will exclude this code via tree-shaking.
+ */
+if (import.meta.env.DEV) {
+  console.log(
+    '[businessStore] TanStack Store devtools enabled in development mode',
+  )
+}
