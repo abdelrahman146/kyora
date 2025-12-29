@@ -4,6 +4,7 @@ import {
   useState,
   useRef,
   useEffect,
+  useCallback,
   type ReactNode,
 } from "react";
 import { cn } from "@/lib/utils";
@@ -132,7 +133,34 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     };
 
     useEffect(() => {
-      const handleClickOutside = (event: MouseEvent) => {
+      // Prevent body scroll when dropdown is open on mobile
+      if (isOpen && typeof window !== "undefined") {
+        const originalOverflow = document.body.style.overflow;
+        const originalPaddingRight = document.body.style.paddingRight;
+        
+        // Only lock scroll on mobile/tablet
+        const isMobile = window.innerWidth < 1024;
+        if (isMobile) {
+          const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+          document.body.style.overflow = "hidden";
+          if (scrollbarWidth > 0) {
+            document.body.style.paddingRight = `${String(scrollbarWidth)}px`;
+          }
+        }
+
+        return () => {
+          if (isMobile) {
+            document.body.style.overflow = originalOverflow;
+            document.body.style.paddingRight = originalPaddingRight;
+          }
+        };
+      }
+      
+      return undefined;
+    }, [isOpen]);
+
+    useEffect(() => {
+      const handleClickOutside = (event: MouseEvent | TouchEvent) => {
         if (
           containerRef.current &&
           !containerRef.current.contains(event.target as Node)
@@ -143,19 +171,33 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         }
       };
 
+      const handleEscape = (event: KeyboardEvent) => {
+        if (event.key === "Escape" && isOpen) {
+          setIsOpen(false);
+          setSearchQuery("");
+          setFocusedIndex(-1);
+        }
+      };
+
       if (isOpen) {
-        document.addEventListener("mousedown", handleClickOutside);
+        // Use capture phase for better click-outside detection
+        document.addEventListener("mousedown", handleClickOutside, true);
+        document.addEventListener("touchstart", handleClickOutside, true);
+        document.addEventListener("keydown", handleEscape);
+        
         if (searchable && searchInputRef.current) {
           searchInputRef.current.focus();
         }
       }
 
       return () => {
-        document.removeEventListener("mousedown", handleClickOutside);
+        document.removeEventListener("mousedown", handleClickOutside, true);
+        document.removeEventListener("touchstart", handleClickOutside, true);
+        document.removeEventListener("keydown", handleEscape);
       };
     }, [isOpen, searchable]);
 
-    const handleToggleOption = (optionValue: T) => {
+    const handleToggleOption = useCallback((optionValue: T) => {
       if (disabled) return;
 
       if (multiSelect) {
@@ -167,19 +209,20 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         onChange?.(optionValue as T | T[]);
         setIsOpen(false);
         setSearchQuery("");
+        setFocusedIndex(-1);
       }
-    };
+    }, [disabled, multiSelect, selectedValues, onChange]);
 
-    const handleClear = (e: React.MouseEvent) => {
+    const handleClear = useCallback((e: React.MouseEvent) => {
       e.stopPropagation();
       if (multiSelect) {
         onChange?.([] as T | T[]);
       } else {
         onChange?.(null as unknown as T | T[]);
       }
-    };
+    }, [multiSelect, onChange]);
 
-    const handleKeyDown = (e: React.KeyboardEvent) => {
+    const handleKeyDown = useCallback((e: React.KeyboardEvent) => {
       if (disabled) return;
 
       switch (e.key) {
@@ -188,31 +231,59 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
           if (!isOpen) {
             setIsOpen(true);
           } else if (focusedIndex >= 0 && focusedIndex < filteredOptions.length) {
-            handleToggleOption(filteredOptions[focusedIndex].value);
+            const option = filteredOptions[focusedIndex];
+            if (!option.disabled) {
+              handleToggleOption(option.value);
+            }
           }
           e.preventDefault();
           break;
         case "Escape":
-          setIsOpen(false);
-          setSearchQuery("");
-          setFocusedIndex(-1);
+          if (isOpen) {
+            setIsOpen(false);
+            setSearchQuery("");
+            setFocusedIndex(-1);
+            e.preventDefault();
+          }
           break;
         case "ArrowDown":
           if (!isOpen) {
             setIsOpen(true);
           } else {
-            setFocusedIndex((prev) =>
-              prev < filteredOptions.length - 1 ? prev + 1 : prev
-            );
+            setFocusedIndex((prev) => {
+              const nextIndex = prev + 1;
+              return nextIndex < filteredOptions.length ? nextIndex : prev;
+            });
           }
           e.preventDefault();
           break;
         case "ArrowUp":
-          setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
-          e.preventDefault();
+          if (isOpen) {
+            setFocusedIndex((prev) => (prev > 0 ? prev - 1 : 0));
+            e.preventDefault();
+          }
+          break;
+        case "Home":
+          if (isOpen) {
+            setFocusedIndex(0);
+            e.preventDefault();
+          }
+          break;
+        case "End":
+          if (isOpen) {
+            setFocusedIndex(filteredOptions.length - 1);
+            e.preventDefault();
+          }
+          break;
+        case "Tab":
+          if (isOpen) {
+            setIsOpen(false);
+            setSearchQuery("");
+            setFocusedIndex(-1);
+          }
           break;
       }
-    };
+    }, [disabled, isOpen, focusedIndex, filteredOptions, handleToggleOption]);
 
     const getDisplayText = () => {
       if (selectedValues.length === 0) return placeholder;
@@ -302,10 +373,15 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             <div
               className={cn(
                 "absolute z-50 mt-2 w-full",
-                "bg-base-100 border border-base-300 rounded-lg shadow-lg",
-                "overflow-hidden"
+                "bg-base-100 border border-base-300 rounded-lg shadow-xl",
+                "overflow-hidden",
+                "animate-in fade-in-0 zoom-in-95 duration-100"
               )}
               style={{ maxHeight }}
+              role="presentation"
+              onClick={(e) => {
+                e.stopPropagation();
+              }}
             >
               {searchable && (
                 <div className="p-2 border-b border-base-300">
@@ -347,15 +423,30 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         key={option.value}
                         role="option"
                         aria-selected={isSelected}
+                        aria-disabled={option.disabled}
                         onClick={() => {
                           if (!option.disabled) handleToggleOption(option.value);
                         }}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter" || e.key === " ") {
+                            e.preventDefault();
+                            if (!option.disabled) handleToggleOption(option.value);
+                          }
+                        }}
+                        tabIndex={isFocused ? 0 : -1}
+                        ref={(el) => {
+                          if (isFocused && el) {
+                            el.scrollIntoView({ block: "nearest", behavior: "smooth" });
+                          }
+                        }}
                         className={cn(
                           "flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors",
-                          "hover:bg-base-200",
+                          "min-h-[48px]", // Better touch target for mobile
+                          "hover:bg-base-200 focus:bg-base-200 focus:outline-none",
+                          "active:bg-base-300", // Touch feedback
                           isSelected && "bg-primary/10",
-                          isFocused && "bg-base-200",
-                          option.disabled && "opacity-50 cursor-not-allowed"
+                          isFocused && "bg-base-200 ring-2 ring-inset ring-primary/30",
+                          option.disabled && "opacity-50 cursor-not-allowed pointer-events-none"
                         )}
                       >
                         {option.renderCustom ? (

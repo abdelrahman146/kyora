@@ -143,8 +143,11 @@
       "street": "Street",
       "street_placeholder": "Street and building",
       "city": "City",
+      "city_placeholder": "e.g. Dubai",
       "state": "State/Region",
-      "zip": "ZIP/Postal Code"
+      "state_placeholder": "e.g. Dubai",
+      "zip_code": "ZIP/Postal Code",
+      "zip_placeholder": "e.g. 12345"
     },
     "search_placeholder": "Search customers...",
     "name": "Name",
@@ -169,6 +172,17 @@
       "notes": "Notes",
       "no_addresses": "No addresses added yet",
       "no_notes": "No notes added yet"
+    },
+    "address": {
+      "add_title": "Add Address",
+      "edit_title": "Edit Address",
+      "add_button": "Add Address",
+      "add_first": "Add First Address",
+      "create_success": "Address added successfully",
+      "update_success": "Address updated successfully",
+      "delete_success": "Address deleted successfully",
+      "delete_confirm_title": "Delete Address",
+      "delete_confirm_message": "Are you sure you want to delete this address?"
     }
   },
   "pagination": {

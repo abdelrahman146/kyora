@@ -24,3 +24,16 @@ export function buildE164Phone(
     e164: `${phoneCode}${phoneNumber}`,
   };
 }
+
+export function parseE164Phone(
+  phoneCode: string,
+  phoneNumber: string
+): {
+  phoneCode: string;
+  phoneNumber: string;
+} {
+  return {
+    phoneCode: normalizePhoneCode(phoneCode),
+    phoneNumber: normalizePhoneNumber(phoneNumber),
+  };
+}

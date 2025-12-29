@@ -1,4 +1,4 @@
-import { useEffect, useId, useMemo } from "react";
+import { useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
 import { Controller, useForm, useWatch } from "react-hook-form";
@@ -6,6 +6,8 @@ import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { BottomSheet } from "../../molecules/BottomSheet";
+import { CountrySelect } from "../../molecules/CountrySelect";
+import { PhoneCodeSelect } from "../../molecules/PhoneCodeSelect";
 import { FormInput, FormSelect, FormTextarea } from "@/components";
 import { createCustomer, createCustomerAddress } from "@/api/customer";
 import type {
@@ -121,7 +123,7 @@ export function AddCustomerSheet({
   businessCountryCode,
   onCreated,
 }: AddCustomerSheetProps) {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const { t: tErrors } = useTranslation("errors");
   const formId = useId();
 
@@ -131,44 +133,10 @@ export function AddCustomerSheet({
 
   const countriesReady = countries.length > 0 || countriesStatus === "loaded";
 
-  const isArabic = i18n.language.toLowerCase().startsWith("ar");
-
   useEffect(() => {
     if (!isOpen) return;
     void loadCountries();
   }, [isOpen, loadCountries]);
-
-  const countryByCode = useMemo(() => {
-    const map = new Map<string, (typeof countries)[number]>();
-    for (const c of countries) {
-      map.set(c.code, c);
-    }
-    return map;
-  }, [countries]);
-
-  const countryOptions = useMemo(() => {
-    return countries.map((c) => {
-      const label = `${c.flag ? `${c.flag} ` : ""}${isArabic ? c.nameAr : c.name}`;
-      return { value: c.code, label };
-    });
-  }, [countries, isArabic]);
-
-  const phoneCodeOptions = useMemo(() => {
-    const seen = new Set<string>();
-    const options: { value: string; label: string }[] = [];
-
-    for (const c of countries) {
-      if (!c.phonePrefix) continue;
-      if (seen.has(c.phonePrefix)) continue;
-      seen.add(c.phonePrefix);
-
-      const countryLabel = isArabic ? c.nameAr : c.name;
-      const label = `\u200E${c.phonePrefix} — ${countryLabel}`;
-      options.push({ value: c.phonePrefix, label });
-    }
-
-    return options;
-  }, [countries, isArabic]);
 
   const {
     register,
@@ -189,10 +157,10 @@ export function AddCustomerSheet({
   useEffect(() => {
     if (!isOpen) return;
     if (!countriesReady) return;
-    const selected = countryByCode.get(selectedCountryCode);
+    const selected = countries.find((c) => c.code === selectedCountryCode);
     if (!selected?.phonePrefix) return;
     setValue("phoneCode", selected.phonePrefix, { shouldValidate: true });
-  }, [isOpen, countriesReady, countryByCode, selectedCountryCode, setValue]);
+  }, [isOpen, countriesReady, countries, selectedCountryCode, setValue]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -334,18 +302,12 @@ export function AddCustomerSheet({
             control={control}
             name="countryCode"
             render={({ field }) => (
-              <FormSelect<string>
-                label={t("customers.form.country")}
-                options={countryOptions}
+              <CountrySelect
                 value={field.value}
-                onChange={(value) => {
-                  field.onChange(value as string);
-                }}
-                required
-                disabled={isSubmitting || !countriesReady}
-                placeholder={t("customers.form.select_country")}
-                searchable
+                onChange={field.onChange}
                 error={errors.countryCode?.message ? tErrors(errors.countryCode.message) : undefined}
+                disabled={isSubmitting}
+                required
               />
             )}
           />
@@ -379,17 +341,11 @@ export function AddCustomerSheet({
             control={control}
             name="phoneCode"
             render={({ field }) => (
-              <FormSelect<string>
-                label={t("customers.form.phone_code")}
-                options={phoneCodeOptions}
+              <PhoneCodeSelect
                 value={field.value}
-                onChange={(value) => {
-                  field.onChange(value as string);
-                }}
-                disabled={isSubmitting || !countriesReady}
-                placeholder={t("customers.form.select_phone_code")}
-                searchable
+                onChange={field.onChange}
                 error={errors.phoneCode?.message ? tErrors(errors.phoneCode.message) : undefined}
+                disabled={isSubmitting}
               />
             )}
           />

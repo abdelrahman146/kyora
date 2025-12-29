@@ -29,15 +29,25 @@ import {
   Globe,
   User,
   ShoppingBag,
+  Plus,
 } from "lucide-react";
 import { DashboardLayout } from "../../components/templates";
 import { Avatar } from "../../components/atoms/Avatar";
 import { Dialog } from "../../components/atoms/Dialog";
 import { EditCustomerSheet } from "../../components/organisms/customers/EditCustomerSheet";
+import { AddressSheet } from "../../components/organisms/customers/AddressSheet";
+import { AddressCard } from "../../components/molecules/AddressCard";
 import { useBusinessStore } from "../../stores/businessStore";
 import { useMetadataStore } from "../../stores/metadataStore";
 import { getCustomer, deleteCustomer } from "../../api/customer";
-import type { Customer } from "../../api/types/customer";
+import {
+  listAddresses,
+  createAddress,
+  updateAddress,
+  deleteAddress,
+} from "../../api/address";
+import type { Customer, CustomerAddress } from "../../api/types/customer";
+import type { CreateAddressRequest, UpdateAddressRequest } from "../../api/address";
 import toast from "react-hot-toast";
 import { translateErrorAsync } from "@/lib/translateError";
 
@@ -67,10 +77,17 @@ export default function CustomerDetailsPage() {
 
   // State
   const [customer, setCustomer] = useState<Customer | null>(null);
+  const [addresses, setAddresses] = useState<CustomerAddress[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false);
+  const [editingAddress, setEditingAddress] = useState<CustomerAddress | undefined>(undefined);
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(null);
+  const [isDeletingAddress, setIsDeletingAddress] = useState(false);
+  const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] = useState(false);
 
   // Fetch customer details
   useEffect(() => {
@@ -93,6 +110,27 @@ export default function CustomerDetailsPage() {
 
     void fetchCustomer();
   }, [businessDescriptor, customerId, t, navigate]);
+
+  // Fetch addresses
+  useEffect(() => {
+    const fetchAddresses = async () => {
+      if (!businessDescriptor || !customerId) return;
+
+      try {
+        setIsLoadingAddresses(true);
+        const data = await listAddresses(businessDescriptor, customerId);
+        setAddresses(data);
+      } catch (error) {
+        console.error("Failed to fetch addresses:", error);
+        const message = await translateErrorAsync(error, t);
+        toast.error(message);
+      } finally {
+        setIsLoadingAddresses(false);
+      }
+    };
+
+    void fetchAddresses();
+  }, [businessDescriptor, customerId, t]);
 
   // Handlers
   const handleBack = () => {
@@ -119,6 +157,68 @@ export default function CustomerDetailsPage() {
 
   const handleCustomerUpdated = (updated: Customer) => {
     setCustomer(updated);
+  };
+
+  const handleAddAddress = () => {
+    setEditingAddress(undefined);
+    setIsAddressSheetOpen(true);
+  };
+
+  const handleEditAddress = (address: CustomerAddress) => {
+    setEditingAddress(address);
+    setIsAddressSheetOpen(true);
+  };
+
+  const handleDeleteAddressClick = (addressId: string) => {
+    setDeletingAddressId(addressId);
+    setAddressDeleteDialogOpen(true);
+  };
+
+  const handleDeleteAddressConfirm = async () => {
+    if (!businessDescriptor || !customerId || !deletingAddressId) return;
+
+    try {
+      setIsDeletingAddress(true);
+      await deleteAddress(businessDescriptor, customerId, deletingAddressId);
+      setAddresses((prev) => prev.filter((a) => a.id !== deletingAddressId));
+      toast.success(t("customers.address.delete_success"));
+    } catch (error) {
+      const message = await translateErrorAsync(error, t);
+      toast.error(message);
+    } finally {
+      setIsDeletingAddress(false);
+      setDeletingAddressId(null);
+      setAddressDeleteDialogOpen(false);
+    }
+  };
+
+  const handleAddressSubmit = async (
+    data: CreateAddressRequest | UpdateAddressRequest
+  ): Promise<CustomerAddress> => {
+    if (!businessDescriptor || !customerId) {
+      throw new Error("Missing required parameters");
+    }
+
+    if (editingAddress) {
+      // Update
+      const updated = await updateAddress(
+        businessDescriptor,
+        customerId,
+        editingAddress.id,
+        data as UpdateAddressRequest
+      );
+      setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)));
+      return updated;
+    } else {
+      // Create
+      const created = await createAddress(
+        businessDescriptor,
+        customerId,
+        data as CreateAddressRequest
+      );
+      setAddresses((prev) => [...prev, created]);
+      return created;
+    }
   };
 
   const getInitials = (name: string): string => {
@@ -320,37 +420,53 @@ export default function CustomerDetailsPage() {
               {/* Addresses */}
               <div className="card bg-base-100 border border-base-300 shadow-sm">
                 <div className="card-body">
-                  <h3 className="card-title text-lg">{t("customers.details.addresses")}</h3>
-                  <div className="space-y-3 mt-4">
-                    {customer.addresses && customer.addresses.length > 0 ? (
-                      customer.addresses.map((address) => (
-                        <div key={address.id} className="flex items-start gap-3 p-3 bg-base-200 rounded-lg">
-                          <MapPin size={18} className="text-base-content/60 mt-0.5" />
-                          <div className="flex-1">
-                            <div className="font-medium">
-                              {address.city}, {address.state}
-                            </div>
-                            {address.street && (
-                              <div className="text-sm text-base-content/70">{address.street}</div>
-                            )}
-                            {address.zipCode && (
-                              <div className="text-sm text-base-content/70">
-                                {address.zipCode}
-                              </div>
-                            )}
-                            <div className="text-sm text-base-content/70 mt-1" dir="ltr">
-                              {address.phoneCode} {address.phoneNumber}
-                            </div>
-                          </div>
-                        </div>
-                      ))
-                    ) : (
-                      <div className="text-center py-8 text-base-content/60">
-                        <MapPin size={32} className="mx-auto mb-2 opacity-40" />
-                        <p>{t("customers.details.no_addresses")}</p>
-                      </div>
-                    )}
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="card-title text-lg">{t("customers.details.addresses")}</h3>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm gap-2"
+                      onClick={handleAddAddress}
+                    >
+                      <Plus size={16} />
+                      <span className="hidden sm:inline">{t("customers.address.add_button")}</span>
+                    </button>
                   </div>
+
+                  {isLoadingAddresses ? (
+                    <div className="space-y-3">
+                      <div className="skeleton h-24 rounded-box"></div>
+                      <div className="skeleton h-24 rounded-box"></div>
+                    </div>
+                  ) : addresses.length > 0 ? (
+                    <div className="space-y-3">
+                      {addresses.map((address) => (
+                        <AddressCard
+                          key={address.id}
+                          address={address}
+                          onEdit={() => {
+                            handleEditAddress(address);
+                          }}
+                          onDelete={() => {
+                            handleDeleteAddressClick(address.id);
+                          }}
+                          isDeleting={isDeletingAddress && deletingAddressId === address.id}
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-base-content/60">
+                      <MapPin size={32} className="mx-auto mb-2 opacity-40" />
+                      <p className="mb-3">{t("customers.details.no_addresses")}</p>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm gap-2"
+                        onClick={handleAddAddress}
+                      >
+                        <Plus size={16} />
+                        {t("customers.address.add_first")}
+                      </button>
+                    </div>
+                  )}
                 </div>
               </div>
             </div>
@@ -432,6 +548,58 @@ export default function CustomerDetailsPage() {
         }
       >
         <p>{t("customers.delete_confirm_message", { name: customer?.name })}</p>
+      </Dialog>
+
+      {/* Address Sheet */}
+      {businessDescriptor && customerId && (
+        <AddressSheet
+          isOpen={isAddressSheetOpen}
+          onClose={() => {
+            setIsAddressSheetOpen(false);
+            setEditingAddress(undefined);
+          }}
+          onSubmit={handleAddressSubmit}
+          address={editingAddress}
+        />
+      )}
+
+      {/* Address Delete Confirmation Dialog */}
+      <Dialog
+        open={addressDeleteDialogOpen}
+        onClose={() => {
+          setAddressDeleteDialogOpen(false);
+          setDeletingAddressId(null);
+        }}
+        title={t("customers.address.delete_confirm_title")}
+        size="sm"
+        footer={
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setAddressDeleteDialogOpen(false);
+                setDeletingAddressId(null);
+              }}
+              disabled={isDeletingAddress}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={() => {
+                void handleDeleteAddressConfirm();
+              }}
+              disabled={isDeletingAddress}
+            >
+              {isDeletingAddress && <span className="loading loading-spinner loading-sm" />}
+              {t("common.delete")}
+            </button>
+          </div>
+        }
+      >
+        <p>{t("customers.address.delete_confirm_message")}</p>
       </Dialog>
     </DashboardLayout>
   );

@@ -143,8 +143,11 @@
       "street": "الشارع",
       "street_placeholder": "الشارع ورقم المبنى",
       "city": "المدينة",
+      "city_placeholder": "مثال: دبي",
       "state": "المنطقة/الإمارة",
-      "zip": "الرمز البريدي"
+      "state_placeholder": "مثال: دبي",
+      "zip_code": "الرمز البريدي",
+      "zip_placeholder": "مثال: 12345"
     },
     "search_placeholder": "البحث عن عملاء...",
     "name": "الاسم",
@@ -169,6 +172,17 @@
       "notes": "الملاحظات",
       "no_addresses": "لم تتم إضافة عناوين بعد",
       "no_notes": "لم تتم إضافة ملاحظات بعد"
+    },
+    "address": {
+      "add_title": "إضافة عنوان",
+      "edit_title": "تعديل العنوان",
+      "add_button": "إضافة عنوان",
+      "add_first": "إضافة أول عنوان",
+      "create_success": "تمت إضافة العنوان بنجاح",
+      "update_success": "تم تحديث العنوان بنجاح",
+      "delete_success": "تم حذف العنوان بنجاح",
+      "delete_confirm_title": "حذف العنوان",
+      "delete_confirm_message": "هل أنت متأكد من حذف هذا العنوان؟"
     }
   },
   "pagination": {
