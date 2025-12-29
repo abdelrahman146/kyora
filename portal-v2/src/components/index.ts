@@ -71,9 +71,15 @@ export { BottomNav, type BottomNavProps } from './organisms/BottomNav'
 export { LoginForm } from './organisms/LoginForm'
 export { FilterButton, type FilterButtonProps } from './organisms/FilterButton'
 export { Table, type TableProps, type TableColumn } from './organisms/Table'
+export { CustomerForm, type CustomerFormProps } from './organisms/CustomerForm'
 
 // Templates
 export {
   DashboardLayout,
   type DashboardLayoutProps,
 } from './templates/DashboardLayout'
+
+// Skeletons
+export { CustomerListSkeleton } from './atoms/skeletons/CustomerListSkeleton'
+export { CustomerDetailSkeleton } from './atoms/skeletons/CustomerDetailSkeleton'
+export { FormSkeleton } from './atoms/skeletons/FormSkeleton'
