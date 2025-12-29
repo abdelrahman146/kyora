@@ -208,10 +208,10 @@ export default function HomePage() {
                           @{business.descriptor}
                         </p>
                       </div>
+                      <ChevronRight 
                         size={20} 
                         className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
-                     
-                      <ChevronRight size={20} className="text-base-content/40" />
+                      />
                     </div>
                   </div>
                 </button>
@@ -264,14 +264,14 @@ export default function HomePage() {
               >
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between">
-                    <div className
-                      size={20} 
-                      className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
-                   
+                    <div className="flex items-center gap-3">
                       <link.icon size={20} className="text-primary" />
                       <span className="font-medium">{link.label}</span>
                     </div>
-                    <ChevronRight size={20} className="text-base-content/40" />
+                    <ChevronRight 
+                      size={20} 
+                      className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
+                    />
                   </div>
                 </div>
               </a>
