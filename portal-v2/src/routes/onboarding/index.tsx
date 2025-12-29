@@ -1,10 +1,10 @@
-import { createFileRoute, Navigate, Outlet } from '@tanstack/react-router'
+import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { onboardingStore } from '@/stores/onboardingStore'
 import { authStore } from '@/stores/authStore'
+import { onboardingStore } from '@/stores/onboardingStore'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
-export const Route = createFileRoute('/onboarding')({
+export const Route = createFileRoute('/onboarding/')({
   component: OnboardingRoot,
 })
 

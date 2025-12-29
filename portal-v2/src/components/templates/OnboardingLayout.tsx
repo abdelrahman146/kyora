@@ -2,7 +2,7 @@ import { Outlet } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import { Languages } from 'lucide-react'
-import { onboardingStore, getCurrentStageNumber } from '@/stores/onboardingStore'
+import { getCurrentStageNumber, onboardingStore } from '@/stores/onboardingStore'
 import { useLanguage } from '@/hooks/useLanguage'
 
 /**

@@ -3,11 +3,11 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
-import { Loader2, AlertCircle } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
+import { z } from 'zod'
 import { onboardingStore, updateStage } from '@/stores/onboardingStore'
 import { useOAuthGoogleMutation } from '@/api/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
-import { z } from 'zod'
 
 const OAuthCallbackSearchSchema = z.object({
   code: z.string().optional(),

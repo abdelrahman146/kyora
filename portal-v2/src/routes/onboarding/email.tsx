@@ -139,9 +139,9 @@ function EmailEntryPage() {
 
         {/* Submit Button */}
         <form.Subscribe
-          selector={(state) => ({
-            canSubmit: state.canSubmit,
-            isSubmitting: state.isSubmitting,
+          selector={(formState) => ({
+            canSubmit: formState.canSubmit,
+            isSubmitting: formState.isSubmitting,
           })}
         >
           {({ canSubmit, isSubmitting }) => (

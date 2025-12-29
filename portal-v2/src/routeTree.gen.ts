@@ -10,6 +10,14 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as OnboardingIndexRouteImport } from './routes/onboarding/index'
+import { Route as OnboardingVerifyRouteImport } from './routes/onboarding/verify'
+import { Route as OnboardingPlanRouteImport } from './routes/onboarding/plan'
+import { Route as OnboardingPaymentRouteImport } from './routes/onboarding/payment'
+import { Route as OnboardingOauthCallbackRouteImport } from './routes/onboarding/oauth-callback'
+import { Route as OnboardingEmailRouteImport } from './routes/onboarding/email'
+import { Route as OnboardingCompleteRouteImport } from './routes/onboarding/complete'
+import { Route as OnboardingBusinessRouteImport } from './routes/onboarding/business'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
@@ -18,6 +26,46 @@ import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callb
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingIndexRoute = OnboardingIndexRouteImport.update({
+  id: '/onboarding/',
+  path: '/onboarding/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingVerifyRoute = OnboardingVerifyRouteImport.update({
+  id: '/onboarding/verify',
+  path: '/onboarding/verify',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingPlanRoute = OnboardingPlanRouteImport.update({
+  id: '/onboarding/plan',
+  path: '/onboarding/plan',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingPaymentRoute = OnboardingPaymentRouteImport.update({
+  id: '/onboarding/payment',
+  path: '/onboarding/payment',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingOauthCallbackRoute = OnboardingOauthCallbackRouteImport.update({
+  id: '/onboarding/oauth-callback',
+  path: '/onboarding/oauth-callback',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingEmailRoute = OnboardingEmailRouteImport.update({
+  id: '/onboarding/email',
+  path: '/onboarding/email',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingCompleteRoute = OnboardingCompleteRouteImport.update({
+  id: '/onboarding/complete',
+  path: '/onboarding/complete',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const OnboardingBusinessRoute = OnboardingBusinessRouteImport.update({
+  id: '/onboarding/business',
+  path: '/onboarding/business',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
@@ -46,6 +94,14 @@ export interface FileRoutesByFullPath {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/onboarding/business': typeof OnboardingBusinessRoute
+  '/onboarding/complete': typeof OnboardingCompleteRoute
+  '/onboarding/email': typeof OnboardingEmailRoute
+  '/onboarding/oauth-callback': typeof OnboardingOauthCallbackRoute
+  '/onboarding/payment': typeof OnboardingPaymentRoute
+  '/onboarding/plan': typeof OnboardingPlanRoute
+  '/onboarding/verify': typeof OnboardingVerifyRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
 }
 export interface FileRoutesByTo {
@@ -53,6 +109,14 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/onboarding/business': typeof OnboardingBusinessRoute
+  '/onboarding/complete': typeof OnboardingCompleteRoute
+  '/onboarding/email': typeof OnboardingEmailRoute
+  '/onboarding/oauth-callback': typeof OnboardingOauthCallbackRoute
+  '/onboarding/payment': typeof OnboardingPaymentRoute
+  '/onboarding/plan': typeof OnboardingPlanRoute
+  '/onboarding/verify': typeof OnboardingVerifyRoute
+  '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
 }
 export interface FileRoutesById {
@@ -61,6 +125,14 @@ export interface FileRoutesById {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/onboarding/business': typeof OnboardingBusinessRoute
+  '/onboarding/complete': typeof OnboardingCompleteRoute
+  '/onboarding/email': typeof OnboardingEmailRoute
+  '/onboarding/oauth-callback': typeof OnboardingOauthCallbackRoute
+  '/onboarding/payment': typeof OnboardingPaymentRoute
+  '/onboarding/plan': typeof OnboardingPlanRoute
+  '/onboarding/verify': typeof OnboardingVerifyRoute
+  '/onboarding/': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
 }
 export interface FileRouteTypes {
@@ -70,6 +142,14 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/onboarding/business'
+    | '/onboarding/complete'
+    | '/onboarding/email'
+    | '/onboarding/oauth-callback'
+    | '/onboarding/payment'
+    | '/onboarding/plan'
+    | '/onboarding/verify'
+    | '/onboarding'
     | '/auth/oauth/callback'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -77,6 +157,14 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/onboarding/business'
+    | '/onboarding/complete'
+    | '/onboarding/email'
+    | '/onboarding/oauth-callback'
+    | '/onboarding/payment'
+    | '/onboarding/plan'
+    | '/onboarding/verify'
+    | '/onboarding'
     | '/auth/oauth/callback'
   id:
     | '__root__'
@@ -84,6 +172,14 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/onboarding/business'
+    | '/onboarding/complete'
+    | '/onboarding/email'
+    | '/onboarding/oauth-callback'
+    | '/onboarding/payment'
+    | '/onboarding/plan'
+    | '/onboarding/verify'
+    | '/onboarding/'
     | '/auth/oauth/callback'
   fileRoutesById: FileRoutesById
 }
@@ -92,6 +188,14 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  OnboardingBusinessRoute: typeof OnboardingBusinessRoute
+  OnboardingCompleteRoute: typeof OnboardingCompleteRoute
+  OnboardingEmailRoute: typeof OnboardingEmailRoute
+  OnboardingOauthCallbackRoute: typeof OnboardingOauthCallbackRoute
+  OnboardingPaymentRoute: typeof OnboardingPaymentRoute
+  OnboardingPlanRoute: typeof OnboardingPlanRoute
+  OnboardingVerifyRoute: typeof OnboardingVerifyRoute
+  OnboardingIndexRoute: typeof OnboardingIndexRoute
   AuthOauthCallbackRoute: typeof AuthOauthCallbackRoute
 }
 
@@ -102,6 +206,62 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/': {
+      id: '/onboarding/'
+      path: '/onboarding'
+      fullPath: '/onboarding'
+      preLoaderRoute: typeof OnboardingIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/verify': {
+      id: '/onboarding/verify'
+      path: '/onboarding/verify'
+      fullPath: '/onboarding/verify'
+      preLoaderRoute: typeof OnboardingVerifyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/plan': {
+      id: '/onboarding/plan'
+      path: '/onboarding/plan'
+      fullPath: '/onboarding/plan'
+      preLoaderRoute: typeof OnboardingPlanRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/payment': {
+      id: '/onboarding/payment'
+      path: '/onboarding/payment'
+      fullPath: '/onboarding/payment'
+      preLoaderRoute: typeof OnboardingPaymentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/oauth-callback': {
+      id: '/onboarding/oauth-callback'
+      path: '/onboarding/oauth-callback'
+      fullPath: '/onboarding/oauth-callback'
+      preLoaderRoute: typeof OnboardingOauthCallbackRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/email': {
+      id: '/onboarding/email'
+      path: '/onboarding/email'
+      fullPath: '/onboarding/email'
+      preLoaderRoute: typeof OnboardingEmailRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/complete': {
+      id: '/onboarding/complete'
+      path: '/onboarding/complete'
+      fullPath: '/onboarding/complete'
+      preLoaderRoute: typeof OnboardingCompleteRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/onboarding/business': {
+      id: '/onboarding/business'
+      path: '/onboarding/business'
+      fullPath: '/onboarding/business'
+      preLoaderRoute: typeof OnboardingBusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth/reset-password': {
@@ -140,6 +300,14 @@ const rootRouteChildren: RootRouteChildren = {
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  OnboardingBusinessRoute: OnboardingBusinessRoute,
+  OnboardingCompleteRoute: OnboardingCompleteRoute,
+  OnboardingEmailRoute: OnboardingEmailRoute,
+  OnboardingOauthCallbackRoute: OnboardingOauthCallbackRoute,
+  OnboardingPaymentRoute: OnboardingPaymentRoute,
+  OnboardingPlanRoute: OnboardingPlanRoute,
+  OnboardingVerifyRoute: OnboardingVerifyRoute,
+  OnboardingIndexRoute: OnboardingIndexRoute,
   AuthOauthCallbackRoute: AuthOauthCallbackRoute,
 }
 export const routeTree = rootRouteImport

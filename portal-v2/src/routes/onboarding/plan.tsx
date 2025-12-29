@@ -4,10 +4,9 @@ import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import { Check, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
-import { usePlansQuery } from '@/api/onboarding'
-import { onboardingStore, setPlan, clearSession } from '@/stores/onboardingStore'
-import { translateErrorAsync } from '@/lib/translateError'
 import type { Plan } from '@/api/types/onboarding'
+import { usePlansQuery } from '@/api/onboarding'
+import { clearSession, onboardingStore, setPlan } from '@/stores/onboardingStore'
 
 export const Route = createFileRoute('/onboarding/plan')({
   component: PlanSelectionPage,
@@ -51,7 +50,7 @@ function PlanSelectionPage() {
   }
 
   const getEnabledFeatures = (plan: Plan) => {
-    const features: string[] = []
+    const features: Array<string> = []
     if (plan.features.orderManagement) features.push(t('onboarding:feature_order_management'))
     if (plan.features.inventoryManagement) features.push(t('onboarding:feature_inventory_management'))
     if (plan.features.customerManagement) features.push(t('onboarding:feature_customer_management'))

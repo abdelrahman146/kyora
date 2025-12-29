@@ -1,10 +1,7 @@
 import { useQuery } from '@tanstack/react-query'
-import { client } from './client'
-import {
-  ListCountriesResponseSchema,
-  type ListCountriesResponse,
-  type CountryMetadata,
-} from './types/metadata'
+import { get } from './client'
+import { ListCountriesResponseSchema } from './types/metadata'
+import type { CountryMetadata, ListCountriesResponse } from './types/metadata'
 
 /**
  * Metadata API Client
@@ -16,7 +13,7 @@ export const metadataApi = {
    * List all supported countries
    */
   async listCountries(): Promise<ListCountriesResponse> {
-    const response = await client.get('v1/metadata/countries').json()
+    const response = await get<unknown>('v1/metadata/countries')
     return ListCountriesResponseSchema.parse(response)
   },
 }
@@ -40,7 +37,7 @@ export function useCountriesQuery() {
 /**
  * Helper to get unique currencies from countries
  */
-export function getUniqueCurrencies(countries: CountryMetadata[]) {
+export function getUniqueCurrencies(countries: Array<CountryMetadata>) {
   const currencyMap = new Map<
     string,
     { code: string; name: string; symbol: string }

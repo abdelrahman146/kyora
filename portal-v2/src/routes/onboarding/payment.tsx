@@ -29,24 +29,7 @@ function PaymentPage() {
   const startPaymentMutation = useStartPaymentMutation()
   
   // Poll session to check payment status
-  const { data: session } = useOnboardingSessionQuery(
-    state.sessionToken || '',
-    {
-      enabled: !!state.sessionToken && !state.paymentCompleted,
-      refetchInterval: (query) => {
-        const data = query.state.data
-        // Poll every 3 seconds if payment is pending
-        if (data?.stage === 'payment_pending' || data?.stage === 'business_staged') {
-          return 3000
-        }
-        // Stop polling once payment is confirmed
-        if (data?.stage === 'payment_confirmed' || data?.stage === 'ready_to_commit') {
-          return false
-        }
-        return 5000
-      },
-    }
-  )
+  const { data: session } = useOnboardingSessionQuery(state.sessionToken)
 
   // Redirect if no session or not business staged
   useEffect(() => {
@@ -193,7 +176,7 @@ function PaymentPage() {
           disabled={startPaymentMutation.isPending || isRedirecting}
           className="btn btn-primary w-full"
         >
-          {(startPaymentMutation.isPending || isRedirecting) && (
+          {startPaymentMutation.isPending && (
             <Loader2 className="w-4 h-4 animate-spin" />
           )}
           {t('onboarding:proceed_to_payment')}

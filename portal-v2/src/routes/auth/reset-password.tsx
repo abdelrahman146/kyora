@@ -28,7 +28,6 @@ function ResetPasswordPage() {
 
   // Early return if no token provided in URL
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   if (!token) {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center p-6">

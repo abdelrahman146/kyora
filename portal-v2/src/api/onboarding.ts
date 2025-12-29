@@ -1,44 +1,43 @@
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { z } from 'zod'
+import { del, get, post } from './client'
 import {
-  useMutation,
-  useQuery,
-  type UseMutationOptions,
-} from '@tanstack/react-query'
-import { get, post, del } from './client'
-import {
-  StartSessionRequestSchema,
-  StartSessionResponseSchema,
-  GetSessionResponseSchema,
-  SendOTPRequestSchema,
-  SendOTPResponseSchema,
-  VerifyEmailRequestSchema,
-  VerifyEmailResponseSchema,
-  OAuthGoogleRequestSchema,
-  OAuthGoogleResponseSchema,
-  SetBusinessRequestSchema,
-  SetBusinessResponseSchema,
-  PaymentStartRequestSchema,
-  PaymentStartResponseSchema,
   CompleteOnboardingRequestSchema,
   CompleteOnboardingResponseSchema,
+  GetSessionResponseSchema,
+  OAuthGoogleRequestSchema,
+  OAuthGoogleResponseSchema,
+  PaymentStartRequestSchema,
+  PaymentStartResponseSchema,
   PlanSchema,
-  type StartSessionRequest,
-  type StartSessionResponse,
-  type GetSessionResponse,
-  type SendOTPRequest,
-  type SendOTPResponse,
-  type VerifyEmailRequest,
-  type VerifyEmailResponse,
-  type OAuthGoogleRequest,
-  type OAuthGoogleResponse,
-  type SetBusinessRequest,
-  type SetBusinessResponse,
-  type PaymentStartRequest,
-  type PaymentStartResponse,
-  type CompleteOnboardingRequest,
-  type CompleteOnboardingResponse,
-  type Plan,
+  SendOTPRequestSchema,
+  SendOTPResponseSchema,
+  SetBusinessRequestSchema,
+  SetBusinessResponseSchema,
+  StartSessionRequestSchema,
+  StartSessionResponseSchema,
+  VerifyEmailRequestSchema,
+  VerifyEmailResponseSchema,
 } from './types/onboarding'
-import { z } from 'zod'
+import type { UseMutationOptions } from '@tanstack/react-query'
+import type {
+  CompleteOnboardingRequest,
+  CompleteOnboardingResponse,
+  GetSessionResponse,
+  OAuthGoogleRequest,
+  OAuthGoogleResponse,
+  PaymentStartRequest,
+  PaymentStartResponse,
+  Plan,
+  SendOTPRequest,
+  SendOTPResponse,
+  SetBusinessRequest,
+  SetBusinessResponse,
+  StartSessionRequest,
+  StartSessionResponse,
+  VerifyEmailRequest,
+  VerifyEmailResponse,
+} from './types/onboarding'
 
 /**
  * Onboarding API Service
@@ -180,7 +179,7 @@ export const onboardingApi = {
    * @returns Array of plans
    * @throws HTTPError with parsed ProblemDetails on failure
    */
-  async listPlans(): Promise<Plan[]> {
+  async listPlans(): Promise<Array<Plan>> {
     const response = await get<unknown>('v1/billing/plans')
 
     return z.array(PlanSchema).parse(response)
@@ -223,6 +222,7 @@ export function useOnboardingSessionQuery(sessionToken: string | null) {
     enabled: !!sessionToken,
     staleTime: 0, // Always fresh - onboarding is time-sensitive
     gcTime: 0, // Don't cache - session may be invalidated server-side
+    refetchInterval: 3000, // Poll every 3 seconds for payment status updates
   })
 }
 

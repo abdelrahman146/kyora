@@ -1,4 +1,4 @@
-import { useEffect, useState, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useForm } from '@tanstack/react-form'
@@ -34,8 +34,6 @@ function VerifyEmailPage() {
 
   const verifyMutation = useVerifyEmailMutation()
   const sendOTPMutation = useSendOTPMutation()
-
-  const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
   // Redirect if no session
   useEffect(() => {

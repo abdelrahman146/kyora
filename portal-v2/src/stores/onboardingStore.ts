@@ -66,21 +66,18 @@ const initialState: OnboardingState = {
  * Persists entire state to localStorage with no TTL.
  * Session is cleared manually after completion or abandoned.
  */
-export const onboardingStore = new Store<OnboardingState>(initialState, {
-  onUpdate: () => {
-    // Persist to localStorage on every state change
-    persistencePlugin.onUpdate(onboardingStore.state)
-  },
-})
+export const onboardingStore = new Store<OnboardingState>(initialState)
 
 // Set up persistence plugin
-const persistencePlugin = createPersistencePlugin<OnboardingState>({
+const persistencePlugin = createPersistencePlugin({
   key: 'kyora_onboarding_session',
+  store: onboardingStore,
+  select: (state: OnboardingState) => state,
   // No TTL - sessions stay until explicitly cleared
 })
 
 // Initialize store from localStorage on app load
-const persistedState = persistencePlugin.getPersistedState()
+const persistedState = persistencePlugin.loadState()
 if (persistedState) {
   onboardingStore.setState(() => persistedState)
 }
@@ -199,7 +196,7 @@ export function setCheckoutUrl(checkoutUrl: string | null): void {
  */
 export function clearSession(): void {
   onboardingStore.setState(() => initialState)
-  persistencePlugin.clearPersistedState()
+  persistencePlugin.clearState()
 }
 
 /**
@@ -209,9 +206,9 @@ export function clearSession(): void {
  * Returns true if session was restored, false if no session exists.
  */
 export function restoreSession(): boolean {
-  const persistedState = persistencePlugin.getPersistedState()
-  if (persistedState && persistedState.sessionToken) {
-    onboardingStore.setState(() => persistedState)
+  const savedState = persistencePlugin.loadState()
+  if (savedState && savedState.sessionToken) {
+    onboardingStore.setState(() => savedState)
     return true
   }
   return false
