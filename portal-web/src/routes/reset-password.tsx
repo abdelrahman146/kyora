@@ -3,9 +3,9 @@ import { useNavigate, useSearchParams } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useTranslation } from "react-i18next";
-import { Lock, CheckCircle, AlertCircle, Loader2 } from "lucide-react";
+import { CheckCircle, AlertCircle, Loader2 } from "lucide-react";
 import { z } from "zod";
-import { Input } from "../components/atoms/Input";
+import { PasswordInput } from "../components/atoms/PasswordInput";
 import { Button } from "../components/atoms/Button";
 import { authApi } from "../api/auth";
 import { useLanguage } from "../hooks/useLanguage";
@@ -251,10 +251,9 @@ export default function ResetPasswordPage() {
               ) : null}
 
               {/* New Password Input */}
-              <Input
+              <PasswordInput
                 {...register("newPassword")}
                 id="newPassword"
-                type="password"
                 label={t("auth.new_password")}
                 placeholder={t("auth.new_password_placeholder")}
                 error={
@@ -263,17 +262,16 @@ export default function ResetPasswordPage() {
                     : undefined
                 }
                 helperText={t("auth.password_requirements")}
-                startIcon={<Lock size={20} />}
                 autoComplete="new-password"
                 autoFocus
                 disabled={isSubmitting}
+                showPasswordToggle
               />
 
               {/* Confirm Password Input */}
-              <Input
+              <PasswordInput
                 {...register("confirmPassword")}
                 id="confirmPassword"
-                type="password"
                 label={t("auth.confirm_password")}
                 placeholder={t("auth.confirm_password_placeholder")}
                 error={
@@ -281,9 +279,9 @@ export default function ResetPasswordPage() {
                     ? tErrors(errors.confirmPassword.message)
                     : undefined
                 }
-                startIcon={<Lock size={20} />}
                 autoComplete="new-password"
                 disabled={isSubmitting}
+                showPasswordToggle
               />
 
               {/* Submit Button */}

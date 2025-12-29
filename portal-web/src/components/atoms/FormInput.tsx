@@ -79,7 +79,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         <div className="relative">
           {startIcon && (
             <div className="absolute inset-y-0 start-0 z-10 flex items-center ps-3 pointer-events-none text-base-content/50">
-              {startIcon}
+              <span aria-hidden="true">{startIcon}</span>
             </div>
           )}
           
@@ -92,7 +92,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               "input relative z-0 w-full transition-all duration-200",
               sizeClasses[size],
               variantClasses[variant],
-              "text-start placeholder:text-base-content/40",
+              "text-base-content text-start placeholder:text-base-content/40",
               "focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
               error && "input-error border-error focus:border-error focus:ring-error/20",
               disabled && "opacity-60 cursor-not-allowed",
@@ -110,7 +110,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           
           {endIcon && (
             <div className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50">
-              {endIcon}
+              <span aria-hidden="true">{endIcon}</span>
             </div>
           )}
         </div>

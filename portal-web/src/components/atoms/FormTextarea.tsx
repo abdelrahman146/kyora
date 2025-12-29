@@ -14,21 +14,27 @@ export interface FormTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextA
 
 /**
  * FormTextarea - Production-grade textarea component
- * 
+ *
  * Features:
- * - RTL-first design
- * - Auto-resize capability
- * - Character counter (optional)
+ * - RTL-first design with logical properties
+ * - Mobile-optimized with proper touch targets (min-height per KDS)
+ * - Auto-resize capability with resize-y
+ * - Character counter with live updates (optional)
  * - Accessible with ARIA attributes
+ * - Validation states with error messages
  * - Multiple variants and sizes
- * 
+ * - Full keyboard navigation support
+ *
  * @example
+ * ```tsx
  * <FormTextarea
  *   label="Description"
  *   maxLength={500}
  *   showCount
  *   rows={4}
+ *   error="Description too short"
  * />
+ * ```
  */
 export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
   (
@@ -94,7 +100,7 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
             "textarea w-full transition-all duration-200",
             sizeClasses[size],
             variantClasses[variant],
-            "text-start placeholder:text-base-content/40",
+            "text-base-content text-start placeholder:text-base-content/40",
             "focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
             "resize-y",
             error && "textarea-error border-error focus:border-error focus:ring-error/20",

@@ -38,20 +38,20 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
         )}
         <div className="relative">
           {startIcon && (
-            <div className="absolute inset-y-0 start-0 flex items-center ps-3 pointer-events-none text-neutral-500">
-              {startIcon}
+            <div className="absolute inset-y-0 start-0 z-10 flex items-center ps-3 pointer-events-none text-base-content/50">
+              <span aria-hidden="true">{startIcon}</span>
             </div>
           )}
           <input
             ref={ref}
             id={inputId}
             className={cn(
-              'input input-bordered w-full h-[50px]',
-              'bg-base-100 border-base-300',
-              'focus:border-primary focus:outline-none',
-              'transition-colors',
-              'text-start',
-              error ? 'input-error border-error focus:border-error' : '',
+              'input input-bordered w-full h-[50px] relative z-0',
+              'bg-base-100 text-base-content',
+              'text-start placeholder:text-base-content/40',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'transition-all duration-200',
+              error ? 'input-error border-error focus:border-error focus:ring-error/20' : '',
               startIcon ? 'ps-10' : '',
               endIcon ? 'pe-10' : '',
               className
@@ -63,8 +63,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             {...props}
           />
           {endIcon && (
-            <div className="absolute inset-y-0 end-0 flex items-center pe-3 text-neutral-500">
-              {endIcon}
+            <div className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 pointer-events-none text-base-content/50">
+              <span aria-hidden="true">{endIcon}</span>
             </div>
           )}
         </div>

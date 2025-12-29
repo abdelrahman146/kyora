@@ -42,26 +42,32 @@ export interface FormSelectProps<T = string> {
 
 /**
  * FormSelect - Advanced production-grade select/dropdown component
- * 
+ *
  * Features:
- * - RTL-first design
- * - Mobile-optimized with bottom sheet on mobile
- * - Searchable with filtering
- * - Multi-select support
- * - Custom option rendering
- * - Keyboard navigation
- * - Accessible with ARIA attributes
- * - Clearable selection
- * 
+ * - RTL-first design with logical properties
+ * - Mobile-optimized with bottom sheet on mobile devices
+ * - Searchable with real-time filtering
+ * - Multi-select support with chip display
+ * - Custom option rendering for rich content
+ * - Full keyboard navigation (Arrow keys, Enter, Escape)
+ * - Accessible with comprehensive ARIA attributes
+ * - Clearable selection for better UX
+ * - Validation states with error messages
+ * - Body scroll lock on mobile when open
+ * - Click-outside detection for auto-close
+ * - Multiple sizes and variants
+ *
  * @example
+ * ```tsx
  * // Basic select
  * <FormSelect
  *   label="Country"
  *   options={countries}
  *   value={selectedCountry}
  *   onChange={setSelectedCountry}
+ *   error="Please select a country"
  * />
- * 
+ *
  * // Searchable multi-select
  * <FormSelect
  *   label="Tags"
@@ -70,7 +76,9 @@ export interface FormSelectProps<T = string> {
  *   onChange={setSelectedTags}
  *   searchable
  *   multiSelect
+ *   clearable
  * />
+ * ```
  */
 export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
   <T extends string>(

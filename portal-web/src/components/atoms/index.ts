@@ -34,3 +34,4 @@ export {
   type FormSelectProps,
   type FormSelectOption,
 } from "./FormSelect";
+export { PasswordInput, type PasswordInputProps } from "./PasswordInput";

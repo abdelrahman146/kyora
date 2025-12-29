@@ -20,16 +20,20 @@ export interface FormRadioProps extends Omit<InputHTMLAttributes<HTMLInputElemen
 
 /**
  * FormRadio - Production-grade radio button group component
- * 
+ *
  * Features:
- * - RTL-first design
- * - Mobile-optimized touch targets
- * - Accessible with ARIA attributes
- * - Supports descriptions for each option
- * - Vertical or horizontal layout
+ * - RTL-first design with logical properties
+ * - Mobile-optimized touch targets for easy selection
+ * - Accessible with ARIA attributes (role="radiogroup")
+ * - Supports descriptions for each option for better UX
+ * - Validation states with error messages
+ * - Flexible layout: vertical or horizontal orientation
  * - Multiple sizes and color variants
- * 
+ * - Individual option disabled states
+ * - Keyboard navigation support (arrow keys)
+ *
  * @example
+ * ```tsx
  * <FormRadio
  *   name="plan"
  *   label="Select a plan"
@@ -37,7 +41,10 @@ export interface FormRadioProps extends Omit<InputHTMLAttributes<HTMLInputElemen
  *     { value: "free", label: "Free", description: "$0/month" },
  *     { value: "pro", label: "Pro", description: "$10/month" }
  *   ]}
+ *   error="Please select a plan"
+ *   orientation="vertical"
  * />
+ * ```
  */
 export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
   (

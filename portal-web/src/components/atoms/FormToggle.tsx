@@ -12,20 +12,27 @@ export interface FormToggleProps extends Omit<InputHTMLAttributes<HTMLInputEleme
 
 /**
  * FormToggle - Production-grade toggle/switch component
- * 
+ *
  * Features:
- * - RTL-first design
- * - Mobile-optimized touch target
- * - Accessible with ARIA attributes
- * - Label positioning (start/end)
+ * - RTL-first design with logical properties
+ * - Mobile-optimized touch target for easy interaction
+ * - Accessible with ARIA attributes (role="switch", aria-checked)
+ * - Flexible label positioning (start/end) for layout versatility
+ * - Validation states with error messages
  * - Multiple sizes and color variants
- * 
+ * - Keyboard navigation support
+ * - Disabled state handling with visual feedback
+ *
  * @example
+ * ```tsx
  * <FormToggle
  *   label="Enable notifications"
  *   description="Receive email updates"
  *   labelPosition="start"
+ *   error="Required field"
+ *   variant="primary"
  * />
+ * ```
  */
 export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
   (

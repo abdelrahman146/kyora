@@ -1,8 +1,9 @@
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Link } from "react-router-dom";
-import { Mail, Lock, Loader2 } from "lucide-react";
+import { Mail, Loader2 } from "lucide-react";
 import { Input } from "../atoms/Input";
+import { PasswordInput } from "../atoms/PasswordInput";
 import { Button } from "../atoms/Button";
 import { loginSchema, type LoginFormData } from "../../schemas/auth";
 import { useTranslation } from "react-i18next";
@@ -120,16 +121,15 @@ export function LoginForm({ onSubmit, onGoogleLogin, isGoogleLoading = false }: 
       />
 
       {/* Password Input */}
-      <Input
+      <PasswordInput
         {...register("password")}
         id="password"
-        type="password"
         label={t("auth.password")}
         placeholder={t("auth.password_placeholder")}
         error={errors.password?.message ? tErrors(errors.password.message) : undefined}
-        startIcon={<Lock size={20} />}
         autoComplete="current-password"
         disabled={isSubmitting}
+        showPasswordToggle
       />
 
       {/* Forgot Password Link */}

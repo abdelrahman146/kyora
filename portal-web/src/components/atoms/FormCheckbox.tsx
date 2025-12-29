@@ -11,19 +11,26 @@ export interface FormCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputEle
 
 /**
  * FormCheckbox - Production-grade checkbox component
- * 
+ *
  * Features:
- * - RTL-first design
- * - Mobile-optimized touch target (44x44px minimum)
- * - Accessible with ARIA attributes
- * - Label and description support
+ * - RTL-first design with logical properties
+ * - Mobile-optimized touch target (44x44px minimum per WCAG)
+ * - Accessible with ARIA attributes and semantic HTML
+ * - Label and description support for clarity
+ * - Validation states with error messages
  * - Multiple sizes and color variants
- * 
+ * - Keyboard navigation support
+ * - Disabled state handling with visual feedback
+ *
  * @example
+ * ```tsx
  * <FormCheckbox
  *   label="Accept terms"
  *   description="I agree to the terms and conditions"
+ *   error="You must accept the terms"
+ *   variant="primary"
  * />
+ * ```
  */
 export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
   (

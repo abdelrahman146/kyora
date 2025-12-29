@@ -1,9 +1,9 @@
 import { useState, useEffect, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Mail, Check, Lock, User } from "lucide-react";
+import { Mail, Check, User } from "lucide-react";
 import { OnboardingLayout } from "@/components/templates";
-import { ResendCountdownButton, FormInput } from "@/components";
+import { ResendCountdownButton, FormInput, PasswordInput } from "@/components";
 import { useOnboarding } from "@/contexts/OnboardingContext";
 import { onboardingApi } from "@/api/onboarding";
 import { authApi } from "@/api/auth";
@@ -413,9 +413,8 @@ export default function VerifyEmailPage() {
                 />
 
                 {/* Password */}
-                <FormInput
+                <PasswordInput
                   label={t("common:password")}
-                  type="password"
                   value={password}
                   onChange={(e) => {
                     setPassword(e.target.value);
@@ -423,15 +422,15 @@ export default function VerifyEmailPage() {
                   minLength={8}
                   required
                   disabled={isSubmitting}
-                  startIcon={<Lock className="w-5 h-5" />}
                   placeholder={t("common:password")}
                   helperText={t("onboarding:verify.passwordHint")}
+                  showPasswordToggle
+                  showDefaultIcon
                 />
 
                 {/* Confirm Password */}
-                <FormInput
+                <PasswordInput
                   label={t("common:confirmPassword")}
-                  type="password"
                   value={confirmPassword}
                   onChange={(e) => {
                     setConfirmPassword(e.target.value);
@@ -439,8 +438,9 @@ export default function VerifyEmailPage() {
                   minLength={8}
                   required
                   disabled={isSubmitting}
-                  startIcon={<Lock className="w-5 h-5" />}
                   placeholder={t("common:confirmPassword")}
+                  showPasswordToggle
+                  showDefaultIcon
                 />
 
                 {error && (
