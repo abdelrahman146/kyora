@@ -1,13 +1,14 @@
 import { useEffect, useId } from "react";
 import { useTranslation } from "react-i18next";
 import toast from "react-hot-toast";
-import { Controller, useForm } from "react-hook-form";
+import { Controller, useForm, useWatch } from "react-hook-form";
 import { z } from "zod";
 import { zodResolver } from "@hookform/resolvers/zod";
 
 import { BottomSheet } from "../../molecules/BottomSheet";
 import { CountrySelect } from "../../molecules/CountrySelect";
 import { PhoneCodeSelect } from "../../molecules/PhoneCodeSelect";
+import { SocialMediaInputs } from "../../molecules/SocialMediaInputs";
 import { FormInput, FormSelect } from "@/components";
 import { updateCustomer } from "@/api/customer";
 import type { CustomerGender, Customer } from "@/api/types/customer";
@@ -44,6 +45,12 @@ const editCustomerSchema = z
       .string()
       .trim()
       .refine((v) => v === "" || /^[0-9\-\s()]{6,20}$/.test(v), "validation.invalid_phone"),
+    instagramUsername: z.string().trim().optional(),
+    facebookUsername: z.string().trim().optional(),
+    tiktokUsername: z.string().trim().optional(),
+    snapchatUsername: z.string().trim().optional(),
+    xUsername: z.string().trim().optional(),
+    whatsappNumber: z.string().trim().optional(),
   })
   .refine(
     (values) => {
@@ -63,6 +70,12 @@ function getDefaultValues(customer: Customer): EditCustomerFormValues {
     countryCode: customer.countryCode,
     phoneCode: customer.phoneCode ?? "",
     phoneNumber: customer.phoneNumber ?? "",
+    instagramUsername: customer.instagramUsername ?? "",
+    facebookUsername: customer.facebookUsername ?? "",
+    tiktokUsername: customer.tiktokUsername ?? "",
+    snapchatUsername: customer.snapchatUsername ?? "",
+    xUsername: customer.xUsername ?? "",
+    whatsappNumber: customer.whatsappNumber ?? "",
   };
 }
 
@@ -82,6 +95,7 @@ export function EditCustomerSheet({
     control,
     handleSubmit,
     reset,
+    setValue,
     formState: { errors, isSubmitting, isDirty },
   } = useForm<EditCustomerFormValues>({
     resolver: zodResolver(editCustomerSchema),
@@ -89,6 +103,16 @@ export function EditCustomerSheet({
     shouldFocusError: true,
     mode: "onBlur",
   });
+
+  // Watch social media fields for the inputs component
+  const socialMediaValues = {
+    instagramUsername: useWatch({ control, name: "instagramUsername" }) ?? "",
+    facebookUsername: useWatch({ control, name: "facebookUsername" }) ?? "",
+    tiktokUsername: useWatch({ control, name: "tiktokUsername" }) ?? "",
+    snapchatUsername: useWatch({ control, name: "snapchatUsername" }) ?? "",
+    xUsername: useWatch({ control, name: "xUsername" }) ?? "",
+    whatsappNumber: useWatch({ control, name: "whatsappNumber" }) ?? "",
+  };
 
   useEffect(() => {
     if (isOpen) {
@@ -118,6 +142,12 @@ export function EditCustomerSheet({
         countryCode: values.countryCode.trim().toUpperCase(),
         phoneCode: normalizedPhone ? normalizedPhone.phoneCode : undefined,
         phoneNumber: normalizedPhone ? normalizedPhone.phoneNumber : undefined,
+        instagramUsername: values.instagramUsername?.trim() !== "" ? values.instagramUsername?.trim() : undefined,
+        facebookUsername: values.facebookUsername?.trim() !== "" ? values.facebookUsername?.trim() : undefined,
+        tiktokUsername: values.tiktokUsername?.trim() !== "" ? values.tiktokUsername?.trim() : undefined,
+        snapchatUsername: values.snapchatUsername?.trim() !== "" ? values.snapchatUsername?.trim() : undefined,
+        xUsername: values.xUsername?.trim() !== "" ? values.xUsername?.trim() : undefined,
+        whatsappNumber: values.whatsappNumber?.trim() !== "" ? values.whatsappNumber?.trim() : undefined,
       });
 
       toast.success(t("customers.update_success"));
@@ -262,6 +292,41 @@ export function EditCustomerSheet({
             />
           </div>
         </div>
+
+        <SocialMediaInputs
+          instagramUsername={socialMediaValues.instagramUsername}
+          onInstagramChange={(value) => {
+            setValue("instagramUsername", value, { shouldDirty: true });
+          }}
+          instagramError={errors.instagramUsername?.message ? tErrors(errors.instagramUsername.message) : undefined}
+          facebookUsername={socialMediaValues.facebookUsername}
+          onFacebookChange={(value) => {
+            setValue("facebookUsername", value, { shouldDirty: true });
+          }}
+          facebookError={errors.facebookUsername?.message ? tErrors(errors.facebookUsername.message) : undefined}
+          tiktokUsername={socialMediaValues.tiktokUsername}
+          onTiktokChange={(value) => {
+            setValue("tiktokUsername", value, { shouldDirty: true });
+          }}
+          tiktokError={errors.tiktokUsername?.message ? tErrors(errors.tiktokUsername.message) : undefined}
+          snapchatUsername={socialMediaValues.snapchatUsername}
+          onSnapchatChange={(value) => {
+            setValue("snapchatUsername", value, { shouldDirty: true });
+          }}
+          snapchatError={errors.snapchatUsername?.message ? tErrors(errors.snapchatUsername.message) : undefined}
+          xUsername={socialMediaValues.xUsername}
+          onXChange={(value) => {
+            setValue("xUsername", value, { shouldDirty: true });
+          }}
+          xError={errors.xUsername?.message ? tErrors(errors.xUsername.message) : undefined}
+          whatsappNumber={socialMediaValues.whatsappNumber}
+          onWhatsappChange={(value) => {
+            setValue("whatsappNumber", value, { shouldDirty: true });
+          }}
+          whatsappError={errors.whatsappNumber?.message ? tErrors(errors.whatsappNumber.message) : undefined}
+          disabled={isSubmitting}
+          defaultExpanded={true}
+        />
       </form>
     </BottomSheet>
   );
