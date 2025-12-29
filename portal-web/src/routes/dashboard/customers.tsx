@@ -13,9 +13,9 @@
  */
 
 import { useState, useEffect, useCallback } from "react";
-import { useSearchParams, useParams } from "react-router-dom";
+import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Plus, Filter } from "lucide-react";
+import { Plus, Filter, Edit, Trash2, Eye } from "lucide-react";
 import { DashboardLayout } from "../../components/templates";
 import { useBusinessStore } from "../../stores/businessStore";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -25,14 +25,19 @@ import { InfiniteScroll } from "../../components/molecules/InfiniteScroll";
 import { Pagination } from "../../components/molecules/Pagination";
 import { FilterDrawer } from "../../components/organisms/FilterDrawer";
 import { AddCustomerSheet } from "../../components/organisms";
+import { EditCustomerSheet } from "../../components/organisms/customers/EditCustomerSheet";
+import { Dialog } from "../../components/atoms/Dialog";
 import { Table } from "../../components/organisms/Table";
 import type { TableColumn } from "../../components/organisms/Table";
 import { Avatar } from "../../components/atoms/Avatar";
-import { listCustomers } from "../../api/customer";
+import { listCustomers, deleteCustomer } from "../../api/customer";
 import type { Customer } from "../../api/types/customer";
+import toast from "react-hot-toast";
+import { translateErrorAsync } from "@/lib/translateError";
 
 export default function CustomersPage() {
   const { t } = useTranslation();
+  const navigate = useNavigate();
   const { businessDescriptor: urlBusinessDescriptor } = useParams<{ businessDescriptor: string }>();
   const { selectedBusiness, setSelectedBusinessId, businesses } = useBusinessStore();
   const isMobile = useMediaQuery("(max-width: 768px)");
@@ -59,6 +64,10 @@ export default function CustomersPage() {
   const [totalPages, setTotalPages] = useState(0);
   const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
+  const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false);
+  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
+  const [isDeleting, setIsDeleting] = useState(false);
 
   // URL params
   const page = parseInt(searchParams.get("page") ?? "1", 10);
@@ -156,7 +165,46 @@ export default function CustomersPage() {
   };
 
   const handleCustomerClick = (customer: Customer) => {
-    console.log("Customer clicked:", customer.id);
+    if (!businessDescriptor) return;
+    void navigate(`/businesses/${businessDescriptor}/customers/${customer.id}`);
+  };
+
+  const handleEditClick = (customer: Customer, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    setSelectedCustomer(customer);
+    setIsEditCustomerOpen(true);
+  };
+
+  const handleDeleteClick = (customer: Customer, event?: React.MouseEvent) => {
+    if (event) {
+      event.stopPropagation();
+    }
+    setSelectedCustomer(customer);
+    setIsDeleteDialogOpen(true);
+  };
+
+  const handleDelete = async () => {
+    if (!businessDescriptor || !selectedCustomer) return;
+
+    try {
+      setIsDeleting(true);
+      await deleteCustomer(businessDescriptor, selectedCustomer.id);
+      toast.success(t("customers.delete_success"));
+      await fetchCustomers(false);
+    } catch (error) {
+      const message = await translateErrorAsync(error, t);
+      toast.error(message);
+    } finally {
+      setIsDeleting(false);
+      setIsDeleteDialogOpen(false);
+      setSelectedCustomer(null);
+    }
+  };
+
+  const handleCustomerUpdated = () => {
+    void fetchCustomers(false);
   };
 
   const businessCountryCode = selectedBusiness?.countryCode ?? "AE";
@@ -212,7 +260,6 @@ export default function CustomersPage() {
       align: "end",
       render: (customer) => {
         const spent = customer.totalSpent ?? 0;
-        // Get the business currency (default to AED for now)
         const currency = selectedBusiness?.currency ?? "AED";
         return (
           <span className="font-semibold">
@@ -220,6 +267,50 @@ export default function CustomersPage() {
           </span>
         );
       },
+    },
+    {
+      key: "actions",
+      label: t("common.actions"),
+      align: "center",
+      width: "120px",
+      render: (customer) => (
+        <div className="flex items-center justify-center gap-2">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            onClick={(e) => {
+              e.stopPropagation();
+              handleCustomerClick(customer);
+            }}
+            aria-label={t("common.view")}
+            title={t("common.view")}
+          >
+            <Eye size={16} />
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square"
+            onClick={(e) => {
+              handleEditClick(customer, e);
+            }}
+            aria-label={t("common.edit")}
+            title={t("common.edit")}
+          >
+            <Edit size={16} />
+          </button>
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm btn-square text-error"
+            onClick={(e) => {
+              handleDeleteClick(customer, e);
+            }}
+            aria-label={t("common.delete")}
+            title={t("common.delete")}
+          >
+            <Trash2 size={16} />
+          </button>
+        </div>
+      ),
     },
   ];
 
@@ -282,16 +373,18 @@ export default function CustomersPage() {
         {/* Desktop: Table View */}
         {!isMobile && (
           <>
-            <Table
-              columns={tableColumns}
-              data={customers}
-              keyExtractor={(customer) => customer.id}
-              isLoading={isLoading}
-              emptyMessage={t("customers.no_customers")}
-              sortBy={sortBy}
-              sortOrder={sortOrder}
-              onSort={handleSort}
-            />
+            <div className="overflow-x-auto">
+              <Table
+                columns={tableColumns}
+                data={customers}
+                keyExtractor={(customer) => customer.id}
+                isLoading={isLoading}
+                emptyMessage={t("customers.no_customers")}
+                sortBy={sortBy}
+                sortOrder={sortOrder}
+                onSort={handleSort}
+              />
+            </div>
             <Pagination
               currentPage={page}
               totalPages={totalPages}
@@ -324,14 +417,37 @@ export default function CustomersPage() {
                 </div>
               ) : (
                 customers.map((customer) => (
-                  <CustomerCard
-                    key={customer.id}
-                    customer={customer}
-                    onClick={handleCustomerClick}
-                    ordersCount={customer.ordersCount ?? 0}
-                    totalSpent={customer.totalSpent ?? 0}
-                    currency={selectedBusiness?.currency ?? "AED"}
-                  />
+                  <div key={customer.id} className="relative group">
+                    <CustomerCard
+                      customer={customer}
+                      onClick={handleCustomerClick}
+                      ordersCount={customer.ordersCount ?? 0}
+                      totalSpent={customer.totalSpent ?? 0}
+                      currency={selectedBusiness?.currency ?? "AED"}
+                    />
+                    <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md"
+                        onClick={(e) => {
+                          handleEditClick(customer, e);
+                        }}
+                        aria-label={t("common.edit")}
+                      >
+                        <Edit size={14} />
+                      </button>
+                      <button
+                        type="button"
+                        className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md text-error"
+                        onClick={(e) => {
+                          handleDeleteClick(customer, e);
+                        }}
+                        aria-label={t("common.delete")}
+                      >
+                        <Trash2 size={14} />
+                      </button>
+                    </div>
+                  </div>
                 ))
               )}
             </div>
@@ -373,6 +489,57 @@ export default function CustomersPage() {
           await fetchCustomers(false);
         }}
       />
+
+      {selectedCustomer && (
+        <EditCustomerSheet
+          isOpen={isEditCustomerOpen}
+          onClose={() => {
+            setIsEditCustomerOpen(false);
+            setSelectedCustomer(null);
+          }}
+          businessDescriptor={businessDescriptor}
+          customer={selectedCustomer}
+          onUpdated={handleCustomerUpdated}
+        />
+      )}
+
+      <Dialog
+        open={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false);
+          setSelectedCustomer(null);
+        }}
+        title={t("customers.delete_confirm_title")}
+        size="sm"
+        footer={
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setIsDeleteDialogOpen(false);
+                setSelectedCustomer(null);
+              }}
+              disabled={isDeleting}
+            >
+              {t("common.cancel")}
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={() => {
+                void handleDelete();
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting && <span className="loading loading-spinner loading-sm" />}
+              {t("common.delete")}
+            </button>
+          </div>
+        }
+      >
+        <p>{t("customers.delete_confirm_message", { name: selectedCustomer?.name })}</p>
+      </Dialog>
     </DashboardLayout>
   );
 }

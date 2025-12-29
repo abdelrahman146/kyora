@@ -16,6 +16,7 @@ import PaymentPage from './routes/onboarding/payment';
 import CompletePage from './routes/onboarding/complete';
 import OnboardingOAuthCallbackPage from './routes/onboarding/oauth-callback';
 import CustomersPage from './routes/dashboard/customers';
+import CustomerDetailsPage from './routes/dashboard/customers.$customerId';
 import HomePage from './routes/home';
 import { Toaster } from 'react-hot-toast';
 import { useMediaQuery } from './hooks/useMediaQuery';
@@ -95,6 +96,14 @@ function App() {
               element={
                 <RequireAuth>
                   <CustomersPage />
+                </RequireAuth>
+              }
+            />
+            <Route
+              path="customers/:customerId"
+              element={
+                <RequireAuth>
+                  <CustomerDetailsPage />
                 </RequireAuth>
               }
             />

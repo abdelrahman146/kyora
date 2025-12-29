@@ -16,6 +16,9 @@
     "loading_more": "جاري تحميل المزيد...",
     "coming_soon": "قريباً",
     "close": "إغلاق",
+    "back": "رجوع",
+    "view": "عرض",
+    "actions": "الإجراءات",
     "changeLanguage": "تغيير اللغة",
     "selectLanguage": "اختر اللغة",
     "validation": {
@@ -151,7 +154,22 @@
     "no_customers": "لا يوجد عملاء حتى الآن",
     "no_more_customers": "لا يوجد المزيد من العملاء",
     "filters": "تصفية العملاء",
-    "filters_coming_soon": "خيارات التصفية قريباً"
+    "filters_coming_soon": "خيارات التصفية قريباً",
+    "edit_title": "تعديل العميل",
+    "update_submit": "تحديث العميل",
+    "update_submitting": "جاري التحديث...",
+    "update_success": "تم تحديث العميل بنجاح",
+    "delete_confirm_title": "حذف العميل",
+    "delete_confirm_message": "هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.",
+    "delete_success": "تم حذف العميل بنجاح",
+    "details_title": "تفاصيل العميل",
+    "details": {
+      "basic_info": "المعلومات الأساسية",
+      "addresses": "العناوين",
+      "notes": "الملاحظات",
+      "no_addresses": "لم تتم إضافة عناوين بعد",
+      "no_notes": "لم تتم إضافة ملاحظات بعد"
+    }
   },
   "pagination": {
     "showing": "عرض {{start}} - {{end}} من {{total}} {{items}}",

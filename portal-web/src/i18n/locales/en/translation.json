@@ -16,6 +16,9 @@
     "loading_more": "Loading more...",
     "coming_soon": "Coming Soon",
     "close": "Close",
+    "back": "Back",
+    "view": "View",
+    "actions": "Actions",
     "changeLanguage": "Change Language",
     "selectLanguage": "Select Language",
     "validation": {
@@ -151,7 +154,22 @@
     "no_customers": "No customers yet",
     "no_more_customers": "No more customers",
     "filters": "Filter Customers",
-    "filters_coming_soon": "Filter options coming soon"
+    "filters_coming_soon": "Filter options coming soon",
+    "edit_title": "Edit Customer",
+    "update_submit": "Update Customer",
+    "update_submitting": "Updating...",
+    "update_success": "Customer updated successfully",
+    "delete_confirm_title": "Delete Customer",
+    "delete_confirm_message": "Are you sure you want to delete {{name}}? This action cannot be undone.",
+    "delete_success": "Customer deleted successfully",
+    "details_title": "Customer Details",
+    "details": {
+      "basic_info": "Basic Information",
+      "addresses": "Addresses",
+      "notes": "Notes",
+      "no_addresses": "No addresses added yet",
+      "no_notes": "No notes added yet"
+    }
   },
   "pagination": {
     "showing": "Showing {{start}} - {{end}} of {{total}} {{items}}",

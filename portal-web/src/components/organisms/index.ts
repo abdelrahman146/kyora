@@ -5,3 +5,4 @@
 export * from "./Table";
 export * from "./FilterDrawer";
 export * from "./customers/AddCustomerSheet";
+export * from "./customers/EditCustomerSheet";

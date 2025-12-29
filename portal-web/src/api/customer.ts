@@ -5,7 +5,7 @@
  * Provides CRUD operations and search functionality for customers.
  */
 
-import { get, post, put, delVoid } from "./client";
+import { get, post, patch, delVoid } from "./client";
 import type {
   Customer,
   CustomerAddress,
@@ -96,7 +96,7 @@ export async function updateCustomer(
   customerId: string,
   data: UpdateCustomerRequest
 ): Promise<Customer> {
-  return put<Customer>(
+  return patch<Customer>(
     `v1/businesses/${businessDescriptor}/customers/${customerId}`,
     {
       json: data,

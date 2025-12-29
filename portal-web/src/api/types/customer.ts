@@ -59,8 +59,8 @@ export interface Customer {
   tiktokUsername: string | null;
   snapchatUsername: string | null;
   xUsername: string | null;
-  addresses: CustomerAddress[];
-  notes: CustomerNote[];
+  addresses?: CustomerAddress[];
+  notes?: CustomerNote[];
   createdAt: string;
   updatedAt: string;
   deletedAt: string | null;
