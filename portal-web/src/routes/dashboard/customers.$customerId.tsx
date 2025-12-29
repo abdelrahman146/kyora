@@ -37,6 +37,7 @@ import { Dialog } from "../../components/atoms/Dialog";
 import { EditCustomerSheet } from "../../components/organisms/customers/EditCustomerSheet";
 import { AddressSheet } from "../../components/organisms/customers/AddressSheet";
 import { AddressCard } from "../../components/molecules/AddressCard";
+import { SocialMediaHandles } from "../../components/molecules/SocialMediaHandles";
 import { useBusinessStore } from "../../stores/businessStore";
 import { useMetadataStore } from "../../stores/metadataStore";
 import { getCustomer, deleteCustomer } from "../../api/customer";
@@ -383,9 +384,18 @@ export default function CustomerDetailsPage() {
               </div>
             </div>
 
+            {/* Social Media Handles */}
+            <SocialMediaHandles
+              instagramUsername={customer.instagramUsername}
+              facebookUsername={customer.facebookUsername}
+              tiktokUsername={customer.tiktokUsername}
+              snapchatUsername={customer.snapchatUsername}
+              xUsername={customer.xUsername}
+              whatsappNumber={customer.whatsappNumber}
+            />
+
             {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {/* Basic Information */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">{/* Basic Information */}
               <div className="card bg-base-100 border border-base-300 shadow-sm">
                 <div className="card-body">
                   <h3 className="card-title text-lg">{t("customers.details.basic_info")}</h3>
