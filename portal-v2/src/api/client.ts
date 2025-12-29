@@ -160,10 +160,10 @@ export const apiClient = ky.create({
     // Note: Error messages are now translation keys. Use translateError()
     // in components to get localized messages.
     beforeError: [
-      (error) => {
+      async (error) => {
         // Parse backend ProblemDetails error format
         try {
-          const errorResult = parseProblemDetails(error)
+          const errorResult = await parseProblemDetails(error)
           // Store translation key in error message for now
           // Components should use translateError(errorResult, t) for proper i18n
           error.message = errorResult.fallback ?? errorResult.key

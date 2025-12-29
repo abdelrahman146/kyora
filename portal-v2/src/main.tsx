@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { RouterProvider } from '@tanstack/react-router'
 import { getRouter } from './router'
+import './i18n/init'
 import './styles.css'
 
 // Create QueryClient instance

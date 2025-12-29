@@ -1,0 +1,46 @@
+{
+  "generic": {
+    "unexpected": "An unexpected error occurred. Please try again.",
+    "message": "{{message}}"
+  },
+  "network": {
+    "timeout": "Request timed out. Please check your connection and try again.",
+    "connection": "Network error. Please check your internet connection."
+  },
+  "http": {
+    "400": "Invalid request. Please check your input and try again.",
+    "401": "You are not authorized. Please log in again.",
+    "403": "You don't have permission to perform this action.",
+    "404": "The requested resource was not found.",
+    "409": "This operation conflicts with existing data.",
+    "422": "The provided data is invalid. Please check and try again.",
+    "429": "Too many requests. Please wait a moment and try again.",
+    "500": "Server error. Please try again later.",
+    "502": "Service temporarily unavailable. Please try again later.",
+    "503": "Service is currently under maintenance. Please try again later.",
+    "504": "Request timed out. Please try again.",
+    "4xx": "Client error ({{status}}). Please check your request and try again.",
+    "5xx": "Server error ({{status}}). Please try again later.",
+    "unknown": "Request failed with status {{status}}."
+  },
+  "validation": {
+    "required": "This field is required.",
+    "invalid_email": "Please enter a valid email address.",
+    "invalid_phone": "Please enter a valid phone number.",
+    "invalid_country": "Invalid country",
+    "invalid_phone_code": "Please enter a valid country calling code.",
+    "address_requires_phone": "Phone is required when adding an address.",
+    "invalid_password": "Password must be at least 8 characters.",
+    "password_mismatch": "Passwords do not match.",
+    "invalid_format": "Invalid format. Please check your input."
+  },
+  "auth": {
+    "invalid_credentials": "Invalid email or password.",
+    "session_expired": "Your session has expired. Please log in again.",
+    "email_not_verified": "Please verify your email address first.",
+    "account_locked": "Your account has been locked. Please contact support."
+  },
+  "onboarding": {
+    "email_already_exists": "This email is already registered. Please log in to continue."
+  }
+}
