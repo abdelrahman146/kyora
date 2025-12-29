@@ -100,7 +100,6 @@ export default function CustomerDetailsPage() {
         const data = await getCustomer(businessDescriptor, customerId);
         setCustomer(data);
       } catch (error) {
-        console.error("Failed to fetch customer:", error);
         const message = await translateErrorAsync(error, t);
         toast.error(message);
         void navigate(`/businesses/${businessDescriptor}/customers`);
@@ -122,7 +121,6 @@ export default function CustomerDetailsPage() {
         const data = await listAddresses(businessDescriptor, customerId);
         setAddresses(data);
       } catch (error) {
-        console.error("Failed to fetch addresses:", error);
         const message = await translateErrorAsync(error, t);
         toast.error(message);
       } finally {

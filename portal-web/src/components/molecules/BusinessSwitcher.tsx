@@ -51,8 +51,8 @@ export function BusinessSwitcher() {
         if (!selectedBusiness && fetchedBusinesses.length > 0) {
           setSelectedBusiness(fetchedBusinesses[0]);
         }
-      } catch (error) {
-        console.error("Failed to load businesses:", error);
+      } catch {
+        // Silent fail - component will handle empty state
       } finally {
         setIsLoading(false);
       }

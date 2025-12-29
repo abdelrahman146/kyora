@@ -111,12 +111,13 @@ export default function CustomersPage() {
       setTotalItems(response.totalCount);
       setTotalPages(response.totalPages);
     } catch (error) {
-      console.error("Failed to fetch customers:", error);
+      const message = await translateErrorAsync(error, t);
+      toast.error(message);
     } finally {
       setIsLoading(false);
       setIsLoadingMore(false);
     }
-  }, [businessDescriptor, page, pageSize, search, sortBy, sortOrder, searchParams, setSearchParams]);
+  }, [businessDescriptor, page, pageSize, search, sortBy, sortOrder, searchParams, setSearchParams, t]);
 
   // Initial load and when params change
   useEffect(() => {

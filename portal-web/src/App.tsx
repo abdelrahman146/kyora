@@ -1,6 +1,7 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from './contexts/AuthContext';
 import { RequireAuth } from './components/routing/RequireAuth';
+import { ErrorBoundary } from './components/atoms';
 import DesignSystem from './routes/design-system';
 import LoginPage from './routes/login';
 import DashboardPage from './routes/dashboard';
@@ -20,16 +21,73 @@ import CustomerDetailsPage from './routes/dashboard/customers.$customerId';
 import HomePage from './routes/home';
 import { Toaster } from 'react-hot-toast';
 import { useMediaQuery } from './hooks/useMediaQuery';
+import { useLanguage } from './hooks/useLanguage';
 
+/**
+ * AppToaster Component
+ *
+ * Provides global toast notifications matching the Kyora Design System.
+ *
+ * Features:
+ * - RTL-aware positioning (top-right for RTL, top-left for LTR)
+ * - Mobile-responsive: top on mobile, bottom-center on small screens
+ * - Custom styles matching DaisyUI + Kyora branding
+ * - Consistent with IBM Plex Sans Arabic typography
+ * - Smooth animations and transitions
+ */
 function AppToaster() {
   const isDesktop = useMediaQuery('(min-width: 768px)');
-  const position = isDesktop ? 'top-right' : 'bottom-center';
+  const { isRTL } = useLanguage();
+
+  const position = isDesktop ? (isRTL ? 'top-right' : 'top-left') : 'top-center';
 
   return (
     <Toaster
       position={position}
       toastOptions={{
         duration: 4000,
+        style: {
+          fontFamily: 'IBM Plex Sans Arabic, Almarai, -apple-system, sans-serif',
+          fontSize: '14px',
+          lineHeight: '1.5',
+          borderRadius: '12px',
+          padding: '12px 16px',
+          boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1)',
+          maxWidth: '400px',
+        },
+        success: {
+          iconTheme: {
+            primary: '#10B981',
+            secondary: '#FFFFFF',
+          },
+          style: {
+            background: '#FFFFFF',
+            color: '#0F172A',
+            border: '1px solid #10B981',
+          },
+        },
+        error: {
+          iconTheme: {
+            primary: '#EF4444',
+            secondary: '#FFFFFF',
+          },
+          style: {
+            background: '#FFFFFF',
+            color: '#0F172A',
+            border: '1px solid #EF4444',
+          },
+        },
+        loading: {
+          iconTheme: {
+            primary: '#0D9488',
+            secondary: '#FFFFFF',
+          },
+          style: {
+            background: '#FFFFFF',
+            color: '#0F172A',
+            border: '1px solid #E2E8F0',
+          },
+        },
       }}
     />
   );
@@ -40,7 +98,8 @@ function App() {
     <AuthProvider>
       <BrowserRouter>
         <AppToaster />
-        <Routes>
+        <ErrorBoundary>
+          <Routes>
           {/* Public Home (Unauthenticated) */}
           <Route path="/welcome" element={<DesignSystem />} />
           
@@ -111,7 +170,8 @@ function App() {
 
           {/* Legacy dashboard redirect */}
           <Route path="/dashboard" element={<HomePage />} />
-        </Routes>
+          </Routes>
+        </ErrorBoundary>
       </BrowserRouter>
     </AuthProvider>
   );

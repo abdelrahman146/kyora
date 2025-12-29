@@ -88,9 +88,7 @@ export default function OAuthCallbackPage() {
       }
     };
 
-    void handleCallback().catch((error: unknown) => {
-      console.error("OAuth callback error:", error);
-    });
+    void handleCallback();
   }, [searchParams, navigate, t]);
 
   // Retry button handler

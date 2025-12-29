@@ -37,8 +37,8 @@ export function UserMenu() {
       .then(() => {
         void navigate("/auth/login", { replace: true });
       })
-      .catch((error: unknown) => {
-        console.error("Logout failed:", error);
+      .catch(() => {
+        // Silent fail - logout will clear local state anyway
         void navigate("/auth/login", { replace: true });
       });
   };

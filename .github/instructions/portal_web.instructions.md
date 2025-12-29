@@ -1048,7 +1048,247 @@ function MyComponent() {
 
 ---
 
-## 16. Troubleshooting
+## 16. Code Quality Standards
+
+### 16.1 Code Cleanliness
+
+**Absolutely Forbidden:**
+
+- ❌ `console.log()` in any production code paths
+- ❌ `console.error()` or `console.warn()` in production paths
+- ❌ `// TODO` or `// FIXME` comments
+- ❌ Deprecated code or functions
+- ❌ Commented-out code blocks
+
+**Development Debugging:**
+
+- Console statements are **only** acceptable when guarded by `import.meta.env.DEV`
+- Example (ErrorBoundary only):
+  ```typescript
+  if (import.meta.env.DEV) {
+    console.error("Error caught by ErrorBoundary:", error, errorInfo);
+  }
+  ```
+
+**Why:**
+
+- Production code must be clean and professional
+- Console noise pollutes production logs
+- TODOs indicate incomplete features that should be finished before commit
+- Deprecated code creates confusion and technical debt
+
+**Error Handling Instead:**
+
+- Use toast notifications for user feedback
+- Use ErrorBoundary for component errors
+- Silent failures with comments for non-critical operations
+- Proper error translation and user-facing messages
+
+### 16.2 Error Boundaries
+
+**Global Error Boundary:**
+All routes are wrapped in `<ErrorBoundary>` in `App.tsx`:
+
+```tsx
+<ErrorBoundary>
+  <Routes>{/* All routes here */}</Routes>
+</ErrorBoundary>
+```
+
+**ErrorBoundary Component:**
+Location: `/portal-web/src/components/atoms/ErrorBoundary.tsx`
+
+Features:
+
+- Catches render-time errors in child components
+- Displays friendly "Something went wrong" UI
+- Retry button to attempt re-rendering
+- Follows KDS design system (DaisyUI + branding)
+- Mobile-first and RTL-aware
+- Accessible with ARIA labels
+
+**Usage in Components:**
+
+```tsx
+import { ErrorBoundary } from "@/components/atoms";
+
+// Wrap critical sections
+<ErrorBoundary>
+  <CriticalComponent />
+</ErrorBoundary>;
+```
+
+**Error Handling Pattern:**
+
+```tsx
+try {
+  await apiCall();
+  toast.success(t("success_message"));
+} catch (error) {
+  const message = await translateErrorAsync(error, t);
+  toast.error(message);
+}
+```
+
+### 16.3 Toast Notification System
+
+**Configuration:**
+Location: `App.tsx` - `AppToaster` component
+
+**Features:**
+
+- RTL-aware positioning: `top-right` for RTL, `top-left` for LTR
+- Mobile-responsive: `top-center` on mobile
+- Custom styles matching KDS (IBM Plex Sans Arabic, 12px border radius)
+- Semantic colors: Success (#10B981), Error (#EF4444), Info (#0D9488)
+- Duration: 4000ms (4 seconds)
+- Max width: 400px
+
+**Design Standards:**
+
+```tsx
+toastOptions={{
+  duration: 4000,
+  style: {
+    fontFamily: 'IBM Plex Sans Arabic, Almarai, -apple-system, sans-serif',
+    fontSize: '14px',
+    lineHeight: '1.5',
+    borderRadius: '12px',
+    padding: '12px 16px',
+    boxShadow: '0 10px 15px -3px rgb(0 0 0 / 0.1)',
+    maxWidth: '400px',
+  },
+  success: {
+    iconTheme: { primary: '#10B981', secondary: '#FFFFFF' },
+    style: { background: '#FFFFFF', color: '#0F172A', border: '1px solid #10B981' },
+  },
+  error: {
+    iconTheme: { primary: '#EF4444', secondary: '#FFFFFF' },
+    style: { background: '#FFFFFF', color: '#0F172A', border: '1px solid #EF4444' },
+  },
+}}
+```
+
+**Usage Patterns:**
+
+```tsx
+import toast from "react-hot-toast";
+import { translateErrorAsync } from "@/lib/translateError";
+
+// Success
+toast.success(t("customers.created_successfully"));
+
+// Error with translation
+try {
+  await createCustomer(data);
+} catch (error) {
+  const message = await translateErrorAsync(error, t);
+  toast.error(message);
+}
+
+// Loading
+const toastId = toast.loading(t("common.saving"));
+try {
+  await saveData();
+  toast.success(t("common.saved"), { id: toastId });
+} catch (error) {
+  toast.error(t("common.save_failed"), { id: toastId });
+}
+```
+
+### 16.4 Loading States & Skeletons
+
+**Principle:**
+Always prefer Skeleton components over generic spinners for content loading states.
+
+**When to Use Skeletons:**
+
+- ✅ List/table loading (match item structure)
+- ✅ Card loading (match card dimensions)
+- ✅ Profile/details loading (match layout)
+- ✅ Form loading (match field positions)
+
+**When to Use Spinners:**
+
+- ✅ Button loading states (inline)
+- ✅ Full-page initial load
+- ✅ Action feedback (submitting, deleting)
+- ✅ Small inline operations
+
+**Skeleton Component:**
+Location: `/portal-web/src/components/atoms/Skeleton.tsx`
+
+**Variants:**
+
+```tsx
+// Rectangular (default)
+<Skeleton className="h-32 w-full rounded-box" />
+
+// Text lines
+<SkeletonText lines={3} />
+
+// Circular (avatars)
+<Skeleton variant="circular" width={48} height={48} />
+
+// Custom dimensions
+<Skeleton width="200px" height="24px" className="rounded-md" />
+```
+
+**Implementation Examples:**
+
+```tsx
+// Table loading
+{
+  isLoading ? (
+    Array.from({ length: 5 }).map((_, i) => (
+      <div key={i} className="skeleton h-16 w-full rounded-md" />
+    ))
+  ) : (
+    <Table data={items} />
+  );
+}
+
+// Card loading
+{
+  isLoading ? (
+    <div className="skeleton h-32 rounded-box" />
+  ) : (
+    <CustomerCard customer={customer} />
+  );
+}
+
+// Profile details loading
+{
+  isLoading ? (
+    <div className="space-y-4">
+      <Skeleton className="h-8 w-48" />
+      <SkeletonText lines={3} />
+      <Skeleton className="h-64 rounded-box" />
+    </div>
+  ) : (
+    <ProfileDetails user={user} />
+  );
+}
+```
+
+**DaisyUI Built-in:**
+
+```tsx
+// Simple skeleton (using DaisyUI utility)
+<div className="skeleton h-32 w-full rounded-box"></div>
+```
+
+**Best Practices:**
+
+1. Match skeleton dimensions to actual content
+2. Use same border radius as actual components
+3. Maintain layout structure during loading
+4. Avoid layout shift when content loads
+5. Use `rounded-box` for cards, `rounded-md` for smaller elements
+
+---
+
+## 17. Troubleshooting
 
 ### 16.1 Common Issues
 
@@ -1084,9 +1324,9 @@ function MyComponent() {
 
 ---
 
-## 17. Quick Reference
+## 18. Quick Reference
 
-### 17.1 Key Imports
+### 18.1 Key Imports
 
 ```typescript
 // Authentication
@@ -1113,7 +1353,7 @@ import { Modal } from "@/components/atoms/Modal";
 import { LanguageSwitcher } from "@/components/molecules/LanguageSwitcher";
 ```
 
-### 17.2 Essential Hooks
+### 18.2 Essential Hooks
 
 ```typescript
 const { user, isAuthenticated, login, logout } = useAuth();
@@ -1122,7 +1362,7 @@ const { language, isRTL, changeLanguage } = useLanguage();
 const isMobile = useMediaQuery("(max-width: 768px)");
 ```
 
-### 17.3 Common Patterns
+### 18.3 Common Patterns
 
 ```typescript
 // Login
@@ -1147,7 +1387,7 @@ const { register, handleSubmit } = useForm({ resolver: zodResolver(schema) });
 
 ---
 
-## 18. Future Considerations
+## 19. Future Considerations
 
 - **TanStack Query**: For server state caching and optimistic updates
 - **React Router Deferred Data**: For streaming large datasets

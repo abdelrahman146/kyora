@@ -48,8 +48,8 @@ export default function HomePage() {
         setIsLoading(true);
         const businesses = await businessApi.listBusinesses();
         setBusinesses(businesses);
-      } catch (error) {
-        console.error("Failed to fetch businesses:", error);
+      } catch {
+        // Silent fail - ErrorBoundary will handle critical errors
       } finally {
         setIsLoading(false);
       }

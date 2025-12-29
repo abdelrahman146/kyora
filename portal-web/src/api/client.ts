@@ -94,26 +94,12 @@ export const apiClient = ky.create({
         if (!request.headers.has("X-Request-ID")) {
           request.headers.set("X-Request-ID", crypto.randomUUID());
         }
-
-        // Log request in development
-        if (import.meta.env.DEV) {
-          console.log(`[API] → ${request.method} ${request.url}`);
-        }
       },
     ],
 
     // After Response Hook: Handle Authentication & Token Refresh
     afterResponse: [
       async (request, options, response) => {
-        // Log response in development
-        if (import.meta.env.DEV) {
-          console.log(
-            `[API] ← ${request.method} ${request.url} - ${String(
-              response.status
-            )}`
-          );
-        }
-
         // Handle 401 Unauthorized - Try to refresh token
         // IMPORTANT: Auth endpoints intentionally return 401 for invalid credentials.
         // We must not treat those as "session expired" or we'll cause redirects/retries
@@ -170,18 +156,8 @@ export const apiClient = ky.create({
       },
     ],
 
-    // Before Retry Hook: Log retry attempts
-    beforeRetry: [
-      ({ request, retryCount }) => {
-        if (import.meta.env.DEV) {
-          console.log(
-            `[API] ⟳ Retry #${String(retryCount)} for ${request.method} ${
-              request.url
-            }`
-          );
-        }
-      },
-    ],
+    // Before Retry Hook
+    beforeRetry: [],
 
     // Before Error Hook: Parse ProblemDetails and enhance error messages
     // Note: Error messages are now translation keys. Use translateError()
@@ -196,11 +172,6 @@ export const apiClient = ky.create({
           error.message = errorResult.fallback ?? errorResult.key;
         } catch {
           // If parsing fails, keep original error message
-        }
-
-        // Log error in development
-        if (import.meta.env.DEV) {
-          console.error(`[API] ✗ ${error.message}`, error);
         }
 
         return error;
@@ -291,9 +262,6 @@ async function deduped<T>(
   const key = buildDedupeKey(method, url, options);
   const existing = inFlight.get(key);
   if (existing) {
-    if (import.meta.env.DEV) {
-      console.log(`[API] ⇉ DEDUPED ${method.toUpperCase()} ${url}`);
-    }
     return existing as Promise<T>;
   }
 

@@ -245,8 +245,8 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
     if (state.sessionToken) {
       try {
         await onboardingApi.deleteSession(state.sessionToken);
-      } catch (error) {
-        console.error("Failed to delete session:", error);
+      } catch {
+        // Silent fail - session will expire anyway
       }
     }
     sessionTokenStorage.clearToken();

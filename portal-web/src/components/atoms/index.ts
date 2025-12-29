@@ -1,6 +1,7 @@
 // Atoms: Basic building blocks
 // Export your atomic components here
 
+export { ErrorBoundary } from "./ErrorBoundary";
 export { Button, type ButtonProps } from "./Button";
 export { Input, type InputProps } from "./Input";
 export { Badge, type BadgeProps } from "./Badge";

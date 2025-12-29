@@ -18,8 +18,7 @@ export const sessionStorage = {
   getToken(): string | null {
     try {
       return localStorage.getItem(SESSION_TOKEN_KEY);
-    } catch (error) {
-      console.error("Failed to read session token:", error);
+    } catch {
       return null;
     }
   },
@@ -31,8 +30,8 @@ export const sessionStorage = {
   setToken(token: string): void {
     try {
       localStorage.setItem(SESSION_TOKEN_KEY, token);
-    } catch (error) {
-      console.error("Failed to save session token:", error);
+    } catch {
+      // Silent fail - storage might not be available
     }
   },
 
@@ -42,8 +41,8 @@ export const sessionStorage = {
   clearToken(): void {
     try {
       localStorage.removeItem(SESSION_TOKEN_KEY);
-    } catch (error) {
-      console.error("Failed to clear session token:", error);
+    } catch {
+      // Silent fail
     }
   },
 

@@ -69,12 +69,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
       // Fetch user profile using new access token
       const user = await userApi.getCurrentUser();
       setUser(user);
-    } catch (error) {
+    } catch {
       // Refresh failed - clear invalid tokens
       clearTokens();
       setUser(null);
-
-      console.warn("[Auth] Session restoration failed:", error);
     } finally {
       setIsLoading(false);
     }
@@ -127,8 +125,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Call backend to revoke current refresh token
       await authApi.logoutCurrent();
-    } catch (error) {
-      console.warn("[Auth] Logout API call failed:", error);
+    } catch {
       // Continue with local cleanup even if API call fails
     } finally {
       // Clear tokens and user state
@@ -145,8 +142,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       // Call backend to revoke all refresh tokens
       await authApi.logoutAllCurrent();
-    } catch (error) {
-      console.warn("[Auth] Logout all API call failed:", error);
+    } catch {
       // Continue with local cleanup even if API call fails
     } finally {
       // Clear tokens and user state
