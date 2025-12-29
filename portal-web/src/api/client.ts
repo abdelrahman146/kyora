@@ -2,28 +2,11 @@ import ky from "ky";
 import { parseProblemDetails } from "../lib/errorParser";
 import { getCookie, setCookie, deleteCookie } from "../lib/cookies";
 
-/**
- * Centralized API Client for Kyora Portal Web
- *
- * Features:
- * - JWT Bearer token authentication (Access token in memory, Refresh token in secure cookie)
- * - Automatic token refresh on 401 responses
- * - Retry logic with exponential backoff
- * - Comprehensive error handling with ProblemDetails parsing
- * - Request/response logging in development
- */
-
 const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
   (import.meta.env.DEV ? window.location.origin : "http://localhost:8080");
 
 const REFRESH_TOKEN_COOKIE_NAME = "kyora_refresh_token";
-
-// ============================================================================
-// Token Management
-// Access Token: In-Memory (more secure, cleared on tab close/refresh)
-// Refresh Token: Secure Cookie (persistent, HttpOnly-like with Secure flag in production)
-// ============================================================================
 
 let accessToken: string | null = null;
 let isRefreshing = false;
@@ -39,9 +22,6 @@ export function getRefreshToken(): string | null {
 
 export function setTokens(access: string, refresh: string): void {
   accessToken = access;
-  // Store refresh token in secure cookie (365 days)
-  // Note: For true HttpOnly, this should be set by backend via Set-Cookie header
-  // This is client-side cookie with Secure flag in production
   setCookie(REFRESH_TOKEN_COOKIE_NAME, refresh, 365);
 }
 
@@ -56,10 +36,6 @@ export function hasValidToken(): boolean {
   return accessToken !== null;
 }
 
-// ============================================================================
-// Token Refresh Logic
-// ============================================================================
-
 async function refreshAccessToken(): Promise<string | null> {
   const refresh = getRefreshToken();
 
@@ -68,7 +44,6 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 
   try {
-    // Create a new ky instance without auth hooks to avoid infinite loop
     const refreshClient = ky.create({
       prefixUrl: API_BASE_URL,
       timeout: 10000,
@@ -91,9 +66,7 @@ async function refreshAccessToken(): Promise<string | null> {
   }
 }
 
-// ============================================================================
 // API Client Configuration
-// ============================================================================
 
 export const apiClient = ky.create({
   prefixUrl: API_BASE_URL,
@@ -108,9 +81,7 @@ export const apiClient = ky.create({
   },
 
   hooks: {
-    // ========================================================================
     // Before Request Hook: Add Authentication & Headers
-    // ========================================================================
     beforeRequest: [
       (request) => {
         // Add JWT Bearer token if available
@@ -131,9 +102,7 @@ export const apiClient = ky.create({
       },
     ],
 
-    // ========================================================================
     // After Response Hook: Handle Authentication & Token Refresh
-    // ========================================================================
     afterResponse: [
       async (request, options, response) => {
         // Log response in development
@@ -201,9 +170,7 @@ export const apiClient = ky.create({
       },
     ],
 
-    // ========================================================================
     // Before Retry Hook: Log retry attempts
-    // ========================================================================
     beforeRetry: [
       ({ request, retryCount }) => {
         if (import.meta.env.DEV) {
@@ -216,11 +183,9 @@ export const apiClient = ky.create({
       },
     ],
 
-    // ========================================================================
     // Before Error Hook: Parse ProblemDetails and enhance error messages
     // Note: Error messages are now translation keys. Use translateError()
     // in components to get localized messages.
-    // ========================================================================
     beforeError: [
       async (error) => {
         // Parse backend ProblemDetails error format
@@ -244,9 +209,7 @@ export const apiClient = ky.create({
   },
 });
 
-// ============================================================================
 // Typed API Client Methods (Optional Convenience Wrappers)
-// ============================================================================
 
 type KyOptions = Parameters<typeof apiClient.get>[1];
 

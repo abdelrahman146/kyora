@@ -50,10 +50,6 @@ import { z } from "zod";
  */
 
 export const onboardingApi = {
-  // ==========================================================================
-  // Start Session - POST /v1/onboarding/start
-  // ==========================================================================
-
   /**
    * Initializes or resumes an onboarding session for an email and plan.
    * @returns Session token and stage information
@@ -69,10 +65,6 @@ export const onboardingApi = {
     return StartSessionResponseSchema.parse(response);
   },
 
-  // ==========================================================================
-  // Get Session - GET /v1/onboarding/session
-  // ==========================================================================
-
   /**
    * Retrieves the current onboarding session state by token.
    * Use this to restore/resume onboarding flow when user returns.
@@ -86,10 +78,6 @@ export const onboardingApi = {
 
     return GetSessionResponseSchema.parse(response);
   },
-
-  // ==========================================================================
-  // Send Email OTP - POST /v1/onboarding/email/otp
-  // ==========================================================================
 
   /**
    * Generates a 6-digit OTP and sends it to the user's email
@@ -105,9 +93,7 @@ export const onboardingApi = {
     return SendOTPResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // Verify Email - POST /v1/onboarding/email/verify
-  // ==========================================================================
 
   /**
    * Validates OTP code and stores user profile and password
@@ -124,9 +110,7 @@ export const onboardingApi = {
     return VerifyEmailResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // OAuth Google - POST /v1/onboarding/oauth/google
-  // ==========================================================================
 
   /**
    * Sets OAuth identity from Google and stages user profile
@@ -143,9 +127,7 @@ export const onboardingApi = {
     return OAuthGoogleResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // Set Business - POST /v1/onboarding/business
-  // ==========================================================================
 
   /**
    * Stages business details for the onboarding session
@@ -162,9 +144,7 @@ export const onboardingApi = {
     return SetBusinessResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // Payment Start - POST /v1/onboarding/payment/start
-  // ==========================================================================
 
   /**
    * Creates Stripe checkout session for paid plans
@@ -181,9 +161,7 @@ export const onboardingApi = {
     return PaymentStartResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // Complete Onboarding - POST /v1/onboarding/complete
-  // ==========================================================================
 
   /**
    * Finalizes onboarding and commits all staged data to permanent tables
@@ -202,9 +180,7 @@ export const onboardingApi = {
     return CompleteOnboardingResponseSchema.parse(response);
   },
 
-  // ==========================================================================
   // List Plans - GET /v1/billing/plans
-  // ==========================================================================
 
   /**
    * Fetches all available billing plans
@@ -217,9 +193,7 @@ export const onboardingApi = {
     return z.array(PlanSchema).parse(response);
   },
 
-  // ==========================================================================
   // Get Plan - GET /v1/billing/plans/:descriptor
-  // ==========================================================================
 
   /**
    * Fetches a specific plan by descriptor

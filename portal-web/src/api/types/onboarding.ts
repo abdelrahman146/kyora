@@ -6,9 +6,7 @@ import { UserSchema } from "./auth";
  * All schemas validate API request/response data for the onboarding flow
  */
 
-// ============================================================================
 // Onboarding Session Stage & Payment Status
-// ============================================================================
 
 export const SessionStageSchema = z.enum([
   "plan_selected",
@@ -31,9 +29,7 @@ export const IdentityMethodSchema = z.enum(["email", "google"]);
 
 export type IdentityMethod = z.infer<typeof IdentityMethodSchema>;
 
-// ============================================================================
 // Plan Schema
-// ============================================================================
 
 export const PlanFeaturesSchema = z.object({
   customerManagement: z.boolean(),
@@ -80,9 +76,7 @@ export const PlanSchema = z.object({
 
 export type Plan = z.infer<typeof PlanSchema>;
 
-// ============================================================================
 // Start Session - POST /v1/onboarding/start
-// ============================================================================
 
 export const StartSessionRequestSchema = z.object({
   email: z.email({ message: "Invalid email address" }),
@@ -99,9 +93,7 @@ export const StartSessionResponseSchema = z.object({
 
 export type StartSessionResponse = z.infer<typeof StartSessionResponseSchema>;
 
-// ============================================================================
 // Get Session - GET /v1/onboarding/session
-// ============================================================================
 
 export const GetSessionResponseSchema = z.object({
   sessionToken: z.string(),
@@ -126,9 +118,7 @@ export const GetSessionResponseSchema = z.object({
 
 export type GetSessionResponse = z.infer<typeof GetSessionResponseSchema>;
 
-// ============================================================================
 // Send Email OTP - POST /v1/onboarding/email/otp
-// ============================================================================
 
 export const SendOTPRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
@@ -142,9 +132,7 @@ export const SendOTPResponseSchema = z.object({
 
 export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>;
 
-// ============================================================================
 // Verify Email - POST /v1/onboarding/email/verify
-// ============================================================================
 
 export const VerifyEmailRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
@@ -162,9 +150,7 @@ export const VerifyEmailResponseSchema = z.object({
 
 export type VerifyEmailResponse = z.infer<typeof VerifyEmailResponseSchema>;
 
-// ============================================================================
 // OAuth Google - POST /v1/onboarding/oauth/google
-// ============================================================================
 
 export const OAuthGoogleRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
@@ -179,9 +165,7 @@ export const OAuthGoogleResponseSchema = z.object({
 
 export type OAuthGoogleResponse = z.infer<typeof OAuthGoogleResponseSchema>;
 
-// ============================================================================
 // Set Business - POST /v1/onboarding/business
-// ============================================================================
 
 export const SetBusinessRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
@@ -206,9 +190,7 @@ export const SetBusinessResponseSchema = z.object({
 
 export type SetBusinessResponse = z.infer<typeof SetBusinessResponseSchema>;
 
-// ============================================================================
 // Payment Start - POST /v1/onboarding/payment/start
-// ============================================================================
 
 export const PaymentStartRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),
@@ -224,9 +206,7 @@ export const PaymentStartResponseSchema = z.object({
 
 export type PaymentStartResponse = z.infer<typeof PaymentStartResponseSchema>;
 
-// ============================================================================
 // Complete Onboarding - POST /v1/onboarding/complete
-// ============================================================================
 
 export const CompleteOnboardingRequestSchema = z.object({
   sessionToken: z.string().min(1, "Session token is required"),

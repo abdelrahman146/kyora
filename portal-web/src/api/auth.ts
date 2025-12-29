@@ -39,10 +39,6 @@ import {
  */
 
 export const authApi = {
-  // ==========================================================================
-  // Login with Email & Password - POST /v1/auth/login
-  // ==========================================================================
-
   /**
    * Authenticates a user with email and password
    * @returns LoginResponse with access token, refresh token, and user data
@@ -65,10 +61,6 @@ export const authApi = {
 
     return validatedResponse;
   },
-
-  // ==========================================================================
-  // Refresh Access Token - POST /v1/auth/refresh
-  // ==========================================================================
 
   /**
    * Refreshes the access token using a refresh token
@@ -93,9 +85,7 @@ export const authApi = {
     return validatedResponse;
   },
 
-  // ==========================================================================
   // Logout - POST /v1/auth/logout
-  // ==========================================================================
 
   /**
    * Logs out the current user by revoking the refresh token
@@ -113,9 +103,7 @@ export const authApi = {
     clearTokens();
   },
 
-  // ==========================================================================
   // Logout All Devices - POST /v1/auth/logout-all
-  // ==========================================================================
 
   /**
    * Logs out the user from all devices by revoking all refresh tokens
@@ -133,9 +121,7 @@ export const authApi = {
     clearTokens();
   },
 
-  // ==========================================================================
   // Forgot Password - POST /v1/auth/forgot-password
-  // ==========================================================================
 
   /**
    * Sends a password reset email to the user
@@ -150,9 +136,7 @@ export const authApi = {
     await postVoid("v1/auth/forgot-password", { json: validatedRequest });
   },
 
-  // ==========================================================================
   // Reset Password - POST /v1/auth/reset-password
-  // ==========================================================================
 
   /**
    * Resets user password using a valid reset token
@@ -167,9 +151,7 @@ export const authApi = {
     await postVoid("v1/auth/reset-password", { json: validatedRequest });
   },
 
-  // ==========================================================================
   // Google OAuth Login - POST /v1/auth/google/login
-  // ==========================================================================
 
   /**
    * Authenticates a user using Google OAuth code
@@ -194,9 +176,7 @@ export const authApi = {
     return validatedResponse;
   },
 
-  // ==========================================================================
   // Get Google OAuth URL - GET /v1/auth/google/url
-  // ==========================================================================
 
   /**
    * Gets the Google OAuth authorization URL for user authentication
@@ -219,9 +199,7 @@ export const authApi = {
     return response as { url: string };
   },
 
-  // ==========================================================================
   // Request Email Verification - POST /v1/auth/request-email-verification
-  // ==========================================================================
 
   /**
    * Sends an email verification link to the user
@@ -240,9 +218,7 @@ export const authApi = {
     });
   },
 
-  // ==========================================================================
   // Verify Email - POST /v1/auth/verify-email
-  // ==========================================================================
 
   /**
    * Verifies user email using a verification token
@@ -257,9 +233,7 @@ export const authApi = {
     await postVoid("v1/auth/verify-email", { json: validatedRequest });
   },
 
-  // ==========================================================================
   // Helper: Logout with current refresh token
-  // ==========================================================================
 
   /**
    * Convenience method to logout using the current stored refresh token

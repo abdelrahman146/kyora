@@ -2,10 +2,6 @@ import { Languages, Globe, Check } from "lucide-react";
 import { useLanguage } from "../../hooks/useLanguage";
 import { useTranslation } from "react-i18next";
 
-/**
- * Language configuration for supported locales
- * Add new languages here as they become available
- */
 const LANGUAGE_CONFIG = {
   en: {
     code: "en",
@@ -21,28 +17,13 @@ const LANGUAGE_CONFIG = {
     flag: "🇸🇦",
     direction: "rtl",
   },
-  // Future languages can be added here:
-  // fr: {
-  //   code: "fr",
-  //   name: "French",
-  //   nativeName: "Français",
-  //   flag: "🇫🇷",
-  //   direction: "ltr",
-  // },
-  // es: {
-  //   code: "es",
-  //   name: "Spanish",
-  //   nativeName: "Español",
-  //   flag: "🇪🇸",
-  //   direction: "ltr",
-  // },
 } as const;
 
 type LanguageSwitcherVariant = 
-  | "dropdown" // Full dropdown with all languages
-  | "toggle" // Simple toggle button (best for 2 languages)
-  | "compact" // Compact dropdown in navbar
-  | "iconOnly"; // Icon-only dropdown
+  | "dropdown"
+  | "toggle"
+  | "compact"
+  | "iconOnly";
 
 interface LanguageSwitcherProps {
   variant?: LanguageSwitcherVariant;
@@ -51,41 +32,6 @@ interface LanguageSwitcherProps {
   showFlag?: boolean;
 }
 
-/**
- * Universal Language Switcher Component
- * 
- * A flexible, reusable language switcher that supports multiple design variants
- * and can easily be extended with new languages.
- * 
- * Features:
- * - Multiple design variants (dropdown, toggle, compact, iconOnly)
- * - Extensible language configuration
- * - RTL-aware positioning
- * - Accessible keyboard navigation
- * - Flag emoji support
- * - Native language names
- * 
- * Variants:
- * - `dropdown`: Full dropdown with language names and flags (default)
- * - `toggle`: Simple toggle button (best for 2 languages)
- * - `compact`: Compact version for navbars
- * - `iconOnly`: Shows only globe icon with dropdown
- * 
- * Usage:
- * ```tsx
- * // Full dropdown
- * <LanguageSwitcher variant="dropdown" />
- * 
- * // Simple toggle
- * <LanguageSwitcher variant="toggle" />
- * 
- * // Navbar compact version
- * <LanguageSwitcher variant="compact" />
- * 
- * // Icon only
- * <LanguageSwitcher variant="iconOnly" />
- * ```
- */
 export function LanguageSwitcher({
   variant = "dropdown",
   className = "",

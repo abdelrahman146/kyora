@@ -16,10 +16,6 @@ import { z } from "zod";
  */
 
 export const businessApi = {
-  // ==========================================================================
-  // List Businesses - GET /v1/businesses
-  // ==========================================================================
-
   /**
    * Fetches all businesses for the authenticated workspace
    * @returns Array of businesses
@@ -33,10 +29,6 @@ export const businessApi = {
 
     return validatedResponse.businesses;
   },
-
-  // ==========================================================================
-  // Get Business - GET /v1/businesses/{businessDescriptor}
-  // ==========================================================================
 
   /**
    * Fetches a single business by descriptor
@@ -52,10 +44,6 @@ export const businessApi = {
 
     return validated.business;
   },
-
-  // ==========================================================================
-  // Create Business - POST /v1/businesses
-  // ==========================================================================
 
   /**
    * Creates a new business in the authenticated workspace

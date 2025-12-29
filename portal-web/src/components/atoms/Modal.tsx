@@ -3,51 +3,14 @@ import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 
 export interface ModalProps {
-  /**
-   * Whether the modal is open or closed
-   */
   isOpen: boolean;
-
-  /**
-   * Callback fired when the modal should be closed
-   */
   onClose: () => void;
-
-  /**
-   * Modal title
-   */
   title?: ReactNode;
-
-  /**
-   * Modal content
-   */
   children: ReactNode;
-
-  /**
-   * Footer content (typically action buttons)
-   */
   footer?: ReactNode;
-
-  /**
-   * Size of the modal
-   * @default "md"
-   */
   size?: "sm" | "md" | "lg" | "xl" | "full";
-
-  /**
-   * Whether clicking the backdrop closes the modal
-   * @default true
-   */
   closeOnBackdropClick?: boolean;
-
-  /**
-   * Whether pressing Escape closes the modal
-   * @default true
-   */
   closeOnEscape?: boolean;
-
-  /**
-   * Whether to show the close button in the top-right
    * @default true
    */
   showCloseButton?: boolean;
