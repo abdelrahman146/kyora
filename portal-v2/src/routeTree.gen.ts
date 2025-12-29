@@ -18,10 +18,14 @@ import { Route as OnboardingOauthCallbackRouteImport } from './routes/onboarding
 import { Route as OnboardingEmailRouteImport } from './routes/onboarding/email'
 import { Route as OnboardingCompleteRouteImport } from './routes/onboarding/complete'
 import { Route as OnboardingBusinessRouteImport } from './routes/onboarding/business'
+import { Route as BusinessBusinessDescriptorRouteImport } from './routes/business/$businessDescriptor'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
+import { Route as BusinessBusinessDescriptorIndexRouteImport } from './routes/business/$businessDescriptor/index'
 import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callback'
+import { Route as BusinessBusinessDescriptorCustomersIndexRouteImport } from './routes/business/$businessDescriptor/customers/index'
+import { Route as BusinessBusinessDescriptorCustomersCustomerIdRouteImport } from './routes/business/$businessDescriptor/customers/$customerId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -68,6 +72,12 @@ const OnboardingBusinessRoute = OnboardingBusinessRouteImport.update({
   path: '/onboarding/business',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessBusinessDescriptorRoute =
+  BusinessBusinessDescriptorRouteImport.update({
+    id: '/business/$businessDescriptor',
+    path: '/business/$businessDescriptor',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 const AuthResetPasswordRoute = AuthResetPasswordRouteImport.update({
   id: '/auth/reset-password',
   path: '/auth/reset-password',
@@ -83,17 +93,36 @@ const AuthForgotPasswordRoute = AuthForgotPasswordRouteImport.update({
   path: '/auth/forgot-password',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessBusinessDescriptorIndexRoute =
+  BusinessBusinessDescriptorIndexRouteImport.update({
+    id: '/',
+    path: '/',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
 const AuthOauthCallbackRoute = AuthOauthCallbackRouteImport.update({
   id: '/auth/oauth/callback',
   path: '/auth/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessBusinessDescriptorCustomersIndexRoute =
+  BusinessBusinessDescriptorCustomersIndexRouteImport.update({
+    id: '/customers/',
+    path: '/customers/',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
+const BusinessBusinessDescriptorCustomersCustomerIdRoute =
+  BusinessBusinessDescriptorCustomersCustomerIdRouteImport.update({
+    id: '/customers/$customerId',
+    path: '/customers/$customerId',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/business/$businessDescriptor': typeof BusinessBusinessDescriptorRouteWithChildren
   '/onboarding/business': typeof OnboardingBusinessRoute
   '/onboarding/complete': typeof OnboardingCompleteRoute
   '/onboarding/email': typeof OnboardingEmailRoute
@@ -103,6 +132,9 @@ export interface FileRoutesByFullPath {
   '/onboarding/verify': typeof OnboardingVerifyRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +150,9 @@ export interface FileRoutesByTo {
   '/onboarding/verify': typeof OnboardingVerifyRoute
   '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/business/$businessDescriptor': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -125,6 +160,7 @@ export interface FileRoutesById {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/business/$businessDescriptor': typeof BusinessBusinessDescriptorRouteWithChildren
   '/onboarding/business': typeof OnboardingBusinessRoute
   '/onboarding/complete': typeof OnboardingCompleteRoute
   '/onboarding/email': typeof OnboardingEmailRoute
@@ -134,6 +170,9 @@ export interface FileRoutesById {
   '/onboarding/verify': typeof OnboardingVerifyRoute
   '/onboarding/': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
+  '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/customers/': typeof BusinessBusinessDescriptorCustomersIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -142,6 +181,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/business/$businessDescriptor'
     | '/onboarding/business'
     | '/onboarding/complete'
     | '/onboarding/email'
@@ -151,6 +191,9 @@ export interface FileRouteTypes {
     | '/onboarding/verify'
     | '/onboarding'
     | '/auth/oauth/callback'
+    | '/business/$businessDescriptor/'
+    | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/customers'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,12 +209,16 @@ export interface FileRouteTypes {
     | '/onboarding/verify'
     | '/onboarding'
     | '/auth/oauth/callback'
+    | '/business/$businessDescriptor'
+    | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/customers'
   id:
     | '__root__'
     | '/'
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/business/$businessDescriptor'
     | '/onboarding/business'
     | '/onboarding/complete'
     | '/onboarding/email'
@@ -181,6 +228,9 @@ export interface FileRouteTypes {
     | '/onboarding/verify'
     | '/onboarding/'
     | '/auth/oauth/callback'
+    | '/business/$businessDescriptor/'
+    | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/customers/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -188,6 +238,7 @@ export interface RootRouteChildren {
   AuthForgotPasswordRoute: typeof AuthForgotPasswordRoute
   AuthLoginRoute: typeof AuthLoginRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
+  BusinessBusinessDescriptorRoute: typeof BusinessBusinessDescriptorRouteWithChildren
   OnboardingBusinessRoute: typeof OnboardingBusinessRoute
   OnboardingCompleteRoute: typeof OnboardingCompleteRoute
   OnboardingEmailRoute: typeof OnboardingEmailRoute
@@ -264,6 +315,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof OnboardingBusinessRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business/$businessDescriptor': {
+      id: '/business/$businessDescriptor'
+      path: '/business/$businessDescriptor'
+      fullPath: '/business/$businessDescriptor'
+      preLoaderRoute: typeof BusinessBusinessDescriptorRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/auth/reset-password': {
       id: '/auth/reset-password'
       path: '/auth/reset-password'
@@ -285,6 +343,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthForgotPasswordRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business/$businessDescriptor/': {
+      id: '/business/$businessDescriptor/'
+      path: '/'
+      fullPath: '/business/$businessDescriptor/'
+      preLoaderRoute: typeof BusinessBusinessDescriptorIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
     '/auth/oauth/callback': {
       id: '/auth/oauth/callback'
       path: '/auth/oauth/callback'
@@ -292,14 +357,49 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business/$businessDescriptor/customers/': {
+      id: '/business/$businessDescriptor/customers/'
+      path: '/customers'
+      fullPath: '/business/$businessDescriptor/customers'
+      preLoaderRoute: typeof BusinessBusinessDescriptorCustomersIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
+    '/business/$businessDescriptor/customers/$customerId': {
+      id: '/business/$businessDescriptor/customers/$customerId'
+      path: '/customers/$customerId'
+      fullPath: '/business/$businessDescriptor/customers/$customerId'
+      preLoaderRoute: typeof BusinessBusinessDescriptorCustomersCustomerIdRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
   }
 }
+
+interface BusinessBusinessDescriptorRouteChildren {
+  BusinessBusinessDescriptorIndexRoute: typeof BusinessBusinessDescriptorIndexRoute
+  BusinessBusinessDescriptorCustomersCustomerIdRoute: typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  BusinessBusinessDescriptorCustomersIndexRoute: typeof BusinessBusinessDescriptorCustomersIndexRoute
+}
+
+const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteChildren =
+  {
+    BusinessBusinessDescriptorIndexRoute: BusinessBusinessDescriptorIndexRoute,
+    BusinessBusinessDescriptorCustomersCustomerIdRoute:
+      BusinessBusinessDescriptorCustomersCustomerIdRoute,
+    BusinessBusinessDescriptorCustomersIndexRoute:
+      BusinessBusinessDescriptorCustomersIndexRoute,
+  }
+
+const BusinessBusinessDescriptorRouteWithChildren =
+  BusinessBusinessDescriptorRoute._addFileChildren(
+    BusinessBusinessDescriptorRouteChildren,
+  )
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthForgotPasswordRoute: AuthForgotPasswordRoute,
   AuthLoginRoute: AuthLoginRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
+  BusinessBusinessDescriptorRoute: BusinessBusinessDescriptorRouteWithChildren,
   OnboardingBusinessRoute: OnboardingBusinessRoute,
   OnboardingCompleteRoute: OnboardingCompleteRoute,
   OnboardingEmailRoute: OnboardingEmailRoute,
