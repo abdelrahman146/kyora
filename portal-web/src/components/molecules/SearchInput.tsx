@@ -1,26 +1,54 @@
 /**
  * SearchInput Component
  *
- * A debounced search input component for filtering lists.
+ * A production-grade debounced search input with clear functionality.
  *
  * Features:
- * - Automatic debouncing (default 300ms)
- * - Clear button when input has value
- * - Loading indicator during debounce
- * - Accessible keyboard navigation
- * - RTL-compatible
- * - Mobile-friendly (min 44px touch target)
+ * - ✅ Automatic debouncing (configurable, default 300ms)
+ * - ✅ Clear button with loading state indicator
+ * - ✅ Search icon (start position, RTL-compatible)
+ * - ✅ Consistent styling with form fields (focus states, colors, transitions)
+ * - ✅ Full accessibility (ARIA labels, keyboard navigation)
+ * - ✅ RTL-first design (start/end logical properties)
+ * - ✅ Mobile-friendly (50px min-height, proper touch targets)
+ * - ✅ Disabled state support
+ *
+ * Consistency Notes:
+ * - Uses same color scheme as FormInput/Input components
+ * - Focus ring: ring-2 ring-primary/20
+ * - Border: border-base-300, focus:border-primary
+ * - Icon color: text-base-content/50
+ * - Placeholder: text-base-content/40
+ * - Smooth transitions: transition-all duration-200
+ *
+ * @example
+ * ```tsx
+ * const [search, setSearch] = useState("");
+ * 
+ * <SearchInput
+ *   value={search}
+ *   onChange={setSearch}
+ *   placeholder="Search customers..."
+ *   debounceMs={300}
+ * />
+ * ```
  */
 
 import { useState, useEffect, useRef } from "react";
 import { Search, X } from "lucide-react";
 
 export interface SearchInputProps {
+  /** Current search value (controlled) */
   value: string;
+  /** Callback fired after debounce when value changes */
   onChange: (value: string) => void;
+  /** Placeholder text */
   placeholder?: string;
+  /** Debounce delay in milliseconds */
   debounceMs?: number;
+  /** Whether the input is disabled */
   disabled?: boolean;
+  /** Additional CSS classes */
   className?: string;
 }
 
@@ -73,13 +101,15 @@ export function SearchInput({
 
   return (
     <div className={`relative ${className}`}>
-      {/* Search Icon */}
-      <Search
-        size={20}
-        className="absolute top-1/2 -translate-y-1/2 start-3 text-base-content/50 pointer-events-none"
-      />
+      {/* Search Icon - Consistent with form fields */}
+      <span
+        className="absolute top-1/2 -translate-y-1/2 start-3 text-base-content/50 pointer-events-none z-10"
+        aria-hidden="true"
+      >
+        <Search size={20} />
+      </span>
 
-      {/* Input */}
+      {/* Input - Consistent styling with FormInput/Input */}
       <input
         type="text"
         value={localValue}
@@ -88,7 +118,23 @@ export function SearchInput({
         }}
         placeholder={placeholder}
         disabled={disabled}
-        className="input input-bordered w-full ps-10 pe-10"
+        className="
+          input input-bordered w-full
+          min-h-[50px]
+          ps-10 pe-10
+          text-base text-base-content
+          placeholder:text-base-content/40
+          border-base-300
+          bg-base-100
+          transition-all duration-200
+          focus:border-primary
+          focus:ring-2
+          focus:ring-primary/20
+          focus:outline-none
+          disabled:opacity-50
+          disabled:cursor-not-allowed
+          z-0
+        "
         aria-label={placeholder}
       />
 
@@ -98,13 +144,20 @@ export function SearchInput({
           type="button"
           onClick={handleClear}
           disabled={disabled}
-          className="btn btn-ghost btn-sm btn-circle absolute top-1/2 -translate-y-1/2 end-2"
+          className="
+            btn btn-ghost btn-sm btn-circle
+            absolute top-1/2 -translate-y-1/2 end-2
+            z-10
+            hover:bg-base-200
+            focus:ring-2 focus:ring-primary/20
+            transition-colors duration-200
+          "
           aria-label="Clear search"
         >
           {isDebouncePending ? (
-            <span className="loading loading-spinner loading-sm"></span>
+            <span className="loading loading-spinner loading-sm text-base-content/50"></span>
           ) : (
-            <X size={18} />
+            <X size={18} className="text-base-content/50" />
           )}
         </button>
       )}

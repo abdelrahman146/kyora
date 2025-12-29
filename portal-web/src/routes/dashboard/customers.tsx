@@ -15,7 +15,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { useSearchParams, useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Plus, Filter, Edit, Trash2, Eye } from "lucide-react";
+import { Plus, Edit, Trash2, Eye } from "lucide-react";
 import { DashboardLayout } from "../../components/templates";
 import { useBusinessStore } from "../../stores/businessStore";
 import { useMediaQuery } from "../../hooks/useMediaQuery";
@@ -23,7 +23,7 @@ import { SearchInput } from "../../components/molecules/SearchInput";
 import { CustomerCard } from "../../components/molecules/CustomerCard";
 import { InfiniteScroll } from "../../components/molecules/InfiniteScroll";
 import { Pagination } from "../../components/molecules/Pagination";
-import { FilterDrawer } from "../../components/organisms/FilterDrawer";
+import { FilterButton } from "../../components/organisms/FilterButton";
 import { AddCustomerSheet } from "../../components/organisms";
 import { EditCustomerSheet } from "../../components/organisms/customers/EditCustomerSheet";
 import { Dialog } from "../../components/atoms/Dialog";
@@ -62,7 +62,6 @@ export default function CustomersPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const [totalItems, setTotalItems] = useState(0);
   const [totalPages, setTotalPages] = useState(0);
-  const [isFilterOpen, setIsFilterOpen] = useState(false);
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false);
   const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false);
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(null);
@@ -359,15 +358,24 @@ export default function CustomersPage() {
               placeholder={t("customers.search_placeholder")}
             />
           </div>
-          <button
-            className="btn btn-outline gap-2"
-            onClick={() => {
-              setIsFilterOpen(true);
+          <FilterButton
+            title={t("customers.filters")}
+            buttonText={t("common.filter")}
+            applyLabel={t("common.apply")}
+            resetLabel={t("common.reset")}
+            onApply={() => {
+              // Filter application logic will be implemented here
+            }}
+            onReset={() => {
+              // Filter reset logic will be implemented here
             }}
           >
-            <Filter size={18} />
-            {t("common.filter")}
-          </button>
+            <div className="space-y-4">
+              <p className="text-sm text-base-content/60">
+                {t("customers.filters_coming_soon")}
+              </p>
+            </div>
+          </FilterButton>
         </div>
 
         {/* Desktop: Table View */}
@@ -454,29 +462,6 @@ export default function CustomersPage() {
           </InfiniteScroll>
         )}
       </div>
-
-      {/* Filter Drawer */}
-      <FilterDrawer
-        isOpen={isFilterOpen}
-        onClose={() => {
-          setIsFilterOpen(false);
-        }}
-        title={t("customers.filters")}
-        applyLabel={t("common.apply")}
-        resetLabel={t("common.reset")}
-        onApply={() => {
-          // Filter application logic will be implemented here
-        }}
-        onReset={() => {
-          // Filter reset logic will be implemented here
-        }}
-      >
-        <div className="space-y-4">
-          <p className="text-sm text-base-content/60">
-            {t("customers.filters_coming_soon")}
-          </p>
-        </div>
-      </FilterDrawer>
 
       <AddCustomerSheet
         isOpen={isAddCustomerOpen}

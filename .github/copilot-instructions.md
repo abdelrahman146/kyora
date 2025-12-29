@@ -96,7 +96,8 @@ kyora/
 
 - the code is maintained by a single developer so we should always aim for simplicity and clarity in the code we write.
 - the code is still under heavy development so we should always write code that is flexible and easy to change as requirements evolve and we can do breaking changes as needed.
-- never leave any TODOs or FIXMEs in the code, we should always address them before finalizing the code.
+- **never leave any TODOs or FIXMEs in the code**, we should always address them before finalizing the code.
+- **never leave deprecated code in the codebase**, we should always remove it immediately to keep the code clean and maintainable. When creating a replacement for existing functionality, delete the old deprecated code completely - don't just mark it as deprecated.
 - we should always follow the SOLID principles and best practices when writing code.
 - we should always follow the existing code style and conventions used in the project to maintain consistency across the codebase.
 - we should always write clear and concise comments and documentation for the code we write to ensure that it's easy to understand for other developers.
@@ -112,7 +113,6 @@ kyora/
 - we should alwasys look for smart simple and elegant solutions to complex problems leaving the code clean and maintainble and very easy to fix and extend in the future.
 - everytime we write code we should always think about the future and how this code will be used and maintained in the future and we should always write code that is easy to understand and maintain in the future.
 - whenever we introduce new design pattern or archiectural changes we need to make sure it aligns with the overall architecture and design principles of the project and we should document the changes properly to explain the reasoning behind them.
-- don't leave deprecated code in the codebase, we should always remove it to keep the code clean and maintainable.
 - always do cleanups for no longer needed code or functions.
 - never ever brief any implementation. always provide complete and thorough implementations.
 - never ever settle on examples or partial implementations. always provide complete and thorough implementations.
