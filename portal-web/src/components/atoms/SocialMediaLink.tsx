@@ -21,15 +21,14 @@
 
 import { type AnchorHTMLAttributes, useMemo } from "react";
 import { cn } from "@/lib/utils";
+import { SocialIcon, type SocialPlatform } from "@/components/icons/social";
 import {
-  SocialIcon,
-  type SocialPlatform,
   SOCIAL_COLOR_CLASSES,
   SOCIAL_HOVER_COLOR_CLASSES,
   SOCIAL_BG_CLASSES,
   SOCIAL_HOVER_BG_CLASSES,
   SOCIAL_LABELS,
-} from "@/components/icons/social";
+} from "@/components/icons/socialConstants";
 
 export interface SocialMediaLinkProps extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, "href"> {
   platform: SocialPlatform;

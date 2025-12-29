@@ -11,6 +11,8 @@ export interface ModalProps {
   size?: "sm" | "md" | "lg" | "xl" | "full";
   closeOnBackdropClick?: boolean;
   closeOnEscape?: boolean;
+  /**
+   * Whether to show the close button (X) in the header
    * @default true
    */
   showCloseButton?: boolean;

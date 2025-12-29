@@ -29,7 +29,8 @@ import { useTranslation } from "react-i18next";
 import { ChevronDown, ChevronUp } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { FormInput } from "@/components/atoms/FormInput";
-import { SocialIcon, SOCIAL_COLOR_CLASSES } from "@/components/icons/social";
+import { SocialIcon } from "@/components/icons/social";
+import { SOCIAL_COLOR_CLASSES } from "@/components/icons/socialConstants";
 
 export interface SocialMediaInputsProps {
   // Instagram

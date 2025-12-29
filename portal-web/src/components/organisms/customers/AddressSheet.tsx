@@ -117,6 +117,7 @@ export function AddressSheet({
   }, [isOpen, address, initialPhoneData, reset]);
 
   // Watch country code to auto-set phone code (always auto-update phone code)
+  // eslint-disable-next-line react-hooks/incompatible-library
   const selectedCountryCode = watch("countryCode");
 
   useEffect(() => {
