@@ -1,294 +1,817 @@
 ---
-description: KYORA DESIGN SYSTEM (KDS)
+description: KYORA DESIGN SYSTEM (KDS) - Portal Web Implementation
 applyTo: "portal-web/**,storefront-web/**"
 ---
 
-# KYORA DESIGN SYSTEM (KDS) v1.0
+# KYORA DESIGN SYSTEM (KDS) - Portal Web
 
-**Target Platform:** Mobile Web (PWA) & Mobile Native (React Native)
-**Primary Audience:** Middle East (Arabic First / RTL)
-**Core Philosophy:** "Complexity made invisible."
+**Target Platform:** Web (Desktop & Mobile), PWA
+**Primary Audience:** Middle East (Arabic First / RTL)  
+**Core Philosophy:** "Professional tools that feel effortless."
 
 ---
 
-## 1. Brand Identity & Voice
+## 1. Brand Identity & Philosophy
 
 ### 1.1. Core Values
 
-1. **Tamkeen (Empowerment):** We turn small merchants into business tycoons. The UI must feel professional, not "cute."
-2. **Basata (Simplicity):** Our users are busy. They stand in shops all day. Every tap must be purposeful. No hidden menus.
-3. **Thiqah (Trust):** We handle money and inventory. The design must feel stable, secure, and precise.
+1. **Tamkeen (Empowerment):** Transform social media entrepreneurs into professional business owners
+2. **Basata (Simplicity):** Every interaction must be intuitive and purposeful
+3. **Thiqah (Trust):** Professional, stable, and secure design that handles money and inventory
 
-### 1.2. Voice & Tone (Arabic Centric)
+### 1.2. Voice & Tone
 
-- **Language:** Modern Standard Arabic (MSA) but approachable (White Arabic). Avoid overly classical terms; use business-standard terms used in the GCC/Levant.
-- **Tone:** Direct, warm, and respectful.
-- **English Fallback:** English is the secondary citizen. UI layouts are designed for RTL (Right-to-Left) first. LTR (Left-to-Right) is the mirror.
+- **Language:** Modern Standard Arabic (MSA) - approachable and business-standard
+- **Tone:** Direct, warm, respectful, and professional
+- **English:** Full support with proper LTR layout
+- **RTL-First:** All layouts designed for RTL (Arabic) first, LTR (English) is the mirror
 
 ---
 
-## 2. Design Tokens (The DNA)
+## 2. Design Tokens
 
-All AI agents must strictly utilize these tokens. Do not hardcode magic numbers.
-
-**Source of truth in this repo (storefront-web):**
-
-- daisyUI theme tokens are defined in `storefront-web/src/index.css` via `@plugin "daisyui/theme"`.
-- KDS raw CSS variables (e.g. `--primary-600`) also exist in `storefront-web/src/index.css` under `:root`.
-- Prefer daisyUI semantic tokens in components: `bg-base-100`, `text-base-content`, `btn btn-primary`, etc.
+All design tokens are defined in `/portal-web/src/index.css` using daisyUI theme system.
 
 ### 2.1. Color Palette
 
-The palette is inspired by the Middle East landscape (Teal/Sea) and Modern Fintech (Trust).
+**Primary (Teal - The Brand)**
+- Primary: `#0D9488` (oklch(52% 0.11 192))
+- Usage: Main actions, links, brand elements
+- DaisyUI: `bg-primary`, `text-primary`, `btn-primary`
 
-**Primary (The Brand)**
+**Secondary (Gold - Action/Accent)**
+- Secondary: `#EAB308` (oklch(75% 0.15 90))
+- Usage: Secondary CTAs, highlighting important items
+- DaisyUI: `bg-secondary`, `text-secondary`, `btn-secondary`
 
-- `primary-50`: `#F0FDFA` (Backgrounds)
-- `primary-100`: `#CCFBF1` (Interactive bg)
-- `primary-500`: `#14B8A6` (Icons, Highlights)
-- `primary-600`: `#0D9488` (Main Actions - **Key Color**)
-- `primary-700`: `#0F766E` (Active States)
-- `primary-900`: `#134E4A` (Text on Light)
+**Accent (Yellow - CTAs)**
+- Accent: `#FACC15` (oklch(87% 0.14 100))
+- Usage: Attention-grabbing CTAs, badges
+- DaisyUI: `bg-accent`, `text-accent`
 
-**Secondary (Action/Accent - Gold/Sand)**
+**Base Colors (Backgrounds & Surfaces)**
+- `base-100`: `#FFFFFF` (Main backgrounds, cards)
+- `base-200`: `#F8FAFC` (App background, secondary surfaces)
+- `base-300`: `#E2E8F0` (Borders, dividers)
+- `base-content`: `#0F172A` (Primary text)
 
-- `secondary-400`: `#FACC15`
-- `secondary-500`: `#EAB308` (CTAs requiring attention)
-- `secondary-600`: `#CA8A04`
+**Semantic Colors**
+- Success: `#10B981` (Completed, paid, active)
+- Error: `#EF4444` (Failed, invalid, critical)
+- Warning: `#F59E0B` (Low stock, ending soon)
+- Info: `oklch(60% 0.12 192)` (Informational states)
 
-**Neutral (Text & Surface)**
+**Text Colors**
+- Primary text: `text-base-content` (`#0F172A`)
+- Secondary text: `text-base-content/70` (70% opacity)
+- Tertiary text: `text-base-content/60` (60% opacity)
+- Disabled text: `text-base-content/40` (40% opacity)
+- Icon color: `text-base-content/50` (50% opacity)
+- Placeholder: `placeholder:text-base-content/40`
 
-- `neutral-0`: `#FFFFFF` (Card Backgrounds)
-- `neutral-50`: `#F8FAFC` (App Background - Off White to reduce glare)
-- `neutral-200`: `#E2E8F0` (Borders/Dividers)
-- `neutral-500`: `#64748B` (Secondary Text)
-- `neutral-900`: `#0F172A` (Primary Text - Almost Black)
+### 2.2. Typography
 
-**Semantic**
+**Font Family:** `IBM Plex Sans Arabic` (via Google Fonts)
+**Fallback:** `Almarai`, `-apple-system`, `sans-serif`
 
-- `success`: `#10B981` (Completed orders, Paid invoices)
-- `error`: `#EF4444` (Failed payment, Out of stock)
-- `warning`: `#F59E0B` (Low stock, Subscription ending)
+**Scale (Fluid Responsive)**
+- Display: 32px / Bold (Page marketing headers)
+- H1: 24px / Bold (Page titles)
+- H2: 20px / SemiBold (Section headers)
+- H3: 18px / Medium (Card titles)
+- Body-L: 16px / Regular (Default text - `text-base`)
+- Body-M: 14px / Regular (Secondary text - `text-sm`)
+- Caption: 12px / Medium (Labels, timestamps - `text-xs`)
+- Micro: 10px / Bold (Small badges)
 
-**Third-party brand colors (exception):**
+**Line Height:**
+- Headings: 1.2-1.3
+- Body: 1.5-1.6
 
-- WhatsApp green `#25D366` is allowed only for WhatsApp-specific UI (e.g., the floating WhatsApp button).
+### 2.3. Spacing (4px Baseline Grid)
 
-### 2.2. Typography (Arabic First)
+Use Tailwind spacing scale:
+- **Gap-1:** 4px (`gap-1`, `space-y-1`)
+- **Gap-2:** 8px (`gap-2`, `space-y-2`)
+- **Gap-3:** 12px (`gap-3`, `space-y-3`)
+- **Gap-4:** 16px (`gap-4`, `space-y-4`) - **Standard spacing**
+- **Gap-6:** 24px (`gap-6`, `space-y-6`)
+- **Gap-8:** 32px (`gap-8`, `space-y-8`)
 
-**Font Family:** `IBM Plex Sans Arabic` (Google Fonts). It is geometric, modern, and legible at small mobile sizes.
-**Fallback:** `Almarai`.
+**Safe Area Padding:** Always use `p-4` (16px) for mobile content padding
 
-**Scale (Mobile)**
+### 2.4. Border Radius
 
-- `Display`: 32px / 1.2 / Bold (Marketing Headers)
-- `H1`: 24px / 1.3 / Bold (Page Titles)
-- `H2`: 20px / 1.3 / SemiBold (Section Headers)
-- `H3`: 18px / 1.4 / Medium (Card Titles)
-- `Body-L`: 16px / 1.5 / Regular (Default Text)
-- `Body-M`: 14px / 1.5 / Regular (Secondary descriptions)
-- `Caption`: 12px / 1.4 / Medium (Labels, Timestamps)
-- `Micro`: 10px / 1.2 / Bold (Badges)
+- `rounded-sm`: 4px (Small elements, tags)
+- `rounded-md`: 8px (Default, inner elements)
+- `rounded-lg`: 12px (Cards, modals, containers)
+- `rounded-xl`: 16px (Buttons, bottom sheets, prominent cards)
+- `rounded-box`: 12px (daisyUI card utility)
+- `rounded-full`: Pills, avatars, circular buttons
 
-### 2.3. Spacing & Grid (4px Baseline)
+### 2.5. Shadows
 
-- **Safe Area:** Left/Right padding is always `16px` (mobile standard).
-- **Gap-XS:** 4px
-- **Gap-S:** 8px
-- **Gap-M:** 16px
-- **Gap-L:** 24px
-- **Gap-XL:** 32px
-- **Touch Target:** Minimum tappable area is **44x44px**.
+- `shadow-sm`: Subtle card elevation (`0 1px 2px 0 rgb(0 0 0 / 0.05)`)
+- `shadow`: Standard card shadow
+- `shadow-md`: Elevated elements
+- `shadow-lg`: Floating elements, dropdowns
+- `shadow-xl`: Modals, important overlays
 
-### 2.4. Radius (Soft & Friendly)
+### 2.6. Borders
 
-- `rounded-sm`: 4px (Checkboxes, Tags)
-- `rounded-md`: 8px (Inner cards, Inputs)
-- `rounded-lg`: 12px (Standard Cards, Modals)
-- `rounded-xl`: 16px (Bottom Sheets)
-- `rounded-full`: 9999px (Buttons, Avatars)
+- Default border: `border border-base-300`
+- Focus border: `focus:border-primary`
+- Error border: `border-error`
+- Border width: 1px (default)
 
-### 2.5. Shadows (Elevation)
+### 2.7. Transitions
 
-- `shadow-sm`: `0 1px 2px 0 rgb(0 0 0 / 0.05)` (Cards)
-- `shadow-float`: `0 10px 15px -3px rgb(0 0 0 / 0.1)` (Sticky Buttons, Bottom Sheets)
-
----
-
-## 3. Global UX Behaviors (Mobile First)
-
-### 3.1. Right-to-Left (RTL) Mechanics
-
-Since Arabic is 1st class, the AI **must** implement logical properties.
-
-- **NEVER use:** `margin-left`, `padding-right`, `float-left`.
-- **ALWAYS use:** `margin-inline-start`, `padding-inline-end`, `text-align: start`.
-- **Icons:** Directional icons (arrows, chevrons, back buttons) must be mirrored.
-- _Example:_ A "Next" arrow points Left in LTR, but must point **Left** in RTL? **NO.**
-- _Correction:_ In RTL, the flow is Right -> Left. A "Next" arrow points **Left** (towards the future). A "Back" arrow points **Right** (towards the start).
-
-- **Phone Numbers:** Always display LTR standard (e.g., +971 50...), even in Arabic text blocks.
-
-### 3.2. Navigation Topology (The "Thumb Zone")
-
-- **Primary Navigation:** Prefer simple, thumb-friendly navigation. If a tab bar exists, labels must be present (Icons + Text).
-- **Secondary Actions:** Floating Action Button (FAB) or Sticky Bottom Bar.
-- **Back Navigation:** Top-Right (in RTL) header arrow.
-- **Modals:** DO NOT use centered modals. Use **Bottom Sheets** (Slide up panels) for filters, confirmations, and quick forms. This is easier for thumb reach.
-
-### 3.3. Input & Forms (The "Fat Finger" Rule)
-
-- **Inputs:** Minimum height `50px`.
-- **Labels:** Use "Floating Labels" or Top-aligned labels. Never use placeholder text as the only label.
-- **Keyboard:**
-- Phone fields -> Numeric keypad.
-- Email fields -> Email keyboard.
-- Search -> 'Search' action key.
-
-- **Validation:** Inline, immediate validation. Red border + text message below input.
+All interactive elements use smooth transitions:
+- Standard: `transition-all duration-200`
+- Colors: `transition-colors duration-200`
+- Opacity: `transition-opacity duration-200`
 
 ---
 
-## 4. Component Dictionary (Detailed Specs)
+## 3. Component Standards
 
-AI Agents: Implement components exactly as described below.
+### 3.1. Buttons
 
-### 4.1. Buttons (`Button`)
+**Implementation:** `/portal-web/src/components/atoms/Button.tsx`
 
-- **Primary Button:**
-- Bg: `primary-600`
-- Text: `neutral-0` / SemiBold
-- Height: `52px` (Full width on mobile usually)
-- Radius: `rounded-xl`
-- State: `active:scale-95` (Press animation)
+**Variants:**
+- `primary`: Primary brand color, main actions (`btn-primary`)
+- `secondary`: Secondary style with primary-50 background
+- `ghost`: Transparent background (`btn-ghost`)
+- `outline`: Outline style (`btn-outline`)
 
-- **Secondary Button:**
-- Bg: `primary-50`
-- Text: `primary-700`
+**Sizes:**
+- `sm`: 40px height (`btn-sm`)
+- `md`: 52px height (default, min-height for touch targets)
+- `lg`: 56px height (`btn-lg`)
 
-- **Ghost Button:**
-- Bg: Transparent
-- Text: `neutral-500`
+**States:**
+- Active: `active:scale-95` (press animation)
+- Loading: Spinner with disabled state
+- Disabled: 50% opacity, cursor-not-allowed
 
-**Implementation note (storefront-web):** Prefer daisyUI button variants (`btn`, `btn-primary`, `btn-secondary`, `btn-ghost`, `btn-outline`) and reuse the shared interaction utilities (`focus-ring`, `active-scale`).
+**Key Classes:**
+```tsx
+"btn rounded-xl font-semibold transition-all active:scale-95 
+ disabled:opacity-50 disabled:cursor-not-allowed"
+```
 
-### 4.2. Cards (`Card`)
+### 3.2. Form Inputs
 
-- **Container:** `bg-white`, `rounded-lg`, `border border-neutral-100`, `shadow-sm`.
-- **Padding:** `p-4` (16px).
-- **Clickable Cards:** Should have a `chevron-left` (in RTL) icon to indicate navigation.
+**Base Implementation:** `/portal-web/src/components/atoms/Input.tsx`, `FormInput.tsx`, `PasswordInput.tsx`
 
-### 4.3. List Items (`ListItem`)
+**Design Standards:**
+- Min-height: `50px` (`h-[50px]`) - Critical for touch targets
+- Border: `border-base-300`
+- Background: `bg-base-100`
+- Text: `text-base text-base-content`
+- Placeholder: `placeholder:text-base-content/40`
+- Focus: `focus:border-primary focus:ring-2 focus:ring-primary/20`
+- Error: `border-error focus:border-error focus:ring-error/20`
+- Icons: `text-base-content/50` with `aria-hidden="true"`
+- Transitions: `transition-all duration-200`
 
-Used for Inventory lists, Customer lists, etc.
+**Key Classes:**
+```tsx
+"input input-bordered w-full h-[50px] bg-base-100 text-base-content
+ focus:border-primary focus:ring-2 focus:ring-primary/20
+ transition-all duration-200"
+```
 
-- **Layout:** Flex row.
-- **Left (RTL Start):** Image/Icon (40x40px, rounded-md, object-cover).
-- **Middle:** Title (Body-L, SemiBold) + Subtitle (Body-M, neutral-500).
-- **Right (RTL End):** Value/Price (SemiBold) or Status Badge.
-- **Separator:** Full width or indented divider `border-b-neutral-100`.
+**Icon Positioning:**
+- Start icon: `ps-10` (padding-inline-start)
+- End icon: `pe-10` (padding-inline-end)
+- Icon wrapper: `z-10`, input: `z-0` (proper layering)
 
-### 4.4. Input Fields (`Input`)
+**Accessibility:**
+- All inputs have labels or `aria-label`
+- Error messages linked via `aria-describedby`
+- Required fields marked with `aria-required`
+- Icons wrapped in spans with `aria-hidden="true"`
 
-- **Base:** `bg-neutral-50`, `border-transparent`, `focus:bg-white`, `focus:border-primary-500`, `focus:ring-2`.
-- **RTL Specific:** Text aligns Right. Caret aligns Right.
-- **Icons:** Input may have `startIcon` (Payment card icon) or `endIcon` (Eye toggle).
+### 3.3. Textarea
 
-### 4.5. Bottom Sheet (`BottomSheet`)
+**Implementation:** `/portal-web/src/components/atoms/FormTextarea.tsx`
 
-- **Behavior:** Slides up from bottom. Backdrop blur.
-- **Handle:** Gray pill at the top center (`w-12 h-1 bg-neutral-300 rounded-full`).
-- **Content:** Scrollable content area.
-- **Footer:** Sticky container for "Save" or "Apply" buttons.
+**Standards:**
+- Min-height: `min-h-[120px]` (default)
+- Resize: `resize-y` (vertical only)
+- Character counter: Optional with live updates
+- Same color scheme as inputs
 
-**Implementation note (storefront-web):** Keep it keyboard accessible (Escape to close) and restore scroll on close via effect cleanup.
+### 3.4. Search Input
 
-### 4.6. Skeleton Loaders
+**Implementation:** `/portal-web/src/components/molecules/SearchInput.tsx`
 
-- **Mandatory:** Never show white screens. Use pulsing gray blocks (`animate-pulse bg-neutral-200`) matching the shape of the content loading (Circle for avatars, Rect for text).
+**Features:**
+- Debounced input (300ms default)
+- Search icon at start position (RTL-aware)
+- Clear button with loading state indicator
+- Same styling as form inputs for consistency
+
+### 3.5. Cards
+
+**DaisyUI Classes:** `card`, `card-body`
+
+**Standard Card Pattern:**
+```tsx
+<div className="card bg-base-100 border border-base-300 shadow-sm">
+  <div className="card-body">
+    {/* Content */}
+  </div>
+</div>
+```
+
+**Variants:**
+- Default: White background, subtle border and shadow
+- Hover: `hover:shadow-md transition-shadow`
+- Clickable: `cursor-pointer` with hover effect
+
+### 3.6. Badges
+
+**Implementation:** `/portal-web/src/components/atoms/Badge.tsx`
+
+**Variants:**
+- `default`: Neutral gray
+- `primary`: Brand teal
+- `secondary`: Gold/yellow
+- `success`: Green
+- `error`: Red
+- `warning`: Orange
+- `info`: Blue
+
+**DaisyUI Classes:** `badge`, `badge-primary`, `badge-success`, etc.
+
+### 3.7. Modals & Dialogs
+
+**Implementation:** 
+- `/portal-web/src/components/atoms/Modal.tsx` - Basic modal
+- `/portal-web/src/components/atoms/Dialog.tsx` - Dialog with footer actions
+
+**Behavior:**
+- Portal-based rendering
+- Backdrop blur: `backdrop-blur-sm`
+- Click outside to close (optional)
+- Escape key to close
+- Focus trap for accessibility
+- Sizes: `sm`, `md`, `lg`, `xl`, `full`
+
+### 3.8. Bottom Sheets
+
+**Implementation:** `/portal-web/src/components/molecules/BottomSheet.tsx`
+
+**Behavior:**
+- Mobile: Slides up from bottom (85% max height)
+- Desktop: Side drawer from start/end
+- Drag handle on mobile (gray pill)
+- Scrollable content area
+- Sticky footer for actions
+- RTL-aware positioning
+
+### 3.9. Skeletons
+
+**Implementation:** `/portal-web/src/components/atoms/Skeleton.tsx`
+
+**Standards:**
+- Color: `bg-base-300`
+- Animation: `animate-pulse`
+- Variants: `text`, `circular`, `rectangular`
+- Match content shape (circle for avatars, rectangles for text)
+
+**Usage:**
+```tsx
+<Skeleton variant="circular" width={40} height={40} />
+<Skeleton variant="rectangular" height={100} />
+<Skeleton variant="text" width="60%" />
+```
+
+### 3.10. Filter Button
+
+**Implementation:** `/portal-web/src/components/organisms/FilterButton.tsx`
+
+**Features:**
+- Unified component with trigger button + drawer
+- Active filter count badge
+- Consistent styling with form fields
+- Internal state management
+- Apply and Reset callbacks
+
+**Design Consistency:**
+- Same min-height as form inputs (`50px`)
+- Same focus states and transitions
+- Badge indicator for active filters
 
 ---
 
-## 5. Storefront Specific Guidelines (The Revamp)
+## 4. RTL-First Design Rules
 
-The User-Facing Storefront (`storefront-web`) needs to feel like a high-end native app (PWA).
+### 4.1. Logical Properties (MANDATORY)
 
-### 5.1. Storefront Header
+**NEVER use:**
+- `left`, `right`
+- `margin-left`, `margin-right`, `padding-left`, `padding-right`
+- `float-left`, `float-right`
+- `text-align: left`, `text-align: right`
+- `border-left`, `border-right`
 
-Current implementation uses a minimal, safe-area-aware header with:
+**ALWAYS use:**
+- `start`, `end` (Tailwind utilities)
+- `ms-*`, `me-*` (margin-inline-start/end)
+- `ps-*`, `pe-*` (padding-inline-start/end)
+- `start-*`, `end-*` (positioning)
+- `text-start`, `text-end`
+- `border-s-*`, `border-e-*`
 
-- Language switcher on one side
-- Cart button (with badge) on the other side
+**Examples:**
+```tsx
+// ❌ WRONG
+<div className="ml-4 text-left float-left" />
 
-Brand identity (logo/name) is displayed in a separate centered brand header below.
+// ✅ CORRECT
+<div className="ms-4 text-start float-start" />
+```
 
-### 5.2. Product Card (The Grid)
+### 4.2. Directional Icons
 
-- **Layout:** 2 Columns on Mobile (Grid).
-- **Image:** Aspect Ratio `1:1` or `3:4`. `rounded-lg`.
-- **Title:** Max 2 lines. `text-sm`.
-- **Price:** Bold. `text-primary-700`.
-- **Add Button:** A distinct circular button with a "+" icon floating on the bottom-left (RTL) of the image, OR a full-width "Add" button below. **Decision:** Floating button on image corner for cleaner look.
+Icons like arrows, chevrons, and back buttons must be mirrored in RTL:
 
-### 5.3. Sticky Cart Bar
+```tsx
+import { useLanguage } from "@/hooks/useLanguage";
 
-- If items > 0 in cart, show a sticky bar at the bottom of the screen (above tab bar if exists).
-- **Content:** "3 Items • 150 AED" (Right) .... "View Cart >" (Left).
-- **Color:** `bg-primary-900` text white.
+const { isRTL } = useLanguage();
 
-### 5.4. WhatsApp Integration (Critical)
+<ArrowLeft className={isRTL ? "rotate-180" : ""} />
+```
 
-- **Floating Button:** Use logical positioning (Tailwind `end-*`) so it naturally flips in RTL.
-- **Product Page:** "Order via WhatsApp" button variant (secondary action).
-- **Message Pre-fill:** "Hi [Store Name], I am interested in [Product Name]..."
+### 4.3. Phone Numbers
 
-**Implementation note (storefront-web):** The floating WhatsApp FAB uses WhatsApp green `#25D366` (allowed exception).
+Always display LTR (left-to-right) even in Arabic text:
 
-### 5.5. Checkout Flow
+```tsx
+<span dir="ltr">{phoneNumber}</span>
+```
 
-1. **Phone Number First:** No email requirement. Just phone.
-2. **Location:** Use "Current Location" GPS button to fill address.
-3. **Payment:**
+### 4.4. Document Direction
 
-- Option 1: Cash on Delivery (COD) - Default for many.
-- Option 2: Online Payment (Stripe).
-
-4. **Success:** Digital Receipt animation.
-
----
-
-## 6. Implementation Rules for AI Agents
-
-When writing code (React SPA):
-
-1. **Tailwind + daisyUI (storefront-web):** Tailwind v4 is configured CSS-first. Use daisyUI semantic tokens and the theme defined in `storefront-web/src/index.css`. Do not introduce new colors in component classNames.
-2. **Icons:** Prefer `lucide-react` for consistency.
-3. **RTL & logical properties:** Prefer logical utilities (`start-*`, `end-*`, `text-start`). For directional icons, apply the existing `rtl-mirror` class.
-4. **Dates/Currency:**
-
-- Use `Intl.NumberFormat` with `ar-AE` (or relevant country) for currency (e.g., "د.إ.‏ 150.00").
-- Use Hijri/Gregorian toggle if requested, but Gregorian (English numbers) is standard for business in most GCC apps.
-
-5. **Error Handling:**
-
-- Network Error -> Show "Retry" button component.
-- 404 -> Friendly illustration + "Go Home" button.
-
-6. **Files:** Keep components small and composable; prefer shared atoms/molecules/organisms where they already exist.
+Automatically set via `useLanguage` hook:
+- HTML `dir` attribute: `rtl` or `ltr`
+- HTML `lang` attribute: `ar` or `en`
 
 ---
 
-## 7. Accessibility (A11y)
+## 5. Mobile-First & Touch Standards
 
-1. **Contrast:** Ensure `primary-600` is used on white. Do not use `primary-400` for text.
-2. **Screen Readers:** All images must have `alt` text. Use `aria-label` for icon-only buttons (like the Hamburger menu or Cart icon).
-3. **Focus:** Never remove outline unless replacing with a custom ring.
+### 5.1. Touch Targets
+
+**Minimum Size:** 44x44px (Apple HIG) or 50x50px (Material/KDS)
+- All interactive elements: `min-h-[50px]`
+- Buttons: Default `h-[52px]`
+- Form inputs: `h-[50px]`
+- Icon buttons: `min-w-[44px] min-h-[44px]`
+
+### 5.2. Safe Areas
+
+**Mobile Padding:**
+- Horizontal: `px-4` (16px)
+- Vertical: `py-4` (16px)
+- iOS safe areas: Use `safe-bottom`, `safe-top` classes where needed
+
+### 5.3. Responsive Breakpoints
+
+Use Tailwind default breakpoints:
+- `sm`: 640px (tablets portrait)
+- `md`: 768px (tablets landscape, small desktops)
+- `lg`: 1024px (desktops)
+- `xl`: 1280px (large desktops)
+
+**Hook:** Use `useMediaQuery` for JavaScript-based responsive logic:
+```tsx
+import { useMediaQuery } from "@/hooks/useMediaQuery";
+
+const isMobile = useMediaQuery("(max-width: 768px)");
+```
+
+---
+
+## 6. Interaction Patterns
+
+### 6.1. Navigation
+
+**Mobile:**
+- Bottom navigation bar for primary actions
+- Hamburger menu for secondary navigation
+- Top header: Business switcher, search, notifications
+
+**Desktop:**
+- Left sidebar with collapsible navigation
+- Top header: Business switcher, search, user menu
+
+### 6.2. Forms
+
+**Bottom Sheets (Mobile) / Modals (Desktop):**
+- Create/Edit actions: Use `BottomSheet` component
+- Quick filters: Use `FilterButton` component
+- Confirmations: Use `Dialog` component
+
+**Validation:**
+- Inline, real-time validation
+- Error messages below fields
+- Field-level error highlighting
+- Translated error messages
+
+### 6.3. Loading States
+
+**Skeletons (Preferred):**
+- Match content shape
+- Use for initial page loads
+- Prevent layout shift
+
+**Spinners:**
+- Button loading states
+- Inline actions
+- Small content areas
+
+**Progress Indicators:**
+- Multi-step flows (onboarding)
+- File uploads
+- Long-running operations
+
+### 6.4. Toast Notifications
+
+**Implementation:** `react-hot-toast`
+
+**Position:**
+- Desktop: `top-right` (RTL), `top-left` (LTR)
+- Mobile: `bottom-center`
+
+**Types:**
+- `toast.success()` - Green checkmark
+- `toast.error()` - Red X
+- `toast.loading()` - Spinner
+- Custom with icons
+
+**Auto-dismiss:** 4 seconds (default)
+
+**Usage:**
+```tsx
+import toast from "react-hot-toast";
+import { useLanguage } from "@/hooks/useLanguage";
+
+const { isRTL } = useLanguage();
+
+// Position based on language
+<Toaster position={isRTL ? "top-right" : "top-left"} />
+
+// Show toast
+toast.success("Order created successfully");
+toast.error("Failed to save changes");
+```
+
+---
+
+## 7. Accessibility Standards
+
+### 7.1. ARIA Attributes
+
+**Required:**
+- All icon-only buttons: `aria-label`
+- Form inputs: `aria-invalid`, `aria-describedby`, `aria-required`
+- Modals: `role="dialog"`, `aria-modal="true"`, `aria-labelledby`
+- Icons: `aria-hidden="true"` (decorative)
+- Live regions: `role="alert"` for errors
+
+### 7.2. Keyboard Navigation
+
+**Standards:**
+- All interactive elements: Focusable via Tab
+- Focus visible: Clear focus ring (`focus:ring-2 focus:ring-primary/20`)
+- Escape: Close modals, dropdowns
+- Enter/Space: Activate buttons, toggles
+- Arrow keys: Navigate dropdowns, radio groups
+
+### 7.3. Color Contrast
+
+**WCAG AA Compliance:**
+- Text on base-100: `text-base-content` (high contrast)
+- Secondary text: Minimum 70% opacity
+- Primary brand on white: AA compliant
+- Never use low-contrast text for critical content
+
+### 7.4. Focus Management
+
+**Focus Ring:**
+- Default: `focus:ring-2 focus:ring-primary/20 focus:border-primary focus:outline-none`
+- Never remove without replacement
+- Consistent across all interactive elements
+
+**Focus Trap:**
+- Modals and bottom sheets trap focus
+- Tab cycles within modal
+- Escape returns focus to trigger
 
 ---
 
 ## 8. Animation Guidelines
 
-- **Page Transitions:** Fade in + Slide Up slightly (`y-4` to `y-0`).
-- **Modals/Sheets:** Spring physics (damping: 20, stiffness: 300).
-- **Buttons:** `active:scale-95`.
-- **Lists:** Staggered fade-in for items.
+### 8.1. Interactive Animations
+
+**Button Press:**
+```tsx
+active:scale-95
+```
+
+**Hover Effects:**
+```tsx
+hover:shadow-md transition-shadow
+hover:bg-base-200 transition-colors
+```
+
+### 8.2. Transitions
+
+**Standard:**
+```tsx
+transition-all duration-200
+transition-colors duration-200
+transition-opacity duration-200
+transition-shadow duration-200
+```
+
+### 8.3. Loading Animations
+
+**Pulse (Skeletons):**
+```tsx
+animate-pulse
+```
+
+**Spin (Loaders):**
+```tsx
+animate-spin
+```
+
+### 8.4. Page Transitions
+
+- Subtle fade-in for new content
+- Avoid jarring animations
+- Keep under 300ms for perceived performance
+
+---
+
+## 9. Implementation Checklist
+
+When creating new components, ensure:
+
+### ✅ Design Consistency
+- [ ] Uses daisyUI semantic tokens (`bg-primary`, `text-base-content`)
+- [ ] Follows color scheme (primary, secondary, base colors)
+- [ ] Uses consistent border radius (`rounded-lg`, `rounded-xl`)
+- [ ] Applies standard shadows (`shadow-sm`, `shadow-md`)
+- [ ] Uses 4px spacing grid (`gap-4`, `space-y-4`)
+
+### ✅ Typography
+- [ ] Uses IBM Plex Sans Arabic font family
+- [ ] Correct font sizes (`text-base`, `text-lg`)
+- [ ] Proper font weights (Regular, Medium, SemiBold, Bold)
+- [ ] Appropriate line heights (1.5 for body text)
+
+### ✅ RTL-First
+- [ ] Uses logical properties (`start`, `end`, `ms-*`, `ps-*`)
+- [ ] No `left`, `right`, `margin-left`, etc.
+- [ ] Directional icons rotate in RTL (180deg)
+- [ ] Phone numbers use `dir="ltr"`
+- [ ] Layout mirrors correctly in Arabic
+
+### ✅ Mobile-First
+- [ ] Touch targets minimum 50px height
+- [ ] Responsive breakpoints (`sm:`, `md:`, `lg:`)
+- [ ] Safe area padding (`px-4`)
+- [ ] Works on small screens (320px+)
+
+### ✅ Accessibility
+- [ ] All interactive elements keyboard accessible
+- [ ] Focus rings visible (`focus:ring-2 focus:ring-primary/20`)
+- [ ] ARIA labels on icon-only buttons
+- [ ] Error messages linked to inputs
+- [ ] Color contrast WCAG AA compliant
+
+### ✅ States & Feedback
+- [ ] Hover states defined
+- [ ] Active/pressed states (`active:scale-95`)
+- [ ] Disabled states (50% opacity)
+- [ ] Loading states (spinner or skeleton)
+- [ ] Error states (red border, error message)
+- [ ] Focus states (ring, border color)
+
+### ✅ Transitions
+- [ ] Smooth transitions (`transition-all duration-200`)
+- [ ] Consistent animation timing
+- [ ] No jarring animations
+
+---
+
+## 10. Common Patterns & Examples
+
+### 10.1. Standard Form
+
+```tsx
+<form className="space-y-4">
+  <FormInput
+    label="Email"
+    type="email"
+    required
+    error={errors.email?.message}
+    startIcon={<Mail size={20} />}
+  />
+  
+  <PasswordInput
+    label="Password"
+    required
+    error={errors.password?.message}
+  />
+  
+  <Button
+    type="submit"
+    variant="primary"
+    size="lg"
+    fullWidth
+    loading={isSubmitting}
+  >
+    Submit
+  </Button>
+</form>
+```
+
+### 10.2. Card List
+
+```tsx
+<div className="space-y-3">
+  {items.map((item) => (
+    <div
+      key={item.id}
+      className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      onClick={() => handleClick(item)}
+    >
+      <div className="card-body p-4">
+        {/* Content */}
+      </div>
+    </div>
+  ))}
+</div>
+```
+
+### 10.3. Bottom Sheet Form
+
+```tsx
+<BottomSheet
+  isOpen={isOpen}
+  onClose={onClose}
+  title="Add Customer"
+  size="md"
+  footer={
+    <div className="flex gap-2">
+      <button className="btn btn-ghost flex-1" onClick={onClose}>
+        Cancel
+      </button>
+      <button className="btn btn-primary flex-1" onClick={handleSave}>
+        Save
+      </button>
+    </div>
+  }
+>
+  <form className="space-y-4">
+    {/* Form fields */}
+  </form>
+</BottomSheet>
+```
+
+### 10.4. Loading State
+
+```tsx
+{isLoading ? (
+  <div className="space-y-3">
+    {Array.from({ length: 5 }).map((_, i) => (
+      <Skeleton key={i} variant="rectangular" height={100} />
+    ))}
+  </div>
+) : (
+  <div className="space-y-3">
+    {items.map((item) => <ItemCard key={item.id} item={item} />)}
+  </div>
+)}
+```
+
+### 10.5. RTL-Aware Icon
+
+```tsx
+import { useLanguage } from "@/hooks/useLanguage";
+import { ArrowLeft } from "lucide-react";
+
+function BackButton() {
+  const { isRTL } = useLanguage();
+  
+  return (
+    <button className="btn btn-ghost btn-sm gap-2">
+      <ArrowLeft size={18} className={isRTL ? "rotate-180" : ""} />
+      <span>Back</span>
+    </button>
+  );
+}
+```
+
+---
+
+## 11. Don'ts - Common Mistakes to Avoid
+
+### ❌ Don't Do This:
+
+```tsx
+// Wrong: Hardcoded colors
+<div className="bg-[#0D9488] text-[#FFFFFF]" />
+
+// Wrong: Using left/right
+<div className="ml-4 text-left" />
+
+// Wrong: No touch target height
+<button className="h-8 px-2">Click</button>
+
+// Wrong: No transitions
+<button className="bg-primary">Click</button>
+
+// Wrong: Missing focus ring
+<button className="focus:outline-none">Click</button>
+
+// Wrong: Icon without aria-hidden
+<button><Mail size={20} /></button>
+
+// Wrong: No error message
+<input className="border-error" />
+
+// Wrong: Inline styles
+<div style={{ marginLeft: "16px" }}>Content</div>
+```
+
+### ✅ Do This Instead:
+
+```tsx
+// Correct: Semantic tokens
+<div className="bg-primary text-primary-content" />
+
+// Correct: Logical properties
+<div className="ms-4 text-start" />
+
+// Correct: Proper touch target
+<button className="btn min-h-[50px]">Click</button>
+
+// Correct: Smooth transitions
+<button className="btn btn-primary transition-all duration-200">Click</button>
+
+// Correct: Clear focus ring
+<button className="btn focus:ring-2 focus:ring-primary/20 focus:outline-none">
+  Click
+</button>
+
+// Correct: Icon with ARIA
+<button aria-label="Send email">
+  <Mail size={20} aria-hidden="true" />
+</button>
+
+// Correct: Error with message
+<div>
+  <input className="input input-error" aria-describedby="email-error" />
+  <span id="email-error" className="text-error text-sm">
+    Invalid email
+  </span>
+</div>
+
+// Correct: Tailwind utilities
+<div className="ms-4">Content</div>
+```
+
+---
+
+## 12. Resources & References
+
+- **DaisyUI Documentation:** https://daisyui.com/
+- **Tailwind CSS:** https://tailwindcss.com/
+- **IBM Plex Sans Arabic:** https://fonts.google.com/specimen/IBM+Plex+Sans+Arabic
+- **Lucide Icons:** https://lucide.dev/
+- **WCAG Guidelines:** https://www.w3.org/WAI/WCAG21/quickref/
+
+---
+
+## Revision History
+
+- **v2.0** (2025-12-29): Complete rewrite based on actual portal-web implementation
+  - Updated all component patterns to match real codebase
+  - Added detailed form field standards
+  - Documented RTL-first patterns as implemented
+  - Added FilterButton component documentation
+  - Removed deprecated patterns
+  - Added comprehensive accessibility guidelines
+  - Included real code examples from the project
+
+- **v1.0** (Initial): Original KDS specification
