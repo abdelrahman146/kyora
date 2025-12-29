@@ -223,6 +223,7 @@ export function SocialMediaLink({
       target="_blank"
       rel="noopener noreferrer"
       aria-label={`${config.label}: ${username}`}
+      dir="ltr"
       className={cn(
         // Base styles
         "inline-flex items-center justify-start",
@@ -231,8 +232,6 @@ export function SocialMediaLink({
         "transition-all duration-200",
         "focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2",
         "active:scale-[0.98]",
-        // RTL/LTR support - use logical properties
-        "text-start",
         // Size
         sizeClasses[size].container,
         // Variant
@@ -252,15 +251,12 @@ export function SocialMediaLink({
         aria-hidden="true"
       />
 
-      {/* Username - with proper LTR direction for social handles */}
+      {/* Username - always displays LTR since social handles are always in English */}
       <span
         className={cn(
           "truncate font-medium",
-          sizeClasses[size].text,
-          // Force LTR for usernames/handles even in RTL layout
-          "direction-ltr"
+          sizeClasses[size].text
         )}
-        dir="ltr"
       >
         {username.startsWith("@") ? username : `@${username}`}
       </span>
