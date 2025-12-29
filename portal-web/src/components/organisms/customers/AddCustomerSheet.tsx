@@ -8,13 +8,11 @@ import { zodResolver } from "@hookform/resolvers/zod";
 import { BottomSheet } from "../../molecules/BottomSheet";
 import { CountrySelect } from "../../molecules/CountrySelect";
 import { PhoneCodeSelect } from "../../molecules/PhoneCodeSelect";
-import { FormInput, FormSelect, FormTextarea } from "@/components";
-import { createCustomer, createCustomerAddress } from "@/api/customer";
+import { FormInput, FormSelect } from "@/components";
+import { createCustomer } from "@/api/customer";
 import type {
-  CreateCustomerAddressRequest,
   CustomerGender,
   Customer,
-  CustomerAddress,
 } from "@/api/types/customer";
 import { translateErrorAsync } from "@/lib/translateError";
 import { buildE164Phone } from "@/lib/phone";
@@ -50,10 +48,6 @@ const addCustomerSchema = z
       .string()
       .trim()
       .refine((v) => v === "" || /^[0-9\-\s()]{6,20}$/.test(v), "validation.invalid_phone"),
-    street: z.string().trim(),
-    city: z.string().trim(),
-    state: z.string().trim(),
-    zipCode: z.string().trim(),
   })
   .refine(
     (values) => {
@@ -61,42 +55,6 @@ const addCustomerSchema = z
       return !hasPhoneNumber || values.phoneCode.trim() !== "";
     },
     { message: "validation.required", path: ["phoneCode"] }
-  )
-  .refine(
-    (values) => {
-      const hasAddress =
-        values.street.trim() !== "" ||
-        values.city.trim() !== "" ||
-        values.state.trim() !== "" ||
-        values.zipCode.trim() !== "";
-      return !hasAddress || values.city.trim() !== "";
-    },
-    { message: "validation.required", path: ["city"] }
-  )
-  .refine(
-    (values) => {
-      const hasAddress =
-        values.street.trim() !== "" ||
-        values.city.trim() !== "" ||
-        values.state.trim() !== "" ||
-        values.zipCode.trim() !== "";
-      return !hasAddress || values.state.trim() !== "";
-    },
-    { message: "validation.required", path: ["state"] }
-  )
-  .refine(
-    (values) => {
-      const hasAddress =
-        values.street.trim() !== "" ||
-        values.city.trim() !== "" ||
-        values.state.trim() !== "" ||
-        values.zipCode.trim() !== "";
-
-      const hasPhoneNumber = values.phoneNumber.trim() !== "";
-      const hasPhoneCode = values.phoneCode.trim() !== "";
-      return !hasAddress || (hasPhoneNumber && hasPhoneCode);
-    },
-    { message: "validation.address_requires_phone", path: ["phoneNumber"] }
   );
 
 export type AddCustomerFormValues = z.infer<typeof addCustomerSchema>;
@@ -109,10 +67,6 @@ function getDefaultValues(businessCountryCode: string): AddCustomerFormValues {
     countryCode: businessCountryCode,
     phoneCode: "",
     phoneNumber: "",
-    street: "",
-    city: "",
-    state: "",
-    zipCode: "",
   };
 }
 
@@ -175,11 +129,6 @@ export function AddCustomerSheet({
 
   const onSubmit = handleSubmit(async (values) => {
     try {
-      const trimOrUndefined = (value: string) => {
-        const trimmed = value.trim();
-        return trimmed === "" ? undefined : trimmed;
-      };
-
       const phoneCode = values.phoneCode.trim();
       const phoneNumber = values.phoneNumber.trim();
 
@@ -196,29 +145,6 @@ export function AddCustomerSheet({
         phoneCode: normalizedPhone ? normalizedPhone.phoneCode : undefined,
         phoneNumber: normalizedPhone ? normalizedPhone.phoneNumber : undefined,
       });
-
-      const hasAddress =
-        Boolean(values.street.trim()) ||
-        Boolean(values.city.trim()) ||
-        Boolean(values.state.trim()) ||
-        Boolean(values.zipCode.trim());
-      if (hasAddress && normalizedPhone) {
-        await (
-          createCustomerAddress as unknown as (
-            businessDescriptor: string,
-            customerId: string,
-            data: CreateCustomerAddressRequest
-          ) => Promise<CustomerAddress>
-        )(businessDescriptor, created.id, {
-          street: trimOrUndefined(values.street),
-          city: values.city.trim(),
-          state: values.state.trim(),
-          zipCode: trimOrUndefined(values.zipCode),
-          countryCode: values.countryCode.trim().toUpperCase(),
-          phoneCode: normalizedPhone.phoneCode,
-          phone: normalizedPhone.e164,
-        });
-      }
 
       toast.success(t("customers.create_success"));
 
@@ -362,40 +288,6 @@ export function AddCustomerSheet({
             />
           </div>
         </div>
-
-        <div className="divider my-2">{t("customers.form.address_section")}</div>
-
-        <FormTextarea
-          label={t("customers.form.street")}
-          placeholder={t("customers.form.street_placeholder")}
-          rows={2}
-          autoComplete="street-address"
-          error={errors.street?.message ? tErrors(errors.street.message) : undefined}
-          {...register("street")}
-        />
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <FormInput
-            label={t("customers.form.city")}
-            autoComplete="address-level2"
-            error={errors.city?.message ? tErrors(errors.city.message) : undefined}
-            {...register("city")}
-          />
-
-          <FormInput
-            label={t("customers.form.state")}
-            autoComplete="address-level1"
-            error={errors.state?.message ? tErrors(errors.state.message) : undefined}
-            {...register("state")}
-          />
-        </div>
-
-        <FormInput
-          label={t("customers.form.zip")}
-          autoComplete="postal-code"
-          error={errors.zipCode?.message ? tErrors(errors.zipCode.message) : undefined}
-          {...register("zipCode")}
-        />
       </form>
     </BottomSheet>
   );
