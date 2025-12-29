@@ -108,7 +108,6 @@ function PlanSelectionPage() {
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
         {plans?.map((plan) => {
           const isSelected = plan.id === selectedPlanId
-          const isPaid = parseFloat(plan.price) > 0
           const features = getEnabledFeatures(plan)
           const isRecommended = plan.descriptor === 'starter'
 

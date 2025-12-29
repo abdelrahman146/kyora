@@ -3,10 +3,11 @@ import { Outlet, createRootRoute } from '@tanstack/react-router'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from 'react-hot-toast'
+import type { RouterContext } from '@/router'
 import { useLanguage } from '@/hooks/useLanguage'
 import { restoreSession } from '@/lib/auth'
 
-export const Route = createRootRoute({
+export const Route = createRootRoute<RouterContext>({
   component: RootComponent,
 })
 

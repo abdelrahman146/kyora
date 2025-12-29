@@ -8,6 +8,7 @@ import { invalidateBusinessScopedQueries } from '@/lib/queryInvalidation'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 import { requireAuth } from '@/lib/routeGuards'
 import { selectBusiness } from '@/stores/businessStore'
+import { DashboardLayout } from '@/components/templates/DashboardLayout'
 
 /**
  * Business Layout Route
@@ -48,35 +49,27 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
 /**
  * Business Layout Component
  *
- * Wraps business routes with dashboard layout.
- * TODO: Implement DashboardLayout template (Sidebar, Header, BottomNav)
+ * Wraps business routes with DashboardLayout template.
  */
 function BusinessLayout() {
   const { business } = Route.useRouteContext()
+  const { businessDescriptor } = Route.useParams()
 
   return (
-    <div className="min-h-screen bg-base-200">
-      {/* TODO: Replace with DashboardLayout template from Step 8 */}
-      <div className="container mx-auto px-4 py-8">
-        {/* Temporary header - will be replaced with DashboardLayout */}
-        <div className="mb-6">
-          <h1 className="text-2xl font-bold">{business.name}</h1>
-          <p className="text-sm text-base-content/70">
-            {business.country} • {business.currency}
-          </p>
-        </div>
-
-        {/* Content outlet with Suspense boundary */}
-        <Suspense
-          fallback={
-            <div className="flex min-h-[400px] items-center justify-center">
-              <span className="loading loading-spinner loading-lg"></span>
-            </div>
-          }
-        >
-          <Outlet />
-        </Suspense>
-      </div>
-    </div>
+    <DashboardLayout
+      businessDescriptor={businessDescriptor}
+      businessName={business.name}
+    >
+      {/* Content outlet with Suspense boundary */}
+      <Suspense
+        fallback={
+          <div className="flex min-h-[400px] items-center justify-center">
+            <span className="loading loading-spinner loading-lg"></span>
+          </div>
+        }
+      >
+        <Outlet />
+      </Suspense>
+    </DashboardLayout>
   )
 }

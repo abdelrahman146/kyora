@@ -1,7 +1,6 @@
-import { Navigate, Outlet, createFileRoute } from '@tanstack/react-router'
+import { Navigate, createFileRoute } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { authStore } from '@/stores/authStore'
-import { onboardingStore } from '@/stores/onboardingStore'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 export const Route = createFileRoute('/onboarding/')({
@@ -34,9 +33,5 @@ function OnboardingRoot() {
     return <Navigate to="/" replace />
   }
 
-  return (
-    <OnboardingLayout>
-      <Outlet />
-    </OnboardingLayout>
-  )
+  return <OnboardingLayout />
 }

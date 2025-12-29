@@ -2,8 +2,6 @@ import { useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
-
-import type { PaginatedResponse } from './types/common'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 
 /**

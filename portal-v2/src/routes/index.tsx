@@ -1,6 +1,5 @@
 import { createFileRoute, redirect } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-
 import { businessApi } from '@/api/business'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 import { requireAuth } from '@/lib/routeGuards'
@@ -20,8 +19,14 @@ export const Route = createFileRoute('/')({
   },
 
   loader: async ({ context }) => {
+    // Type-safe context access
+    const queryClient = (context as any)?.queryClient
+    if (!queryClient) {
+      throw new Error('QueryClient not found in router context')
+    }
+
     // Fetch user's businesses
-    const data = await context.queryClient.ensureQueryData({
+    const data = await queryClient.ensureQueryData({
       queryKey: queryKeys.businesses.list(),
       queryFn: () => businessApi.listBusinesses(),
       staleTime: STALE_TIME.FIVE_MINUTES,
@@ -34,7 +39,7 @@ export const Route = createFileRoute('/')({
     const state = businessStore.state
     if (
       state.selectedBusinessDescriptor &&
-      data.businesses.some((b) => b.descriptor === state.selectedBusinessDescriptor)
+      data.businesses.some((b: any) => b.descriptor === state.selectedBusinessDescriptor)
     ) {
       // Redirect to last selected business
       throw redirect({
@@ -92,7 +97,7 @@ function HomePage() {
         ) : (
           // Show business cards grid
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {businesses.map((business) => (
+            {businesses.map((business: any) => (
               <a
                 key={business.id}
                 href={`/business/${business.descriptor}`}

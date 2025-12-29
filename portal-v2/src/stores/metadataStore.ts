@@ -16,6 +16,9 @@ export interface CountryMetadata {
   currencySymbol: string
 }
 
+// Type alias for convenience
+export type Country = CountryMetadata
+
 /**
  * Currency Info (derived from countries)
  */
@@ -35,12 +38,18 @@ interface MetadataState {
   countries: Array<CountryMetadata>
   currencies: Array<CurrencyInfo>
   lastFetched: number | null
+  status: 'idle' | 'loading' | 'loaded' | 'error'
+  loadCountries: () => Promise<void>
 }
 
 const initialState: MetadataState = {
   countries: [],
   currencies: [],
   lastFetched: null,
+  status: 'idle',
+  loadCountries: async () => {
+    // Placeholder - will be replaced after store creation
+  },
 }
 
 /**
@@ -68,6 +77,26 @@ if (persistedMetadata) {
   metadataStore.setState(() => persistedMetadata)
 }
 
+// Now implement loadCountries after store is created
+metadataStore.setState((state) => ({
+  ...state,
+  loadCountries: () => {
+    if (state.status === 'loading') return Promise.resolve()
+
+    metadataStore.setState((s) => ({ ...s, status: 'loading' }))
+
+    // TODO: Replace with actual API call when metadataApi is available
+    // For now, this is a placeholder that just marks as loaded
+    metadataStore.setState((s) => ({
+      ...s,
+      status: 'loaded',
+      lastFetched: Date.now(),
+    }))
+
+    return Promise.resolve()
+  },
+}))
+
 /**
  * Metadata Store Actions
  */
@@ -82,10 +111,12 @@ export function setMetadata(
   countries: Array<CountryMetadata>,
   currencies: Array<CurrencyInfo>,
 ): void {
-  metadataStore.setState(() => ({
+  metadataStore.setState((state) => ({
+    ...state,
     countries,
     currencies,
     lastFetched: Date.now(),
+    status: 'loaded',
   }))
 }
 

@@ -10,6 +10,7 @@ export interface Business {
   name: string
   country: string
   currency: string
+  logoUrl?: string
   createdAt: string
   updatedAt: string
 }
