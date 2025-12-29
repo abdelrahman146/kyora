@@ -25,6 +25,7 @@ import {
   Plus,
 } from "lucide-react";
 import { useAuth } from "../hooks/useAuth";
+import { useLanguage } from "../hooks/useLanguage";
 import { useBusinessStore } from "../stores/businessStore";
 import { businessApi } from "../api/business";
 import type { Business } from "../api/types/business";
@@ -38,6 +39,7 @@ export default function HomePage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { isRTL } = useLanguage();
   const { businesses, setBusinesses, setSelectedBusiness } = useBusinessStore();
   const [isLoading, setIsLoading] = useState(true);
 
@@ -206,6 +208,9 @@ export default function HomePage() {
                           @{business.descriptor}
                         </p>
                       </div>
+                        size={20} 
+                        className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
+                     
                       <ChevronRight size={20} className="text-base-content/40" />
                     </div>
                   </div>
@@ -259,7 +264,10 @@ export default function HomePage() {
               >
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-3">
+                    <div className
+                      size={20} 
+                      className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
+                   
                       <link.icon size={20} className="text-primary" />
                       <span className="font-medium">{link.label}</span>
                     </div>
