@@ -16,11 +16,8 @@ export { Logo, type LogoProps } from "./Logo";
 export { Dropdown, type DropdownProps } from "./Dropdown";
 export { Modal, type ModalProps } from "./Modal";
 export { Dialog } from "./Dialog";
-export {
-  SocialMediaLink,
-  type SocialMediaLinkProps,
-  type SocialPlatform,
-} from "./SocialMediaLink";
+export { SocialMediaLink, type SocialMediaLinkProps } from "./SocialMediaLink";
+export { type SocialPlatform } from "../icons/social";
 
 // Form components (KDS Production-grade)
 export { FormInput, type FormInputProps } from "./FormInput";

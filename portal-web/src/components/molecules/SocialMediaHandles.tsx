@@ -24,7 +24,8 @@
 
 import { useMemo } from "react";
 import { cn } from "@/lib/utils";
-import { SocialMediaLink, type SocialPlatform } from "../atoms/SocialMediaLink";
+import { SocialMediaLink } from "../atoms/SocialMediaLink";
+import { type SocialPlatform } from "../icons/social";
 
 export interface SocialMediaHandlesProps {
   instagramUsername?: string | null;
