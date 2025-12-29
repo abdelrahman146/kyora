@@ -1,23 +1,39 @@
 import { defineConfig } from 'vite'
-import { devtools } from '@tanstack/devtools-vite'
-import { tanstackStart } from '@tanstack/react-start/plugin/vite'
+import { TanStackRouterVite } from '@tanstack/router-plugin/vite'
 import viteReact from '@vitejs/plugin-react'
 import viteTsConfigPaths from 'vite-tsconfig-paths'
 import tailwindcss from '@tailwindcss/vite'
-import { nitro } from 'nitro/vite'
 
 const config = defineConfig({
   plugins: [
-    devtools(),
-    nitro(),
-    // this is the plugin that enables path aliases
+    // TanStack Router plugin for file-based routing (client-only mode)
+    TanStackRouterVite({
+      routesDirectory: './src/routes',
+      generatedRouteTree: './src/routeTree.gen.ts',
+    }),
+    // Path aliases from tsconfig
     viteTsConfigPaths({
       projects: ['./tsconfig.json'],
     }),
+    // Tailwind CSS v4
     tailwindcss(),
-    tanstackStart(),
+    // React plugin
     viteReact(),
   ],
+  build: {
+    rollupOptions: {
+      // Exclude TanStack Store devtools from production bundle
+      external: (id) => {
+        if (
+          process.env.NODE_ENV === 'production' &&
+          id.includes('@tanstack/store-devtools')
+        ) {
+          return true
+        }
+        return false
+      },
+    },
+  },
 })
 
 export default config

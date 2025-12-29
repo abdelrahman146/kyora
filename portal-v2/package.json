@@ -14,6 +14,7 @@
   "dependencies": {
     "@tailwindcss/vite": "^4.0.6",
     "@tanstack/react-devtools": "^0.7.0",
+    "@tanstack/react-form": "^1.27.7",
     "@tanstack/react-query": "^5.66.5",
     "@tanstack/react-query-devtools": "^5.84.2",
     "@tanstack/react-router": "^1.132.0",
@@ -23,12 +24,19 @@
     "@tanstack/react-store": "^0.8.0",
     "@tanstack/router-plugin": "^1.132.0",
     "@tanstack/store": "^0.8.0",
+    "@tanstack/zod-form-adapter": "^0.42.1",
+    "date-fns": "^4.1.0",
+    "i18next": "^25.7.3",
+    "ky": "^1.14.2",
     "lucide-react": "^0.561.0",
     "nitro": "latest",
     "react": "^19.2.0",
     "react-dom": "^19.2.0",
+    "react-hot-toast": "^2.6.0",
+    "react-i18next": "^16.5.0",
     "tailwindcss": "^4.0.6",
-    "vite-tsconfig-paths": "^6.0.2"
+    "vite-tsconfig-paths": "^6.0.2",
+    "zod": "^4.2.1"
   },
   "devDependencies": {
     "@tanstack/devtools-event-client": "^0.4.0",
