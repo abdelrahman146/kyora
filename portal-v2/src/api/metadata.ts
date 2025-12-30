@@ -1,4 +1,4 @@
-import { useQuery } from '@tanstack/react-query'
+import { queryOptions, useQuery } from '@tanstack/react-query'
 import { get } from './client'
 import { ListCountriesResponseSchema } from './types/metadata'
 import type { CountryMetadata, ListCountriesResponse } from './types/metadata'
@@ -25,6 +25,69 @@ export const metadataApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const metadataQueries = {
+  /**
+   * Query options for fetching countries with dual-layer caching
+   */
+  countries: () =>
+    queryOptions({
+      queryKey: queryKeys.metadata.countries(),
+      queryFn: async () => {
+        const response = await metadataApi.listCountries()
+        const currencies = extractCurrencies(response.countries)
+
+        // Sync with metadataStore for additional persistence layer
+        setMetadata(response.countries, currencies)
+
+        return response
+      },
+      staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
+      gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
+      select: (data) => data.countries,
+      // Try to use persisted data on mount
+      initialData: () => {
+        const metadata = getMetadata()
+        if (metadata.countries.length > 0) {
+          return { countries: metadata.countries }
+        }
+        return undefined
+      },
+    }),
+
+  /**
+   * Query options for fetching currencies from countries data
+   */
+  currencies: () =>
+    queryOptions({
+      queryKey: queryKeys.metadata.currencies(),
+      queryFn: async () => {
+        const response = await metadataApi.listCountries()
+        const currencies = extractCurrencies(response.countries)
+
+        // Sync with metadataStore
+        setMetadata(response.countries, currencies)
+
+        return currencies
+      },
+      staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
+      gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
+      // Try to use persisted data on mount
+      initialData: () => {
+        const metadata = getMetadata()
+        if (metadata.currencies.length > 0) {
+          return metadata.currencies
+        }
+        return undefined
+      },
+    }),
+}
+
+/**
  * Query hook for countries metadata with dual-layer caching
  *
  * Fetches list of supported countries with currency info.
@@ -34,29 +97,7 @@ export const metadataApi = {
  * Automatically syncs with metadataStore for additional persistence layer.
  */
 export function useCountriesQuery() {
-  return useQuery({
-    queryKey: queryKeys.metadata.countries(),
-    queryFn: async () => {
-      const response = await metadataApi.listCountries()
-      const currencies = extractCurrencies(response.countries)
-
-      // Sync with metadataStore for additional persistence layer
-      setMetadata(response.countries, currencies)
-
-      return response
-    },
-    staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
-    gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
-    select: (data) => data.countries,
-    // Try to use persisted data on mount
-    initialData: () => {
-      const metadata = getMetadata()
-      if (metadata.countries.length > 0) {
-        return { countries: metadata.countries }
-      }
-      return undefined
-    },
-  })
+  return useQuery(metadataQueries.countries())
 }
 
 /**
@@ -66,28 +107,7 @@ export function useCountriesQuery() {
  * Uses same caching strategy as countries query.
  */
 export function useCurrenciesQuery() {
-  return useQuery({
-    queryKey: queryKeys.metadata.currencies(),
-    queryFn: async () => {
-      const response = await metadataApi.listCountries()
-      const currencies = extractCurrencies(response.countries)
-
-      // Sync with metadataStore
-      setMetadata(response.countries, currencies)
-
-      return currencies
-    },
-    staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
-    gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
-    // Try to use persisted data on mount
-    initialData: () => {
-      const metadata = getMetadata()
-      if (metadata.currencies.length > 0) {
-        return metadata.currencies
-      }
-      return undefined
-    },
-  })
+  return useQuery(metadataQueries.currencies())
 }
 
 /**

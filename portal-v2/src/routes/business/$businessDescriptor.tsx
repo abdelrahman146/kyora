@@ -3,9 +3,8 @@ import { Suspense } from 'react'
 
 import type { RouterContext } from '@/router'
 
-import { businessApi } from '@/api/business'
+import { businessQueries } from '@/api/business'
 import { invalidateBusinessScopedQueries } from '@/lib/queryInvalidation'
-import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 import { requireAuth } from '@/lib/routeGuards'
 import { selectBusiness } from '@/stores/businessStore'
 import { DashboardLayout } from '@/components/templates/DashboardLayout'
@@ -27,12 +26,10 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
     // Cast context to RouterContext to access custom properties
     const { queryClient } = context as RouterContext
 
-    // Validate business access
-    const business = await queryClient.ensureQueryData({
-      queryKey: queryKeys.businesses.detail(params.businessDescriptor),
-      queryFn: () => businessApi.getBusiness(params.businessDescriptor),
-      staleTime: STALE_TIME.FIVE_MINUTES,
-    })
+    // Validate business access and prefetch business details
+    const business = await queryClient.ensureQueryData(
+      businessQueries.detail(params.businessDescriptor),
+    )
 
     // Update selected business in store
     selectBusiness(params.businessDescriptor)

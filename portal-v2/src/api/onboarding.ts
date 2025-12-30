@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { del, get, post } from './client'
 import {
@@ -209,6 +209,50 @@ export const onboardingApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const onboardingQueries = {
+  /**
+   * Query options for fetching onboarding session by token
+   * @param sessionToken - Session identifier
+   */
+  session: (sessionToken: string | null) =>
+    queryOptions({
+      queryKey: ['onboarding', 'session', sessionToken],
+      queryFn: () => onboardingApi.getSession(sessionToken!),
+      enabled: !!sessionToken,
+      staleTime: 0, // Always fresh - onboarding is time-sensitive
+      gcTime: 0, // Don't cache - session may be invalidated server-side
+      refetchInterval: 3000, // Poll every 3 seconds for payment status updates
+    }),
+
+  /**
+   * Query options for fetching all available plans
+   */
+  plans: () =>
+    queryOptions({
+      queryKey: ['onboarding', 'plans'],
+      queryFn: () => onboardingApi.listPlans(),
+      staleTime: 5 * 60 * 1000, // 5 minutes - plans are semi-static
+    }),
+
+  /**
+   * Query options for fetching a specific plan by descriptor
+   * @param descriptor - Plan descriptor (e.g., "free", "starter", "professional")
+   */
+  plan: (descriptor: string | null) =>
+    queryOptions({
+      queryKey: ['onboarding', 'plan', descriptor],
+      queryFn: () => onboardingApi.getPlan(descriptor!),
+      enabled: !!descriptor,
+      staleTime: 5 * 60 * 1000, // 5 minutes - plans are semi-static
+    }),
+}
+
+/**
  * TanStack Query Hooks for Onboarding
  */
 
@@ -216,37 +260,21 @@ export const onboardingApi = {
  * Query to fetch onboarding session by token
  */
 export function useOnboardingSessionQuery(sessionToken: string | null) {
-  return useQuery({
-    queryKey: ['onboarding', 'session', sessionToken],
-    queryFn: () => onboardingApi.getSession(sessionToken!),
-    enabled: !!sessionToken,
-    staleTime: 0, // Always fresh - onboarding is time-sensitive
-    gcTime: 0, // Don't cache - session may be invalidated server-side
-    refetchInterval: 3000, // Poll every 3 seconds for payment status updates
-  })
+  return useQuery(onboardingQueries.session(sessionToken))
 }
 
 /**
  * Query to fetch all available plans
  */
 export function usePlansQuery() {
-  return useQuery({
-    queryKey: ['onboarding', 'plans'],
-    queryFn: () => onboardingApi.listPlans(),
-    staleTime: 5 * 60 * 1000, // 5 minutes - plans are semi-static
-  })
+  return useQuery(onboardingQueries.plans())
 }
 
 /**
  * Query to fetch a specific plan by descriptor
  */
 export function usePlanQuery(descriptor: string | null) {
-  return useQuery({
-    queryKey: ['onboarding', 'plan', descriptor],
-    queryFn: () => onboardingApi.getPlan(descriptor!),
-    enabled: !!descriptor,
-    staleTime: 5 * 60 * 1000, // 5 minutes - plans are semi-static
-  })
+  return useQuery(onboardingQueries.plan(descriptor))
 }
 
 /**

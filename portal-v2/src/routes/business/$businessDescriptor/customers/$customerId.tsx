@@ -17,9 +17,10 @@ import {
 
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress, CustomerGender } from '@/api/customer'
-import { addressApi } from '@/api/address'
-import { useCustomerQuery, useDeleteCustomerMutation } from '@/api/customer'
-import { useCountriesQuery } from '@/api/metadata'
+import type { RouterContext } from '@/router'
+import { addressApi, addressQueries } from '@/api/address'
+import { customerQueries, useCustomerQuery, useDeleteCustomerMutation } from '@/api/customer'
+import { metadataQueries, useCountriesQuery } from '@/api/metadata'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
 import { CustomerDetailSkeleton } from '@/components/atoms/skeletons/CustomerDetailSkeleton'
@@ -47,6 +48,22 @@ export const Route = createFileRoute(
   staticData: {
     titleKey: 'customers.details_title',
   },
+
+  loader: async ({ context, params }) => {
+    const { queryClient } = context as unknown as RouterContext
+
+    // Prefetch customer details (critical data - await)
+    await queryClient.ensureQueryData(
+      customerQueries.detail(params.businessDescriptor, params.customerId),
+    )
+
+    // Prefetch addresses and metadata (non-critical - parallel, no await)
+    void queryClient.prefetchQuery(
+      addressQueries.list(params.businessDescriptor, params.customerId),
+    )
+    void queryClient.prefetchQuery(metadataQueries.countries())
+  },
+
   component: () => (
     <Suspense fallback={<CustomerDetailSkeleton />}>
       <CustomerDetailPage />

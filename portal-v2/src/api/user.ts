@@ -5,7 +5,12 @@
  * Includes TanStack Query hooks for data fetching and mutations.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 import { get, patch } from './client'
 import type { User } from './types/auth'
@@ -39,6 +44,24 @@ export const userApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const userQueries = {
+  /**
+   * Query options for fetching current user profile
+   */
+  current: () =>
+    queryOptions({
+      queryKey: queryKeys.user.current(),
+      queryFn: () => userApi.getCurrentUser(),
+      staleTime: STALE_TIME.FIVE_MINUTES,
+    }),
+}
+
+/**
  * Query Hooks
  */
 
@@ -46,11 +69,7 @@ export const userApi = {
  * Query to fetch current user profile
  */
 export function useCurrentUserQuery() {
-  return useQuery({
-    queryKey: queryKeys.user.current(),
-    queryFn: () => userApi.getCurrentUser(),
-    staleTime: STALE_TIME.FIVE_MINUTES,
-  })
+  return useQuery(userQueries.current())
 }
 
 /**

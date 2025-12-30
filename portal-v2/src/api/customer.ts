@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
 
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
@@ -189,6 +189,48 @@ export const customerApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const customerQueries = {
+  /**
+   * Query options for fetching customers list
+   * @param businessDescriptor - Business identifier
+   * @param params - Optional filter and pagination params
+   */
+  list: (
+    businessDescriptor: string,
+    params?: {
+      search?: string
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) =>
+    queryOptions({
+      queryKey: queryKeys.customers.list(businessDescriptor, params),
+      queryFn: () => customerApi.listCustomers(businessDescriptor, params),
+      staleTime: STALE_TIME.THIRTY_SECONDS,
+      enabled: !!businessDescriptor,
+    }),
+
+  /**
+   * Query options for fetching a specific customer
+   * @param businessDescriptor - Business identifier
+   * @param customerId - Customer identifier
+   */
+  detail: (businessDescriptor: string, customerId: string) =>
+    queryOptions({
+      queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
+      queryFn: () => customerApi.getCustomer(businessDescriptor, customerId),
+      staleTime: STALE_TIME.THIRTY_SECONDS,
+      enabled: !!businessDescriptor && !!customerId,
+    }),
+}
+
+/**
  * Query Hooks
  */
 
@@ -207,12 +249,7 @@ export function useCustomersQuery(
     orderBy?: Array<string>
   },
 ) {
-  return useQuery({
-    queryKey: queryKeys.customers.list(businessDescriptor, params),
-    queryFn: () => customerApi.listCustomers(businessDescriptor, params),
-    staleTime: STALE_TIME.THIRTY_SECONDS,
-    enabled: !!businessDescriptor,
-  })
+  return useQuery(customerQueries.list(businessDescriptor, params))
 }
 
 /**
@@ -225,12 +262,7 @@ export function useCustomerQuery(
   businessDescriptor: string,
   customerId: string,
 ) {
-  return useQuery({
-    queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
-    queryFn: () => customerApi.getCustomer(businessDescriptor, customerId),
-    staleTime: STALE_TIME.THIRTY_SECONDS,
-    enabled: !!businessDescriptor && !!customerId,
-  })
+  return useQuery(customerQueries.detail(businessDescriptor, customerId))
 }
 
 /**

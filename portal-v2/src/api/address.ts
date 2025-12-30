@@ -5,7 +5,12 @@
  * Includes TanStack Query hooks for data fetching and mutations.
  */
 
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import {
+  queryOptions,
+  useMutation,
+  useQuery,
+  useQueryClient,
+} from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { del, get, patch, post } from './client'
@@ -94,6 +99,27 @@ export const addressApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const addressQueries = {
+  /**
+   * Query options for fetching customer addresses
+   * @param businessDescriptor - Business identifier
+   * @param customerId - Customer identifier
+   */
+  list: (businessDescriptor: string, customerId: string) =>
+    queryOptions({
+      queryKey: queryKeys.addresses.list(businessDescriptor, customerId),
+      queryFn: () => addressApi.listAddresses(businessDescriptor, customerId),
+      staleTime: STALE_TIME.THIRTY_SECONDS,
+      enabled: !!businessDescriptor && !!customerId,
+    }),
+}
+
+/**
  * Query Hooks
  */
 
@@ -104,12 +130,7 @@ export function useAddressesQuery(
   businessDescriptor: string,
   customerId: string,
 ) {
-  return useQuery({
-    queryKey: queryKeys.addresses.list(businessDescriptor, customerId),
-    queryFn: () => addressApi.listAddresses(businessDescriptor, customerId),
-    staleTime: STALE_TIME.THIRTY_SECONDS,
-    enabled: !!businessDescriptor && !!customerId,
-  })
+  return useQuery(addressQueries.list(businessDescriptor, customerId))
 }
 
 /**

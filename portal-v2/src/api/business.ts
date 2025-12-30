@@ -1,4 +1,4 @@
-import { useMutation, useQuery } from '@tanstack/react-query'
+import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
 import { z } from 'zod'
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
@@ -99,6 +99,37 @@ export const businessApi = {
 }
 
 /**
+ * Query Options Factories
+ *
+ * Co-locate query configuration (key + fn + staleTime) for type-safe reuse
+ * in components, route loaders, and prefetching.
+ */
+export const businessQueries = {
+  /**
+   * Query options for fetching all businesses
+   */
+  list: () =>
+    queryOptions({
+      queryKey: queryKeys.businesses.list(),
+      queryFn: () => businessApi.listBusinesses(),
+      staleTime: STALE_TIME.FIVE_MINUTES,
+      select: (data) => data.businesses,
+    }),
+
+  /**
+   * Query options for fetching a specific business
+   * @param descriptor - Business descriptor/slug
+   */
+  detail: (descriptor: string) =>
+    queryOptions({
+      queryKey: queryKeys.businesses.detail(descriptor),
+      queryFn: () => businessApi.getBusiness(descriptor),
+      staleTime: STALE_TIME.FIVE_MINUTES,
+      enabled: !!descriptor,
+    }),
+}
+
+/**
  * Query Hooks
  */
 
@@ -108,12 +139,7 @@ export const businessApi = {
  * StaleTime: 5 minutes (semi-static, only changes when creating new business)
  */
 export function useBusinessesQuery() {
-  return useQuery({
-    queryKey: queryKeys.businesses.list(),
-    queryFn: () => businessApi.listBusinesses(),
-    staleTime: STALE_TIME.FIVE_MINUTES,
-    select: (data) => data.businesses,
-  })
+  return useQuery(businessQueries.list())
 }
 
 /**
@@ -122,12 +148,7 @@ export function useBusinessesQuery() {
  * StaleTime: 5 minutes (semi-static)
  */
 export function useBusinessQuery(descriptor: string) {
-  return useQuery({
-    queryKey: queryKeys.businesses.detail(descriptor),
-    queryFn: () => businessApi.getBusiness(descriptor),
-    staleTime: STALE_TIME.FIVE_MINUTES,
-    enabled: !!descriptor,
-  })
+  return useQuery(businessQueries.detail(descriptor))
 }
 
 /**

@@ -25,12 +25,11 @@ import {
   Users,
 } from 'lucide-react'
 import type { Business } from '@/stores/businessStore'
-import { businessApi } from '@/api/business'
+import { businessQueries } from '@/api/business'
 import { Logo } from '@/components/atoms/Logo'
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
-import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 import { requireAuth } from '@/lib/routeGuards'
 import {
   businessStore,
@@ -51,26 +50,20 @@ export const Route = createFileRoute('/')({
   pendingComponent: HomePending,
 
   loader: async ({ context }) => {
-     
     const queryClient = (context as any).queryClient
     if (!queryClient) {
       throw new Error('QueryClient not found in router context')
     }
 
-    const data = await queryClient.ensureQueryData({
-      queryKey: queryKeys.businesses.list(),
-      queryFn: () => businessApi.listBusinesses(),
-      staleTime: STALE_TIME.FIVE_MINUTES,
-    })
+    // Use businessQueries.list() for type-safe data fetching
+    const data = await queryClient.ensureQueryData(businessQueries.list())
 
-    setBusinesses(data.businesses)
+    setBusinesses(data)
 
     const state = businessStore.state
     if (
       state.selectedBusinessDescriptor &&
-      data.businesses.some(
-        (b: Business) => b.descriptor === state.selectedBusinessDescriptor,
-      )
+      data.some((b: Business) => b.descriptor === state.selectedBusinessDescriptor)
     ) {
       throw redirect({
         to: '/business/$businessDescriptor',
@@ -78,14 +71,14 @@ export const Route = createFileRoute('/')({
       })
     }
 
-    if (data.businesses.length === 1) {
+    if (data.length === 1) {
       throw redirect({
         to: '/business/$businessDescriptor',
-        params: { businessDescriptor: data.businesses[0].descriptor },
+        params: { businessDescriptor: data[0].descriptor },
       })
     }
 
-    return { businesses: data.businesses }
+    return { businesses: data }
   },
 
   component: HomePage,

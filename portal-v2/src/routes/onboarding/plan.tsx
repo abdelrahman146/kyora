@@ -5,7 +5,8 @@ import { useTranslation } from 'react-i18next'
 import { Check, Loader2 } from 'lucide-react'
 import { z } from 'zod'
 import type { Plan } from '@/api/types/onboarding'
-import { onboardingApi } from '@/api/onboarding'
+import type { RouterContext } from '@/router'
+import { onboardingApi, onboardingQueries } from '@/api/onboarding'
 import { Modal } from '@/components/atoms/Modal'
 import { ResumeSessionDialog } from '@/components/molecules/ResumeSessionDialog'
 import {
@@ -24,6 +25,13 @@ export const Route = createFileRoute('/onboarding/plan')({
   validateSearch: (search): z.infer<typeof PlanSearchSchema> => {
     return PlanSearchSchema.parse(search)
   },
+
+  loader: async ({ context }) => {
+    const { queryClient } = context as RouterContext
+    // Prefetch plans for faster page load
+    await queryClient.prefetchQuery(onboardingQueries.plans())
+  },
+
   component: PlanSelectionPage,
 })
 
