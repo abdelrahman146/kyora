@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
@@ -14,7 +14,7 @@ import { authApi } from '@/api/auth'
 import { FormInput } from '@/components/atoms/FormInput'
 import { PasswordInput } from '@/components/atoms/PasswordInput'
 import { Button } from '@/components/atoms/Button'
-import { ResendCountdownButton } from '@/components'
+import { OTPInput, ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
 import { translateErrorAsync } from '@/lib/translateError'
 import { formatCountdownDuration } from '@/lib/utils'
@@ -101,8 +101,7 @@ function VerifyEmailPage() {
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0)
   const [showLoginCta, setShowLoginCta] = useState(false)
   const [didSendInitialOtp, setDidSendInitialOtp] = useState(false)
-
-  const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
+  const [otpValue, setOtpValue] = useState<Array<string>>(['', '', '', '', '', ''])
 
   // Send OTP mutation
   const sendOTPMutation = useSendOTPMutation({
@@ -215,35 +214,16 @@ function VerifyEmailPage() {
     }
   }, [didSendInitialOtp, session.stage])
 
-  const handleOtpChange = (index: number, value: string) => {
-    if (!/^\d*$/.test(value)) return
-
-    const currentCode = [...otpForm.state.values.code]
-    currentCode[index] = value.slice(-1)
-    
-    otpForm.setFieldValue('code', currentCode)
-
-    if (value && index < 5) {
-      otpInputRefs.current[index + 1]?.focus()
-    }
+  // Handle OTP completion
+  const handleOtpComplete = (code: string) => {
+    // Update form value when OTP is complete
+    otpForm.setFieldValue('code', code.split(''))
   }
 
-  const handleOtpKeyDown = (
-    index: number,
-    e: React.KeyboardEvent<HTMLInputElement>,
-  ) => {
-    if (e.key === 'Backspace' && !otpForm.state.values.code[index] && index > 0) {
-      otpInputRefs.current[index - 1]?.focus()
-    }
-  }
-
-  const handleOtpPaste = (e: React.ClipboardEvent) => {
-    e.preventDefault()
-    const pasted = e.clipboardData.getData('text').trim()
-    if (/^\d{6}$/.test(pasted)) {
-      otpForm.setFieldValue('code', pasted.split(''))
-      otpInputRefs.current[5]?.focus()
-    }
+  // Sync OTP value with form state
+  const handleOtpChange = (value: Array<string>) => {
+    setOtpValue(value)
+    otpForm.setFieldValue('code', value)
   }
 
   const handleGoogleOAuth = async () => {
@@ -302,28 +282,15 @@ function VerifyEmailPage() {
                 void otpForm.handleSubmit()
               }}
             >
-              <div className="flex justify-center gap-2 mb-6">
-                {otpForm.state.values.code.map((digit, index) => (
-                  <input
-                    key={index}
-                    ref={(el) => {
-                      otpInputRefs.current[index] = el
-                    }}
-                    type="text"
-                    inputMode="numeric"
-                    maxLength={1}
-                    value={digit}
-                    onChange={(e) => {
-                      handleOtpChange(index, e.target.value)
-                    }}
-                    onKeyDown={(e) => {
-                      handleOtpKeyDown(index, e)
-                    }}
-                    onPaste={index === 0 ? handleOtpPaste : undefined}
-                    className="input input-bordered w-12 h-14 text-center text-xl font-bold"
-                    disabled={isSubmitting}
-                  />
-                ))}
+              <div className="mb-6">
+                <OTPInput
+                  value={otpValue}
+                  onChange={handleOtpChange}
+                  onComplete={handleOtpComplete}
+                  disabled={isSubmitting}
+                  autoFocus
+                  error={!!verifyEmailMutation.error}
+                />
               </div>
 
               <Button

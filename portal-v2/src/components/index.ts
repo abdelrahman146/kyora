@@ -27,6 +27,7 @@ export {
 
 // Molecules
 export { Pagination, type PaginationProps } from './molecules/Pagination'
+export { OTPInput, type OTPInputProps } from './molecules/OTPInput'
 export {
   LanguageSwitcher,
   type LanguageSwitcherProps,
