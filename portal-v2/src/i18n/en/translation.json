@@ -21,6 +21,15 @@
     "actions": "Actions",
     "changeLanguage": "Change Language",
     "selectLanguage": "Select Language",
+    "select": "Select",
+    "clear_search": "Clear search",
+    "close_modal": "Close modal",
+    "close_dialog": "Close dialog",
+    "clear_selection": "Clear selection",
+    "search_options": "Search options",
+    "search_placeholder_generic": "Search...",
+    "no_options_found": "No options found",
+    "selected_count": "{{count}} selected",
     "validation": {
       "required": "This field is required",
       "invalid_email": "Enter a valid email address",
@@ -113,6 +122,9 @@
     "this_month": "This Month",
     "pending": "Pending",
     "low_stock": "Low Stock"
+    ,
+    "quick_actions": "Quick Actions",
+    "close_menu": "Close Menu"
   },
   "customers": {
     "title": "Customers",

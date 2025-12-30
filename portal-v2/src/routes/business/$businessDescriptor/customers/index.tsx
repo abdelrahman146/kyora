@@ -54,6 +54,9 @@ type CustomersSearch = z.infer<typeof CustomersSearchSchema>
 export const Route = createFileRoute(
   '/business/$businessDescriptor/customers/',
 )({
+  staticData: {
+    titleKey: 'customers.title',
+  },
   validateSearch: (search): CustomersSearch => {
     return CustomersSearchSchema.parse(search)
   },

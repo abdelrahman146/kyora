@@ -36,6 +36,7 @@
 
 import { useEffect, useRef, useState } from 'react'
 import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export interface SearchInputProps {
   /** Current search value (controlled) */
@@ -55,11 +56,13 @@ export interface SearchInputProps {
 export function SearchInput({
   value,
   onChange,
-  placeholder = 'Search...',
+  placeholder: placeholderProp,
   debounceMs = 300,
   disabled = false,
   className = '',
 }: SearchInputProps) {
+  const { t } = useTranslation()
+  const placeholder = placeholderProp ?? t('common.search_placeholder_generic')
   const [localValue, setLocalValue] = useState(value)
   const [isDebouncePending, setIsDebouncePending] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -153,7 +156,7 @@ export function SearchInput({
             disabled:opacity-50
             disabled:cursor-not-allowed
           "
-          aria-label="Clear search"
+          aria-label={t('common.clear_search')}
         >
           {isDebouncePending ? (
             <span className="loading loading-spinner loading-xs"></span>

@@ -1,4 +1,5 @@
 import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 
 export interface DialogProps {
@@ -103,6 +104,7 @@ export function Dialog({
   centered = false,
   className = '',
 }: DialogProps) {
+  const { t } = useTranslation()
   if (!open) return null
 
   const sizeClasses = {
@@ -146,7 +148,7 @@ export function Dialog({
               <button
                 onClick={onClose}
                 className="btn btn-circle btn-ghost btn-sm shrink-0"
-                aria-label="Close dialog"
+                aria-label={t('common.close_dialog')}
               >
                 <X className="h-5 w-5" />
               </button>

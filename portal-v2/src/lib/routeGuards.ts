@@ -9,7 +9,7 @@ import { authStore } from '@/stores/authStore'
  *
  * @example
  * ```tsx
- * export const Route = createFileRoute('/dashboard')({
+ * export const Route = createFileRoute('/business/$businessDescriptor/')({
  *   beforeLoad: requireAuth,
  *   component: DashboardPage,
  * })

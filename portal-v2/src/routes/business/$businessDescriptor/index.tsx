@@ -9,11 +9,14 @@
  * - Fully localized
  */
 
-import { createFileRoute } from '@tanstack/react-router'
+import { Link, createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { useAuth } from '@/hooks/useAuth'
 
 export const Route = createFileRoute('/business/$businessDescriptor/')({
+  staticData: {
+    titleKey: 'dashboard.title',
+  },
   component: BusinessDashboard,
 })
 
@@ -83,22 +86,23 @@ function BusinessDashboard() {
       {/* Quick Actions */}
       <div className="card bg-base-100 shadow">
         <div className="card-body">
-          <h2 className="card-title">{t('dashboard.quick_actions', 'Quick Actions')}</h2>
+          <h2 className="card-title">{t('dashboard.quick_actions')}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-            <a
-              href={`/business/${businessDescriptor}/customers`}
+            <Link
+              to="/business/$businessDescriptor/customers/"
+              params={{ businessDescriptor }}
               className="btn btn-outline"
             >
               {t('customers.add_customer')}
-            </a>
+            </Link>
             <button className="btn btn-outline" disabled>
-              {t('dashboard.orders', 'Orders')}
+              {t('dashboard.orders')}
             </button>
             <button className="btn btn-outline" disabled>
-              {t('dashboard.inventory', 'Inventory')}
+              {t('dashboard.inventory')}
             </button>
             <button className="btn btn-outline" disabled>
-              {t('dashboard.analytics', 'Analytics')}
+              {t('dashboard.analytics')}
             </button>
           </div>
         </div>

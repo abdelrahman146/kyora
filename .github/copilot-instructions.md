@@ -1,8 +1,80 @@
 Kyora — AI coding agent quickstart
 
-## What is Kyora?
+### **1. Executive Summary: What is Kyora?**
 
-Kyora is a business management assistant specifically designed for solo social media entrepreneurs and small teams who sell products on social media platforms. It's built for business owners who are excellent at creating and selling their products but may not have expertise in accounting or business management. Kyora handles all the complex financial tracking and business operations behind the scenes, presenting everything in a simple, easy-to-understand way so owners can focus on what they do best: creating and selling.
+**Kyora** is a specialized business management assistant (SaaS) designed for **solo social media entrepreneurs** and small teams in the **Middle East**. It acts as a "silent business partner," automating complex back-office tasks (accounting, inventory, revenue recognition) so creators can focus on selling.
+
+- **The Problem:** Social sellers are skilled at creating/selling on Instagram/TikTok but suffer from "financial blindness" (unknown profits, cash flow mystery, inventory chaos).
+- **The Solution:** An automated, mobile-first platform that translates complex financial data into simple, plain-language insights (e.g., "You made $X profit today").
+
+### **2. Brand Philosophy & Values (The "Soul")**
+
+The brand is built on the concept of "Professional tools that feel effortless."
+
+- **Tamkeen (Empowerment):** Transforming "hustlers" into professional business owners.
+- **Basata (Simplicity):** The supreme rule. If it requires accounting knowledge, it is too complex.
+- **Thiqah (Trust):** The platform handles money and data; it must look and feel stable, secure, and professional.
+
+### **3. Target Audience**
+
+- **Primary Region:** Middle East (Arabic First Culture).
+- **Demographics:** Solo entrepreneurs, "Side Hustlers," Home-based makers (artisans, bakers, fashion), and micro-teams (2-5 people).
+- **Tech Literacy:** Low to Moderate. They are intimidated by Excel and complex ERPs.
+- **Channels:** They sell primarily via Direct Messages (DMs) on Instagram, WhatsApp, TikTok, and Facebook.
+
+### **4. Value Proposition & Brand Promise**
+
+- **The Promise:** "Sleep well knowing your business finances are tracked and you are actually making a profit."
+- **The Hook:** "Zero Accounting Knowledge Required."
+- **The Shift:** From "Order Chaos" (orders scattered in DMs) → to "Business Clarity" (One dashboard).
+
+### **5. Visual Identity & Design System (KDS)**
+
+For Graphic Design and UI/UX tasks, strictly adhere to these tokens:
+
+#### **Color Palette**
+
+- **Primary (Brand Identity):** **Teal** (`#0D9488`). Represents stability, professionalism, and the Kyora brand.
+- **Secondary (Action/High Value):** **Gold** (`#EAB308`). Used for profitability, success states, and premium actions.
+- **Backgrounds:** Clean White (`#FFFFFF`) and Slate-Gray surfaces (`#F8FAFC`). High contrast is mandatory.
+
+#### **Typography**
+
+- **Font Family:** `IBM Plex Sans Arabic`.
+- **Style:** Modern, legible, and friendly.
+
+#### **Design Direction (RTL-First)**
+
+- **Orientation:** All designs must be **Right-to-Left (RTL)** first.
+- **Mirroring:** Arrows, chevrons, and progress bars must flow from Right to Left.
+- **Logical Properties:** Use `start` (right) and `end` (left) instead of left/right.
+
+#### **UI/UX Standards (Mobile-First)**
+
+- **Touch Targets:** Minimum **50px** height for all inputs and buttons (thumb-friendly).
+- **Layout:** Bottom sheets for actions (mobile) vs. Modals (desktop).
+- **Simplicity:** Minimal clutter. "plain English" (or Arabic) insights over complex charts.
+
+### **6. Voice, Tone & Content Strategy**
+
+For Copywriting and Marketing tasks:
+
+- **Language:** **Modern Standard Arabic (MSA)**. It should sound approachable but strictly professional (not slang).
+- **Tone:**
+- **Direct:** Get to the point.
+- **Warm/Encouraging:** Celebrate their sales.
+- **Respectful:** Treat them like CEOs, not just hobbyists.
+
+- **Key Messaging Strategy:**
+- _Avoid:_ Accounting jargon (EBITDA, General Ledger, accruals).
+- _Use:_ "Profit," "Cash in hand," "Best seller," "Money made."
+
+### **7. Directives for AI Tasks**
+
+- **If generating UI Mockups:** Prioritize mobile views. Place navigation at the bottom. Ensure the "Add Order" button is prominent and easily accessible by a thumb. Use Teal for the main interface and Gold to highlight "Profit" numbers.
+- **If writing Marketing Copy:** Focus on the pain point of "anxiety" (not knowing where the money is going) and the solution of "peace of mind." Use the phrase "Silent Partner."
+- **If designing Logos/Graphics:** Combine the concepts of "Growth/Commerce" (Charts, coins, bags) with "Simplicity/Flow." The aesthetic should be clean, modern, and Arab-centric without being stereotypical.
+- **If creating Onboarding Flows:** Emphasize speed. "Sign up and add your first order in seconds."
 
 ### The Problem Kyora Solves
 

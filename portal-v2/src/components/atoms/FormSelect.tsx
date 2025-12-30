@@ -7,6 +7,7 @@ import {
   useState,
 } from 'react'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { ReactNode } from 'react'
 
@@ -94,7 +95,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       fullWidth = true,
       searchable = false,
       multiSelect = false,
-      placeholder = 'Select...',
+      placeholder: placeholderProp,
       clearable = false,
       maxHeight = 300,
       className,
@@ -104,8 +105,10 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
+    const { t } = useTranslation()
     const generatedId = useId()
     const inputId = id ?? generatedId
+    const placeholder = placeholderProp ?? t('common.select')
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
     const [focusedIndex, setFocusedIndex] = useState(-1)
@@ -312,8 +315,8 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       if (selectedValues.length === 0) return placeholder
 
       if (multiSelect) {
-        const count = String(selectedValues.length)
-        return count !== '0' ? `${count} selected` : placeholder
+        const count = selectedValues.length
+        return count > 0 ? t('common.selected_count', { count }) : placeholder
       }
 
       const selectedOption = options.find(
@@ -379,7 +382,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     handleClear(e)
                   }}
                   className="p-1 hover:bg-base-200 rounded-md transition-colors"
-                  aria-label="Clear selection"
+                  aria-label={t('common.clear_selection')}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -419,9 +422,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         setSearchQuery(e.target.value)
                         setFocusedIndex(-1)
                       }}
-                      placeholder="Search..."
+                      placeholder={t('common.search_placeholder_generic')}
                       className="input input-sm w-full ps-9"
-                      aria-label="Search options"
+                      aria-label={t('common.search_options')}
                     />
                   </div>
                 </div>
@@ -435,7 +438,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               >
                 {filteredOptions.length === 0 ? (
                   <li className="p-4 text-center text-base-content/50">
-                    No options found
+                    {t('common.no_options_found')}
                   </li>
                 ) : (
                   filteredOptions.map((option, index) => {

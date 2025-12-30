@@ -1,5 +1,7 @@
 import { useEffect } from 'react'
 import { useStore } from '@tanstack/react-store'
+import { useMatches } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
 import type { ReactNode } from 'react'
 import { Header } from '@/components/organisms/Header'
 import { Sidebar } from '@/components/organisms/Sidebar'
@@ -72,9 +74,24 @@ export function DashboardLayout({
   title,
   children,
 }: DashboardLayoutProps) {
+  const { t } = useTranslation()
+  const matches = useMatches()
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
   const sidebarOpen = useStore(businessStore, (s) => s.sidebarOpen)
+
+  const derivedTitleKey =
+    matches.length > 0
+      ? (matches[matches.length - 1] as unknown as { staticData?: unknown })
+          .staticData &&
+        typeof (matches[matches.length - 1] as unknown as { staticData?: any })
+          .staticData?.titleKey === 'string'
+        ? (matches[matches.length - 1] as unknown as { staticData?: any })
+            .staticData.titleKey
+        : undefined
+      : undefined
+
+  const resolvedTitle = title ?? (derivedTitleKey ? t(derivedTitleKey) : undefined)
 
   // Close sidebar when switching to desktop
   useEffect(() => {
@@ -111,12 +128,12 @@ export function DashboardLayout({
           }}
           role="button"
           tabIndex={0}
-          aria-label="Close sidebar"
+          aria-label={t('dashboard.close_menu')}
         />
       )}
 
       {/* Header - Fixed at top, adjusts based on sidebar state */}
-      <Header title={title} />
+      <Header title={resolvedTitle} />
 
       {/* Main Content Area */}
       <main

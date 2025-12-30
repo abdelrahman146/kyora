@@ -44,6 +44,9 @@ import { getSelectedBusiness } from '@/stores/businessStore'
 export const Route = createFileRoute(
   '/business/$businessDescriptor/customers/$customerId',
 )({
+  staticData: {
+    titleKey: 'customers.details_title',
+  },
   component: () => (
     <Suspense fallback={<CustomerDetailSkeleton />}>
       <CustomerDetailPage />

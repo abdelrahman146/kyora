@@ -50,6 +50,8 @@ export const Route = createFileRoute('/')({
     requireAuth()
   },
 
+  pendingComponent: HomePending,
+
   loader: async ({ context }) => {
      
     const queryClient = (context as any).queryClient
@@ -91,6 +93,42 @@ export const Route = createFileRoute('/')({
   component: HomePage,
 })
 
+function HomePending() {
+  return (
+    <div className="min-h-screen bg-base-200">
+      <header className="sticky top-0 z-30 border-b border-base-300 bg-base-100">
+        <div className="container mx-auto px-4 py-4">
+          <div className="flex items-center justify-between">
+            <Logo size="md" showText />
+            <div className="flex items-center gap-2">
+              <LanguageSwitcher variant="compact" />
+            </div>
+          </div>
+        </div>
+      </header>
+
+      <main className="container mx-auto max-w-6xl px-4 py-8">
+        <div className="mb-8">
+          <div className="skeleton h-9 w-64 mb-2" />
+          <div className="skeleton h-5 w-96" />
+        </div>
+
+        <section className="mb-8">
+          <div className="mb-4 flex items-center justify-between">
+            <div className="skeleton h-7 w-48" />
+            <div className="skeleton h-9 w-36" />
+          </div>
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {Array.from({ length: 3 }).map((_, i) => (
+              <div key={i} className="skeleton h-32 rounded-box" />
+            ))}
+          </div>
+        </section>
+      </main>
+    </div>
+  )
+}
+
 /**
  * Home Page Component
  *
@@ -99,10 +137,24 @@ export const Route = createFileRoute('/')({
 function HomePage() {
   const { t } = useTranslation()
   const navigate = useNavigate()
-  const { user } = useAuth()
+  const { user, logout } = useAuth()
   const { isRTL } = useLanguage()
   const { businesses } = Route.useLoaderData()
   const state = useStore(businessStore)
+
+  const handleLogout = () => {
+    void logout()
+      .catch(() => {
+        // Silent fail - auth state will be cleared locally anyway
+      })
+      .finally(() => {
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
+      })
+  }
 
   const handleBusinessSelect = (business: Business) => {
     selectBusiness(business.descriptor)
@@ -164,14 +216,18 @@ function HomePage() {
           <div className="flex items-center justify-between">
             <Logo size="md" showText />
             <div className="flex items-center gap-2">
-              <LanguageSwitcher variant="iconOnly" />
+              <LanguageSwitcher variant="compact" />
               <div className="divider divider-horizontal mx-0" />
               <span className="hidden text-sm text-base-content/70 sm:inline">
                 {user?.firstName} {user?.lastName}
               </span>
-              <a href="/auth/login" className="btn btn-ghost btn-sm">
+              <button
+                type="button"
+                className="btn btn-ghost btn-sm"
+                onClick={handleLogout}
+              >
                 {t('auth.logout')}
-              </a>
+              </button>
             </div>
           </div>
         </div>
@@ -253,7 +309,7 @@ function HomePage() {
                     </div>
                     {state.selectedBusinessDescriptor === business.descriptor && (
                       <span className="badge badge-primary badge-sm mt-2">
-                        {t('common.selected', 'Selected')}
+                        {t('common.selected')}
                       </span>
                     )}
                   </div>

@@ -21,6 +21,15 @@
     "actions": "الإجراءات",
     "changeLanguage": "تغيير اللغة",
     "selectLanguage": "اختر اللغة",
+    "select": "اختر",
+    "clear_search": "مسح البحث",
+    "close_modal": "إغلاق النافذة",
+    "close_dialog": "إغلاق الحوار",
+    "clear_selection": "مسح الاختيار",
+    "search_options": "البحث في الخيارات",
+    "search_placeholder_generic": "بحث...",
+    "no_options_found": "لا توجد خيارات",
+    "selected_count": "{{count}} محدد",
     "validation": {
       "required": "هذا الحقل مطلوب",
       "invalid_email": "أدخل بريدًا إلكترونيًا صحيحًا",
@@ -113,6 +122,9 @@
     "this_month": "هذا الشهر",
     "pending": "قيد الانتظار",
     "low_stock": "مخزون منخفض"
+    ,
+    "quick_actions": "إجراءات سريعة",
+    "close_menu": "إغلاق القائمة"
   },
   "customers": {
     "title": "العملاء",
