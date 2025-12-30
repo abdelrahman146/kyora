@@ -13,7 +13,6 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
@@ -22,7 +21,7 @@ import { CountrySelect } from '../../molecules/CountrySelect'
 import { PhoneCodeSelect } from '../../molecules/PhoneCodeSelect'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress } from '@/api/customer'
-import { FormInput } from '@/components'
+import { useKyoraForm } from '@/lib/form'
 import { useCountriesQuery } from '@/api/metadata'
 import { buildE164Phone, parseE164Phone } from '@/lib/phone'
 import { showErrorToast, showSuccessToast } from '@/lib/toast'
@@ -90,11 +89,17 @@ export function AddressSheet({
     zipCode: address?.zipCode ?? '',
   }
 
-  // TanStack Form setup
-  const form = useForm({
+  // TanStack Form setup with useKyoraForm
+  const form = useKyoraForm({
     defaultValues,
     validators: {
-      onBlur: addressSchema,
+      countryCode: { onBlur: z.string().length(2, 'country_required') },
+      state: { onBlur: z.string().min(1, 'state_required') },
+      city: { onBlur: z.string().min(1, 'city_required') },
+      phoneCode: { onBlur: z.string().min(1, 'phone_code_required') },
+      phoneNumber: { onBlur: z.string().min(1, 'phone_required') },
+      street: { onBlur: z.string().optional() },
+      zipCode: { onBlur: z.string().optional() },
     },
     onSubmit: async ({ value }) => {
       try {
@@ -130,17 +135,14 @@ export function AddressSheet({
         }
         onClose()
       } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        showErrorToast(message)
+        showErrorToast((error as Error).message)
       }
     },
   })
 
   // Subscribe to specific form state to minimize re-renders
-  // TanStack Form pattern: extract form state subscriptions early to avoid
-  // repeated subscriptions in JSX
-  const isSubmitting = form.state.isSubmitting
-  const isDirty = form.state.isDirty
+  const isSubmitting = form.useStore((state) => state.isSubmitting)
+  const isDirty = form.useStore((state) => state.isDirty)
 
   // Reset form when sheet opens or address changes
   useEffect(() => {
@@ -178,140 +180,61 @@ export function AddressSheet({
           : t('customers.address.add_title')
       }
     >
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          void form.handleSubmit()
-        }}
+      <form.FormRoot
         className="space-y-4"
+        aria-busy={isSubmitting}
       >
         {/* Country */}
-        <form.Field
-          name="countryCode"
-          validators={{
-            onBlur: addressSchema.shape.countryCode,
-          }}
-        >
-          {(field) => (
+        <form.Field name="countryCode">
+          {(field: any) => (
             <CountrySelect
               value={field.state.value}
-              onChange={(value) => {
+              onChange={(value: string) => {
                 field.handleChange(value)
                 setSelectedCountryCode(value)
               }}
-              error={
-                field.state.meta.errors.length > 0
-                  ? tErrors(
-                      field.state.meta.errors[0]?.message ??
-                        'validation.invalid',
-                    )
-                  : undefined
-              }
               required
             />
           )}
         </form.Field>
 
         {/* State */}
-        <form.Field
+        <form.TextField
           name="state"
-          validators={{
-            onBlur: addressSchema.shape.state,
-          }}
-        >
-          {(field) => (
-            <FormInput
-              label={t('customers.form.state')}
-              placeholder={t('customers.form.state_placeholder')}
-              required
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              error={
-                field.state.meta.errors.length > 0
-                  ? tErrors(
-                      field.state.meta.errors[0]?.message ??
-                        'validation.invalid',
-                    )
-                  : undefined
-              }
-            />
-          )}
-        </form.Field>
+          label={t('customers.form.state')}
+          placeholder={t('customers.form.state_placeholder')}
+          required
+        />
 
         {/* City */}
-        <form.Field
+        <form.TextField
           name="city"
-          validators={{
-            onBlur: addressSchema.shape.city,
-          }}
-        >
-          {(field) => (
-            <FormInput
-              label={t('customers.form.city')}
-              placeholder={t('customers.form.city_placeholder')}
-              required
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              error={
-                field.state.meta.errors.length > 0
-                  ? tErrors(
-                      field.state.meta.errors[0]?.message ??
-                        'validation.invalid',
-                    )
-                  : undefined
-              }
-            />
-          )}
-        </form.Field>
+          label={t('customers.form.city')}
+          placeholder={t('customers.form.city_placeholder')}
+          required
+        />
 
         {/* Street (Optional) */}
-        <form.Field name="street">
-          {(field) => (
-            <FormInput
-              label={t('customers.form.street')}
-              placeholder={t('customers.form.street_placeholder')}
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          )}
-        </form.Field>
+        <form.TextField
+          name="street"
+          label={t('customers.form.street')}
+          placeholder={t('customers.form.street_placeholder')}
+        />
 
         {/* Zip Code (Optional) */}
-        <form.Field name="zipCode">
-          {(field) => (
-            <FormInput
-              label={t('customers.form.zip_code')}
-              placeholder={t('customers.form.zip_placeholder')}
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-            />
-          )}
-        </form.Field>
+        <form.TextField
+          name="zipCode"
+          label={t('customers.form.zip_code')}
+          placeholder={t('customers.form.zip_placeholder')}
+        />
 
         {/* Phone Code - Auto-updated from country, disabled */}
-        <form.Field
-          name="phoneCode"
-          validators={{
-            onBlur: addressSchema.shape.phoneCode,
-          }}
-        >
-          {(field) => (
+        <form.Field name="phoneCode">
+          {(field: any) => (
             <PhoneCodeSelect
               value={field.state.value}
-              onChange={(value) => field.handleChange(value)}
-              error={
-                field.state.meta.errors.length > 0
-                  ? tErrors(
-                      field.state.meta.errors[0]?.message ??
-                        'validation.invalid',
-                    )
-                  : undefined
-              }
+              onChange={(value: string) => field.handleChange(value)}
+              countryCode={selectedCountryCode}
               disabled
               required
             />
@@ -319,33 +242,15 @@ export function AddressSheet({
         </form.Field>
 
         {/* Phone Number */}
-        <form.Field
+        <form.TextField
           name="phoneNumber"
-          validators={{
-            onBlur: addressSchema.shape.phoneNumber,
-          }}
-        >
-          {(field) => (
-            <FormInput
-              label={t('customers.form.phone_number')}
-              placeholder={t('customers.form.phone_placeholder')}
-              type="tel"
-              inputMode="tel"
-              required
-              value={field.state.value}
-              onChange={(e) => field.handleChange(e.target.value)}
-              onBlur={field.handleBlur}
-              error={
-                field.state.meta.errors.length > 0
-                  ? tErrors(
-                      field.state.meta.errors[0]?.message ??
-                        'validation.invalid',
-                    )
-                  : undefined
-              }
-            />
-          )}
-        </form.Field>
+          type="tel"
+          label={t('customers.form.phone_number')}
+          placeholder={t('customers.form.phone_placeholder')}
+          inputMode="tel"
+          required
+          dir="ltr"
+        />
 
         {/* Footer Actions */}
         <div className="flex gap-2 pt-4">
@@ -357,18 +262,18 @@ export function AddressSheet({
           >
             {t('common.cancel')}
           </button>
-          <button
-            type="submit"
-            className="btn btn-primary flex-1"
-            disabled={isSubmitting || (address ? !isDirty : false)}
+          <form.SubmitButton
+            variant="primary"
+            className="flex-1"
+            disabled={address ? !isDirty : false}
           >
             {isSubmitting && (
               <span className="loading loading-spinner loading-sm" />
             )}
             {submitLabel ?? (address ? t('common.update') : t('common.add'))}
-          </button>
+          </form.SubmitButton>
         </div>
-      </form>
+      </form.FormRoot>
     </BottomSheet>
   )
 }
