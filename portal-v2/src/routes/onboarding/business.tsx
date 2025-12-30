@@ -12,6 +12,7 @@ import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
 import { BusinessSetupSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
+import { translateValidationError } from '@/lib/translateValidationError'
 import { getErrorText } from '@/lib/formErrors'
 import { cn } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
@@ -250,7 +251,7 @@ function BusinessSetupPage() {
                     placeholder={tOnboarding('business.namePlaceholder')}
                     disabled={isSubmitting}
                     autoFocus
-                    error={field.state.meta.errors[0]}
+                    error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                     helperText={tOnboarding('business.nameHint')}
                     startIcon={<Building2 className="w-5 h-5" />}
                   />
@@ -271,7 +272,7 @@ function BusinessSetupPage() {
                     }
                     placeholder={tOnboarding('business.descriptorPlaceholder')}
                     disabled={isSubmitting}
-                    error={field.state.meta.errors[0]}
+                    error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                     helperText={tOnboarding('business.descriptorHint')}
                   />
               )}

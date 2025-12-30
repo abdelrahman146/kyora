@@ -21,23 +21,47 @@ import type { TFunction } from 'i18next'
  * const errorMessage = translateValidationError(field.state.meta.errors[0], t)
  * ```
  */
-export function translateValidationError(
-  error: string | undefined,
-  t: TFunction,
-): string {
+export function translateValidationError(error: unknown, t: TFunction): string {
   if (!error) return ''
 
+  // Handle error objects from TanStack Form/Zod
+  let errorStr: string
+  if (typeof error === 'string') {
+    errorStr = error
+  } else if (typeof error === 'object' && error !== null) {
+    // Try to extract message from error object
+    const errorObj = error as Record<string, unknown>
+    if ('message' in errorObj && typeof errorObj.message === 'string') {
+      errorStr = errorObj.message
+    } else if (
+      'toString' in errorObj &&
+      typeof errorObj.toString === 'function'
+    ) {
+      errorStr = errorObj.toString()
+    } else {
+      errorStr = JSON.stringify(error)
+    }
+  } else {
+    errorStr = String(error)
+  }
+
   // Check if error is a translation key (starts with known namespace)
-  if (
-    error.startsWith('validation.') ||
-    error.startsWith('errors.') ||
-    error.startsWith('onboarding.')
-  ) {
-    return t(error)
+  if (errorStr.startsWith('validation.')) {
+    // Try with 'common.validation.' prefix first
+    const commonKey = `common.${errorStr}`
+    if (t(commonKey) !== commonKey) {
+      return t(commonKey)
+    }
+    // Fallback to original key
+    return t(errorStr)
+  }
+
+  if (errorStr.startsWith('errors.') || errorStr.startsWith('onboarding.')) {
+    return t(errorStr)
   }
 
   // Already translated or custom error message
-  return error
+  return errorStr
 }
 
 /**

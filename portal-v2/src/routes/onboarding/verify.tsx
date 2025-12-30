@@ -17,6 +17,7 @@ import { Button } from '@/components/atoms/Button'
 import { OTPInput, ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
 import { translateErrorAsync } from '@/lib/translateError'
+import { translateValidationError } from '@/lib/translateValidationError'
 import { formatCountdownDuration } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
@@ -97,7 +98,13 @@ function VerifyEmailPage() {
   const { session } = Route.useLoaderData()
   const { sessionToken } = Route.useSearch()
 
-  const [step, setStep] = useState<'otp' | 'profile'>('otp')
+  // Initialize step from sessionStorage to persist across page refresh
+  const getInitialStep = (): 'otp' | 'profile' => {
+    const saved = sessionStorage.getItem(`kyora_verify_step_${sessionToken}`)
+    return saved === 'profile' ? 'profile' : 'otp'
+  }
+
+  const [step, setStep] = useState<'otp' | 'profile'>(getInitialStep)
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0)
   const [showLoginCta, setShowLoginCta] = useState(false)
   const [didSendInitialOtp, setDidSendInitialOtp] = useState(false)
@@ -144,6 +151,8 @@ function VerifyEmailPage() {
     onSubmit: ({ value }) => {
       const codeString = value.code.join('')
       if (codeString.length === 6) {
+        // Persist step to sessionStorage
+        sessionStorage.setItem(`kyora_verify_step_${sessionToken}`, 'profile')
         setStep('profile')
       }
     },
@@ -162,6 +171,9 @@ function VerifyEmailPage() {
     },
     onSubmit: async ({ value }) => {
       setShowLoginCta(false)
+
+      // Clear step from sessionStorage on successful submission
+      sessionStorage.removeItem(`kyora_verify_step_${sessionToken}`)
 
       await verifyEmailMutation.mutateAsync({
         sessionToken,
@@ -241,6 +253,10 @@ function VerifyEmailPage() {
     verifyEmailMutation.isPending ||
     otpForm.state.isSubmitting ||
     profileForm.state.isSubmitting
+
+  // Separate state for profile form fields
+  const isProfileSubmitting =
+    verifyEmailMutation.isPending || profileForm.state.isSubmitting
 
   return (
     <OnboardingLayout>
@@ -387,8 +403,8 @@ function VerifyEmailPage() {
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('firstName')}
-                      disabled={isSubmitting}
-                      error={field.state.meta.errors[0]}
+                      disabled={isProfileSubmitting}
+                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                     />
                 )}
               </profileForm.Field>
@@ -403,8 +419,8 @@ function VerifyEmailPage() {
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('lastName')}
-                      disabled={isSubmitting}
-                      error={field.state.meta.errors[0]}
+                      disabled={isProfileSubmitting}
+                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                     />
                 )}
               </profileForm.Field>
@@ -418,8 +434,8 @@ function VerifyEmailPage() {
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('password')}
-                      disabled={isSubmitting}
-                      error={field.state.meta.errors[0]}
+                      disabled={isProfileSubmitting}
+                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                       helperText={tOnboarding('verify.passwordHint')}
                     />
                 )}
@@ -434,8 +450,8 @@ function VerifyEmailPage() {
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('confirmPassword')}
-                      disabled={isSubmitting}
-                      error={field.state.meta.errors[0]}
+                      disabled={isProfileSubmitting}
+                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                     />
                 )}
               </profileForm.Field>
@@ -473,8 +489,8 @@ function VerifyEmailPage() {
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={isSubmitting}
-                loading={isSubmitting}
+                disabled={isProfileSubmitting}
+                loading={isProfileSubmitting}
               >
                 {tCommon('continue')}
               </Button>

@@ -9,6 +9,7 @@ import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
 import { EmailFormSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
+import { translateValidationError } from '@/lib/translateValidationError'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema for URL-driven state
@@ -161,7 +162,7 @@ function EmailEntryPage() {
                     placeholder={tOnboarding('email.emailPlaceholder')}
                     disabled={isSubmitting}
                     autoFocus
-                    error={field.state.meta.errors[0]}
+                    error={translateValidationError(field.state.meta.errors[0], tTranslation)}
                   />
               )}
             </form.Field>

@@ -35,7 +35,9 @@
       "invalid_email": "أدخل بريدًا إلكترونيًا صحيحًا",
       "invalid_phone": "أدخل رقم هاتف صحيحًا",
       "invalid_phone_code": "أدخل رمز اتصال دولي صحيحًا",
-      "address_requires_phone": "رقم الهاتف مطلوب عند إضافة عنوان"
+      "address_requires_phone": "رقم الهاتف مطلوب عند إضافة عنوان",
+      "password_min_length": "يجب أن تكون كلمة المرور 8 أحرف على الأقل",
+      "passwords_must_match": "يجب أن تتطابق كلمات المرور"
     }
   },
   "auth": {
