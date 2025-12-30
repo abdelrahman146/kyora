@@ -9,7 +9,7 @@ import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
 import { EmailFormSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
-import { getErrorText } from '@/lib/formErrors'
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema for URL-driven state
 const EmailSearchSchema = z.object({
@@ -100,15 +100,16 @@ function EmailEntryPage() {
   }
 
   return (
-    <div className="max-w-md mx-auto">
-      <div className="text-center mb-8">
-        <h1 className="text-4xl font-bold text-base-content mb-3">
-          {tOnboarding('email.title')}
-        </h1>
-        <p className="text-lg text-base-content/70">
-          {tOnboarding('email.subtitle')}
-        </p>
-      </div>
+    <OnboardingLayout>
+      <div className="max-w-md mx-auto">
+        <div className="text-center mb-8">
+          <h1 className="text-4xl font-bold text-base-content mb-3">
+            {tOnboarding('email.title')}
+          </h1>
+          <p className="text-lg text-base-content/70">
+            {tOnboarding('email.subtitle')}
+          </p>
+        </div>
 
       {/* Selected Plan Summary */}
       <div className="card bg-base-200 mb-6">
@@ -220,6 +221,7 @@ function EmailEntryPage() {
           </Button>
         </div>
       </div>
-    </div>
+      </div>
+    </OnboardingLayout>
   )
 }

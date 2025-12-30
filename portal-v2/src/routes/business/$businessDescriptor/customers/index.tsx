@@ -67,13 +67,13 @@ export const Route = createFileRoute(
     const searchParams = CustomersSearchSchema.parse(location.search)
     
     // Build orderBy from sortBy/sortOrder
-    let orderBy: string[] | undefined
+    let orderBy: Array<string> | undefined
     if (searchParams.sortBy) {
-      orderBy = [`${searchParams.sortBy}:${searchParams.sortOrder || 'desc'}`]
+      orderBy = [`${searchParams.sortBy}:${searchParams.sortOrder}`]
     }
     
     // Prefetch customer list (non-blocking, uses cache if available)
-    void queryClient.prefetchQuery(
+    await queryClient.prefetchQuery(
       customerQueries.list(params.businessDescriptor, {
         search: searchParams.search,
         page: searchParams.page,

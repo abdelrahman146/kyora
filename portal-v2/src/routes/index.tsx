@@ -11,7 +11,7 @@
  * - Fully localized
  */
 
-import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import {

@@ -18,7 +18,7 @@ import { ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
 import { translateErrorAsync } from '@/lib/translateError'
 import { formatCountdownDuration } from '@/lib/utils'
-import { getErrorText } from '@/lib/formErrors'
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema
 const VerifySearchSchema = z.object({
@@ -263,8 +263,9 @@ function VerifyEmailPage() {
     profileForm.state.isSubmitting
 
   return (
-    <div className="max-w-lg mx-auto">
-      {step === 'otp' ? (
+    <OnboardingLayout>
+      <div className="max-w-lg mx-auto">
+        {step === 'otp' ? (
         <div className="card bg-base-100 border border-base-300 shadow-xl">
           <div className="card-body">
             <div className="text-center mb-6">
@@ -514,6 +515,7 @@ function VerifyEmailPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </OnboardingLayout>
   )
 }

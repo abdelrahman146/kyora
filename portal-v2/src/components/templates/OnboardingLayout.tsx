@@ -1,6 +1,8 @@
-import { Outlet, useRouterState } from '@tanstack/react-router'
+import { useRouterState } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
+import type { ReactNode } from 'react'
+
 
 /**
  * OnboardingLayout Template
@@ -8,7 +10,7 @@ import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
  * Minimal layout for onboarding flow with:
  * - Progress bar showing completion percentage
  * - Language switcher (icon-only variant)
- * - Outlet for step content
+ * - Children content for step content
  * - Clean, distraction-free design matching portal-web
  *
  * Progress stages:
@@ -19,12 +21,17 @@ import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
  * 5. Payment (83%)
  * 6. Complete (100%)
  */
-export function OnboardingLayout() {
+
+interface OnboardingLayoutProps {
+  children: ReactNode
+}
+
+export function OnboardingLayout({ children }: OnboardingLayoutProps) {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
 
   const pathname = useRouterState({
-    select: (s) => s.location.pathname,
+    select: (s: { location: { pathname: string } }) => s.location.pathname,
   })
 
   const totalSteps = 5
@@ -103,7 +110,7 @@ export function OnboardingLayout() {
       <main className="flex-1 container mx-auto px-4 py-8 max-w-5xl">
         <div className="flex items-center justify-center min-h-[calc(100vh-200px)]">
           <div className="w-full">
-            <Outlet />
+            {children}
           </div>
         </div>
       </main>

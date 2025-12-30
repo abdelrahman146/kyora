@@ -121,18 +121,14 @@ export function setAuthLoading(isLoading: boolean): void {
  * Authenticates user with email and password, updates store with user data.
  */
 export async function login(email: string, password: string): Promise<void> {
-  try {
-    // Don't set loading state here - it causes the login form to unmount
-    // The form component handles its own loading state
-    const user = await loginUser(email, password)
-    setUser(user)
+  // Don't set loading state here - it causes the login form to unmount
+  // The form component handles its own loading state
+  const user = await loginUser(email, password)
+  setUser(user)
 
-    // Consider auth initialized after explicit login.
-    initPromise = Promise.resolve()
-  } catch (error) {
-    // Don't set loading false - we didn't set it to true
-    throw error
-  }
+  // Consider auth initialized after explicit login.
+  authStore.setState((s) => ({ ...s, isInitialized: true }))
+  initPromise = Promise.resolve()
 }
 
 /**

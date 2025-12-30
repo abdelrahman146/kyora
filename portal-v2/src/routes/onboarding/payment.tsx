@@ -7,6 +7,7 @@ import { AlertCircle, CreditCard, Loader2 } from 'lucide-react'
 import type { RouterContext } from '@/router'
 import { onboardingQueries, useStartPaymentMutation } from '@/api/onboarding'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 const PaymentSearchSchema = z.object({
   session: z.string().min(1),
@@ -142,12 +143,13 @@ function PaymentPage() {
   // If payment was cancelled
   if (status === 'cancelled') {
     return (
-      <div className="max-w-2xl mx-auto">
-        <div className="alert alert-warning mb-6">
-          <AlertCircle className="w-5 h-5" />
-          <div>
-            <h3 className="font-semibold">{tOnboarding('payment.cancelled')}</h3>
-            <p className="text-sm">{tOnboarding('payment.cancelledDesc')}</p>
+      <OnboardingLayout>
+        <div className="max-w-2xl mx-auto">
+          <div className="alert alert-warning mb-6">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <h3 className="font-semibold">{tOnboarding('payment.cancelled')}</h3>
+              <p className="text-sm">{tOnboarding('payment.cancelledDesc')}</p>
           </div>
         </div>
 
@@ -207,13 +209,15 @@ function PaymentPage() {
           </div>
         )}
       </div>
+      </OnboardingLayout>
     )
   }
 
   // Regular payment page
   return (
-    <div className="max-w-2xl mx-auto">
-      {selectedPlan && (
+    <OnboardingLayout>
+      <div className="max-w-2xl mx-auto">
+        {selectedPlan && (
         <div className="card bg-base-100 border border-base-300 shadow-xl">
           <div className="card-body">
             <h2 className="card-title text-2xl mb-4">
@@ -268,6 +272,7 @@ function PaymentPage() {
           </div>
         </div>
       )}
-    </div>
+      </div>
+    </OnboardingLayout>
   )
 }

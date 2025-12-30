@@ -14,6 +14,7 @@ import { BusinessSetupSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
 import { getErrorText } from '@/lib/formErrors'
 import { cn } from '@/lib/utils'
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema
 const BusinessSearchSchema = z.object({
@@ -211,8 +212,9 @@ function BusinessSetupPage() {
     form.state.isSubmitting || setBusinessMutation.isPending
 
   return (
-    <div className="max-w-2xl mx-auto">
-      <div className="card bg-base-100 border border-base-300 shadow-xl">
+    <OnboardingLayout>
+      <div className="max-w-2xl mx-auto">
+        <div className="card bg-base-100 border border-base-300 shadow-xl">
         <div className="card-body">
           {/* Header */}
           <div className="text-center mb-6">
@@ -396,6 +398,7 @@ function BusinessSetupPage() {
           </form>
         </div>
       </div>
-    </div>
+      </div>
+    </OnboardingLayout>
   )
 }

@@ -39,5 +39,10 @@ function OnboardingRoot() {
     return <Navigate to="/" replace />
   }
 
-  return <OnboardingLayout />
+  return (
+    <OnboardingLayout>
+      {/* Nested routes will render here */}
+      <div>Redirecting...</div>
+    </OnboardingLayout>
+  )
 }

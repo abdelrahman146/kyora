@@ -1,6 +1,7 @@
 import { Store } from '@tanstack/react-store'
-import { createPersistencePlugin } from '@/lib/storePersistence'
+
 import type { Business } from '@/api/business'
+import { createPersistencePlugin } from '@/lib/storePersistence'
 
 /**
  * Business Store State
