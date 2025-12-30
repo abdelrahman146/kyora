@@ -84,42 +84,6 @@ export function UserMenu() {
         </div>
 
         {/* Menu Items */}
-        <div className="py-1">
-          {/* Profile, Settings, Help routes commented out until implemented */}
-          {/* <button
-            type="button"
-            onClick={() => {
-              void navigate({ to: '/profile' })
-            }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <User size={16} className="shrink-0" />
-            <span className="text-sm">{t('dashboard.profile')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              void navigate({ to: '/settings' })
-            }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <Settings size={16} className="shrink-0" />
-            <span className="text-sm">{t('dashboard.settings')}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => {
-              void navigate({ to: '/help' })
-            }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <HelpCircle size={16} className="shrink-0" />
-            <span className="text-sm">{t('dashboard.help')}</span>
-          </button> */}
-        </div>
-
         <div className="divider my-1"></div>
 
         {/* Logout */}

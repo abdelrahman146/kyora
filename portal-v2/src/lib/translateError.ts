@@ -18,9 +18,12 @@ import type { ErrorResult } from './errorParser'
  * ```
  */
 export function translateError(errorResult: ErrorResult, t: TFunction): string {
+  const namespace = errorResult.ns ?? 'errors'
   // Try to get translation with interpolation params
   const translated = t(errorResult.key, {
-    defaultValue: errorResult.fallback ?? t('errors:generic.unexpected'),
+    ns: namespace,
+    defaultValue:
+      errorResult.fallback ?? t('generic.unexpected', { ns: namespace }),
     ...errorResult.params,
   })
 

@@ -9,7 +9,6 @@ import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
 export interface DashboardLayoutProps {
-  businessDescriptor: string
   title?: string
   children: ReactNode
 }
@@ -64,13 +63,12 @@ export interface DashboardLayoutProps {
  *
  * @example
  * ```tsx
- * <DashboardLayout title="Inventory" businessDescriptor="my-business">
+ * <DashboardLayout title="Inventory">
  *   <InventoryPage />
  * </DashboardLayout>
  * ```
  */
 export function DashboardLayout({
-  businessDescriptor,
   title,
   children,
 }: DashboardLayoutProps) {
@@ -101,7 +99,7 @@ export function DashboardLayout({
   return (
     <div className="min-h-screen bg-base-100">
       {/* Sidebar - Desktop: Fixed, Mobile: Drawer Overlay */}
-      <Sidebar businessDescriptor={businessDescriptor} />
+      <Sidebar />
 
       {/* Mobile Sidebar Backdrop */}
       {!isDesktop && sidebarOpen && (
@@ -137,7 +135,7 @@ export function DashboardLayout({
       </main>
 
       {/* Mobile Bottom Navigation - Only visible on mobile */}
-      {!isDesktop && <BottomNav businessDescriptor={businessDescriptor} />}
+      {!isDesktop && <BottomNav />}
     </div>
   )
 }

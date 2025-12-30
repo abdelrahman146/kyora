@@ -62,17 +62,17 @@ export function useCurrentUserQuery() {
  */
 export function useUpdateUserMutation() {
   const queryClient = useQueryClient()
-  const { t } = useTranslation(['translation'])
+  const { t } = useTranslation('translation')
 
   return useMutation({
     mutationFn: (data: UpdateUserRequest) => userApi.updateCurrentUser(data),
     onSuccess: (updatedUser) => {
       // Update user in cache
       queryClient.setQueryData(queryKeys.user.current(), updatedUser)
-      showSuccessToast(t('translation:profile.updateSuccess'))
+      showSuccessToast(t('profile.updateSuccess'))
     },
     onError: () => {
-      showErrorToast(t('translation:profile.updateError'))
+      showErrorToast(t('profile.updateError'))
     },
   })
 }

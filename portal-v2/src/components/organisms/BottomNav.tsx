@@ -1,5 +1,6 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from '@tanstack/react-router'
+import { useStore } from '@tanstack/react-store'
 import {
   LayoutDashboard,
   Menu,
@@ -7,7 +8,7 @@ import {
   ShoppingCart,
   Users,
 } from 'lucide-react'
-import { openSidebar } from '@/stores/businessStore'
+import { businessStore, openSidebar } from '@/stores/businessStore'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
@@ -22,10 +23,6 @@ const navItems: Array<NavItem> = [
   { key: 'orders', icon: ShoppingCart, path: '/orders' },
   { key: 'customers', icon: Users, path: '/customers' },
 ]
-
-export interface BottomNavProps {
-  businessDescriptor: string
-}
 
 /**
  * BottomNav Component
@@ -44,21 +41,28 @@ export interface BottomNavProps {
  * - Primary actions (Dashboard, Inventory, Orders, Customers)
  * - "More" button opens the full sidebar drawer
  */
-export function BottomNav({ businessDescriptor }: BottomNavProps) {
+export function BottomNav() {
   const { t } = useTranslation()
   const location = useLocation()
+  const selectedBusinessDescriptor = useStore(
+    businessStore,
+    (s) => s.selectedBusinessDescriptor,
+  )
 
   return (
     <nav className="fixed bottom-0 start-0 end-0 h-16 bg-base-100 border-t border-base-300 z-40 md:hidden safe-area-pb">
       <div className="h-full flex items-center justify-around px-2">
         {/* Core Navigation Items */}
         {navItems.map((item) => {
-          // Build full path using props business descriptor
-          const itemPath = `/business/${businessDescriptor}${item.path}`
+          const basePath = selectedBusinessDescriptor
+            ? `/business/${selectedBusinessDescriptor}`
+            : ''
+          const itemPath = `${basePath}${item.path}`
           const isActive =
             item.path === ''
-              ? location.pathname === `/business/${businessDescriptor}` ||
-                location.pathname === `/business/${businessDescriptor}/`
+              ? !!selectedBusinessDescriptor &&
+                (location.pathname === `/business/${selectedBusinessDescriptor}` ||
+                  location.pathname === `/business/${selectedBusinessDescriptor}/`)
               : location.pathname.startsWith(itemPath)
           const Icon = item.icon
 
@@ -66,6 +70,8 @@ export function BottomNav({ businessDescriptor }: BottomNavProps) {
             <Link
               key={item.key}
               to={itemPath}
+              disabled={!selectedBusinessDescriptor}
+              aria-disabled={!selectedBusinessDescriptor}
               className={cn(
                 'flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0',
                 'transition-all active:scale-95 rounded-lg',
@@ -74,6 +80,7 @@ export function BottomNav({ businessDescriptor }: BottomNavProps) {
                 // Active state
                 isActive && 'text-primary',
                 !isActive && 'text-base-content/70',
+                !selectedBusinessDescriptor && 'pointer-events-none opacity-60',
               )}
             >
               <Icon size={22} className="shrink-0" />

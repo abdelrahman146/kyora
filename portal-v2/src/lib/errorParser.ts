@@ -18,6 +18,7 @@ export interface ProblemDetails {
  */
 export interface ErrorResult {
   key: string
+  ns?: string
   params?: Record<string, string | number>
   fallback?: string
 }
@@ -31,7 +32,7 @@ export async function parseProblemDetails(
   error: unknown,
 ): Promise<ErrorResult> {
   if (!error) {
-    return { key: 'errors:generic.unexpected' }
+    return { ns: 'errors', key: 'generic.unexpected' }
   }
 
   // Handle HTTPError from ky
@@ -63,7 +64,7 @@ export async function parseProblemDetails(
         typeof httpError.response.url === 'string' &&
         httpError.response.url.endsWith('/v1/auth/login')
       ) {
-        return { key: 'errors:auth.invalid_credentials', fallback }
+        return { ns: 'errors', key: 'auth.invalid_credentials', fallback }
       }
 
       // Special-case: onboarding verify email can return 409 when the email is already registered.
@@ -73,7 +74,11 @@ export async function parseProblemDetails(
         typeof httpError.response.url === 'string' &&
         httpError.response.url.endsWith('/v1/onboarding/email/verify')
       ) {
-        return { key: 'errors:onboarding.email_already_exists', fallback }
+        return {
+          ns: 'errors',
+          key: 'onboarding.email_already_exists',
+          fallback,
+        }
       }
 
       // Return translation key based on status code
@@ -89,25 +94,26 @@ export async function parseProblemDetails(
 
   // Handle TimeoutError
   if (error instanceof Error && error.name === 'TimeoutError') {
-    return { key: 'errors:network.timeout' }
+    return { ns: 'errors', key: 'network.timeout' }
   }
 
   // Handle network errors
   if (error instanceof Error && error.name === 'TypeError') {
-    return { key: 'errors:network.connection' }
+    return { ns: 'errors', key: 'network.connection' }
   }
 
   // Handle generic Error objects
   if (error instanceof Error && error.message) {
     return {
-      key: 'errors:generic.message',
+      ns: 'errors',
+      key: 'generic.message',
       params: { message: error.message },
       fallback: error.message,
     }
   }
 
   // Fallback for unknown error types
-  return { key: 'errors:generic.unexpected' }
+  return { ns: 'errors', key: 'generic.unexpected' }
 }
 
 /**
@@ -116,35 +122,35 @@ export async function parseProblemDetails(
 function getStatusErrorKey(status: number): ErrorResult {
   switch (status) {
     case 400:
-      return { key: 'errors:http.400' }
+      return { ns: 'errors', key: 'http.400' }
     case 401:
-      return { key: 'errors:http.401' }
+      return { ns: 'errors', key: 'http.401' }
     case 403:
-      return { key: 'errors:http.403' }
+      return { ns: 'errors', key: 'http.403' }
     case 404:
-      return { key: 'errors:http.404' }
+      return { ns: 'errors', key: 'http.404' }
     case 409:
-      return { key: 'errors:http.409' }
+      return { ns: 'errors', key: 'http.409' }
     case 422:
-      return { key: 'errors:http.422' }
+      return { ns: 'errors', key: 'http.422' }
     case 429:
-      return { key: 'errors:http.429' }
+      return { ns: 'errors', key: 'http.429' }
     case 500:
-      return { key: 'errors:http.500' }
+      return { ns: 'errors', key: 'http.500' }
     case 502:
-      return { key: 'errors:http.502' }
+      return { ns: 'errors', key: 'http.502' }
     case 503:
-      return { key: 'errors:http.503' }
+      return { ns: 'errors', key: 'http.503' }
     case 504:
-      return { key: 'errors:http.504' }
+      return { ns: 'errors', key: 'http.504' }
     default:
       if (status >= 400 && status < 500) {
-        return { key: 'errors:http.4xx', params: { status } }
+        return { ns: 'errors', key: 'http.4xx', params: { status } }
       }
       if (status >= 500) {
-        return { key: 'errors:http.5xx', params: { status } }
+        return { ns: 'errors', key: 'http.5xx', params: { status } }
       }
-      return { key: 'errors:http.unknown', params: { status } }
+      return { ns: 'errors', key: 'http.unknown', params: { status } }
   }
 }
 

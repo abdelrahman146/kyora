@@ -55,7 +55,7 @@ function BusinessLayout() {
   const { businessDescriptor } = Route.useParams()
 
   return (
-    <DashboardLayout businessDescriptor={businessDescriptor}>
+    <DashboardLayout>
       {/* Content outlet with Suspense boundary */}
       <Suspense
         fallback={

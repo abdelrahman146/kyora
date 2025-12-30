@@ -43,10 +43,6 @@ const navItems: Array<NavItem> = [
   { key: 'team', icon: UsersRound, path: '/team' },
 ]
 
-export interface SidebarProps {
-  businessDescriptor: string
-}
-
 /**
  * Sidebar Component
  *
@@ -63,7 +59,7 @@ export interface SidebarProps {
  * - Touch-friendly targets (min 44px)
  * - Business descriptor from props for navigation
  */
-export function Sidebar({ businessDescriptor }: SidebarProps) {
+export function Sidebar() {
   const { t } = useTranslation()
   const location = useLocation()
   const { isRTL } = useLanguage()
@@ -71,6 +67,10 @@ export function Sidebar({ businessDescriptor }: SidebarProps) {
 
   const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
   const sidebarOpen = useStore(businessStore, (s) => s.sidebarOpen)
+  const selectedBusinessDescriptor = useStore(
+    businessStore,
+    (s) => s.selectedBusinessDescriptor,
+  )
   const selectedBusiness = getSelectedBusiness()
 
   // Get business name for display
@@ -152,12 +152,16 @@ export function Sidebar({ businessDescriptor }: SidebarProps) {
       {/* Navigation Links */}
       <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
         {navItems.map((item) => {
-          // Build full path using props business descriptor
-          const itemPath = `/business/${businessDescriptor}${item.path}`
+          // Build full path using selected business descriptor
+          const basePath = selectedBusinessDescriptor
+            ? `/business/${selectedBusinessDescriptor}`
+            : ''
+          const itemPath = `${basePath}${item.path}`
           const isActive =
             item.path === ''
-              ? location.pathname === `/business/${businessDescriptor}` ||
-                location.pathname === `/business/${businessDescriptor}/`
+              ? !!selectedBusinessDescriptor &&
+                (location.pathname === `/business/${selectedBusinessDescriptor}` ||
+                  location.pathname === `/business/${selectedBusinessDescriptor}/`)
               : location.pathname.startsWith(itemPath)
           const Icon = item.icon
 
@@ -169,12 +173,15 @@ export function Sidebar({ businessDescriptor }: SidebarProps) {
                 // Close drawer on mobile after navigation
                 if (!isDesktop) closeSidebar()
               }}
+              disabled={!selectedBusinessDescriptor}
+              aria-disabled={!selectedBusinessDescriptor}
               className={cn(
                 'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
                 'hover:bg-base-200 active:scale-98',
                 // Active state styling
                 isActive && 'bg-primary/10 text-primary font-semibold',
                 !isActive && 'text-base-content',
+                !selectedBusinessDescriptor && 'pointer-events-none opacity-60',
                 // Desktop collapsed: center icon
                 isDesktop && sidebarCollapsed && 'justify-center px-0',
               )}

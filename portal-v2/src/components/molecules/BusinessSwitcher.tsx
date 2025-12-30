@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '@tanstack/react-store'
+import { useNavigate } from '@tanstack/react-router'
 import { Building2, Check, ChevronDown, Loader2 } from 'lucide-react'
 import { Avatar } from '../atoms/Avatar'
 import { Dropdown } from '../atoms/Dropdown'
@@ -34,6 +35,7 @@ import type { Business } from '../../stores/businessStore'
 export function BusinessSwitcher() {
   const { t } = useTranslation()
   const isMobile = useMediaQuery('(max-width: 640px)')
+  const navigate = useNavigate()
   const businesses = useStore(businessStore, (state) => state.businesses)
   const selectedBusinessDescriptor = useStore(
     businessStore,
@@ -84,6 +86,11 @@ export function BusinessSwitcher() {
       ...state,
       selectedBusinessDescriptor: businessDescriptor,
     }))
+
+    void navigate({
+      to: '/business/$businessDescriptor',
+      params: { businessDescriptor },
+    })
   }
 
   const handleSelectBusinessById = (businessId: string) => {
