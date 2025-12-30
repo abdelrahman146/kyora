@@ -13,23 +13,10 @@
 
 import { Edit, MapPin, Phone, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
+import { useStore } from '@tanstack/react-store'
 
-interface CustomerAddress {
-  id: string
-  country: string
-  countryCode: string
-  city: string
-  state?: string
-  street: string
-  building?: string
-  floor?: string
-  apartment?: string
-  zipCode?: string
-  additionalInfo?: string
-  phone?: string
-  phoneCode?: string
-  phoneNumber?: string
-}
+import type { CustomerAddress } from '@/api/customer'
+import { metadataStore } from '@/stores/metadataStore'
 
 interface AddressCardProps {
   address: CustomerAddress
@@ -45,8 +32,7 @@ export function AddressCard({
   isDeleting,
 }: AddressCardProps) {
   const { t, i18n } = useTranslation()
-  // Temporary: hardcoded country lookup until metadataStore is properly integrated
-  const countries = [{ code: 'EG', name: 'Egypt', nameAr: 'مصر', flag: '🇪🇬' }]
+  const countries = useStore(metadataStore, (s) => s.countries)
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
   const getCountryInfo = (countryCode: string) => {
@@ -60,6 +46,11 @@ export function AddressCard({
   }
 
   const countryInfo = getCountryInfo(address.countryCode)
+
+  const phoneDisplay =
+    address.phoneCode && address.phoneNumber
+      ? `${address.phoneCode} ${address.phoneNumber}`
+      : null
 
   return (
     <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
@@ -100,12 +91,12 @@ export function AddressCard({
             )}
 
             {/* Phone */}
-            <div className="flex items-center gap-2 text-sm text-base-content/70">
-              <Phone size={14} />
-              <span dir="ltr">
-                {address.phoneCode} {address.phoneNumber}
-              </span>
-            </div>
+            {phoneDisplay && (
+              <div className="flex items-center gap-2 text-sm text-base-content/70">
+                <Phone size={14} />
+                <span dir="ltr">{phoneDisplay}</span>
+              </div>
+            )}
           </div>
 
           {/* Actions */}

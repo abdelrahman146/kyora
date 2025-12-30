@@ -97,7 +97,8 @@ export const customers = {
     filters?: {
       search?: string
       page?: number
-      limit?: number
+      pageSize?: number
+      orderBy?: Array<string>
     },
   ) => [...customers.lists(), businessDescriptor, filters] as const,
   details: () => [...customers.all, 'detail'] as const,

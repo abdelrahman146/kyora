@@ -169,7 +169,7 @@ export function LoginForm({
       {/* Forgot Password Link */}
       <div className="text-end">
         <a
-          href="/forgot-password"
+          href="/auth/forgot-password"
           className="text-sm text-primary hover:text-primary-focus hover:underline transition-colors"
         >
           {t('auth.forgot_password')}

@@ -1,235 +1,266 @@
-import { useEffect, useState } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
-import { CheckCircle2, Loader2, PartyPopper } from 'lucide-react'
-import { clearSession, onboardingStore } from '@/stores/onboardingStore'
+import { ArrowRight, Sparkles } from 'lucide-react'
+import { onboardingApi } from '@/api/onboarding'
 import { setTokens } from '@/api/client'
-import { useCompleteOnboardingMutation } from '@/api/onboarding'
+import { authStore, setUser } from '@/stores/authStore'
+import { clearSession, loadSessionFromStorage, onboardingStore } from '@/stores/onboardingStore'
 import { translateErrorAsync } from '@/lib/translateError'
 
 export const Route = createFileRoute('/onboarding/complete')({
   component: CompletePage,
 })
 
-/**
- * Completion Step - Final step of Onboarding
- *
- * Features:
- * - Finalizes onboarding session
- * - Retrieves authentication tokens
- * - Clears onboarding state
- * - Redirects to main application
- */
 function CompletePage() {
-  const { t } = useTranslation()
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
   const navigate = useNavigate()
-  const state = useStore(onboardingStore)
+  const onboardingState = useStore(onboardingStore)
+  const authState = useStore(authStore)
+
   const [isCompleting, setIsCompleting] = useState(false)
-  const [completionSteps, setCompletionSteps] = useState({
-    finalizingAccount: false,
-    configuringWorkspace: false,
-    redirecting: false,
-  })
+  const [isComplete, setIsComplete] = useState(false)
+  const [error, setError] = useState('')
+  const [hasValidatedSession, setHasValidatedSession] = useState(false)
 
-  const completeMutation = useCompleteOnboardingMutation()
-
-  // Redirect if no session
+  // Restore onboarding session from storage on mount (if needed)
   useEffect(() => {
-    if (!state.sessionToken) {
-      navigate({ to: '/onboarding/email', replace: true })
-      return
+    if (isComplete) return
+
+    let isCancelled = false
+
+    const restoreSession = async () => {
+      if (onboardingState.sessionToken) {
+        setHasValidatedSession(true)
+        return
+      }
+
+      const hasSession = await loadSessionFromStorage()
+      if (isCancelled) return
+
+      setHasValidatedSession(true)
+
+      if (!hasSession) {
+        if (authState.isAuthenticated) {
+          void navigate({ to: '/', replace: true })
+          return
+        }
+
+        void navigate({ to: '/onboarding/plan', replace: true })
+      }
     }
 
-    // Check if business data is set
-    if (!state.businessData) {
-      navigate({ to: '/onboarding/business', replace: true })
-      return
+    void restoreSession()
+    return () => {
+      isCancelled = true
     }
+  }, [authState.isAuthenticated, isComplete, navigate, onboardingState.sessionToken])
 
-    // Check if paid plan requires payment
-    if (state.isPaidPlan && !state.paymentCompleted) {
-      navigate({ to: '/onboarding/payment', replace: true })
-      return
-    }
-  }, [state, navigate])
-
-  // Auto-complete onboarding
+  // Redirect if prerequisites not met
   useEffect(() => {
-    if (state.sessionToken && !isCompleting) {
-      void handleComplete()
+    if (!hasValidatedSession) return
+    if (isCompleting || isComplete) return
+
+    if (!onboardingState.sessionToken) {
+      void navigate({ to: '/onboarding/plan', replace: true })
+      return
     }
-  }, [state.sessionToken])
 
-  const handleComplete = async () => {
-    if (isCompleting) return
+    if (
+      onboardingState.isPaidPlan &&
+      !onboardingState.paymentCompleted &&
+      onboardingState.stage !== 'ready_to_commit'
+    ) {
+      void navigate({ to: '/onboarding/payment', replace: true })
+      return
+    }
 
-    setIsCompleting(true)
+    if (
+      !onboardingState.isPaidPlan &&
+      onboardingState.stage !== 'business_staged' &&
+      onboardingState.stage !== 'ready_to_commit'
+    ) {
+      void navigate({ to: '/onboarding/business', replace: true })
+    }
+  }, [hasValidatedSession, isComplete, isCompleting, navigate, onboardingState.isPaidPlan, onboardingState.paymentCompleted, onboardingState.sessionToken, onboardingState.stage])
+
+  const completeOnboarding = useCallback(async () => {
+    if (!onboardingState.sessionToken) return
 
     try {
-      // Step 1: Finalizing account
-      setCompletionSteps((prev) => ({ ...prev, finalizingAccount: true }))
-      await new Promise((resolve) => setTimeout(resolve, 800))
+      setIsCompleting(true)
+      setError('')
 
-      // Step 2: Call complete API
-      const response = await completeMutation.mutateAsync({
-        sessionToken: state.sessionToken!,
+      const response = await onboardingApi.complete({
+        sessionToken: onboardingState.sessionToken,
       })
 
-      // Step 3: Configuring workspace
-      setCompletionSteps((prev) => ({ ...prev, configuringWorkspace: true }))
-      await new Promise((resolve) => setTimeout(resolve, 800))
-
-      // Step 4: Set authentication tokens
+      // Hydrate auth immediately to avoid protected-route flicker
       setTokens(response.token, response.refreshToken)
+      setUser(response.user)
 
-      // Step 5: Clear onboarding session
-      clearSession()
+      setIsComplete(true)
 
-      // Step 6: Redirecting
-      setCompletionSteps((prev) => ({ ...prev, redirecting: true }))
-      await new Promise((resolve) => setTimeout(resolve, 500))
-
-      toast.success(t('onboarding:welcome_to_kyora'))
-
-      // Navigate to main app
-      await navigate({ to: '/', replace: true })
-    } catch (error) {
+      setTimeout(() => {
+        void (async () => {
+          await clearSession()
+          await navigate({ to: '/', replace: true })
+        })()
+      }, 3000)
+    } catch (err) {
+      const message = await translateErrorAsync(err, tOnboarding)
+      setError(message)
+    } finally {
       setIsCompleting(false)
-      const message = await translateErrorAsync(error, t)
-      toast.error(message)
-
-      // Allow retry
-      setCompletionSteps({
-        finalizingAccount: false,
-        configuringWorkspace: false,
-        redirecting: false,
-      })
     }
+  }, [navigate, onboardingState.sessionToken, tOnboarding])
+
+  // Auto-complete on mount if ready
+  useEffect(() => {
+    if (!hasValidatedSession) return
+    if (!onboardingState.sessionToken) return
+    if (isComplete || isCompleting || error) return
+
+    const isReady =
+      (onboardingState.isPaidPlan && onboardingState.paymentCompleted) ||
+      !onboardingState.isPaidPlan
+
+    if (!isReady) return
+
+    void completeOnboarding()
+  }, [completeOnboarding, error, hasValidatedSession, isComplete, isCompleting, onboardingState.isPaidPlan, onboardingState.paymentCompleted, onboardingState.sessionToken])
+
+  if (error) {
+    return (
+      <div className="max-w-lg mx-auto">
+        <div className="card bg-base-100 border border-error shadow-xl">
+          <div className="card-body">
+            <div className="text-center">
+              <h2 className="text-2xl font-bold text-error mb-3">
+                {tOnboarding('complete.errorTitle')}
+              </h2>
+              <p className="text-base-content/70 mb-6">{error}</p>
+              <button
+                onClick={() => {
+                  void completeOnboarding()
+                }}
+                className="btn btn-primary"
+                disabled={isCompleting}
+              >
+                {isCompleting ? (
+                  <>
+                    <span className="loading loading-spinner loading-sm"></span>
+                    {tCommon('loading')}
+                  </>
+                ) : (
+                  tCommon('retry')
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
-  const handleRetry = () => {
-    void handleComplete()
+  if (isComplete) {
+    const businessName = onboardingState.businessData?.name ?? ''
+
+    return (
+      <div className="max-w-2xl mx-auto">
+        <div className="card bg-linear-to-br from-primary/10 to-secondary/10 border-2 border-primary shadow-2xl">
+          <div className="card-body">
+            <div className="text-center">
+              <div className="flex justify-center mb-6">
+                <div className="relative">
+                  <div className="w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center animate-bounce">
+                    <Sparkles className="w-12 h-12 text-primary-content" />
+                  </div>
+                  <div className="absolute inset-0 w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-full animate-ping opacity-20"></div>
+                </div>
+              </div>
+
+              <h1 className="text-4xl font-bold mb-3">
+                {tOnboarding('complete.welcomeTitle')}
+              </h1>
+              <p className="text-xl text-base-content/80 mb-6">
+                {tOnboarding('complete.welcomeMessage', { businessName })}
+              </p>
+
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
+                <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
+                  <div className="text-2xl mb-2">📦</div>
+                  <h3 className="font-semibold mb-1">
+                    {tOnboarding('complete.feature1Title')}
+                  </h3>
+                  <p className="text-sm text-base-content/70">
+                    {tOnboarding('complete.feature1Desc')}
+                  </p>
+                </div>
+                <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
+                  <div className="text-2xl mb-2">📊</div>
+                  <h3 className="font-semibold mb-1">
+                    {tOnboarding('complete.feature2Title')}
+                  </h3>
+                  <p className="text-sm text-base-content/70">
+                    {tOnboarding('complete.feature2Desc')}
+                  </p>
+                </div>
+                <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
+                  <div className="text-2xl mb-2">🚀</div>
+                  <h3 className="font-semibold mb-1">
+                    {tOnboarding('complete.feature3Title')}
+                  </h3>
+                  <p className="text-sm text-base-content/70">
+                    {tOnboarding('complete.feature3Desc')}
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-center gap-2 text-base-content/60">
+                <span className="loading loading-spinner loading-sm"></span>
+                <span>{tOnboarding('complete.redirecting')}</span>
+                <ArrowRight className="w-4 h-4 animate-pulse" />
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    )
   }
 
   return (
     <div className="max-w-lg mx-auto">
-      <div className="text-center">
-        {/* Success Icon */}
-        <div className="flex justify-center mb-6">
-          <div className="w-20 h-20 rounded-full bg-success/10 flex items-center justify-center">
-            {isCompleting ? (
-              <Loader2 className="w-10 h-10 text-success animate-spin" />
-            ) : (
-              <PartyPopper className="w-10 h-10 text-success" />
-            )}
+      <div className="card bg-base-100 border border-base-300 shadow-xl">
+        <div className="card-body">
+          <div className="text-center">
+            <div className="flex justify-center mb-6">
+              <span className="loading loading-spinner loading-lg text-primary"></span>
+            </div>
+            <h2 className="text-2xl font-bold mb-3">
+              {tOnboarding('complete.processingTitle')}
+            </h2>
+            <p className="text-base-content/70">
+              {tOnboarding('complete.processingMessage')}
+            </p>
+            <div className="mt-6 space-y-2">
+              <div className="flex items-center gap-3 justify-center text-sm">
+                <span className="loading loading-ring loading-sm text-success"></span>
+                <span>{tOnboarding('complete.creatingWorkspace')}</span>
+              </div>
+              <div className="flex items-center gap-3 justify-center text-sm">
+                <span className="loading loading-ring loading-sm text-success"></span>
+                <span>{tOnboarding('complete.settingUpBusiness')}</span>
+              </div>
+              <div className="flex items-center gap-3 justify-center text-sm">
+                <span className="loading loading-ring loading-sm text-success"></span>
+                <span>{tOnboarding('complete.preparingDashboard')}</span>
+              </div>
+            </div>
           </div>
         </div>
-
-        {/* Header */}
-        <h1 className="text-4xl font-bold text-base-content mb-3">
-          {isCompleting
-            ? t('onboarding:completing_setup')
-            : t('onboarding:setup_complete')}
-        </h1>
-        <p className="text-base-content/70 text-lg mb-8">
-          {isCompleting
-            ? t('onboarding:completing_description')
-            : t('onboarding:setup_complete_description')}
-        </p>
-
-        {/* Progress Steps */}
-        {isCompleting && (
-          <div className="space-y-4 mb-8">
-            {/* Step 1: Finalizing Account */}
-            <div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                {completionSteps.finalizingAccount ? (
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                ) : (
-                  <Loader2 className="w-5 h-5 text-base-content/40 animate-spin" />
-                )}
-                <span
-                  className={
-                    completionSteps.finalizingAccount
-                      ? 'text-base-content'
-                      : 'text-base-content/60'
-                  }
-                >
-                  {t('onboarding:finalizing_account')}
-                </span>
-              </div>
-            </div>
-
-            {/* Step 2: Configuring Workspace */}
-            <div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                {completionSteps.configuringWorkspace ? (
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                ) : (
-                  <Loader2
-                    className={`w-5 h-5 ${
-                      completionSteps.finalizingAccount
-                        ? 'text-base-content/40 animate-spin'
-                        : 'text-base-content/20'
-                    }`}
-                  />
-                )}
-                <span
-                  className={
-                    completionSteps.configuringWorkspace
-                      ? 'text-base-content'
-                      : 'text-base-content/60'
-                  }
-                >
-                  {t('onboarding:configuring_workspace')}
-                </span>
-              </div>
-            </div>
-
-            {/* Step 3: Redirecting */}
-            <div className="flex items-center justify-between p-4 bg-base-200 rounded-lg">
-              <div className="flex items-center gap-3">
-                {completionSteps.redirecting ? (
-                  <CheckCircle2 className="w-5 h-5 text-success" />
-                ) : (
-                  <Loader2
-                    className={`w-5 h-5 ${
-                      completionSteps.configuringWorkspace
-                        ? 'text-base-content/40 animate-spin'
-                        : 'text-base-content/20'
-                    }`}
-                  />
-                )}
-                <span
-                  className={
-                    completionSteps.redirecting
-                      ? 'text-base-content'
-                      : 'text-base-content/60'
-                  }
-                >
-                  {t('onboarding:redirecting_to_app')}
-                </span>
-              </div>
-            </div>
-          </div>
-        )}
-
-        {/* Retry Button (shown on error) */}
-        {!isCompleting && completeMutation.isError && (
-          <button onClick={handleRetry} className="btn btn-primary">
-            {t('common:retry')}
-          </button>
-        )}
-
-        {/* Fun Message */}
-        {!isCompleting && (
-          <div className="alert alert-success mt-6">
-            <PartyPopper className="w-5 h-5" />
-            <span>{t('onboarding:ready_to_start')}</span>
-          </div>
-        )}
       </div>
     </div>
   )

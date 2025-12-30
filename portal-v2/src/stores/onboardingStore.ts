@@ -1,4 +1,6 @@
 import { Store } from '@tanstack/react-store'
+import type { GetSessionResponse } from '@/api/types/onboarding'
+import { onboardingApi } from '@/api/onboarding'
 import { createPersistencePlugin } from '@/lib/storePersistence'
 
 /**
@@ -188,37 +190,85 @@ export function setCheckoutUrl(checkoutUrl: string | null): void {
   }))
 }
 
+function setStateFromSession(session: GetSessionResponse): void {
+  onboardingStore.setState((prev) => {
+    const businessData: BusinessData | null =
+      session.businessName &&
+      session.businessDescriptor &&
+      session.businessCountry &&
+      session.businessCurrency
+        ? {
+            name: session.businessName,
+            descriptor: session.businessDescriptor,
+            country: session.businessCountry,
+            currency: session.businessCurrency,
+          }
+        : prev.businessData
+
+    const paymentCompleted =
+      session.paymentStatus === 'succeeded' ||
+      session.paymentStatus === 'skipped'
+
+    return {
+      ...prev,
+      sessionToken: session.sessionToken,
+      stage: session.stage,
+      email: session.email,
+      planId: session.planId,
+      planDescriptor: session.planDescriptor,
+      isPaidPlan: session.isPaidPlan,
+      businessData,
+      paymentCompleted,
+    }
+  })
+}
+
+/**
+ * Load session from backend by token and hydrate store.
+ *
+ * This is the source of truth for resume flows.
+ */
+export async function loadSession(sessionToken: string): Promise<void> {
+  const session = await onboardingApi.getSession(sessionToken)
+  setStateFromSession(session)
+}
+
+/**
+ * Load session using persisted token.
+ * Returns true if a valid session was loaded.
+ */
+export async function loadSessionFromStorage(): Promise<boolean> {
+  const token = onboardingStore.state.sessionToken
+  if (!token) return false
+
+  try {
+    await loadSession(token)
+    return true
+  } catch {
+    // Token invalid/expired -> clear persisted state.
+    await clearSession()
+    return false
+  }
+}
+
 /**
  * Clear onboarding session
  *
  * Called after completion or when user abandons onboarding.
  * Clears both store state and localStorage.
  */
-export function clearSession(): void {
+export async function clearSession(): Promise<void> {
+  const token = onboardingStore.state.sessionToken
+  if (token) {
+    try {
+      await onboardingApi.deleteSession(token)
+    } catch {
+      // Silent fail: session will expire server-side eventually.
+    }
+  }
+
   onboardingStore.setState(() => initialState)
   persistencePlugin.clearState()
-}
-
-/**
- * Restore session from persisted state
- *
- * Called on app mount to restore incomplete onboarding session.
- * Returns true if session was restored, false if no session exists.
- */
-export function restoreSession(): boolean {
-  const savedState = persistencePlugin.loadState()
-  if (savedState && savedState.sessionToken) {
-    onboardingStore.setState(() => savedState)
-    return true
-  }
-  return false
-}
-
-/**
- * Check if user has active onboarding session
- */
-export function hasActiveSession(): boolean {
-  return onboardingStore.state.sessionToken !== null
 }
 
 /**

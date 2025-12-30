@@ -1,20 +1,20 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
-import { ArrowLeft, Building2, Loader2 } from 'lucide-react'
+import { Building2, DollarSign, Globe } from 'lucide-react'
+import type { ReactNode } from 'react'
+import type { CountryResponse } from '@/api/types/metadata'
+import { useCountriesQuery } from '@/api/metadata'
+import { onboardingApi } from '@/api/onboarding'
+import { FormInput, FormSelect } from '@/components'
 import {
+  loadSessionFromStorage,
   onboardingStore,
   setBusiness,
   updateStage,
 } from '@/stores/onboardingStore'
-import { useSetBusinessMutation } from '@/api/onboarding'
-import { BusinessSetupSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
-import { getUniqueCurrencies, useCountriesQuery } from '@/api/metadata'
-import { useLanguage } from '@/hooks/useLanguage'
 
 export const Route = createFileRoute('/onboarding/business')({
   component: BusinessSetupPage,
@@ -30,11 +30,23 @@ export const Route = createFileRoute('/onboarding/business')({
  * - Currency selection
  */
 function BusinessSetupPage() {
-  const { t } = useTranslation()
+  const { t: tOnboarding, i18n } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
+  const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
-  const { language } = useLanguage()
   const state = useStore(onboardingStore)
-  const setBusinessMutation = useSetBusinessMutation()
+
+  const [didAttemptRestore, setDidAttemptRestore] = useState(false)
+  const [businessName, setBusinessName] = useState(state.businessData?.name ?? '')
+  const [descriptor, setDescriptor] = useState(
+    state.businessData?.descriptor ?? '',
+  )
+  const [country, setCountry] = useState(state.businessData?.country ?? '')
+  const [currency, setCurrency] = useState(state.businessData?.currency ?? '')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
+  const [descriptorError, setDescriptorError] = useState('')
+  const [isDescriptorManuallyEdited, setIsDescriptorManuallyEdited] = useState(false)
 
   // Fetch countries and currencies
   const {
@@ -56,299 +68,290 @@ function BusinessSetupPage() {
       return nameA.localeCompare(nameB, language)
     })
   }, [countries, language])
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
-  // Redirect if no session or not verified
-  useEffect(() => {
-    if (!state.sessionToken) {
-      navigate({ to: '/onboarding/email', replace: true })
-    } else if (state.stage === 'identity_pending') {
-      navigate({ to: '/onboarding/verify', replace: true })
+  const countryByCode = useMemo(() => {
+    const map = new Map<string, CountryResponse>()
+    for (const c of countries) {
+      map.set(c.code, c)
     }
-  }, [state.sessionToken, state.stage, navigate])
+    return map
+  }, [countries])
 
-  const form = useForm({
-    defaultValues: {
-      name: state.businessData?.name || '',
-      descriptor: state.businessData?.descriptor || '',
-      country: state.businessData?.country || '',
-      currency: state.businessData?.currency || '',
-    },
-    onSubmit: async ({ value }) => {
-      try {
-        const response = await setBusinessMutation.mutateAsync({
-          sessionToken: state.sessionToken!,
-          businessName: value.name,
-          businessDescriptor: value.descriptor,
-          country: value.country,
-          currency: value.currency,
-        })
-
-        setBusiness(value)
-        updateStage(response.stage)
-        toast.success(t('onboarding:business_setup_success'))
-
-        // Navigate based on plan type
-        if (state.isPaidPlan) {
-          await navigate({ to: '/onboarding/payment' })
-        } else {
-          await navigate({ to: '/onboarding/complete' })
-        }
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
+  const countryOptions = useMemo(() => {
+    return countries.map((c) => {
+      const label = `${c.flag ? `${c.flag} ` : ''}${isArabic ? c.nameAr : c.name}`
+      return {
+        value: c.code,
+        label,
+        icon: <Globe className="w-4 h-4" />,
       }
-    },
-    validators: {
-      onBlur: BusinessSetupSchema,
-    },
-  })
+    })
+  }, [countries, isArabic])
+
+  const currencyOptions = useMemo(() => {
+    const seen = new Set<string>()
+    const options: Array<{ value: string; label: string; icon: ReactNode }> = []
+    for (const c of countries) {
+      if (!c.currencyCode || seen.has(c.currencyCode)) continue
+      seen.add(c.currencyCode)
+      options.push({
+        value: c.currencyCode,
+        label: c.currencyLabel || c.currencyCode,
+        icon: <DollarSign className="w-4 h-4" />,
+      })
+    }
+    return options
+  }, [countries])
+
+  // Restore session from localStorage on mount
+  useEffect(() => {
+    const restoreSession = async () => {
+      try {
+        if (!state.sessionToken) {
+          const hasSession = await loadSessionFromStorage()
+          if (!hasSession) {
+            void navigate({ to: '/onboarding/plan', replace: true })
+          }
+        }
+      } finally {
+        setDidAttemptRestore(true)
+      }
+    }
+
+    void restoreSession()
+  }, [navigate, state.sessionToken])
+
+  // Redirect if not verified
+  useEffect(() => {
+    if (!didAttemptRestore) return
+
+    if (!state.sessionToken) {
+      void navigate({ to: '/onboarding/plan', replace: true })
+      return
+    }
+
+    if (state.stage !== 'identity_verified') {
+      void navigate({ to: '/onboarding/verify', replace: true })
+    }
+  }, [didAttemptRestore, navigate, state.sessionToken, state.stage])
+
+  // Auto-generate descriptor from business name (only if not manually edited)
+  useEffect(() => {
+    if (businessName && !isDescriptorManuallyEdited) {
+      const generated = businessName
+        .toLowerCase()
+        .replace(/[^a-z0-9\s-]/g, '')
+        .replace(/\s+/g, '-')
+        .slice(0, 20)
+
+      setDescriptor(generated)
+    }
+  }, [businessName, isDescriptorManuallyEdited])
+
+  // Validate descriptor format
+  useEffect(() => {
+    if (descriptor) {
+      if (descriptor.length < 3) {
+        setDescriptorError(tOnboarding('business.descriptorTooShort'))
+      } else if (!/^[a-z0-9-]+$/.test(descriptor)) {
+        setDescriptorError(tOnboarding('business.descriptorInvalidFormat'))
+      } else {
+        setDescriptorError('')
+      }
+    } else {
+      setDescriptorError('')
+    }
+  }, [descriptor, tOnboarding])
+
+  const submitBusiness = async () => {
+    setError('')
+
+    if (!businessName.trim()) {
+      setError(tOnboarding('business.nameRequired'))
+      return
+    }
+
+    if (!descriptor.trim()) {
+      setError(tOnboarding('business.descriptorRequired'))
+      return
+    }
+
+    if (descriptorError) {
+      setError(descriptorError)
+      return
+    }
+
+    if (!country) {
+      setError(tOnboarding('business.countryRequired'))
+      return
+    }
+
+    if (!currency) {
+      setError(tOnboarding('business.currencyRequired'))
+      return
+    }
+
+    if (!state.sessionToken) return
+
+    try {
+      setIsSubmitting(true)
+
+      const response = await onboardingApi.setBusiness({
+        sessionToken: state.sessionToken,
+        businessName: businessName.trim(),
+        businessDescriptor: descriptor.trim(),
+        country,
+        currency,
+      })
+
+      setBusiness({
+        name: businessName.trim(),
+        descriptor: descriptor.trim(),
+        country,
+        currency,
+      })
+      updateStage(response.stage)
+
+      if (response.stage === 'ready_to_commit') {
+        void navigate({ to: '/onboarding/complete' })
+      } else if (response.stage === 'business_staged' || state.isPaidPlan) {
+        void navigate({ to: '/onboarding/payment' })
+      } else {
+        void navigate({ to: '/onboarding/complete' })
+      }
+    } catch (err) {
+      const message = await translateErrorAsync(err, tTranslation)
+      setError(message)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
+    e.preventDefault()
+    void submitBusiness()
+  }
 
   return (
-    <div className="max-w-lg mx-auto">
-      {/* Header */}
-      <div className="text-center mb-8">
-        <div className="flex justify-center mb-4">
-          <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-            <Building2 className="w-8 h-8 text-primary" />
+    <div className="max-w-2xl mx-auto">
+      <div className="card bg-base-100 border border-base-300 shadow-xl">
+        <div className="card-body">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary" />
+              </div>
+            </div>
+            <h2 className="text-2xl font-bold">{tOnboarding('business.title')}</h2>
+            <p className="text-base-content/70 mt-2">
+              {tOnboarding('business.subtitle')}
+            </p>
           </div>
-        </div>
-        <h1 className="text-3xl font-bold text-base-content mb-2">
-          {t('onboarding:setup_business')}
-        </h1>
-        <p className="text-base-content/70">
-          {t('onboarding:business_setup_description')}
-        </p>
-      </div>
 
-      {/* Form */}
-      <form
-        onSubmit={(e) => {
-          e.preventDefault()
-          e.stopPropagation()
-          void form.handleSubmit()
-        }}
-        className="space-y-6"
-      >
-        {/* Business Name */}
-        <form.Field
-          name="name"
-          validators={{
-            onBlur: BusinessSetupSchema.shape.name,
-          }}
-        >
-          {(field) => (
-            <div className="form-control">
-              <label htmlFor="name" className="label">
-                <span className="label-text font-medium">
-                  {t('onboarding:business_name')}
-                </span>
-              </label>
-              <input
-                id="name"
-                name="name"
-                type="text"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                className={`input input-bordered w-full ${
-                  field.state.meta.errors.length > 0 ? 'input-error' : ''
-                }`}
-                placeholder={t('onboarding:business_name_placeholder')}
-              />
-              {field.state.meta.errors.length > 0 && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {field.state.meta.errors[0]?.message || 'Invalid value'}
-                  </span>
-                </label>
-              )}
-            </div>
-          )}
-        </form.Field>
+          <form onSubmit={handleSubmit} className="space-y-6">
+            {/* Business Name */}
+            <FormInput
+              label={tOnboarding('business.name')}
+              type="text"
+              value={businessName}
+              onChange={(e) => {
+                setBusinessName(e.target.value)
+              }}
+              placeholder={tOnboarding('business.namePlaceholder')}
+              required
+              disabled={isSubmitting}
+              startIcon={<Building2 className="w-5 h-5" />}
+              helperText={tOnboarding('business.nameHint')}
+              autoFocus
+            />
 
-        {/* Business Descriptor */}
-        <form.Field
-          name="descriptor"
-          validators={{
-            onBlur: BusinessSetupSchema.shape.descriptor,
-          }}
-        >
-          {(field) => (
-            <div className="form-control">
-              <label htmlFor="descriptor" className="label">
-                <span className="label-text font-medium">
-                  {t('onboarding:business_descriptor')}
-                </span>
-              </label>
-              <input
-                id="descriptor"
-                name="descriptor"
-                type="text"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => {
-                  // Convert to lowercase and replace spaces with hyphens
-                  const value = e.target.value
-                    .toLowerCase()
-                    .replace(/\s+/g, '-')
-                    .replace(/[^a-z0-9-]/g, '')
-                  field.handleChange(value)
-                }}
-                className={`input input-bordered w-full font-mono ${
-                  field.state.meta.errors.length > 0 ? 'input-error' : ''
-                }`}
-                placeholder={t('onboarding:business_descriptor_placeholder')}
-              />
-              <label className="label">
-                <span className="label-text-alt text-base-content/60">
-                  {t('onboarding:business_descriptor_help')}
-                </span>
-              </label>
-              {field.state.meta.errors.length > 0 && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {field.state.meta.errors[0]?.message || 'Invalid value'}
-                  </span>
-                </label>
-              )}
-            </div>
-          )}
-        </form.Field>
+            {/* Business Descriptor */}
+            <FormInput
+              label={tOnboarding('business.descriptor')}
+              type="text"
+              value={descriptor}
+              onChange={(e) => {
+                setDescriptor(e.target.value.toLowerCase())
+                setIsDescriptorManuallyEdited(true)
+              }}
+              onBlur={() => {
+                if (!descriptor.trim()) {
+                  setIsDescriptorManuallyEdited(false)
+                }
+              }}
+              placeholder={tOnboarding('business.descriptorPlaceholder')}
+              pattern="[a-z0-9-]+"
+              minLength={3}
+              maxLength={20}
+              required
+              disabled={isSubmitting}
+              helperText={tOnboarding('business.descriptorHint')}
+              error={descriptorError}
+            />
 
-        {/* Country */}
-        <form.Field
-          name="country"
-          validators={{
-            onBlur: BusinessSetupSchema.shape.country,
-          }}
-        >
-          {(field) => (
-            <div className="form-control">
-              <label htmlFor="country" className="label">
-                <span className="label-text font-medium">
-                  {t('onboarding:country')}
-                </span>
-              </label>
-              <select
-                id="country"
-                name="country"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                disabled={isLoadingCountries}
-                className={`select select-bordered w-full ${
-                  field.state.meta.errors.length > 0 ? 'select-error' : ''
-                }`}
-              >
-                <option value="">
-                  {isLoadingCountries
-                    ? t('common:loading')
-                    : t('onboarding:select_country')}
-                </option>
-                {sortedCountries.map((country) => (
-                  <option key={country.code} value={country.code}>
-                    {language === 'ar' ? country.nameAr : country.name}
-                  </option>
-                ))}
-              </select>
-              {isCountriesError && (
-                <label className="label">
-                  <span className="label-text-alt text-warning">
-                    {t('common:load_error')}
-                  </span>
-                </label>
-              )}
-              {field.state.meta.errors.length > 0 && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {field.state.meta.errors[0]?.message || 'Invalid value'}
-                  </span>
-                </label>
-              )}
-            </div>
-          )}
-        </form.Field>
+            {/* Country */}
+            <FormSelect
+              label={tOnboarding('business.country')}
+              value={country}
+              onChange={(value) => {
+                setCountry(value)
+                const selected = countryByCode.get(value)
+                if (selected?.currencyCode) {
+                  setCurrency(selected.currencyCode)
+                }
+              }}
+              options={countryOptions}
+              placeholder={tOnboarding('business.selectCountry')}
+              disabled={isSubmitting || isLoadingCountries || isCountriesError}
+              required
+              startIcon={<Globe className="w-5 h-5" />}
+            />
 
-        {/* Currency */}
-        <form.Field
-          name="currency"
-          validators={{
-            onBlur: BusinessSetupSchema.shape.currency,
-          }}
-        >
-          {(field) => (
-            <div className="form-control">
-              <label htmlFor="currency" className="label">
-                <span className="label-text font-medium">
-                  {t('onboarding:currency')}
-                </span>
-              </label>
-              <select
-                id="currency"
-                name="currency"
-                value={field.state.value}
-                onBlur={field.handleBlur}
-                onChange={(e) => field.handleChange(e.target.value)}
-                disabled={isLoadingCountries}
-                className={`select select-bordered w-full ${
-                  field.state.meta.errors.length > 0 ? 'select-error' : ''
-                }`}
-              >
-                <option value="">
-                  {isLoadingCountries
-                    ? t('common:loading')
-                    : t('onboarding:select_currency')}
-                </option>
-                {currencies.map((currency) => (
-                  <option key={currency.code} value={currency.code}>
-                    {currency.code} - {currency.name} ({currency.symbol})
-                  </option>
-                ))}
-              </select>
-              {field.state.meta.errors.length > 0 && (
-                <label className="label">
-                  <span className="label-text-alt text-error">
-                    {field.state.meta.errors[0]?.message || 'Invalid value'}
-                  </span>
-                </label>
-              )}
-            </div>
-          )}
-        </form.Field>
+            {/* Currency */}
+            <FormSelect
+              label={tOnboarding('business.currency')}
+              value={currency}
+              onChange={(value) => {
+                setCurrency(value)
+              }}
+              options={currencyOptions}
+              placeholder={tOnboarding('business.selectCurrency')}
+              disabled={isSubmitting || isLoadingCountries || isCountriesError}
+              required
+              startIcon={<DollarSign className="w-5 h-5" />}
+            />
 
-        {/* Submit Button */}
-        <form.Subscribe
-          selector={(formState) => ({
-            canSubmit: formState.canSubmit,
-            isSubmitting: formState.isSubmitting,
-          })}
-        >
-          {({ canSubmit, isSubmitting }) => (
+            {isCountriesError && (
+              <div className="alert alert-error">
+                <span className="text-sm">{tTranslation('errors:generic.unexpected')}</span>
+              </div>
+            )}
+
+            {error && (
+              <div className="alert alert-error">
+                <span className="text-sm">{error}</span>
+              </div>
+            )}
+
             <button
               type="submit"
-              disabled={
-                !canSubmit || isSubmitting || setBusinessMutation.isPending
-              }
-              className="btn btn-primary w-full"
+              className="btn btn-primary btn-block"
+              disabled={isSubmitting}
             >
-              {(isSubmitting || setBusinessMutation.isPending) && (
-                <Loader2 className="w-4 h-4 animate-spin" />
+              {isSubmitting ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  {tCommon('loading')}
+                </>
+              ) : (
+                tCommon('continue')
               )}
-              {t('common:continue')}
             </button>
-          )}
-        </form.Subscribe>
-
-        {/* Back Button */}
-        <button
-          type="button"
-          onClick={() => navigate({ to: '/onboarding/verify' })}
-          className="btn btn-ghost w-full"
-        >
-          <ArrowLeft className="w-4 h-4" />
-          {t('common:back')}
-        </button>
-      </form>
+          </form>
+        </div>
+      </div>
     </div>
   )
 }

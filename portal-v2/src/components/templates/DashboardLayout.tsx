@@ -1,6 +1,6 @@
-import {  useEffect } from 'react'
+import { useEffect } from 'react'
 import { useStore } from '@tanstack/react-store'
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react'
 import { Header } from '@/components/organisms/Header'
 import { Sidebar } from '@/components/organisms/Sidebar'
 import { BottomNav } from '@/components/organisms/BottomNav'

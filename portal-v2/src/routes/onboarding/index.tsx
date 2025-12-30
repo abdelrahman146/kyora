@@ -1,4 +1,4 @@
-import { Navigate, createFileRoute } from '@tanstack/react-router'
+import { Navigate, createFileRoute, useRouterState } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { authStore } from '@/stores/authStore'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
@@ -28,8 +28,14 @@ export const Route = createFileRoute('/onboarding/')({
 function OnboardingRoot() {
   const authState = useStore(authStore)
 
+  const pathname = useRouterState({
+    select: (s) => s.location.pathname,
+  })
+
   // Redirect to home if already authenticated
-  if (authState.isAuthenticated) {
+  // Exception: allow /onboarding/complete to render its success screen
+  // after we set auth tokens, matching portal-web UX.
+  if (authState.isAuthenticated && pathname !== '/onboarding/complete') {
     return <Navigate to="/" replace />
   }
 

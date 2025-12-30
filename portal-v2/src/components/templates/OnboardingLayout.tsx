@@ -1,7 +1,6 @@
-import { Outlet } from '@tanstack/react-router'
+import { Outlet, useRouterState } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
-import { getCurrentStageNumber } from '@/stores/onboardingStore'
 
 /**
  * OnboardingLayout Template
@@ -21,12 +20,34 @@ import { getCurrentStageNumber } from '@/stores/onboardingStore'
  * 6. Complete (100%)
  */
 export function OnboardingLayout() {
-  const { t } = useTranslation(['onboarding', 'common'])
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
 
-  // Calculate progress percentage based on current stage
-  const currentStage = getCurrentStageNumber()
-  const totalStages = 6
-  const progressPercentage = Math.round((currentStage / totalStages) * 100)
+  const pathname = useRouterState({
+    select: (s) => s.location.pathname,
+  })
+
+  const totalSteps = 5
+  const currentStep = (() => {
+    switch (pathname) {
+      case '/onboarding/email':
+        return 1
+      case '/onboarding/verify':
+        return 2
+      case '/onboarding/business':
+        return 3
+      case '/onboarding/payment':
+        return 4
+      case '/onboarding/complete':
+        return 5
+      default:
+        return 0
+    }
+  })()
+
+  const showProgress = pathname !== '/onboarding/plan' && currentStep > 0
+
+  const progressPercentage = Math.round((currentStep / totalSteps) * 100)
 
   return (
     <div className="min-h-screen bg-linear-to-br from-base-100 to-base-200 flex flex-col">
@@ -42,19 +63,19 @@ export function OnboardingLayout() {
           </div>
 
           {/* Language Switcher */}
-          <LanguageSwitcher variant="icon" />
+          <LanguageSwitcher variant="iconOnly" />
         </div>
       </header>
 
       {/* Progress Bar */}
-      {currentStage > 0 && (
+      {showProgress && (
         <div className="bg-base-100/80 backdrop-blur-md">
           <div className="container mx-auto px-4 pb-4 max-w-7xl">
             <div className="flex items-center gap-3">
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
-                {t('onboarding:progress.step', {
-                  current: currentStage,
-                  total: totalStages,
+                {tOnboarding('progress.step', {
+                  current: currentStep,
+                  total: totalSteps,
                 })}
               </span>
               <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
@@ -62,10 +83,10 @@ export function OnboardingLayout() {
                   className="h-full bg-linear-to-r from-primary to-secondary transition-all duration-500 ease-out rounded-full"
                   style={{ width: `${progressPercentage.toString()}%` }}
                   role="progressbar"
-                  aria-valuenow={currentStage}
+                  aria-valuenow={currentStep}
                   aria-valuemin={0}
-                  aria-valuemax={totalStages}
-                  aria-label={t('onboarding:progress.label', {
+                  aria-valuemax={totalSteps}
+                  aria-label={tOnboarding('progress.label', {
                     percentage: progressPercentage,
                   })}
                 />
@@ -92,7 +113,7 @@ export function OnboardingLayout() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-base-content/60">
             <p>
-              {t('common:copyright', {
+              {tCommon('copyright', {
                 year: new Date().getFullYear(),
                 company: 'Kyora',
               })}
@@ -104,7 +125,7 @@ export function OnboardingLayout() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('common:privacy')}
+                {tCommon('privacy')}
               </a>
               <a
                 href="/terms"
@@ -112,7 +133,7 @@ export function OnboardingLayout() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('common:terms')}
+                {tCommon('terms')}
               </a>
               <a
                 href="/support"
@@ -120,7 +141,7 @@ export function OnboardingLayout() {
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t('common:support')}
+                {tCommon('support')}
               </a>
             </div>
           </div>

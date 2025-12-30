@@ -62,15 +62,16 @@ export interface Customer {
   avatarUrl?: string
 }
 
-export interface ListCustomersResponse {
-  customers: Array<Customer>
-  pagination: {
-    page: number
-    limit: number
-    total: number
-    totalPages: number
-  }
+export interface ListResponse<T> {
+  hasMore: boolean
+  items: Array<T>
+  page: number
+  pageSize: number
+  totalCount: number
+  totalPages: number
 }
+
+export type ListCustomersResponse = ListResponse<Customer>
 
 export interface CreateCustomerRequest {
   name: string
@@ -116,13 +117,19 @@ export const customerApi = {
     params?: {
       search?: string
       page?: number
-      limit?: number
+      pageSize?: number
+      orderBy?: Array<string>
     },
   ): Promise<ListCustomersResponse> {
     const searchParams = new URLSearchParams()
     if (params?.search) searchParams.set('search', params.search)
     if (params?.page) searchParams.set('page', params.page.toString())
-    if (params?.limit) searchParams.set('limit', params.limit.toString())
+    if (params?.pageSize)
+      searchParams.set('pageSize', params.pageSize.toString())
+    if (params?.orderBy && params.orderBy.length > 0) {
+      // swagger: orderBy is collectionFormat=csv
+      searchParams.set('orderBy', params.orderBy.join(','))
+    }
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
     return get<ListCustomersResponse>(
@@ -196,7 +203,8 @@ export function useCustomersQuery(
   params?: {
     search?: string
     page?: number
-    limit?: number
+    pageSize?: number
+    orderBy?: Array<string>
   },
 ) {
   return useQuery({

@@ -1,35 +1,45 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Suspense, useState } from 'react'
+import { Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
-  Edit2,
-  Facebook,
-  Instagram,
+  Edit,
+  Globe,
   Mail,
   MapPin,
-  MessageCircle,
   Phone,
+  Plus,
+  ShoppingBag,
   Trash2,
+  User,
 } from 'lucide-react'
 
+import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
+import type { CustomerAddress, CustomerGender } from '@/api/customer'
+import { addressApi } from '@/api/address'
 import { useCustomerQuery, useDeleteCustomerMutation } from '@/api/customer'
+import { useCountriesQuery } from '@/api/metadata'
+import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
-import { EditCustomerSheet } from '@/components/organisms/customers'
 import { CustomerDetailSkeleton } from '@/components/atoms/skeletons/CustomerDetailSkeleton'
+import { AddressCard } from '@/components/molecules/AddressCard'
+import { SocialMediaHandles } from '@/components/molecules/SocialMediaHandles'
+import { AddressSheet } from '@/components/organisms/customers/AddressSheet'
+import { EditCustomerSheet } from '@/components/organisms/customers'
 import { queryKeys } from '@/lib/queryKeys'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
+import { getSelectedBusiness } from '@/stores/businessStore'
 
 /**
  * Customer Detail Route
  *
- * Displays detailed customer information with:
- * - Customer profile card
- * - Order history
- * - Edit in BottomSheet with TanStack Form
- * - Delete confirmation Dialog
- * - Optimistic updates with toast on rollback only
+ * Portal-web parity:
+ * - Profile card + stats
+ * - Social handles
+ * - Basic info + addresses management
+ * - Notes section
+ * - Edit + Delete actions
  */
 export const Route = createFileRoute(
   '/business/$businessDescriptor/customers/$customerId',
@@ -41,39 +51,56 @@ export const Route = createFileRoute(
   ),
 })
 
-/**
- * Customer Detail Page Component
- */
 function CustomerDetailPage() {
-  const { t } = useTranslation()
+  const { t, i18n } = useTranslation()
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+
   const { businessDescriptor, customerId } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
-  const [showEditSheet, setShowEditSheet] = useState(false)
-  const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
-  // Fetch customer data
+  const selectedBusiness = getSelectedBusiness()
+  const currency = selectedBusiness?.currency ?? 'AED'
+
+  // Ensure countries metadata is available for display
+  const { data: countries = [] } = useCountriesQuery()
+
+  // State
+  const [isEditOpen, setIsEditOpen] = useState(false)
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
+  const [isDeleting, setIsDeleting] = useState(false)
+
+  const [addresses, setAddresses] = useState<Array<CustomerAddress>>([])
+  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true)
+  const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false)
+  const [editingAddress, setEditingAddress] = useState<
+    CustomerAddress | undefined
+  >(undefined)
+  const [deletingAddressId, setDeletingAddressId] = useState<string | null>(
+    null,
+  )
+  const [isDeletingAddress, setIsDeletingAddress] = useState(false)
+  const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] =
+    useState(false)
+
   const {
     data: customer,
     isLoading,
     error,
   } = useCustomerQuery(businessDescriptor, customerId)
 
-  // Delete mutation
   const deleteMutation = useDeleteCustomerMutation(businessDescriptor, {
     onSuccess: () => {
-      // Invalidate customers list
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.list(businessDescriptor),
       })
 
       showSuccessToast(t('customers.delete_success'))
 
-      // Navigate back to customers list
       void navigate({
         to: '/business/$businessDescriptor/customers',
         params: { businessDescriptor },
-        search: { page: 1, limit: 20 },
+        search: { page: 1, pageSize: 20 },
       })
     },
     onError: (err) => {
@@ -81,9 +108,142 @@ function CustomerDetailPage() {
     },
   })
 
-  // Handle delete customer
-  const handleDelete = () => {
-    deleteMutation.mutate(customerId)
+  useEffect(() => {
+    let mounted = true
+
+    const fetchAddresses = async () => {
+      try {
+        setIsLoadingAddresses(true)
+        const data = await addressApi.listAddresses(businessDescriptor, customerId)
+        if (!mounted) return
+        setAddresses(data)
+      } catch (err) {
+        if (!mounted) return
+        void showErrorFromException(err, t)
+      } finally {
+        if (mounted) {
+          setIsLoadingAddresses(false)
+        }
+      }
+    }
+
+    void fetchAddresses()
+
+    return () => {
+      mounted = false
+    }
+  }, [businessDescriptor, customerId, i18n.language, t])
+
+  const getInitials = (name: string): string => {
+    return name
+      .split(' ')
+      .map((w) => w[0])
+      .join('')
+      .toUpperCase()
+      .slice(0, 2)
+  }
+
+  const formatPhone = (): string | null => {
+    if (customer?.phoneCode && customer.phoneNumber) {
+      return `${customer.phoneCode} ${customer.phoneNumber}`
+    }
+    return null
+  }
+
+  const getCountryInfo = (countryCode: string) => {
+    const country = countries.find((c) => c.code === countryCode)
+    return {
+      name: isArabic
+        ? (country?.nameAr ?? countryCode)
+        : (country?.name ?? countryCode),
+      flag: country?.flag,
+    }
+  }
+
+  const getGenderLabel = (gender: CustomerGender): string => {
+    const genderMap: Record<CustomerGender, string> = {
+      male: t('customers.form.gender_male'),
+      female: t('customers.form.gender_female'),
+      other: t('customers.form.gender_other'),
+    }
+    return genderMap[gender]
+  }
+
+  const handleBack = () => {
+    void navigate({
+      to: '/business/$businessDescriptor/customers',
+      params: { businessDescriptor },
+      search: { page: 1, pageSize: 20 },
+    })
+  }
+
+  const handleDeleteCustomer = async () => {
+    try {
+      setIsDeleting(true)
+      await deleteMutation.mutateAsync(customerId)
+    } finally {
+      setIsDeleting(false)
+      setIsDeleteDialogOpen(false)
+    }
+  }
+
+  const handleAddAddress = () => {
+    setEditingAddress(undefined)
+    setIsAddressSheetOpen(true)
+  }
+
+  const handleEditAddress = (address: CustomerAddress) => {
+    setEditingAddress(address)
+    setIsAddressSheetOpen(true)
+  }
+
+  const handleDeleteAddressClick = (addressId: string) => {
+    setDeletingAddressId(addressId)
+    setAddressDeleteDialogOpen(true)
+  }
+
+  const handleDeleteAddressConfirm = async () => {
+    if (!deletingAddressId) return
+
+    try {
+      setIsDeletingAddress(true)
+      await addressApi.deleteAddress(
+        businessDescriptor,
+        customerId,
+        deletingAddressId,
+      )
+      setAddresses((prev) => prev.filter((a) => a.id !== deletingAddressId))
+      showSuccessToast(t('customers.address.delete_success'))
+    } catch (err) {
+      void showErrorFromException(err, t)
+    } finally {
+      setIsDeletingAddress(false)
+      setDeletingAddressId(null)
+      setAddressDeleteDialogOpen(false)
+    }
+  }
+
+  const handleAddressSubmit = async (
+    data: CreateAddressRequest | UpdateAddressRequest,
+  ): Promise<CustomerAddress> => {
+    if (editingAddress) {
+      const updated = await addressApi.updateAddress(
+        businessDescriptor,
+        customerId,
+        editingAddress.id,
+        data as UpdateAddressRequest,
+      )
+      setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+      return updated
+    }
+
+    const created = await addressApi.createAddress(
+      businessDescriptor,
+      customerId,
+      data as CreateAddressRequest,
+    )
+    setAddresses((prev) => [...prev, created])
+    return created
   }
 
   if (isLoading) {
@@ -101,227 +261,257 @@ function CustomerDetailPage() {
     )
   }
 
-  // Format phone display
-  const phoneDisplay =
-    customer.phoneCode && customer.phoneNumber
-      ? `${customer.phoneCode} ${customer.phoneNumber}`
-      : null
-
-  // Get primary address if exists
-  const primaryAddress = customer.addresses?.[0]
-  const addressDisplay = primaryAddress
-    ? [primaryAddress.street, primaryAddress.city, primaryAddress.state]
-        .filter(Boolean)
-        .join(', ')
-    : null
-
   return (
     <>
-      <div className="space-y-6">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-          <div className="flex items-center gap-4">
-            <button
-              className="btn btn-circle btn-ghost btn-sm"
-              onClick={() => {
-                void navigate({
-                  to: '/business/$businessDescriptor/customers',
-                  params: { businessDescriptor },
-                  search: { page: 1, limit: 20 },
-                })
-              }}
-            >
-              <ArrowLeft size={20} />
-            </button>
-            <div>
-              <h1 className="text-2xl font-bold">{customer.name}</h1>
-              <p className="text-sm text-base-content/70">
-                {t('customers.details_title')}
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-4">
+          <button
+            type="button"
+            className="btn btn-ghost btn-sm gap-2"
+            onClick={handleBack}
+            aria-label={t('common.back')}
+          >
+            <ArrowLeft size={18} className={isArabic ? 'rotate-180' : ''} />
+            <span className="hidden sm:inline">{t('common.back')}</span>
+          </button>
+
+          <h1 className="text-2xl font-bold flex-1 truncate">{customer.name}</h1>
+
           <div className="flex gap-2">
             <button
+              type="button"
               className="btn btn-outline btn-sm gap-2"
-              onClick={() => setShowEditSheet(true)}
+              onClick={() => {
+                setIsEditOpen(true)
+              }}
             >
-              <Edit2 size={16} />
-              {t('common.edit')}
+              <Edit size={16} />
+              <span className="hidden sm:inline">{t('common.edit')}</span>
             </button>
             <button
+              type="button"
               className="btn btn-error btn-outline btn-sm gap-2"
-              onClick={() => setShowDeleteDialog(true)}
+              onClick={() => {
+                setIsDeleteDialogOpen(true)
+              }}
             >
               <Trash2 size={16} />
-              {t('common.delete')}
+              <span className="hidden sm:inline">{t('common.delete')}</span>
             </button>
           </div>
         </div>
 
-        {/* Customer Profile Card */}
-        <div className="card bg-base-100 shadow">
+        {/* Header Card with Avatar */}
+        <div className="card bg-base-100 border border-base-300 shadow-sm">
           <div className="card-body">
-            <div className="flex flex-col md:flex-row gap-6">
-              {/* Avatar */}
-              <div className="avatar placeholder">
-                <div className="w-24 h-24 bg-primary/10 text-primary rounded-full">
-                  <span className="text-3xl font-bold">
-                    {customer.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-              </div>
+            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
+              <Avatar
+                src={customer.avatarUrl}
+                alt={customer.name}
+                fallback={getInitials(customer.name)}
+                size="xl"
+              />
 
-              {/* Customer Info */}
-              <div className="flex-1 space-y-4">
-                <div>
-                  <h2 className="text-2xl font-bold">{customer.name}</h2>
-                  <p className="text-sm text-base-content/70">
-                    {t('customers.since', {
-                      date: new Date(customer.createdAt).toLocaleDateString(),
-                    })}
-                  </p>
-                </div>
+              <div className="flex-1 text-center sm:text-start">
+                <h2 className="text-2xl font-bold">{customer.name}</h2>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {/* Email */}
-                  {customer.email && (
-                    <div className="flex items-center gap-2">
-                      <Mail size={16} className="text-base-content/60" />
-                      <span className="text-sm">{customer.email}</span>
-                    </div>
-                  )}
-
-                  {/* Phone */}
-                  {phoneDisplay && (
-                    <div className="flex items-center gap-2">
-                      <Phone size={16} className="text-base-content/60" />
-                      <span className="text-sm">{phoneDisplay}</span>
-                    </div>
-                  )}
-
-                  {/* Address */}
-                  {addressDisplay && (
-                    <div className="flex items-center gap-2">
-                      <MapPin size={16} className="text-base-content/60" />
-                      <span className="text-sm">{addressDisplay}</span>
-                    </div>
-                  )}
-
-                  {/* WhatsApp */}
-                  {customer.whatsappNumber && (
-                    <div className="flex items-center gap-2">
-                      <MessageCircle
-                        size={16}
-                        className="text-base-content/60"
-                      />
-                      <span className="text-sm">{customer.whatsappNumber}</span>
-                    </div>
-                  )}
-
-                  {/* Instagram */}
-                  {customer.instagramUsername && (
-                    <div className="flex items-center gap-2">
-                      <Instagram size={16} className="text-base-content/60" />
-                      <a
-                        href={`https://instagram.com/${customer.instagramUsername.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm link link-primary"
-                      >
-                        @{customer.instagramUsername.replace('@', '')}
-                      </a>
-                    </div>
-                  )}
-
-                  {/* Facebook */}
-                  {customer.facebookUsername && (
-                    <div className="flex items-center gap-2">
-                      <Facebook size={16} className="text-base-content/60" />
-                      <a
-                        href={`https://facebook.com/${customer.facebookUsername.replace('@', '')}`}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="text-sm link link-primary"
-                      >
-                        {customer.facebookUsername}
-                      </a>
-                    </div>
-                  )}
-                </div>
-
-                {/* Notes */}
-                {customer.notes && customer.notes.length > 0 && (
-                  <div className="pt-4 border-t border-base-300">
-                    <h3 className="text-sm font-semibold mb-2">
-                      {t('customers.details.notes')}
-                    </h3>
-                    <p className="text-sm text-base-content/70 whitespace-pre-wrap">
-                      {customer.notes[0].content}
-                    </p>
+                {customer.email && (
+                  <div className="flex items-center gap-2 justify-center sm:justify-start mt-2 text-base-content/70">
+                    <Mail size={16} />
+                    <span>{customer.email}</span>
                   </div>
                 )}
-              </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Stats Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <div className="text-sm text-base-content/70">
-                {t('customers.total_orders')}
-              </div>
-              <div className="text-3xl font-bold">
-                {customer.ordersCount ?? 0}
-              </div>
-            </div>
-          </div>
+                {formatPhone() && (
+                  <div className="flex items-center gap-2 justify-center sm:justify-start mt-1 text-base-content/70">
+                    <Phone size={16} />
+                    <span dir="ltr">{formatPhone()}</span>
+                  </div>
+                )}
 
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <div className="text-sm text-base-content/70">
-                {t('customers.total_spent')}
-              </div>
-              <div className="text-3xl font-bold">
-                {(customer.totalSpent ?? 0).toFixed(2)}
+                {/* Stats */}
+                <div className="grid grid-cols-2 gap-4 mt-6">
+                  <div className="stat bg-base-200 rounded-box p-4">
+                    <div className="stat-figure text-success">
+                      <ShoppingBag size={28} />
+                    </div>
+                    <div className="stat-title text-sm">
+                      {t('customers.orders_count')}
+                    </div>
+                    <div className="text-2xl font-bold text-success">
+                      {customer.ordersCount ?? 0}
+                    </div>
+                  </div>
+                  <div className="stat bg-base-200 rounded-box p-4">
+                    <div className="stat-title text-sm">
+                      {t('customers.total_spent')}
+                    </div>
+                    <div className="text-2xl font-bold text-primary">
+                      {currency}{' '}
+                      {(customer.totalSpent ?? 0).toLocaleString(
+                        isArabic ? 'ar-AE' : 'en-US',
+                        {
+                          minimumFractionDigits: 2,
+                          maximumFractionDigits: 2,
+                        },
+                      )}
+                    </div>
+                  </div>
+                </div>
               </div>
             </div>
-          </div>
 
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <div className="text-sm text-base-content/70">
-                {t('customers.average_order')}
-              </div>
-              <div className="text-3xl font-bold">
-                {(customer.ordersCount ?? 0) > 0
-                  ? (
-                      (customer.totalSpent ?? 0) / (customer.ordersCount ?? 1)
-                    ).toFixed(2)
-                  : '0.00'}
-              </div>
+            {/* Social Media Handles */}
+            <div className="mt-6">
+              <SocialMediaHandles
+                instagramUsername={customer.instagramUsername}
+                facebookUsername={customer.facebookUsername}
+                tiktokUsername={customer.tiktokUsername}
+                snapchatUsername={customer.snapchatUsername}
+                xUsername={customer.xUsername}
+                whatsappNumber={customer.whatsappNumber}
+              />
             </div>
-          </div>
-        </div>
 
-        {/* Recent Orders */}
-        <div className="card bg-base-100 shadow">
-          <div className="card-body">
-            <h3 className="text-lg font-semibold mb-4">
-              {t('customers.recent_orders')}
-            </h3>
-            <div className="text-center text-base-content/70 py-8">
-              {t('customers.no_orders_yet')}
+            {/* Details Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
+              {/* Basic Information */}
+              <div className="card bg-base-100 border border-base-300 shadow-sm">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">
+                    {t('customers.details.basic_info')}
+                  </h3>
+
+                  <div className="space-y-3 mt-4">
+                    <div className="flex items-start gap-3">
+                      <User size={18} className="text-base-content/60 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs text-base-content/60">
+                          {t('customers.form.gender')}
+                        </div>
+                        <div className="font-medium">
+                          {getGenderLabel(customer.gender)}
+                        </div>
+                      </div>
+                    </div>
+
+                    <div className="flex items-start gap-3">
+                      <Globe size={18} className="text-base-content/60 mt-0.5" />
+                      <div className="flex-1">
+                        <div className="text-xs text-base-content/60">
+                          {t('customers.form.country')}
+                        </div>
+                        <div className="flex items-center gap-2 font-medium">
+                          {getCountryInfo(customer.countryCode).flag && (
+                            <span className="text-lg">
+                              {getCountryInfo(customer.countryCode).flag}
+                            </span>
+                          )}
+                          <span>{getCountryInfo(customer.countryCode).name}</span>
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              {/* Addresses */}
+              <div className="card bg-base-100 border border-base-300 shadow-sm">
+                <div className="card-body">
+                  <div className="flex items-center justify-between mb-4">
+                    <h3 className="card-title text-lg">
+                      {t('customers.details.addresses')}
+                    </h3>
+                    <button
+                      type="button"
+                      className="btn btn-primary btn-sm gap-2"
+                      onClick={handleAddAddress}
+                    >
+                      <Plus size={16} />
+                      <span className="hidden sm:inline">
+                        {t('customers.address.add_button')}
+                      </span>
+                    </button>
+                  </div>
+
+                  {isLoadingAddresses ? (
+                    <div className="space-y-3">
+                      <div className="skeleton h-24 rounded-box"></div>
+                      <div className="skeleton h-24 rounded-box"></div>
+                    </div>
+                  ) : addresses.length > 0 ? (
+                    <div className="space-y-3">
+                      {addresses.map((address) => (
+                        <AddressCard
+                          key={address.id}
+                          address={address}
+                          onEdit={() => {
+                            handleEditAddress(address)
+                          }}
+                          onDelete={() => {
+                            handleDeleteAddressClick(address.id)
+                          }}
+                          isDeleting={
+                            isDeletingAddress && deletingAddressId === address.id
+                          }
+                        />
+                      ))}
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-base-content/60">
+                      <MapPin size={32} className="mx-auto mb-2 opacity-40" />
+                      <p className="mb-3">{t('customers.details.no_addresses')}</p>
+                      <button
+                        type="button"
+                        className="btn btn-outline btn-sm gap-2"
+                        onClick={handleAddAddress}
+                      >
+                        <Plus size={16} />
+                        {t('customers.address.add_first')}
+                      </button>
+                    </div>
+                  )}
+                </div>
+              </div>
             </div>
+
+            {/* Notes Section */}
+            {customer.notes && customer.notes.length > 0 && (
+              <div className="card bg-base-100 border border-base-300 shadow-sm mt-6">
+                <div className="card-body">
+                  <h3 className="card-title text-lg">
+                    {t('customers.details.notes')}
+                  </h3>
+                  <div className="space-y-2 mt-4">
+                    {customer.notes.map((note) => (
+                      <div key={note.id} className="p-3 bg-base-200 rounded-lg">
+                        <p className="text-sm">{note.content}</p>
+                        <div className="text-xs text-base-content/60 mt-2">
+                          {new Date(note.createdAt).toLocaleDateString(
+                            isArabic ? 'ar-AE' : 'en-US',
+                            {
+                              year: 'numeric',
+                              month: 'long',
+                              day: 'numeric',
+                            },
+                          )}
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )}
           </div>
         </div>
       </div>
 
-      {/* Edit Customer Sheet */}
       <EditCustomerSheet
-        isOpen={showEditSheet}
-        onClose={() => setShowEditSheet(false)}
+        isOpen={isEditOpen}
+        onClose={() => {
+          setIsEditOpen(false)
+        }}
         businessDescriptor={businessDescriptor}
         customer={customer}
         onUpdated={() => {
@@ -329,44 +519,96 @@ function CustomerDetailPage() {
             queryKey: queryKeys.customers.list(businessDescriptor),
           })
           void queryClient.invalidateQueries({
-            queryKey: queryKeys.customers.detail(
-              businessDescriptor,
-              customerId,
-            ),
+            queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
           })
-          setShowEditSheet(false)
+          setIsEditOpen(false)
         }}
       />
 
-      {/* Delete Confirmation Dialog */}
       <Dialog
-        open={showDeleteDialog}
-        onClose={() => setShowDeleteDialog(false)}
+        open={isDeleteDialogOpen}
+        onClose={() => {
+          setIsDeleteDialogOpen(false)
+        }}
         title={t('customers.delete_confirm_title')}
-        description={t('customers.delete_confirm_message', {
-          name: customer.name,
-        })}
+        size="sm"
+        footer={
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setIsDeleteDialogOpen(false)
+              }}
+              disabled={isDeleting}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={() => {
+                void handleDeleteCustomer()
+              }}
+              disabled={isDeleting}
+            >
+              {isDeleting && <span className="loading loading-spinner loading-sm" />}
+              {t('common.delete')}
+            </button>
+          </div>
+        }
       >
-        <div className="flex justify-end gap-2 mt-4">
-          <button
-            className="btn btn-ghost"
-            onClick={() => setShowDeleteDialog(false)}
-            disabled={deleteMutation.isPending}
-          >
-            {t('common.cancel')}
-          </button>
-          <button
-            className="btn btn-error"
-            onClick={handleDelete}
-            disabled={deleteMutation.isPending}
-          >
-            {deleteMutation.isPending ? (
-              <span className="loading loading-spinner loading-sm"></span>
-            ) : (
-              t('common.delete')
-            )}
-          </button>
-        </div>
+        <p>{t('customers.delete_confirm_message', { name: customer.name })}</p>
+      </Dialog>
+
+      <AddressSheet
+        isOpen={isAddressSheetOpen}
+        onClose={() => {
+          setIsAddressSheetOpen(false)
+          setEditingAddress(undefined)
+        }}
+        onSubmit={handleAddressSubmit}
+        address={editingAddress}
+      />
+
+      <Dialog
+        open={addressDeleteDialogOpen}
+        onClose={() => {
+          setAddressDeleteDialogOpen(false)
+          setDeletingAddressId(null)
+        }}
+        title={t('customers.address.delete_confirm_title')}
+        size="sm"
+        footer={
+          <div className="flex gap-2 justify-end">
+            <button
+              type="button"
+              className="btn btn-ghost"
+              onClick={() => {
+                setAddressDeleteDialogOpen(false)
+                setDeletingAddressId(null)
+              }}
+              disabled={isDeletingAddress}
+            >
+              {t('common.cancel')}
+            </button>
+            <button
+              type="button"
+              className="btn btn-error"
+              onClick={() => {
+                void handleDeleteAddressConfirm()
+              }}
+              disabled={isDeletingAddress}
+            >
+              {isDeletingAddress && (
+                <span className="loading loading-spinner loading-sm" />
+              )}
+              {t('common.delete')}
+            </button>
+          </div>
+        }
+      >
+        <p>{t('customers.address.delete_confirm_message')}</p>
       </Dialog>
     </>
   )

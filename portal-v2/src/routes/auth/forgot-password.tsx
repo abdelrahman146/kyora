@@ -1,12 +1,15 @@
+import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
-import { Loader2 } from 'lucide-react'
+import { ArrowLeft, CheckCircle, Mail } from 'lucide-react'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
 import { ForgotPasswordSchema } from '@/schemas/auth'
 import { translateErrorAsync } from '@/lib/translateError'
+import { useLanguage } from '@/hooks/useLanguage'
+import { Button } from '@/components/atoms/Button'
+import { Input } from '@/components/atoms/Input'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -16,6 +19,12 @@ export const Route = createFileRoute('/auth/forgot-password')({
 function ForgotPasswordPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
+  const { t: tErrors } = useTranslation('errors')
+  const { isRTL } = useLanguage()
+  const [isSuccess, setIsSuccess] = useState(false)
+  const [submittedEmail, setSubmittedEmail] = useState('')
+  const [submitErrorMessage, setSubmitErrorMessage] =
+    useState<string>('')
 
   const form = useForm({
     defaultValues: {
@@ -23,12 +32,13 @@ function ForgotPasswordPage() {
     },
     onSubmit: async ({ value }) => {
       try {
+        setSubmitErrorMessage('')
         await authApi.forgotPassword(value)
-        toast.success(t('auth:reset_link_sent'))
-        await navigate({ to: '/auth/login', search: { redirect: '/' } })
+        setSubmittedEmail(value.email)
+        setIsSuccess(true)
       } catch (error) {
         const message = await translateErrorAsync(error, t)
-        toast.error(message)
+        setSubmitErrorMessage(message)
       }
     },
     validators: {
@@ -36,96 +46,156 @@ function ForgotPasswordPage() {
     },
   })
 
-  return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-6">
-      <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Kyora</h1>
-          <h2 className="text-2xl font-bold text-base-content mb-2">
-            {t('auth:forgot_password')}
-          </h2>
-          <p className="text-base-content/60">
-            {t('auth:forgot_password_description')}
-          </p>
-        </div>
+  const handleBackToLogin = async () => {
+    await navigate({ to: '/auth/login', replace: true })
+  }
 
-        {/* Forgot Password Form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            void form.handleSubmit()
-          }}
-          className="space-y-6"
-        >
-          {/* Email Field */}
-          <form.Field
-            name="email"
-            validators={{
-              onBlur: ForgotPasswordSchema.shape.email,
-            }}
-          >
-            {(field) => (
-              <div className="form-control">
-                <label htmlFor="email" className="label">
-                  <span className="label-text font-medium">
-                    {t('common:email')}
-                  </span>
-                </label>
-                <input
-                  id="email"
-                  name="email"
-                  type="email"
-                  autoComplete="email"
-                  value={field.state.value}
-                  onBlur={field.handleBlur}
-                  onChange={(e) => field.handleChange(e.target.value)}
-                  className={`input input-bordered w-full ${
-                    field.state.meta.errors.length > 0 ? 'input-error' : ''
-                  }`}
-                  placeholder={t('auth:email_placeholder')}
-                />
-                {field.state.meta.errors.length > 0 && (
-                  <label className="label">
-                    <span className="label-text-alt text-error">
-                      {field.state.meta.errors[0]?.message || 'Invalid value'}
-                    </span>
-                  </label>
-                )}
+  if (isSuccess) {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4">
+                <CheckCircle className="text-success" size={32} />
               </div>
-            )}
-          </form.Field>
 
-          {/* Submit Button */}
-          <form.Subscribe
-            selector={(state) => ({
-              canSubmit: state.canSubmit,
-              isSubmitting: state.isSubmitting,
-            })}
-          >
-            {({ canSubmit, isSubmitting }) => (
-              <button
-                type="submit"
-                disabled={!canSubmit || isSubmitting}
-                className="btn btn-primary w-full"
+              <h1 className="card-title text-2xl mb-2">
+                {t('auth.password_reset_sent_title')}
+              </h1>
+
+              <p className="text-base-content/70 mb-6">
+                {t('auth.password_reset_sent_description', {
+                  email: submittedEmail,
+                })}
+              </p>
+
+              <div className="alert alert-info mb-6">
+                <div className="flex flex-col gap-2 text-start">
+                  <p className="text-sm font-medium">
+                    {t('auth.password_reset_email_tips_title')}
+                  </p>
+                  <ul className="text-xs list-disc list-inside space-y-1">
+                    <li>{t('auth.password_reset_tip_check_spam')}</li>
+                    <li>{t('auth.password_reset_tip_expires')}</li>
+                    <li>{t('auth.password_reset_tip_no_account')}</li>
+                  </ul>
+                </div>
+              </div>
+
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={() => {
+                  void handleBackToLogin()
+                }}
               >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {t('auth:send_reset_link')}
-              </button>
-            )}
-          </form.Subscribe>
-
-          {/* Back to Login Link */}
-          <div className="text-center">
-            <a
-              href="/auth/login"
-              className="text-sm text-base-content/60 hover:text-base-content transition-colors"
-            >
-              {t('auth:back_to_login')}
-            </a>
+                {t('auth.return_to_login')}
+              </Button>
+            </div>
           </div>
-        </form>
+        </div>
+      </div>
+    )
+  }
+
+  return (
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+      <div className="w-full max-w-md">
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body">
+            <button
+              type="button"
+              onClick={() => {
+                void handleBackToLogin()
+              }}
+              className="btn btn-ghost btn-sm w-fit mb-4 -ms-2"
+              aria-label={t('auth.back_to_login')}
+            >
+              <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />
+              {t('auth.back_to_login')}
+            </button>
+
+            <h1 className="card-title text-3xl mb-2">
+              {t('auth.forgot_password_title')}
+            </h1>
+            <p className="text-base-content/70 mb-6">
+              {t('auth.forgot_password_description')}
+            </p>
+
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                void form.handleSubmit()
+              }}
+              className="space-y-6"
+              noValidate
+            >
+              {submitErrorMessage ? (
+                <div role="alert" className="alert alert-error">
+                  <span>{submitErrorMessage}</span>
+                </div>
+              ) : null}
+
+              <form.Field
+                name="email"
+                validators={{
+                  onBlur: ForgotPasswordSchema.shape.email,
+                }}
+              >
+                {(field) => (
+                  <Input
+                    id="email"
+                    type="email"
+                    label={t('auth.email')}
+                    placeholder={t('auth.email_placeholder')}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={
+                      field.state.meta.errors[0]
+                        ? tErrors(field.state.meta.errors[0] as unknown as string)
+                        : undefined
+                    }
+                    startIcon={<Mail size={20} />}
+                    autoComplete="email"
+                    autoFocus
+                    disabled={form.state.isSubmitting}
+                  />
+                )}
+              </form.Field>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={form.state.isSubmitting}
+                disabled={form.state.isSubmitting}
+              >
+                {t('auth.send_reset_link')}
+              </Button>
+
+              <div className="text-center">
+                <p className="text-sm text-base-content/60">
+                  {t('auth.remember_password')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleBackToLogin()
+                    }}
+                    className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
+                  >
+                    {t('auth.login')}
+                  </button>
+                </p>
+              </div>
+            </form>
+          </div>
+        </div>
       </div>
     </div>
   )

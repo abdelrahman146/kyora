@@ -88,7 +88,7 @@
     "nameRequired": "Business name is required",
     "descriptor": "Business Identifier",
     "descriptorPlaceholder": "my-awesome-shop",
-    "descriptorHint": "Lowercase letters, numbers, and hyphens only (3-50 characters)",
+    "descriptorHint": "Lowercase letters, numbers, and hyphens only (3-20 characters)",
     "descriptorRequired": "Business identifier is required",
     "descriptorTooShort": "Must be at least 3 characters",
     "descriptorInvalidFormat": "Only lowercase letters, numbers, and hyphens allowed",

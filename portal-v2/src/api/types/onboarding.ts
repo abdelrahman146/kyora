@@ -101,14 +101,19 @@ export const GetSessionResponseSchema = z.object({
   planId: z.string(),
   planDescriptor: z.string(),
   stage: SessionStageSchema,
-  isPaid: z.boolean(),
-  identityMethod: IdentityMethodSchema.nullable(),
-  businessName: z.string().nullable(),
-  businessDescriptor: z.string().nullable(),
-  businessCountry: z.string().nullable(),
-  businessCurrency: z.string().nullable(),
+  isPaidPlan: z.boolean(),
+  method: IdentityMethodSchema.nullable().optional(),
+  emailVerified: z.boolean().optional(),
+  firstName: z.string().nullable().optional(),
+  lastName: z.string().nullable().optional(),
+  businessName: z.string().nullable().optional(),
+  businessDescriptor: z.string().nullable().optional(),
+  businessCountry: z.string().nullable().optional(),
+  businessCurrency: z.string().nullable().optional(),
   paymentStatus: PaymentStatusSchema,
-  stripeCheckoutSessionId: z.string().nullable(),
+  checkoutSessionId: z.string().nullable().optional(),
+  otpExpiry: z.string().nullable().optional(),
+  expiresAt: z.string().nullable().optional(),
 })
 
 export type GetSessionResponse = z.infer<typeof GetSessionResponseSchema>
@@ -122,8 +127,7 @@ export const SendOTPRequestSchema = z.object({
 export type SendOTPRequest = z.infer<typeof SendOTPRequestSchema>
 
 export const SendOTPResponseSchema = z.object({
-  message: z.string(),
-  expiresAt: z.string(),
+  retryAfterSeconds: z.number().int().nonnegative().optional(),
 })
 
 export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>
@@ -132,8 +136,9 @@ export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>
 
 export const VerifyOTPRequestSchema = z.object({
   sessionToken: z.string().min(1, 'Session token is required'),
-  otp: z.string().length(6, 'OTP must be 6 digits'),
-  fullName: z.string().min(1, 'Full name is required'),
+  code: z.string().length(6, 'OTP must be 6 digits'),
+  firstName: z.string().min(1, 'First name is required'),
+  lastName: z.string().min(1, 'Last name is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
@@ -190,13 +195,14 @@ export type SetBusinessResponse = z.infer<typeof SetBusinessResponseSchema>
 
 export const PaymentStartRequestSchema = z.object({
   sessionToken: z.string().min(1, 'Session token is required'),
+  successUrl: z.string().url(),
+  cancelUrl: z.string().url(),
 })
 
 export type PaymentStartRequest = z.infer<typeof PaymentStartRequestSchema>
 
 export const PaymentStartResponseSchema = z.object({
   checkoutUrl: z.string().url(),
-  sessionId: z.string(),
 })
 
 export type PaymentStartResponse = z.infer<typeof PaymentStartResponseSchema>

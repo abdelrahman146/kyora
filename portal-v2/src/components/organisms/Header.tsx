@@ -71,8 +71,8 @@ export function Header({ title }: HeaderProps) {
           {/* Business Switcher - Compact on mobile */}
           <BusinessSwitcher />
 
-          {/* Language Toggle - Always visible, icon variant for compact display */}
-          <LanguageSwitcher variant="icon" />
+          {/* Language Toggle - Always visible, compact variant */}
+          <LanguageSwitcher variant="compact" />
 
           {/* User Menu */}
           <UserMenu />

@@ -164,7 +164,7 @@ function HomePage() {
           <div className="flex items-center justify-between">
             <Logo size="md" showText />
             <div className="flex items-center gap-2">
-              <LanguageSwitcher variant="icon" />
+              <LanguageSwitcher variant="iconOnly" />
               <div className="divider divider-horizontal mx-0" />
               <span className="hidden text-sm text-base-content/70 sm:inline">
                 {user?.firstName} {user?.lastName}

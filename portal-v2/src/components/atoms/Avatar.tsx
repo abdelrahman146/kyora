@@ -55,7 +55,7 @@ export function Avatar({
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-neutral text-neutral-content">
             {fallback ? (
-              <span>{fallback.charAt(0).toUpperCase()}</span>
+              <span>{fallback.slice(0, 2).toUpperCase()}</span>
             ) : (
               (placeholder ?? <span>?</span>)
             )}

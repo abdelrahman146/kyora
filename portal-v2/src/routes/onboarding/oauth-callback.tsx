@@ -2,11 +2,10 @@ import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
 import { AlertCircle, Loader2 } from 'lucide-react'
 import { z } from 'zod'
-import { onboardingStore, updateStage } from '@/stores/onboardingStore'
-import { useOAuthGoogleMutation } from '@/api/onboarding'
+import { onboardingApi } from '@/api/onboarding'
+import { loadSession, onboardingStore } from '@/stores/onboardingStore'
 import { translateErrorAsync } from '@/lib/translateError'
 
 const OAuthCallbackSearchSchema = z.object({
@@ -32,120 +31,105 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
  * - Redirects to appropriate onboarding step
  */
 function OAuthCallbackPage() {
-  const { t } = useTranslation()
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
   const { code, error, error_description } = Route.useSearch()
   const storeState = useStore(onboardingStore)
   const [isProcessing, setIsProcessing] = useState(true)
-
-  const oauthMutation = useOAuthGoogleMutation()
+  const [errorMessage, setErrorMessage] = useState('')
 
   useEffect(() => {
-    void handleOAuthCallback()
-  }, [])
+    const handleCallback = async () => {
+      const oauthError = error_description || error
 
-  const handleOAuthCallback = async () => {
-    // Handle OAuth errors
-    if (error) {
-      const errorMessage = error_description || error
-      toast.error(t('auth:oauth_error', { error: errorMessage }))
-      await navigate({ to: '/onboarding/verify', replace: true })
-      return
-    }
-
-    // Validate required parameters
-    if (!code) {
-      toast.error(t('auth:oauth_invalid_callback'))
-      await navigate({ to: '/onboarding/verify', replace: true })
-      return
-    }
-
-    // Validate session token
-    if (!storeState.sessionToken) {
-      toast.error(t('onboarding:session_expired'))
-      await navigate({ to: '/onboarding/email', replace: true })
-      return
-    }
-
-    try {
-      setIsProcessing(true)
-
-      // Exchange authorization code for tokens
-      const response = await oauthMutation.mutateAsync({
-        sessionToken: storeState.sessionToken,
-        code,
-      })
-
-      // Update onboarding stage
-      updateStage(response.stage)
-
-      toast.success(t('auth:oauth_success'))
-
-      // Navigate to next step based on stage
-      if (response.stage === 'identity_verified') {
-        await navigate({ to: '/onboarding/business', replace: true })
-      } else if (response.stage === 'business_staged') {
-        // Business already set, go to payment or complete
-        if (storeState.isPaidPlan) {
-          await navigate({ to: '/onboarding/payment', replace: true })
-        } else {
-          await navigate({ to: '/onboarding/complete', replace: true })
-        }
-      } else {
-        // Fallback to verify step
-        await navigate({ to: '/onboarding/verify', replace: true })
+      if (oauthError) {
+        setErrorMessage(tOnboarding('oauth.error', { error: oauthError }))
+        setTimeout(() => {
+          void navigate({ to: '/onboarding/verify', replace: true })
+        }, 3000)
+        return
       }
-    } catch (err) {
-      const message = await translateErrorAsync(err, t)
-      toast.error(message)
-      await navigate({ to: '/onboarding/verify', replace: true })
-    } finally {
-      setIsProcessing(false)
+
+      if (!code) {
+        setErrorMessage(tOnboarding('oauth.noCode'))
+        setTimeout(() => {
+          void navigate({ to: '/onboarding/verify', replace: true })
+        }, 3000)
+        return
+      }
+
+      const storedToken =
+        storeState.sessionToken ??
+        sessionStorage.getItem('kyora_onboarding_google_session')
+
+      if (!storedToken) {
+        setErrorMessage(tOnboarding('oauth.noSession'))
+        setTimeout(() => {
+          void navigate({ to: '/onboarding/plan', replace: true })
+        }, 3000)
+        return
+      }
+
+      try {
+        await onboardingApi.oauthGoogle({
+          sessionToken: storedToken,
+          code,
+        })
+
+        sessionStorage.removeItem('kyora_onboarding_google_session')
+        await loadSession(storedToken)
+
+        void navigate({ to: '/onboarding/business', replace: true })
+      } catch (err) {
+        const message = await translateErrorAsync(err, tTranslation)
+        setErrorMessage(message)
+        setTimeout(() => {
+          void navigate({ to: '/onboarding/verify', replace: true })
+        }, 3000)
+      } finally {
+        setIsProcessing(false)
+      }
     }
-  }
+
+    void handleCallback()
+  }, [code, error, error_description, navigate, storeState.sessionToken, tOnboarding, tTranslation])
 
   return (
-    <div className="max-w-lg mx-auto">
-      <div className="text-center">
-        {/* Loading State */}
-        {isProcessing && (
-          <>
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center">
-                <Loader2 className="w-8 h-8 text-primary animate-spin" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-base-content mb-2">
-              {t('auth:processing_oauth')}
-            </h1>
-            <p className="text-base-content/70">
-              {t('auth:processing_oauth_description')}
-            </p>
-          </>
-        )}
-
-        {/* Error State */}
-        {!isProcessing && (error || oauthMutation.isError) && (
-          <>
-            <div className="flex justify-center mb-6">
-              <div className="w-16 h-16 rounded-full bg-error/10 flex items-center justify-center">
-                <AlertCircle className="w-8 h-8 text-error" />
-              </div>
-            </div>
-            <h1 className="text-3xl font-bold text-base-content mb-2">
-              {t('auth:oauth_failed')}
-            </h1>
-            <p className="text-base-content/70 mb-6">
-              {error_description || t('auth:oauth_failed_description')}
-            </p>
-            <button
-              onClick={() => navigate({ to: '/onboarding/verify' })}
-              className="btn btn-primary"
-            >
-              {t('common:back_to_verification')}
-            </button>
-          </>
-        )}
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+        <div className="card-body">
+          <div className="text-center">
+            {errorMessage ? (
+              <>
+                <div className="flex justify-center mb-4">
+                  <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center">
+                    <AlertCircle className="h-8 w-8 text-error" />
+                  </div>
+                </div>
+                <h2 className="text-xl font-bold text-error mb-3">
+                  {tOnboarding('oauth.errorTitle')}
+                </h2>
+                <p className="text-base-content/70 mb-4">{errorMessage}</p>
+                <p className="text-sm text-base-content/50">
+                  {tOnboarding('oauth.redirecting')}
+                </p>
+              </>
+            ) : (
+              <>
+                {isProcessing && (
+                  <span className="loading loading-spinner loading-lg text-primary mb-4"></span>
+                )}
+                <h2 className="text-xl font-bold mb-2">
+                  {tOnboarding('oauth.processing')}
+                </h2>
+                <p className="text-base-content/70">
+                  {tOnboarding('oauth.pleaseWait')}
+                </p>
+              </>
+            )}
+          </div>
+        </div>
       </div>
     </div>
   )

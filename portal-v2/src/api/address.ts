@@ -124,7 +124,7 @@ export function useCreateAddressMutation(
   customerId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation(['translation'])
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (data: CreateAddressRequest) =>
@@ -138,10 +138,10 @@ export function useCreateAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('translation:customers.addresses.addSuccess'))
+      showSuccessToast(t('customers.address.create_success'))
     },
     onError: () => {
-      showErrorToast(t('translation:customers.addresses.addError'))
+      showErrorToast(t('errors.generic.unexpected'))
     },
   })
 }
@@ -155,7 +155,7 @@ export function useUpdateAddressMutation(
   addressId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation(['translation'])
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (data: UpdateAddressRequest) =>
@@ -167,10 +167,10 @@ export function useUpdateAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('translation:customers.addresses.updateSuccess'))
+      showSuccessToast(t('customers.address.update_success'))
     },
     onError: () => {
-      showErrorToast(t('translation:customers.addresses.updateError'))
+      showErrorToast(t('errors.generic.unexpected'))
     },
   })
 }
@@ -183,7 +183,7 @@ export function useDeleteAddressMutation(
   customerId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation(['translation'])
+  const { t } = useTranslation()
 
   return useMutation({
     mutationFn: (addressId: string) =>
@@ -195,10 +195,10 @@ export function useDeleteAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('translation:customers.addresses.deleteSuccess'))
+      showSuccessToast(t('customers.address.delete_success'))
     },
     onError: () => {
-      showErrorToast(t('translation:customers.addresses.deleteError'))
+      showErrorToast(t('errors.generic.unexpected'))
     },
   })
 }

@@ -1,14 +1,14 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
-import toast from 'react-hot-toast'
-import { Eye, EyeOff, Loader2 } from 'lucide-react'
+import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
 import { ResetPasswordSchema } from '@/schemas/auth'
 import { translateErrorAsync } from '@/lib/translateError'
-import { useLanguage } from '@/hooks/useLanguage'
+import { Button } from '@/components/atoms/Button'
+import { PasswordInput } from '@/components/atoms/PasswordInput'
 
 export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -18,26 +18,131 @@ export const Route = createFileRoute('/auth/reset-password')({
   }),
 })
 
+type PageStatus = 'loading' | 'ready' | 'success' | 'error'
+
 function ResetPasswordPage() {
   const navigate = useNavigate()
   const { token } = useSearch({ from: '/auth/reset-password' })
   const { t } = useTranslation()
-  const { isRTL } = useLanguage()
-  const [showPassword, setShowPassword] = useState(false)
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false)
+  const { t: tErrors } = useTranslation('errors')
+  const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
+  const [errorMessage, setErrorMessage] = useState('')
+  const [submitErrorMessage, setSubmitErrorMessage] = useState<string>('')
 
-  // Early return if no token provided in URL
+  useEffect(() => {
+    if (!token) {
+      queueMicrotask(() => {
+        setPageStatus('error')
+        setErrorMessage(t('auth.reset_password_missing_token'))
+      })
+      return
+    }
 
-  if (!token) {
+    queueMicrotask(() => {
+      setPageStatus('ready')
+    })
+  }, [token, t])
+
+  const handleBackToLogin = async () => {
+    await navigate({ to: '/auth/login', replace: true })
+  }
+
+  if (pageStatus === 'loading') {
     return (
-      <div className="min-h-screen bg-base-100 flex items-center justify-center p-6">
-        <div className="w-full max-w-md text-center">
-          <div className="alert alert-error">
-            <span>{t('auth:invalid_reset_link')}</span>
+      <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+        <div className="text-center">
+          <Loader2 className="animate-spin text-primary mx-auto mb-4" size={48} />
+          <p className="text-base-content/70">
+            {t('auth.reset_password_validating')}
+          </p>
+        </div>
+      </div>
+    )
+  }
+
+  if (pageStatus === 'error') {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-error/20 flex items-center justify-center mb-4">
+                <AlertCircle className="text-error" size={32} />
+              </div>
+
+              <h1 className="card-title text-2xl mb-2">
+                {t('auth.reset_password_error_title')}
+              </h1>
+
+              <p className="text-base-content/70 mb-6">{errorMessage}</p>
+
+              <div className="w-full space-y-3">
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  onClick={() => {
+                    void handleBackToLogin()
+                  }}
+                >
+                  {t('auth.return_to_login')}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="lg"
+                  fullWidth
+                  onClick={() => {
+                    void navigate({ to: '/auth/forgot-password', replace: true })
+                  }}
+                >
+                  {t('auth.request_new_link')}
+                </Button>
+              </div>
+            </div>
           </div>
-          <a href="/auth/login" className="btn btn-primary mt-4">
-            {t('auth:back_to_login')}
-          </a>
+        </div>
+      </div>
+    )
+  }
+
+  if (pageStatus === 'success') {
+    return (
+      <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
+        <div className="w-full max-w-md">
+          <div className="card bg-base-200 shadow-xl">
+            <div className="card-body items-center text-center">
+              <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4">
+                <CheckCircle className="text-success" size={32} />
+              </div>
+
+              <h1 className="card-title text-2xl mb-2">
+                {t('auth.password_reset_success_title')}
+              </h1>
+
+              <p className="text-base-content/70 mb-6">
+                {t('auth.password_reset_success_description')}
+              </p>
+
+              <div className="flex items-center gap-2 text-sm text-base-content/60 mb-4">
+                <Loader2 className="animate-spin" size={16} />
+                <span>{t('auth.redirecting_to_login')}</span>
+              </div>
+
+              <Button
+                type="button"
+                variant="primary"
+                size="lg"
+                fullWidth
+                onClick={() => {
+                  void handleBackToLogin()
+                }}
+              >
+                {t('auth.return_to_login')}
+              </Button>
+            </div>
+          </div>
         </div>
       </div>
     )
@@ -50,16 +155,19 @@ function ResetPasswordPage() {
     },
     onSubmit: async ({ value }) => {
       try {
+        setSubmitErrorMessage('')
         await authApi.resetPassword({
           token,
           password: value.password,
         })
 
-        toast.success(t('auth:password_reset_success'))
-        await navigate({ to: '/auth/login', search: { redirect: '/' } })
+        setPageStatus('success')
+        void setTimeout(() => {
+          void navigate({ to: '/auth/login', replace: true })
+        }, 2000)
       } catch (error) {
         const message = await translateErrorAsync(error, t)
-        toast.error(message)
+        setSubmitErrorMessage(message)
       }
     },
     validators: {
@@ -68,163 +176,114 @@ function ResetPasswordPage() {
   })
 
   return (
-    <div className="min-h-screen bg-base-100 flex items-center justify-center p-6">
+    <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        {/* Header */}
-        <div className="text-center mb-8">
-          <h1 className="text-3xl font-bold text-primary mb-2">Kyora</h1>
-          <h2 className="text-2xl font-bold text-base-content mb-2">
-            {t('auth:reset_password')}
-          </h2>
-          <p className="text-base-content/60">
-            {t('auth:reset_password_description')}
-          </p>
-        </div>
+        <div className="card bg-base-200 shadow-xl">
+          <div className="card-body">
+            <h1 className="card-title text-3xl mb-2">
+              {t('auth.reset_password_title')}
+            </h1>
+            <p className="text-base-content/70 mb-6">
+              {t('auth.reset_password_description')}
+            </p>
 
-        {/* Reset Password Form */}
-        <form
-          onSubmit={(e) => {
-            e.preventDefault()
-            e.stopPropagation()
-            void form.handleSubmit()
-          }}
-          className="space-y-6"
-        >
-          {/* New Password Field */}
-          <form.Field
-            name="password"
-            validators={{
-              onBlur: ResetPasswordSchema.shape.password,
-            }}
-          >
-            {(field) => (
-              <div className="form-control">
-                <label htmlFor="password" className="label">
-                  <span className="label-text font-medium">
-                    {t('auth:new_password')}
-                  </span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="password"
-                    name="password"
-                    type={showPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className={`input input-bordered w-full ${
-                      isRTL ? 'ps-12' : 'pe-12'
-                    } ${field.state.meta.errors.length > 0 ? 'input-error' : ''}`}
-                    placeholder={t('auth:password_placeholder')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowPassword(!showPassword)}
-                    className={`absolute ${
-                      isRTL ? 'start-3' : 'end-3'
-                    } top-1/2 -translate-y-1/2 text-base-content/60 hover:text-base-content transition-colors`}
-                  >
-                    {showPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {field.state.meta.errors.length > 0 && (
-                  <label className="label">
-                    <span className="label-text-alt text-error">
-                      {field.state.meta.errors[0]?.message || 'Invalid value'}
-                    </span>
-                  </label>
-                )}
-              </div>
-            )}
-          </form.Field>
-
-          {/* Confirm Password Field */}
-          <form.Field
-            name="confirmPassword"
-            validators={{
-              onBlur: ResetPasswordSchema.shape.confirmPassword,
-            }}
-          >
-            {(field) => (
-              <div className="form-control">
-                <label htmlFor="confirmPassword" className="label">
-                  <span className="label-text font-medium">
-                    {t('auth:confirm_password')}
-                  </span>
-                </label>
-                <div className="relative">
-                  <input
-                    id="confirmPassword"
-                    name="confirmPassword"
-                    type={showConfirmPassword ? 'text' : 'password'}
-                    autoComplete="new-password"
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    className={`input input-bordered w-full ${
-                      isRTL ? 'ps-12' : 'pe-12'
-                    } ${field.state.meta.errors.length > 0 ? 'input-error' : ''}`}
-                    placeholder={t('auth:confirm_password_placeholder')}
-                  />
-                  <button
-                    type="button"
-                    onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-                    className={`absolute ${
-                      isRTL ? 'start-3' : 'end-3'
-                    } top-1/2 -translate-y-1/2 text-base-content/60 hover:text-base-content transition-colors`}
-                  >
-                    {showConfirmPassword ? (
-                      <EyeOff className="w-5 h-5" />
-                    ) : (
-                      <Eye className="w-5 h-5" />
-                    )}
-                  </button>
-                </div>
-                {field.state.meta.errors.length > 0 && (
-                  <label className="label">
-                    <span className="label-text-alt text-error">
-                      {field.state.meta.errors[0]?.message || 'Invalid value'}
-                    </span>
-                  </label>
-                )}
-              </div>
-            )}
-          </form.Field>
-
-          {/* Submit Button */}
-          <form.Subscribe
-            selector={(state) => ({
-              canSubmit: state.canSubmit,
-              isSubmitting: state.isSubmitting,
-            })}
-          >
-            {({ canSubmit, isSubmitting }) => (
-              <button
-                type="submit"
-                disabled={!canSubmit || isSubmitting}
-                className="btn btn-primary w-full"
-              >
-                {isSubmitting && <Loader2 className="w-4 h-4 animate-spin" />}
-                {t('auth:reset_password')}
-              </button>
-            )}
-          </form.Subscribe>
-
-          {/* Back to Login Link */}
-          <div className="text-center">
-            <a
-              href="/auth/login"
-              className="text-sm text-base-content/60 hover:text-base-content transition-colors"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                void form.handleSubmit()
+              }}
+              className="space-y-6"
+              noValidate
             >
-              {t('auth:back_to_login')}
-            </a>
+              {submitErrorMessage ? (
+                <div role="alert" className="alert alert-error">
+                  <span>{submitErrorMessage}</span>
+                </div>
+              ) : null}
+
+              <form.Field
+                name="password"
+                validators={{
+                  onBlur: ResetPasswordSchema.shape.password,
+                }}
+              >
+                {(field) => (
+                  <PasswordInput
+                    id="newPassword"
+                    label={t('auth.new_password')}
+                    placeholder={t('auth.new_password_placeholder')}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={
+                      field.state.meta.errors[0]
+                        ? tErrors(field.state.meta.errors[0] as unknown as string)
+                        : undefined
+                    }
+                    helperText={t('auth.password_requirements')}
+                    autoComplete="new-password"
+                    autoFocus
+                    disabled={form.state.isSubmitting}
+                    showPasswordToggle
+                  />
+                )}
+              </form.Field>
+
+              <form.Field
+                name="confirmPassword"
+                validators={{
+                  onBlur: ResetPasswordSchema.shape.confirmPassword,
+                }}
+              >
+                {(field) => (
+                  <PasswordInput
+                    id="confirmPassword"
+                    label={t('auth.confirm_password')}
+                    placeholder={t('auth.confirm_password_placeholder')}
+                    value={field.state.value}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    onBlur={field.handleBlur}
+                    error={
+                      field.state.meta.errors[0]
+                        ? tErrors(field.state.meta.errors[0] as unknown as string)
+                        : undefined
+                    }
+                    autoComplete="new-password"
+                    disabled={form.state.isSubmitting}
+                    showPasswordToggle
+                  />
+                )}
+              </form.Field>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                loading={form.state.isSubmitting}
+                disabled={form.state.isSubmitting}
+              >
+                {t('auth.reset_password_submit')}
+              </Button>
+
+              <div className="text-center">
+                <p className="text-sm text-base-content/60">
+                  {t('auth.remember_password')}{' '}
+                  <button
+                    type="button"
+                    onClick={() => {
+                      void handleBackToLogin()
+                    }}
+                    className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
+                  >
+                    {t('auth.login')}
+                  </button>
+                </p>
+              </div>
+            </form>
           </div>
-        </form>
+        </div>
       </div>
     </div>
   )
