@@ -1,23 +1,48 @@
-Plan: 1:1 Portal-web to Portal-v2 Migration
-Copy ALL content and functionality from portal-web to portal-v2 file-by-file, adapting only for TanStack Router/Form/Store while keeping portal-v2's route structure and TanStack Store.
+Plan: Strict 1:1 Portal-web → Portal-v2 Migration (No Legacy URLs)
+We’ll deliver a true 1:1 UX for all routes/components/files by overwriting portal-v2 with portal-web implementations, adapting only for TanStack Router/Form/Store, and keeping portal-v2’s file-based route structure + TanStack Store. We will NOT add any legacy/backward-compatible routes or redirects; portal-v2 URLs are the source of truth, and all navigation/UI will be updated to match portal-web UX within that structure.
 
 Steps
-Migrate missing API files — Copy api/address.ts, api/user.ts, api/types/business.ts, api/types/customer.ts to portal-v2, wrapping functions with TanStack Query hooks following existing patterns in customer.ts.
 
-Migrate missing lib utilities — Copy lib/phone.ts, lib/sessionStorage.ts to portal-v2 as-is (no stack changes needed).
+1. Lock i18n conventions across portal-v2 (eliminate raw keys everywhere)
 
-Migrate customer organisms — Copy organisms/customers/AddCustomerSheet.tsx, EditCustomerSheet.tsx, AddressSheet.tsx to portal-v2, refactoring React Hook Form → TanStack Form.
+Align init.ts with portal-web key style: nested keys in translation (e.g. t('auth.welcome_back')).
+Replace all invalid namespace usage (t('auth:...')) in auth/onboarding/business routes under routes.
+Overwrite LanguageSwitcher to portal-web behavior/variants: LanguageSwitcher.tsx → LanguageSwitcher.tsx.
 
-Overwrite components with portal-web versions — For EVERY existing component (Pagination, Header, Sidebar, BottomNav, DashboardLayout, Modal, Table, etc.), copy the full portal-web implementation and adapt only: useNavigate/<Link> → TanStack Router equivalents, form handling → TanStack Form, keeping all translations, features, and UI identical.
+2. Enforce a single URL system: portal-v2 route structure only (no legacy, no redirects)
 
-Overwrite route files with portal-web content — Copy exact content from home.tsx → index.tsx, dashboard.tsx → business/$businessDescriptor.tsx, customers.tsx → customers/index.tsx, etc., adapting route params from :param to $param syntax.
+Remove any “old path” references in UI and navigation; update all internal links to portal-v2 file routes.
+Ensure layouts/nav components (Header/Sidebar/BottomNav) generate portal-v2 URLs consistently.
 
-Verify and sync TanStack Stores — Compare AuthContext with authStore, OnboardingContext with onboardingStore, and businessStore with businessStore — ensure identical state shape and all methods exist, optimized for TanStack Store patterns.
+3. Auth routes 1:1 UX migration (within portal-v2 URLs)
 
-Sync translation files 100% — Diff and merge ALL translation content from ar and en/ into portal-v2's i18n folders, ensuring every key exists and every component uses t() calls.
+Overwrite each auth screen to match portal-web UX states and visuals, adapting only navigation + form stack:
+login.tsx → login.tsx
+forgot-password.tsx → forgot-password.tsx
+reset-password.tsx → reset-password.tsx
+oauth-callback.tsx → oauth-callback.tsx
+Ensure LanguageSwitcher is present on login and any auth pages where portal-web shows it.
+Overwrite shared layouts + navigation components to portal-web parity (TanStack Router-native)
 
-Migrate types and add barrel exports — Copy types/index.ts, create index.ts barrel exports in atoms/, molecules/, organisms/, templates/.
+4. Overwrite these portal-v2 components with portal-web implementations and adapt only navigation primitives:
+   DashboardLayout.tsx → DashboardLayout.tsx
+   Header.tsx → Header.tsx
+   Sidebar.tsx → Sidebar.tsx
+   BottomNav.tsx → BottomNav.tsx
 
-Delete divergent portal-v2 components — Remove CustomerForm.tsx (replaced by AddCustomerSheet/EditCustomerSheet), and any simplified/stub implementations that don't match portal-web quality.
+5. Overwrite feature routes to portal-web UX (within portal-v2 URLs), then reconcile TanStack Router search schemas
 
-Final verification pass — Review every TSX file in portal-v2 to confirm: no hardcoded text (all use t()), all features from portal-web exist, all props/APIs match, RTL support intact, mobile-first responsive design preserved.
+Home: home.tsx → index.tsx
+Dashboard: dashboard.tsx → index.tsx
+Customers list/detail: overwrite to portal-web UX while keeping portal-v2 paths:
+customers.tsx → index.tsx
+customers.$customerId.tsx → $customerId.tsx
+Final verification pass: every TS/TSX in portal-v2 is 1:1 UX-complete and production-grade
+
+6. Verify no hardcoded text, every user string uses t(), all portal-web UX states exist, RTL matches, shared components are reused, and no simplified/stub implementations remain under src.
+   Further Considerations
+   Confirm portal-v2 URLs are canonical; remove any legacy references in UI/docs.
+   Standardize “TanStack Router navigation pattern” to avoid Link typing pitfalls (consistent wrapper or helper).
+   Ensure LanguageSwitcher parity everywhere portal-web shows it (auth + header + onboarding layouts)
+
+7. Final verification pass — Review every TSX file in portal-v2 to confirm: no hardcoded text (all use t()), all features from portal-web exist, all props/APIs match, RTL support intact, mobile-first responsive design preserved.
