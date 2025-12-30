@@ -214,7 +214,7 @@ function ResetPasswordPage() {
 
               <form.SubmitButton variant="primary" size="lg" fullWidth>
                 {t('auth.reset_password_submit')}
-              </form.Submitform.SubmitButton>
+              </form.SubmitButton>
 
               <div className="text-center">
                 <p className="text-sm text-base-content/60">

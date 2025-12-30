@@ -8,6 +8,11 @@
 
 export { TextField } from './TextField'
 export { PasswordField } from './PasswordField'
+export { TextareaField } from './TextareaField'
+export { SelectField } from './SelectField'
+export { CheckboxField } from './CheckboxField'
+export { RadioField } from './RadioField'
+export { ToggleField } from './ToggleField'
 export { ErrorInfo } from './ErrorInfo'
 export { FormRoot } from './FormRoot'
 export { SubmitButton } from './SubmitButton'

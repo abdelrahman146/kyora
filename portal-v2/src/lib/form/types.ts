@@ -5,8 +5,6 @@
  * Provides type-safe field props, validation error shapes, and form values.
  */
 
-import type { FieldApi, FormApi } from '@tanstack/react-form'
-
 /**
  * Supported validation error types
  *
@@ -70,17 +68,30 @@ export interface PasswordFieldProps extends BaseFieldProps {
  */
 export interface SelectFieldProps<T = string> extends BaseFieldProps {
   /** Options for the select dropdown */
-  options: Array<{ value: T; label: string; disabled?: boolean }>
+  options: Array<{
+    value: T
+    label: string
+    description?: string
+    icon?: React.ReactNode
+    disabled?: boolean
+    renderCustom?: () => React.ReactNode
+  }>
   /** Whether to allow search/filtering */
   searchable?: boolean
   /** Whether to allow multiple selection */
-  multiple?: boolean
-  /** Placeholder for search input */
-  searchPlaceholder?: string
-  /** Custom rendering for selected option */
-  renderValue?: (value: T) => React.ReactNode
-  /** Custom rendering for dropdown option */
-  renderOption?: (option: { value: T; label: string }) => React.ReactNode
+  multiSelect?: boolean
+  /** Whether to show clear button */
+  clearable?: boolean
+  /** Maximum height of dropdown menu */
+  maxHeight?: number
+  /** Size variant */
+  size?: 'sm' | 'md' | 'lg'
+  /** Style variant */
+  variant?: 'default' | 'filled' | 'ghost'
+  /** Help text displayed below select */
+  helperText?: string
+  /** Whether to take full width */
+  fullWidth?: boolean
 }
 
 /**
@@ -116,6 +127,25 @@ export interface ToggleFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Radio button group specific props
+ */
+export interface RadioFieldProps extends BaseFieldProps {
+  /** Options for the radio group */
+  options: Array<{
+    value: string
+    label: string
+    description?: string
+    disabled?: boolean
+  }>
+  /** Layout orientation */
+  orientation?: 'vertical' | 'horizontal'
+  /** Size variant */
+  size?: 'sm' | 'md' | 'lg'
+  /** Color variant */
+  variant?: 'default' | 'primary' | 'secondary'
+}
+
+/**
  * Generic form values type
  *
  * Can be extended for type-safe form definitions:
@@ -126,22 +156,6 @@ export interface ToggleFieldProps extends BaseFieldProps {
  * }
  */
 export type FormValues = Record<string, unknown>
-
-/**
- * Field context value providing access to field state and methods
- */
-export type FieldContextValue<TValue = unknown> = FieldApi<
-  any,
-  any,
-  any,
-  any,
-  TValue
->
-
-/**
- * Form context value providing access to form state and methods
- */
-export type FormContextValue = FormApi<any, any>
 
 /**
  * Validation mode timing options

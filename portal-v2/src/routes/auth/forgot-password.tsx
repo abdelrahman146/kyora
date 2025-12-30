@@ -140,7 +140,7 @@ function ForgotPasswordPage() {
 
               <form.SubmitButton variant="primary" size="lg" fullWidth>
                 {t('auth.send_reset_link')}
-              </form.Submitform.SubmitButton>
+              </form.SubmitButton>
 
               <div className="text-center">
                 <p className="text-sm text-base-content/60">

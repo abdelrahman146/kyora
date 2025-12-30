@@ -84,16 +84,21 @@ Returns a form instance with pre-bound components.
 ```typescript
 {
   // Pre-bound components
-  FormRoot: Component       // Replaces <form>
-  TextField: Component       // Text/email/tel inputs
-  PasswordField: Component   // Password with toggle
-  SubmitButton: Component    // Submit button
-  ErrorInfo: Component       // Field error display
-  FormError: Component       // Form-level errors
+  FormRoot: Component         // Replaces <form>
+  TextField: Component        // Text/email/tel inputs
+  PasswordField: Component    // Password with toggle
+  TextareaField: Component    // Multi-line text input
+  SelectField: Component      // Dropdown with search
+  CheckboxField: Component    // Checkbox with label
+  RadioField: Component       // Radio button group
+  ToggleField: Component      // Toggle/switch
+  SubmitButton: Component     // Submit button
+  ErrorInfo: Component        // Field error display
+  FormError: Component        // Form-level errors
   
   // TanStack Form primitives  
-  Field: Component           // Custom fields
-  Subscribe: Component       // Granular subscriptions
+  Field: Component            // Custom fields
+  Subscribe: Component        // Granular subscriptions
   
   // Form methods
   handleSubmit: () => void
@@ -147,6 +152,113 @@ Password input with visibility toggle.
 - Translated labels
 - All TextField features
 
+#### `<form.TextareaField>`
+
+Multi-line text input with character counter.
+
+```tsx
+<form.TextareaField
+  name="description"
+  label="Description"
+  placeholder="Enter description"
+  rows={4}                        // Number of visible rows
+  maxLength={500}                 // Character limit
+  showCount                       // Show character counter
+  required
+/>
+```
+
+**Auto-handled:**
+- Value binding
+- Change/blur handlers
+- Error display (translated)
+- Character counter
+
+#### `<form.SelectField>`
+
+Dropdown select with search and multi-select support.
+
+```tsx
+<form.SelectField
+  name="country"
+  label="Country"
+  options={[
+    { value: 'us', label: 'United States' },
+    { value: 'uk', label: 'United Kingdom' },
+  ]}
+  searchable                      // Enable search
+  multiSelect={false}             // Single or multi select
+  clearable                       // Show clear button
+  required
+/>
+```
+
+**Features:**
+- Search/filtering
+- Multi-select mode
+- Keyboard navigation
+- Clear functionality
+
+#### `<form.CheckboxField>`
+
+Checkbox with label and description.
+
+```tsx
+<form.CheckboxField
+  name="acceptTerms"
+  label="Accept terms"
+  description="I agree to the terms and conditions"
+  required
+/>
+```
+
+**Auto-handled:**
+- Boolean value binding
+- Error display
+- Accessibility
+
+#### `<form.RadioField>`
+
+Radio button group with flexible layout.
+
+```tsx
+<form.RadioField
+  name="plan"
+  label="Select a plan"
+  options={[
+    { value: 'free', label: 'Free', description: '$0/month' },
+    { value: 'pro', label: 'Pro', description: '$10/month' },
+  ]}
+  orientation="vertical"          // vertical | horizontal
+  variant="primary"
+  required
+/>
+```
+
+**Features:**
+- Multiple layout options
+- Option descriptions
+- Keyboard navigation
+
+#### `<form.ToggleField>`
+
+Toggle/switch component.
+
+```tsx
+<form.ToggleField
+  name="notifications"
+  label="Enable notifications"
+  description="Receive email updates"
+  size="md"
+  variant="primary"
+/>
+```
+
+**Auto-handled:**
+- Boolean value binding
+- Toggle state
+- Error display
+
 #### `<form.SubmitButton>`
 
 Submit button with loading state.
@@ -168,12 +280,12 @@ Submit button with loading state.
 
 #### `<form.Field>`
 
-For custom controls (selects, checkboxes, etc.).
+For custom controls not covered by pre-bound components.
 
 ```tsx
-<form.Field name="country">
+<form.Field name="customField">
   {(field) => (
-    <CountrySelect
+    <CustomControl
       value={field.state.value}
       onChange={(value) => field.handleChange(value)}
       onBlur={field.handleBlur}
