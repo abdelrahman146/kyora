@@ -1,6 +1,5 @@
 // Atoms
 export { Button, type ButtonProps } from './atoms/Button'
-export { Input, type InputProps } from './atoms/Input'
 export { Modal, type ModalProps } from './atoms/Modal'
 export { Badge, type BadgeProps } from './atoms/Badge'
 export { Avatar, type AvatarProps } from './atoms/Avatar'

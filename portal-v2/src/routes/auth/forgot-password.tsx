@@ -9,7 +9,7 @@ import { ForgotPasswordSchema } from '@/schemas/auth'
 import { translateErrorAsync } from '@/lib/translateError'
 import { useLanguage } from '@/hooks/useLanguage'
 import { Button } from '@/components/atoms/Button'
-import { Input } from '@/components/atoms/Input'
+import { FormInput } from '@/components/atoms/FormInput'
 import { getErrorText } from '@/lib/formErrors'
 
 export const Route = createFileRoute('/auth/forgot-password')({
@@ -159,7 +159,7 @@ function ForgotPasswordPage() {
                   const errorKey = getErrorText(field.state.meta.errors)
 
                   return (
-                    <Input
+                    <FormInput
                       id="email"
                       type="email"
                       label={t('auth.email')}

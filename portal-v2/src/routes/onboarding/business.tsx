@@ -8,7 +8,7 @@ import type { RouterContext } from '@/router'
 import type { CountryMetadata } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
-import { Input } from '@/components/atoms/Input'
+import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
 import { BusinessSetupSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
@@ -238,59 +238,30 @@ function BusinessSetupPage() {
             {/* Business Name */}
             <form.Field name="name">
               {(field) => (
-                <div>
-                  <label htmlFor={field.name} className="label">
-                    <span className="label-text">
-                      {tOnboarding('business.name')}
-                    </span>
-                  </label>
-                  <div className="relative">
-                    <span className="absolute inset-y-0 start-0 flex items-center ps-3 text-base-content/40">
-                      <Building2 className="w-5 h-5" />
-                    </span>
-                    <Input
-                      id={field.name}
-                      type="text"
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={tOnboarding('business.namePlaceholder')}
-                      disabled={isSubmitting}
-                      autoFocus
-                      className={cn(
-                        'ps-10',
-                        field.state.meta.errors.length > 0 ? 'input-error' : ''
-                      )}
-                    />
-                  </div>
-                  <label className="label">
-                    <span className="label-text-alt">
-                      {tOnboarding('business.nameHint')}
-                    </span>
-                  </label>
-                  {field.state.meta.errors.length > 0 && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {getErrorText(field.state.meta.errors[0])}
-                      </span>
-                    </label>
-                  )}
-                </div>
+                  <FormInput
+                    id={field.name}
+                    type="text"
+                    label={tOnboarding('business.name')}
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder={tOnboarding('business.namePlaceholder')}
+                    disabled={isSubmitting}
+                    autoFocus
+                    error={field.state.meta.errors[0]}
+                    helperText={tOnboarding('business.nameHint')}
+                    startIcon={<Building2 className="w-5 h-5" />}
+                  />
               )}
             </form.Field>
 
             {/* Business Descriptor */}
             <form.Field name="descriptor">
               {(field) => (
-                <div>
-                  <label htmlFor={field.name} className="label">
-                    <span className="label-text">
-                      {tOnboarding('business.descriptor')}
-                    </span>
-                  </label>
-                  <Input
+                  <FormInput
                     id={field.name}
                     type="text"
+                    label={tOnboarding('business.descriptor')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) =>
@@ -298,23 +269,9 @@ function BusinessSetupPage() {
                     }
                     placeholder={tOnboarding('business.descriptorPlaceholder')}
                     disabled={isSubmitting}
-                    className={
-                      field.state.meta.errors.length > 0 ? 'input-error' : ''
-                    }
+                    error={field.state.meta.errors[0]}
+                    helperText={tOnboarding('business.descriptorHint')}
                   />
-                  <label className="label">
-                    <span className="label-text-alt">
-                      {tOnboarding('business.descriptorHint')}
-                    </span>
-                  </label>
-                  {field.state.meta.errors.length > 0 && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {getErrorText(field.state.meta.errors[0])}
-                      </span>
-                    </label>
-                  )}
-                </div>
               )}
             </form.Field>
 

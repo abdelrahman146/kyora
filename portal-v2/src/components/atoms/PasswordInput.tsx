@@ -6,11 +6,13 @@ import { getErrorText } from '@/lib/formErrors'
 
 export interface PasswordInputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
-  'type'
+  'type' | 'size'
 > {
   label?: string
   error?: unknown
   helperText?: string
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'filled' | 'ghost'
   fullWidth?: boolean
   showPasswordToggle?: boolean
   showDefaultIcon?: boolean
@@ -46,6 +48,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       label,
       error,
       helperText,
+      size = 'md',
+      variant = 'default',
       fullWidth = true,
       showPasswordToggle = true,
       showDefaultIcon = true,
@@ -65,6 +69,19 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
 
     const togglePasswordVisibility = () => {
       setIsPasswordVisible((prev) => !prev)
+    }
+
+    const sizeClasses = {
+      sm: 'h-[44px] text-sm',
+      md: 'h-[50px] text-base',
+      lg: 'h-[56px] text-lg',
+    }
+
+    const variantClasses = {
+      default: 'input-bordered bg-base-100',
+      filled:
+        'input-bordered bg-base-200/50 border-transparent focus:bg-base-100',
+      ghost: 'input-ghost bg-transparent',
     }
 
     return (
@@ -94,9 +111,10 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
             disabled={disabled}
             required={required}
             className={cn(
-              'input input-bordered relative z-0 w-full h-[50px] text-base transition-all duration-200',
-              'bg-base-100 text-base-content',
-              'text-start placeholder:text-base-content/40',
+              'input relative z-0 w-full transition-all duration-200',
+              sizeClasses[size],
+              variantClasses[variant],
+              'text-base-content text-start placeholder:text-base-content/40',
               'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
               hasError &&
                 'input-error border-error focus:border-error focus:ring-error/20',

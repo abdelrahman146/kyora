@@ -3,11 +3,11 @@ import { useForm } from '@tanstack/react-form'
 import { Loader2, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../atoms/Button'
-import { Input } from '../atoms/Input'
+import { FormInput } from '../atoms/FormInput'
 import { PasswordInput } from '../atoms/PasswordInput'
+import { getErrorText } from '../../lib/formErrors'
 import { LoginSchema } from '../../schemas/auth'
 import type { LoginFormData } from '../../schemas/auth'
-import { getErrorText } from '../../lib/formErrors'
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData) => Promise<void>
@@ -64,29 +64,44 @@ export function LoginForm({
         await onSubmit(value)
       } catch (err: unknown) {
         // Login-specific UX:
+        // - Network errors: show connection error
+        // - Timeout: show timeout error
         // - 400/401: show invalid credentials on password field
-        // - 500: show a generic error message at root level
-        if (
-          err &&
-          typeof err === 'object' &&
-          'response' in err &&
-          (err as { response?: unknown }).response instanceof Response
-        ) {
-          const response = (err as { response: Response }).response
-          const status = response.status
-
-          if (status === 400 || status === 401) {
-            setPasswordServerError('auth.invalid_credentials')
+        // - 500+: show generic server error message
+        
+        // Handle network errors (connection failures, timeouts)
+        if (err && typeof err === 'object') {
+          // Check for timeout errors
+          if ('name' in err && err.name === 'TimeoutError') {
+            setRootError('network.timeout')
             return
           }
 
-          if (status >= 500) {
-            setRootError('generic.unexpected')
+          // Check for connection errors (no response received)
+          if (!('response' in err)) {
+            setRootError('network.connection')
             return
+          }
+
+          // Handle HTTP response errors
+          if ('response' in err && (err as { response?: unknown }).response instanceof Response) {
+            const response = (err as { response: Response }).response
+            const status = response.status
+
+            if (status === 400 || status === 401) {
+              setPasswordServerError('auth.invalid_credentials')
+              return
+            }
+
+            if (status >= 500) {
+              setRootError('generic.unexpected')
+              return
+            }
           }
         }
 
-        setRootError('generic.unexpected')
+        // Fallback for any other unexpected errors
+        setRootError('network.connection')
       }
     },
   })
@@ -119,7 +134,7 @@ export function LoginForm({
         }}
       >
         {(field) => (
-          <Input
+          <FormInput
             id="email"
             type="email"
             label={t('auth.email')}

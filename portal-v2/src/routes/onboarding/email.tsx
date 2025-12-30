@@ -5,7 +5,7 @@ import { z } from 'zod'
 import type { RouterContext } from '@/router'
 import { onboardingQueries, useStartSessionMutation } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
-import { Input } from '@/components/atoms/Input'
+import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
 import { EmailFormSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
@@ -150,31 +150,18 @@ function EmailEntryPage() {
           >
             <form.Field name="email">
               {(field) => (
-                <div>
-                  <label htmlFor={field.name} className="label">
-                    <span className="label-text">{tCommon('email')}</span>
-                  </label>
-                  <Input
+                  <FormInput
                     id={field.name}
                     type="email"
+                    label={tCommon('email')}
                     value={field.state.value}
                     onBlur={field.handleBlur}
                     onChange={(e) => field.handleChange(e.target.value)}
                     placeholder={tOnboarding('email.emailPlaceholder')}
                     disabled={isSubmitting}
                     autoFocus
-                    className={
-                      field.state.meta.errors.length > 0 ? 'input-error' : ''
-                    }
+                    error={field.state.meta.errors[0]}
                   />
-                  {field.state.meta.errors.length > 0 && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {getErrorText(field.state.meta.errors[0])}
-                      </span>
-                    </label>
-                  )}
-                </div>
               )}
             </form.Field>
 

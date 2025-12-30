@@ -11,7 +11,8 @@ import {
   useVerifyEmailMutation,
 } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
-import { Input } from '@/components/atoms/Input'
+import { FormInput } from '@/components/atoms/FormInput'
+import { PasswordInput } from '@/components/atoms/PasswordInput'
 import { Button } from '@/components/atoms/Button'
 import { ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
@@ -410,122 +411,64 @@ function VerifyEmailPage() {
             >
               <profileForm.Field name="firstName">
                 {(field) => (
-                  <div>
-                    <label htmlFor={field.name} className="label">
-                      <span className="label-text">{tCommon('firstName')}</span>
-                    </label>
-                    <Input
+                    <FormInput
                       id={field.name}
                       type="text"
+                      label={tCommon('firstName')}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('firstName')}
                       disabled={isSubmitting}
-                      className={
-                        field.state.meta.errors.length > 0 ? 'input-error' : ''
-                      }
+                      error={field.state.meta.errors[0]}
                     />
-                    {field.state.meta.errors.length > 0 && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">
-                          {getErrorText(field.state.meta.errors[0])}
-                        </span>
-                      </label>
-                    )}
-                  </div>
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="lastName">
                 {(field) => (
-                  <div>
-                    <label htmlFor={field.name} className="label">
-                      <span className="label-text">{tCommon('lastName')}</span>
-                    </label>
-                    <Input
+                    <FormInput
                       id={field.name}
                       type="text"
+                      label={tCommon('lastName')}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('lastName')}
                       disabled={isSubmitting}
-                      className={
-                        field.state.meta.errors.length > 0 ? 'input-error' : ''
-                      }
+                      error={field.state.meta.errors[0]}
                     />
-                    {field.state.meta.errors.length > 0 && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">
-                          {getErrorText(field.state.meta.errors[0])}
-                        </span>
-                      </label>
-                    )}
-                  </div>
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="password">
                 {(field) => (
-                  <div>
-                    <label htmlFor={field.name} className="label">
-                      <span className="label-text">{tCommon('password')}</span>
-                    </label>
-                    <Input
+                    <PasswordInput
                       id={field.name}
-                      type="password"
+                      label={tCommon('password')}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('password')}
                       disabled={isSubmitting}
-                      className={
-                        field.state.meta.errors.length > 0 ? 'input-error' : ''
-                      }
+                      error={field.state.meta.errors[0]}
+                      helperText={tOnboarding('verify.passwordHint')}
                     />
-                    <label className="label">
-                      <span className="label-text-alt">
-                        {tOnboarding('verify.passwordHint')}
-                      </span>
-                    </label>
-                    {field.state.meta.errors.length > 0 && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">
-                          {getErrorText(field.state.meta.errors[0])}
-                        </span>
-                      </label>
-                    )}
-                  </div>
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="confirmPassword">
                 {(field) => (
-                  <div>
-                    <label htmlFor={field.name} className="label">
-                      <span className="label-text">{tCommon('confirmPassword')}</span>
-                    </label>
-                    <Input
+                    <PasswordInput
                       id={field.name}
-                      type="password"
+                      label={tCommon('confirmPassword')}
                       value={field.state.value}
                       onBlur={field.handleBlur}
                       onChange={(e) => field.handleChange(e.target.value)}
                       placeholder={tCommon('confirmPassword')}
                       disabled={isSubmitting}
-                      className={
-                        field.state.meta.errors.length > 0 ? 'input-error' : ''
-                      }
+                      error={field.state.meta.errors[0]}
                     />
-                    {field.state.meta.errors.length > 0 && (
-                      <label className="label">
-                        <span className="label-text-alt text-error">
-                          {getErrorText(field.state.meta.errors[0])}
-                        </span>
-                      </label>
-                    )}
-                  </div>
                 )}
               </profileForm.Field>
 
