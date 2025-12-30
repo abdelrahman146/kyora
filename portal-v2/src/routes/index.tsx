@@ -46,9 +46,7 @@ import {
  * - Otherwise, show business selection interface
  */
 export const Route = createFileRoute('/')({
-  beforeLoad: () => {
-    requireAuth()
-  },
+  beforeLoad: requireAuth,
 
   pendingComponent: HomePending,
 

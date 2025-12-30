@@ -1,6 +1,11 @@
 import { Store } from '@tanstack/react-store'
 import type { User } from '@/api/types/auth'
-import { loginUser, logoutAllDevices, logoutUser } from '@/lib/auth'
+import {
+  loginUser,
+  logoutAllDevices,
+  logoutUser,
+  restoreSession,
+} from '@/lib/auth'
 
 /**
  * Authentication Store State
@@ -30,6 +35,46 @@ const initialState: AuthState = {
  */
 export const authStore = new Store<AuthState>(initialState)
 
+let initPromise: Promise<void> | null = null
+
+/**
+ * Initialize authentication state
+ *
+ * - Restores session from refresh token cookie when present
+ * - Ensures `isLoading` is always eventually set to false
+ * - Idempotent: concurrent calls share the same promise
+ */
+export async function initializeAuth(): Promise<void> {
+  if (initPromise) return initPromise
+
+  initPromise = (async () => {
+    setAuthLoading(true)
+
+    try {
+      const user = await restoreSession()
+      if (user) {
+        setUser(user)
+      } else {
+        clearAuth()
+      }
+
+      if (import.meta.env.DEV) {
+        const { isAuthenticated } = authStore.state
+        console.debug('[authStore] initializeAuth complete', {
+          isAuthenticated,
+        })
+      }
+    } catch (error) {
+      clearAuth()
+      if (import.meta.env.DEV) {
+        console.error('[authStore] initializeAuth failed', error)
+      }
+    }
+  })()
+
+  return initPromise
+}
+
 /**
  * Authentication Actions
  */
@@ -55,6 +100,9 @@ export function clearAuth(): void {
     isAuthenticated: false,
     isLoading: false,
   }))
+
+  // Allow re-initialization after an explicit logout/clear.
+  initPromise = null
 }
 
 /**
@@ -77,6 +125,9 @@ export async function login(email: string, password: string): Promise<void> {
     setAuthLoading(true)
     const user = await loginUser(email, password)
     setUser(user)
+
+    // Consider auth initialized after explicit login.
+    initPromise = Promise.resolve()
   } catch (error) {
     setAuthLoading(false)
     throw error

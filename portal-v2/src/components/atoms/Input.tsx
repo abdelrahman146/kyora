@@ -1,10 +1,11 @@
 import { forwardRef, useId } from 'react'
 import type { InputHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface InputProps extends InputHTMLAttributes<HTMLInputElement> {
   label?: string
-  error?: string
+  error?: unknown
   helperText?: string
   startIcon?: React.ReactNode
   endIcon?: React.ReactNode
@@ -23,6 +24,8 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     return (
       <div className="w-full">
@@ -49,16 +52,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
               'text-start placeholder:text-base-content/40',
               'transition-all duration-200',
               'focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/20',
-              error
+              hasError
                 ? 'input-error border-error focus:border-error focus:ring-error/20'
                 : '',
               startIcon ? 'ps-10' : '',
               endIcon ? 'pe-10' : '',
               className,
             )}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : helperText
                   ? `${inputId}-helper`
@@ -72,16 +75,16 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(
             </div>
           )}
         </div>
-        {error && (
+        {hasError && (
           <p
             id={`${inputId}-error`}
             className="mt-2 text-sm text-error"
             role="alert"
           >
-            {error}
+            {errorText}
           </p>
         )}
-        {!error && helperText && (
+        {!hasError && helperText && (
           <p
             id={`${inputId}-helper`}
             className="mt-2 text-sm text-base-content/60"

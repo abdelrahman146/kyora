@@ -1,13 +1,14 @@
 import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes, ReactNode } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormInputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'size'
 > {
   label?: string
-  error?: string
+  error?: unknown
   helperText?: string
   startIcon?: ReactNode
   endIcon?: ReactNode
@@ -56,6 +57,8 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const sizeClasses = {
       sm: 'h-[44px] text-sm',
@@ -99,16 +102,16 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               variantClasses[variant],
               'text-base-content text-start placeholder:text-base-content/40',
               'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
-              error &&
+              hasError &&
                 'input-error border-error focus:border-error focus:ring-error/20',
               disabled && 'opacity-60 cursor-not-allowed',
               startIcon ? 'ps-10' : '',
               endIcon ? 'pe-10' : '',
               className,
             )}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : helperText
                   ? `${inputId}-helper`
@@ -125,19 +128,19 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           )}
         </div>
 
-        {error && (
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
 
-        {!error && helperText && (
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}

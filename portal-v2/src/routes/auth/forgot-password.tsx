@@ -10,6 +10,7 @@ import { translateErrorAsync } from '@/lib/translateError'
 import { useLanguage } from '@/hooks/useLanguage'
 import { Button } from '@/components/atoms/Button'
 import { Input } from '@/components/atoms/Input'
+import { getErrorText } from '@/lib/formErrors'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -47,7 +48,11 @@ function ForgotPasswordPage() {
   })
 
   const handleBackToLogin = async () => {
-    await navigate({ to: '/auth/login', replace: true })
+    await navigate({
+      to: '/auth/login',
+      search: { redirect: '/' },
+      replace: true,
+    })
   }
 
   if (isSuccess) {
@@ -146,26 +151,26 @@ function ForgotPasswordPage() {
                   onBlur: ForgotPasswordSchema.shape.email,
                 }}
               >
-                {(field) => (
-                  <Input
-                    id="email"
-                    type="email"
-                    label={t('auth.email')}
-                    placeholder={t('auth.email_placeholder')}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={
-                      field.state.meta.errors[0]
-                        ? tErrors(field.state.meta.errors[0] as unknown as string)
-                        : undefined
-                    }
-                    startIcon={<Mail size={20} />}
-                    autoComplete="email"
-                    autoFocus
-                    disabled={form.state.isSubmitting}
-                  />
-                )}
+                {(field) => {
+                  const errorKey = getErrorText(field.state.meta.errors)
+
+                  return (
+                    <Input
+                      id="email"
+                      type="email"
+                      label={t('auth.email')}
+                      placeholder={t('auth.email_placeholder')}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={errorKey ? tErrors(errorKey) : undefined}
+                      startIcon={<Mail size={20} />}
+                      autoComplete="email"
+                      autoFocus
+                      disabled={form.state.isSubmitting}
+                    />
+                  )
+                }}
               </form.Field>
 
               <Button

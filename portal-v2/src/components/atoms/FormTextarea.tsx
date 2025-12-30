@@ -1,13 +1,14 @@
 import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { TextareaHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormTextareaProps extends Omit<
   TextareaHTMLAttributes<HTMLTextAreaElement>,
   'size'
 > {
   label?: string
-  error?: string
+  error?: unknown
   helperText?: string
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'filled' | 'ghost'
@@ -62,6 +63,8 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const currentLength = typeof value === 'string' ? value.length : 0
 
@@ -108,14 +111,14 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
             'text-base-content text-start placeholder:text-base-content/40',
             'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
             'resize-y',
-            error &&
+            hasError &&
               'textarea-error border-error focus:border-error focus:ring-error/20',
             disabled && 'opacity-60 cursor-not-allowed',
             className,
           )}
-          aria-invalid={error ? 'true' : 'false'}
+          aria-invalid={hasError ? 'true' : 'false'}
           aria-describedby={
-            error
+            hasError
               ? `${inputId}-error`
               : helperText
                 ? `${inputId}-helper`
@@ -125,19 +128,19 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
           {...props}
         />
 
-        {error && (
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
 
-        {!error && helperText && (
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}

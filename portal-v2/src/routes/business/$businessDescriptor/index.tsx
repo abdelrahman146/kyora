@@ -89,8 +89,9 @@ function BusinessDashboard() {
           <h2 className="card-title">{t('dashboard.quick_actions')}</h2>
           <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
             <Link
-              to="/business/$businessDescriptor/customers/"
+              to="/business/$businessDescriptor/customers"
               params={{ businessDescriptor }}
+              search={{ page: 1, pageSize: 20, sortOrder: 'desc' }}
               className="btn btn-outline"
             >
               {t('customers.add_customer')}

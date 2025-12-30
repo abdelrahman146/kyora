@@ -1,5 +1,5 @@
 import { redirect } from '@tanstack/react-router'
-import { authStore } from '@/stores/authStore'
+import { authStore, initializeAuth } from '@/stores/authStore'
 
 /**
  * Route Guard: Require Authentication
@@ -15,7 +15,10 @@ import { authStore } from '@/stores/authStore'
  * })
  * ```
  */
-export function requireAuth() {
+export async function requireAuth() {
+  // Ensure auth state is resolved before enforcing.
+  await initializeAuth()
+
   const { isAuthenticated } = authStore.state
 
   if (!isAuthenticated) {
@@ -43,7 +46,10 @@ export function requireAuth() {
  * })
  * ```
  */
-export function redirectIfAuthenticated() {
+export async function redirectIfAuthenticated() {
+  // Ensure auth state is resolved before deciding.
+  await initializeAuth()
+
   const { isAuthenticated } = authStore.state
 
   if (isAuthenticated) {

@@ -77,7 +77,11 @@ function OAuthCallbackPage() {
   }, [code, state, error, error_description, navigate, t])
 
   const handleRetry = async () => {
-    await navigate({ to: '/auth/login', replace: true })
+    await navigate({
+      to: '/auth/login',
+      search: { redirect: '/' },
+      replace: true,
+    })
   }
 
   return (

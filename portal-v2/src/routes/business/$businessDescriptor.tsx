@@ -22,7 +22,7 @@ import { DashboardLayout } from '@/components/templates/DashboardLayout'
 export const Route = createFileRoute('/business/$businessDescriptor')({
   beforeLoad: async ({ context, params }) => {
     // Require authentication
-    requireAuth()
+    await requireAuth()
 
     // Cast context to RouterContext to access custom properties
     const { queryClient } = context as RouterContext
@@ -52,8 +52,6 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
  * Wraps business routes with DashboardLayout template.
  */
 function BusinessLayout() {
-  const { businessDescriptor } = Route.useParams()
-
   return (
     <DashboardLayout>
       {/* Content outlet with Suspense boundary */}

@@ -4,10 +4,10 @@ import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import { Building2, DollarSign, Globe } from 'lucide-react'
 import type { ReactNode } from 'react'
-import type { CountryResponse } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { onboardingApi } from '@/api/onboarding'
 import { FormInput, FormSelect } from '@/components'
+import type { CountryMetadata } from '@/api/types/metadata'
 import {
   loadSessionFromStorage,
   onboardingStore,
@@ -55,31 +55,28 @@ function BusinessSetupPage() {
     isError: isCountriesError,
   } = useCountriesQuery()
 
-  // Extract unique currencies from countries
-  const currencies = useMemo(() => {
-    return countries.length > 0 ? getUniqueCurrencies(countries) : []
-  }, [countries])
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const language = isArabic ? 'ar' : 'en'
 
   // Sort countries by name based on language
   const sortedCountries = useMemo(() => {
     return [...countries].sort((a, b) => {
-      const nameA = language === 'ar' ? a.nameAr : a.name
-      const nameB = language === 'ar' ? b.nameAr : b.name
+      const nameA = isArabic ? a.nameAr : a.name
+      const nameB = isArabic ? b.nameAr : b.name
       return nameA.localeCompare(nameB, language)
     })
-  }, [countries, language])
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  }, [countries, isArabic, language])
 
   const countryByCode = useMemo(() => {
-    const map = new Map<string, CountryResponse>()
-    for (const c of countries) {
+    const map = new Map<string, CountryMetadata>()
+    for (const c of sortedCountries) {
       map.set(c.code, c)
     }
     return map
-  }, [countries])
+  }, [sortedCountries])
 
   const countryOptions = useMemo(() => {
-    return countries.map((c) => {
+    return sortedCountries.map((c) => {
       const label = `${c.flag ? `${c.flag} ` : ''}${isArabic ? c.nameAr : c.name}`
       return {
         value: c.code,
@@ -87,12 +84,12 @@ function BusinessSetupPage() {
         icon: <Globe className="w-4 h-4" />,
       }
     })
-  }, [countries, isArabic])
+  }, [sortedCountries, isArabic])
 
   const currencyOptions = useMemo(() => {
     const seen = new Set<string>()
     const options: Array<{ value: string; label: string; icon: ReactNode }> = []
-    for (const c of countries) {
+    for (const c of sortedCountries) {
       if (!c.currencyCode || seen.has(c.currencyCode)) continue
       seen.add(c.currencyCode)
       options.push({
@@ -102,7 +99,7 @@ function BusinessSetupPage() {
       })
     }
     return options
-  }, [countries])
+  }, [sortedCountries])
 
   // Restore session from localStorage on mount
   useEffect(() => {
@@ -296,8 +293,9 @@ function BusinessSetupPage() {
               label={tOnboarding('business.country')}
               value={country}
               onChange={(value) => {
-                setCountry(value)
-                const selected = countryByCode.get(value)
+                const next = Array.isArray(value) ? value[0] ?? '' : value
+                setCountry(next)
+                const selected = countryByCode.get(next)
                 if (selected?.currencyCode) {
                   setCurrency(selected.currencyCode)
                 }
@@ -306,7 +304,6 @@ function BusinessSetupPage() {
               placeholder={tOnboarding('business.selectCountry')}
               disabled={isSubmitting || isLoadingCountries || isCountriesError}
               required
-              startIcon={<Globe className="w-5 h-5" />}
             />
 
             {/* Currency */}
@@ -314,13 +311,13 @@ function BusinessSetupPage() {
               label={tOnboarding('business.currency')}
               value={currency}
               onChange={(value) => {
-                setCurrency(value)
+                const next = Array.isArray(value) ? value[0] ?? '' : value
+                setCurrency(next)
               }}
               options={currencyOptions}
               placeholder={tOnboarding('business.selectCurrency')}
               disabled={isSubmitting || isLoadingCountries || isCountriesError}
               required
-              startIcon={<DollarSign className="w-5 h-5" />}
             />
 
             {isCountriesError && (

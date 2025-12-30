@@ -2,13 +2,14 @@ import { forwardRef, useId, useState } from 'react'
 import { Eye, EyeOff, Lock } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface PasswordInputProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'type'
 > {
   label?: string
-  error?: string
+  error?: unknown
   helperText?: string
   fullWidth?: boolean
   showPasswordToggle?: boolean
@@ -59,6 +60,8 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
     const generatedId = useId()
     const inputId = id ?? generatedId
     const [isPasswordVisible, setIsPasswordVisible] = useState(false)
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const togglePasswordVisibility = () => {
       setIsPasswordVisible((prev) => !prev)
@@ -95,16 +98,16 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
               'bg-base-100 text-base-content',
               'text-start placeholder:text-base-content/40',
               'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
-              error &&
+              hasError &&
                 'input-error border-error focus:border-error focus:ring-error/20',
               disabled && 'opacity-60 cursor-not-allowed',
               showDefaultIcon ? 'ps-10' : '',
               showPasswordToggle ? 'pe-10' : '',
               className,
             )}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : helperText
                   ? `${inputId}-helper`
@@ -140,20 +143,20 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         </div>
 
         {/* Error Message */}
-        {error && (
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
 
         {/* Helper Text */}
-        {!error && helperText && (
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}

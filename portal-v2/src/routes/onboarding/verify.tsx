@@ -405,7 +405,10 @@ function VerifyEmailPage() {
                         type="button"
                         className="btn btn-outline btn-sm self-start"
                         onClick={() => {
-                          void navigate({ to: '/auth/login' })
+                          void navigate({
+                            to: '/auth/login',
+                            search: { redirect: '/' },
+                          })
                         }}
                       >
                         {tTranslation('auth.login')}

@@ -17,6 +17,8 @@ interface NavItem {
   path: string
 }
 
+export type BottomNavProps = Record<string, never>
+
 const navItems: Array<NavItem> = [
   { key: 'dashboard', icon: LayoutDashboard, path: '' },
   { key: 'inventory', icon: Package, path: '/inventory' },
@@ -41,7 +43,7 @@ const navItems: Array<NavItem> = [
  * - Primary actions (Dashboard, Inventory, Orders, Customers)
  * - "More" button opens the full sidebar drawer
  */
-export function BottomNav() {
+export function BottomNav(_props: BottomNavProps) {
   const { t } = useTranslation()
   const location = useLocation()
   const selectedBusinessDescriptor = useStore(

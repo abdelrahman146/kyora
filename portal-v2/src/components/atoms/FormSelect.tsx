@@ -10,6 +10,7 @@ import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import type { ReactNode } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormSelectOption<T = string> {
   value: T
@@ -22,7 +23,7 @@ export interface FormSelectOption<T = string> {
 
 export interface FormSelectProps<T = string> {
   label?: string
-  error?: string
+  error?: unknown
   helperText?: string
   options: Array<FormSelectOption<T>>
   value?: T | Array<T>
@@ -108,6 +109,8 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     const { t } = useTranslation()
     const generatedId = useId()
     const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
     const placeholder = placeholderProp ?? t('common.select')
     const [isOpen, setIsOpen] = useState(false)
     const [searchQuery, setSearchQuery] = useState('')
@@ -351,7 +354,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               variantClasses[variant],
               'text-start cursor-pointer',
               'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
-              error
+              hasError
                 ? 'input-error border-error focus:border-error focus:ring-error/20'
                 : '',
               disabled && 'opacity-60 cursor-not-allowed',
@@ -362,7 +365,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             aria-expanded={isOpen}
             aria-labelledby={label ? `${inputId}-label` : undefined}
             aria-required={required}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
           >
             <span
               className={cn(
@@ -516,19 +519,19 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
           )}
         </div>
 
-        {error && (
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
 
-        {!error && helperText && (
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}

@@ -9,6 +9,7 @@ import { ResetPasswordSchema } from '@/schemas/auth'
 import { translateErrorAsync } from '@/lib/translateError'
 import { Button } from '@/components/atoms/Button'
 import { PasswordInput } from '@/components/atoms/PasswordInput'
+import { getErrorText } from '@/lib/formErrors'
 
 export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -44,7 +45,11 @@ function ResetPasswordPage() {
   }, [token, t])
 
   const handleBackToLogin = async () => {
-    await navigate({ to: '/auth/login', replace: true })
+    await navigate({
+      to: '/auth/login',
+      search: { redirect: '/' },
+      replace: true,
+    })
   }
 
   if (pageStatus === 'loading') {
@@ -163,7 +168,11 @@ function ResetPasswordPage() {
 
         setPageStatus('success')
         void setTimeout(() => {
-          void navigate({ to: '/auth/login', replace: true })
+          void navigate({
+            to: '/auth/login',
+            search: { redirect: '/' },
+            replace: true,
+          })
         }, 2000)
       } catch (error) {
         const message = await translateErrorAsync(error, t)
@@ -208,26 +217,26 @@ function ResetPasswordPage() {
                   onBlur: ResetPasswordSchema.shape.password,
                 }}
               >
-                {(field) => (
-                  <PasswordInput
-                    id="newPassword"
-                    label={t('auth.new_password')}
-                    placeholder={t('auth.new_password_placeholder')}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={
-                      field.state.meta.errors[0]
-                        ? tErrors(field.state.meta.errors[0] as unknown as string)
-                        : undefined
-                    }
-                    helperText={t('auth.password_requirements')}
-                    autoComplete="new-password"
-                    autoFocus
-                    disabled={form.state.isSubmitting}
-                    showPasswordToggle
-                  />
-                )}
+                {(field) => {
+                  const errorKey = getErrorText(field.state.meta.errors)
+
+                  return (
+                    <PasswordInput
+                      id="newPassword"
+                      label={t('auth.new_password')}
+                      placeholder={t('auth.new_password_placeholder')}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={errorKey ? tErrors(errorKey) : undefined}
+                      helperText={t('auth.password_requirements')}
+                      autoComplete="new-password"
+                      autoFocus
+                      disabled={form.state.isSubmitting}
+                      showPasswordToggle
+                    />
+                  )
+                }}
               </form.Field>
 
               <form.Field
@@ -236,24 +245,24 @@ function ResetPasswordPage() {
                   onBlur: ResetPasswordSchema.shape.confirmPassword,
                 }}
               >
-                {(field) => (
-                  <PasswordInput
-                    id="confirmPassword"
-                    label={t('auth.confirm_password')}
-                    placeholder={t('auth.confirm_password_placeholder')}
-                    value={field.state.value}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    onBlur={field.handleBlur}
-                    error={
-                      field.state.meta.errors[0]
-                        ? tErrors(field.state.meta.errors[0] as unknown as string)
-                        : undefined
-                    }
-                    autoComplete="new-password"
-                    disabled={form.state.isSubmitting}
-                    showPasswordToggle
-                  />
-                )}
+                {(field) => {
+                  const errorKey = getErrorText(field.state.meta.errors)
+
+                  return (
+                    <PasswordInput
+                      id="confirmPassword"
+                      label={t('auth.confirm_password')}
+                      placeholder={t('auth.confirm_password_placeholder')}
+                      value={field.state.value}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      onBlur={field.handleBlur}
+                      error={errorKey ? tErrors(errorKey) : undefined}
+                      autoComplete="new-password"
+                      disabled={form.state.isSubmitting}
+                      showPasswordToggle
+                    />
+                  )
+                }}
               </form.Field>
 
               <Button

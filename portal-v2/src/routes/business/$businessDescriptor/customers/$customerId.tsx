@@ -103,7 +103,7 @@ function CustomerDetailPage() {
       void navigate({
         to: '/business/$businessDescriptor/customers',
         params: { businessDescriptor },
-        search: { page: 1, pageSize: 20 },
+        search: { page: 1, pageSize: 20, sortOrder: 'desc' },
       })
     },
     onError: (err) => {
@@ -176,7 +176,7 @@ function CustomerDetailPage() {
     void navigate({
       to: '/business/$businessDescriptor/customers',
       params: { businessDescriptor },
-      search: { page: 1, pageSize: 20 },
+      search: { page: 1, pageSize: 20, sortOrder: 'desc' },
     })
   }
 

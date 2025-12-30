@@ -5,7 +5,7 @@ import { TanStackRouterDevtools } from '@tanstack/react-router-devtools'
 import { Toaster } from 'react-hot-toast'
 import type { RouterContext } from '@/router'
 import { useLanguage } from '@/hooks/useLanguage'
-import { restoreSession } from '@/lib/auth'
+import { initializeAuth } from '@/stores/authStore'
 
 export const Route = createRootRoute<RouterContext>({
   component: RootComponent,
@@ -16,7 +16,7 @@ function RootComponent() {
 
   // Restore session on mount
   useEffect(() => {
-    void restoreSession()
+    void initializeAuth()
   }, [])
 
   // Toast position based on RTL and screen size

@@ -1,6 +1,7 @@
 import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormCheckboxProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -8,7 +9,7 @@ export interface FormCheckboxProps extends Omit<
 > {
   label?: string
   description?: string
-  error?: string
+  error?: unknown
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'primary' | 'secondary'
 }
@@ -54,6 +55,9 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
     const generatedId = useId()
     const inputId = id ?? generatedId
 
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
+
     const sizeClasses = {
       sm: 'checkbox-sm',
       md: 'checkbox-md',
@@ -84,12 +88,12 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
               'checkbox',
               sizeClasses[size],
               variantClasses[variant],
-              error && 'checkbox-error',
+              hasError && 'checkbox-error',
               className,
             )}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : description
                   ? `${inputId}-description`
@@ -115,14 +119,14 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
           </div>
         </label>
 
-        {error && (
+        {hasError && (
           <label className="label pt-0">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}

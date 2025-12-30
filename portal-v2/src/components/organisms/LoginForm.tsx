@@ -7,6 +7,7 @@ import { Input } from '../atoms/Input'
 import { PasswordInput } from '../atoms/PasswordInput'
 import { LoginSchema } from '../../schemas/auth'
 import type { LoginFormData } from '../../schemas/auth'
+import { getErrorText } from '../../lib/formErrors'
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData) => Promise<void>
@@ -123,9 +124,10 @@ export function LoginForm({
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
             error={
-              field.state.meta.errors[0]
-                ? tErrors(field.state.meta.errors[0] as unknown as string)
-                : undefined
+              (() => {
+                const errorKey = getErrorText(field.state.meta.errors)
+                return errorKey ? tErrors(errorKey) : undefined
+              })()
             }
             startIcon={<Mail size={20} />}
             autoComplete="email"
@@ -153,11 +155,12 @@ export function LoginForm({
             }}
             onBlur={field.handleBlur}
             error={
-              field.state.meta.errors[0]
-                ? tErrors(field.state.meta.errors[0] as unknown as string)
-                : passwordServerError
-                  ? tErrors(passwordServerError)
-                  : undefined
+              (() => {
+                const errorKey = getErrorText(field.state.meta.errors)
+                if (errorKey) return tErrors(errorKey)
+                if (passwordServerError) return tErrors(passwordServerError)
+                return undefined
+              })()
             }
             autoComplete="current-password"
             disabled={form.state.isSubmitting}

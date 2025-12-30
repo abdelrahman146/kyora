@@ -1,6 +1,7 @@
 import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormRadioOption {
   value: string
@@ -15,7 +16,7 @@ export interface FormRadioProps extends Omit<
 > {
   label?: string
   options: Array<FormRadioOption>
-  error?: string
+  error?: unknown
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'primary' | 'secondary'
   orientation?: 'vertical' | 'horizontal'
@@ -70,6 +71,9 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
     const generatedId = useId()
     const groupId = `${generatedId}-group`
 
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
+
     const sizeClasses = {
       sm: 'radio-sm',
       md: 'radio-md',
@@ -95,8 +99,8 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
         <div
           role="radiogroup"
           aria-labelledby={label ? groupId : undefined}
-          aria-invalid={error ? 'true' : 'false'}
-          aria-describedby={error ? `${groupId}-error` : undefined}
+          aria-invalid={hasError ? 'true' : 'false'}
+          aria-describedby={hasError ? `${groupId}-error` : undefined}
           className={cn(
             'flex gap-4',
             orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap',
@@ -129,7 +133,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                     'radio',
                     sizeClasses[size],
                     variantClasses[variant],
-                    error && 'radio-error',
+                    hasError && 'radio-error',
                     className,
                   )}
                   {...props}
@@ -150,14 +154,14 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
           })}
         </div>
 
-        {error && (
+        {hasError && (
           <label className="label">
             <span
               id={`${groupId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}

@@ -32,6 +32,8 @@ interface NavItem {
   path: string
 }
 
+export type SidebarProps = Record<string, never>
+
 const navItems: Array<NavItem> = [
   { key: 'dashboard', icon: LayoutDashboard, path: '' },
   { key: 'inventory', icon: Package, path: '/inventory' },
@@ -59,7 +61,7 @@ const navItems: Array<NavItem> = [
  * - Touch-friendly targets (min 44px)
  * - Business descriptor from props for navigation
  */
-export function Sidebar() {
+export function Sidebar(_props: SidebarProps) {
   const { t } = useTranslation()
   const location = useLocation()
   const { isRTL } = useLanguage()

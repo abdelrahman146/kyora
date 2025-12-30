@@ -1,6 +1,7 @@
 import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormToggleProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
@@ -8,7 +9,7 @@ export interface FormToggleProps extends Omit<
 > {
   label?: string
   description?: string
-  error?: string
+  error?: unknown
   size?: 'sm' | 'md' | 'lg'
   variant?: 'default' | 'primary' | 'secondary'
   labelPosition?: 'start' | 'end'
@@ -56,6 +57,9 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
+
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const sizeClasses = {
       sm: 'toggle-sm',
@@ -110,14 +114,14 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
               'toggle',
               sizeClasses[size],
               variantClasses[variant],
-              error && 'toggle-error',
+              hasError && 'toggle-error',
               className,
             )}
             role="switch"
             aria-checked={props.checked}
-            aria-invalid={error ? 'true' : 'false'}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : description
                   ? `${inputId}-description`
@@ -129,14 +133,14 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
           {labelPosition === 'end' && labelContent}
         </label>
 
-        {error && (
+        {hasError && (
           <label className="label pt-0">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
