@@ -7,11 +7,10 @@ import type { RouterContext } from '@/router'
 import type { CountryMetadata } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
-import { Button } from '@/components/atoms/Button'
-import { cn } from '@/lib/utils'
+
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
-import { createBusinessSetupValidators } from '@/schemas/onboarding'
+import { SelectField, TextField } from '@/lib/form/components'
 
 // Search params schema
 const BusinessSearchSchema = z.object({
@@ -154,8 +153,7 @@ function BusinessSetupPage() {
       country: '',
       currency: '',
     },
-    validators: createBusinessSetupValidators(),
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: { name: string; descriptor: string; country: string; currency: string } }) => {
       await setBusinessMutation.mutateAsync({
         sessionToken,
         businessName: value.name,
@@ -222,117 +220,72 @@ function BusinessSetupPage() {
 
           <form.FormRoot className="space-y-6">
             {/* Business Name */}
-            <form.Field name="name">
-              {(field) => (
-                <form.TextField
-                  {...field}
-                  id="name"
+            <form.Field 
+              name="name"
+              validators={{
+                onBlur: z.string().min(1, 'validation.required'),
+              }}
+            >
+              {() => (
+                <TextField
                   type="text"
                   label={tOnboarding('business.name')}
                   placeholder={tOnboarding('business.namePlaceholder')}
                   autoFocus
-                  helperText={tOnboarding('business.nameHint')}
+                  hint={tOnboarding('business.nameHint')}
                   startIcon={<Building2 className="w-5 h-5" />}
                 />
               )}
             </form.Field>
 
             {/* Business Descriptor */}
-            <form.Field name="descriptor">
-              {(field) => (
-                <form.TextField
-                  {...field}
-                  id="descriptor"
+            <form.Field 
+              name="descriptor"
+              validators={{
+                onBlur: z.string().min(1, 'validation.required'),
+              }}
+            >
+              {() => (
+                <TextField
                   type="text"
                   label={tOnboarding('business.descriptor')}
                   placeholder={tOnboarding('business.descriptorPlaceholder')}
-                  helperText={tOnboarding('business.descriptorHint')}
-                  onChange={(e) => field.handleChange(e.target.value.toLowerCase())}
+                  hint={tOnboarding('business.descriptorHint')}
                 />
               )}
             </form.Field>
 
             {/* Country */}
-            <form.Field name="country">
-              {(field) => (
-                <div>
-                  <label htmlFor="country" className="label">
-                    <span className="label-text">
-                      {tOnboarding('business.country')}
-                    </span>
-                  </label>
-                  <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
-                    {({ isSubmitting }) => (
-                      <select
-                        id="country"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => {
-                          const value = e.target.value
-                          field.handleChange(value)
-                          
-                          const country = countryByCode.get(value)
-                          if (country?.currencyCode) {
-                            form.setFieldValue('currency', country.currencyCode)
-                          }
-                        }}
-                        disabled={isSubmitting || isLoadingCountries || isCountriesError}
-                        className={cn(
-                          'select select-bordered w-full',
-                          field.state.meta.errors.length > 0 ? 'select-error' : ''
-                        )}
-                      >
-                        <option value="" disabled>
-                          {tOnboarding('business.selectCountry')}
-                        </option>
-                        {countryOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </form.Subscribe>
-                  <form.ErrorInfo />
-                </div>
+            <form.Field 
+              name="country"
+              validators={{
+                onBlur: z.string().min(1, 'validation.required'),
+              }}
+            >
+              {() => (
+                <SelectField
+                  label={tOnboarding('business.country')}
+                  placeholder={tOnboarding('business.selectCountry')}
+                  options={countryOptions}
+                  disabled={isLoadingCountries || isCountriesError}
+                />
               )}
             </form.Field>
 
             {/* Currency */}
-            <form.Field name="currency">
-              {(field) => (
-                <div>
-                  <label htmlFor="currency" className="label">
-                    <span className="label-text">
-                      {tOnboarding('business.currency')}
-                    </span>
-                  </label>
-                  <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
-                    {({ isSubmitting }) => (
-                      <select
-                        id="currency"
-                        value={field.state.value}
-                        onBlur={field.handleBlur}
-                        onChange={(e) => field.handleChange(e.target.value)}
-                        disabled={isSubmitting || isLoadingCountries || isCountriesError}
-                        className={cn(
-                          'select select-bordered w-full',
-                          field.state.meta.errors.length > 0 ? 'select-error' : ''
-                        )}
-                      >
-                        <option value="" disabled>
-                          {tOnboarding('business.selectCurrency')}
-                        </option>
-                        {currencyOptions.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                    )}
-                  </form.Subscribe>
-                  <form.ErrorInfo />
-                </div>
+            <form.Field 
+              name="currency"
+              validators={{
+                onBlur: z.string().min(1, 'validation.required'),
+              }}
+            >
+              {() => (
+                <SelectField
+                  label={tOnboarding('business.currency')}
+                  placeholder={tOnboarding('business.selectCurrency')}
+                  options={currencyOptions}
+                  disabled={isLoadingCountries || isCountriesError}
+                />
               )}
             </form.Field>
 

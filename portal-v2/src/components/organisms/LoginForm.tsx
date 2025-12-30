@@ -1,10 +1,10 @@
 import { Link } from '@tanstack/react-router'
 import { Loader2, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { Button } from '../atoms/Button'
-import { useKyoraForm } from '@/lib/form'
-import { createLoginValidators } from '@/schemas/auth'
+import { z } from 'zod'
 import type { LoginFormData } from '@/schemas/auth'
+import { useKyoraForm } from '@/lib/form'
+import { PasswordField, TextField } from '@/lib/form/components'
 
 interface LoginFormProps {
   onSubmit: (data: LoginFormData) => Promise<void>
@@ -46,8 +46,7 @@ export function LoginForm({
       email: '',
       password: '',
     },
-    validators: createLoginValidators(),
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: LoginFormData }) => {
       await onSubmit(value)
     },
   })
@@ -57,11 +56,14 @@ export function LoginForm({
       <form.FormError />
 
       {/* Email Input */}
-      <form.Field name="email">
-        {(field) => (
-          <form.TextField
-            {...field}
-            id="email"
+      <form.Field 
+        name="email"
+        validators={{
+          onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
+        }}
+      >
+        {() => (
+          <TextField
             type="email"
             label={t('auth.email')}
             placeholder={t('auth.email_placeholder')}
@@ -72,11 +74,14 @@ export function LoginForm({
       </form.Field>
 
       {/* Password Input */}
-      <form.Field name="password">
-        {(field) => (
-          <form.PasswordField
-            {...field}
-            id="password"
+      <form.Field 
+        name="password"
+        validators={{
+          onBlur: z.string().min(1, 'validation.required'),
+        }}
+      >
+        {() => (
+          <PasswordField
             label={t('auth.password')}
             placeholder={t('auth.password_placeholder')}
             autoComplete="current-password"
@@ -108,7 +113,7 @@ export function LoginForm({
 
           {/* Google Login Button */}
           <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
-            {({ isSubmitting }) => (
+            {({ isSubmitting }: { isSubmitting: boolean }) => (
               <button
                 type="button"
                 onClick={onGoogleLogin}

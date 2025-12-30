@@ -20,6 +20,7 @@ import { FormSelect } from '@/components'
 import { useCreateCustomerMutation } from '@/api/customer'
 import { useCountriesQuery } from '@/api/metadata'
 import { useKyoraForm } from '@/lib/form'
+import { TextField } from '@/lib/form/components'
 import { buildE164Phone } from '@/lib/phone'
 import { showErrorToast, showSuccessToast } from '@/lib/toast'
 
@@ -123,7 +124,7 @@ export function AddCustomerSheet({
       }
       onClose()
     },
-    onError: async (error) => {
+    onError: (error) => {
       showErrorToast(error.message)
     },
   })
@@ -131,20 +132,6 @@ export function AddCustomerSheet({
   // TanStack Form setup with useKyoraForm
   const form = useKyoraForm({
     defaultValues: getDefaultValues(businessCountryCode),
-    validators: {
-      name: { onBlur: z.string().trim().min(1, 'required') },
-      email: { onBlur: z.string().trim().min(1, 'required').email('invalid_email') },
-      gender: { onBlur: z.enum(['male', 'female', 'other'], { message: 'required' }) },
-      countryCode: {
-        onBlur: z.string().trim().min(1, 'required').refine((v) => /^[A-Za-z]{2}$/.test(v), 'invalid_country'),
-      },
-      phoneCode: {
-        onBlur: z.string().trim().refine((v) => v === '' || /^\+?\d{1,4}$/.test(v), 'invalid_phone_code'),
-      },
-      phoneNumber: {
-        onBlur: z.string().trim().refine((v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v), 'invalid_phone'),
-      },
-    },
     onSubmit: async ({ value }) => {
       const phoneCode = value.phoneCode.trim()
       const phoneNumber = value.phoneNumber.trim()
@@ -199,8 +186,8 @@ export function AddCustomerSheet({
         type="button"
         className="btn btn-ghost flex-1"
         onClick={safeClose}
-        disabled={isSubmitting}
-        aria-disabled={isSubmitting}
+        disabled={createMutation.isPending}
+        aria-disabled={createMutation.isPending}
       >
         {t('common.cancel')}
       </button>
@@ -234,26 +221,46 @@ export function AddCustomerSheet({
         className="space-y-4"
         aria-busy={createMutation.isPending}
       >
-        <form.TextField
+        <form.Field
           name="name"
-          label={t('customers.form.name')}
-          placeholder={t('customers.form.name_placeholder')}
-          autoComplete="name"
-          required
-        />
+          validators={{
+            onBlur: z.string().trim().min(1, 'validation.required'),
+          }}
+        >
+          {() => (
+            <TextField
+              label={t('customers.form.name')}
+              placeholder={t('customers.form.name_placeholder')}
+              autoComplete="name"
+              required
+            />
+          )}
+        </form.Field>
 
-        <form.TextField
+        <form.Field
           name="email"
-          type="email"
-          label={t('customers.form.email')}
-          placeholder={t('customers.form.email_placeholder')}
-          autoComplete="email"
-          inputMode="email"
-          required
-        />
+          validators={{
+            onBlur: z.string().trim().min(1, 'validation.required').email('validation.invalid_email'),
+          }}
+        >
+          {() => (
+            <TextField
+              type="email"
+              label={t('customers.form.email')}
+              placeholder={t('customers.form.email_placeholder')}
+              autoComplete="email"
+              required
+            />
+          )}
+        </form.Field>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <form.Field name="countryCode">
+          <form.Field
+            name="countryCode"
+            validators={{
+              onBlur: z.string().trim().min(1, 'validation.required').refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
+            }}
+          >
             {(field: any) => (
               <CountrySelect
                 value={field.state.value}
@@ -267,7 +274,12 @@ export function AddCustomerSheet({
             )}
           </form.Field>
 
-          <form.Field name="gender">
+          <form.Field
+            name="gender"
+            validators={{
+              onBlur: z.enum(['male', 'female', 'other'], { message: 'validation.required' }),
+            }}
+          >
             {(field: any) => (
               <FormSelect<CustomerGender>
                 label={t('customers.form.gender')}
@@ -277,7 +289,7 @@ export function AddCustomerSheet({
                   { value: 'other', label: t('customers.form.gender_other') },
                 ]}
                 value={field.state.value}
-                onChange={(value: CustomerGender | CustomerGender[]) => {
+                onChange={(value: CustomerGender | Array<CustomerGender>) => {
                   // FormSelect can return array for multiSelect, but we use single select
                   const singleValue = Array.isArray(value) ? value[0] : value
                   field.handleChange(singleValue)
@@ -291,27 +303,37 @@ export function AddCustomerSheet({
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <form.Field name="phoneCode">
+          <form.Field
+            name="phoneCode"
+            validators={{
+              onBlur: z.string().trim().refine((v) => v === '' || /^\+?\d{1,4}$/.test(v), 'validation.invalid_phone_code'),
+            }}
+          >
             {(field: any) => (
               <PhoneCodeSelect
                 value={field.state.value}
                 onChange={(value: string) => field.handleChange(value)}
-                countryCode={selectedCountryCode}
                 disabled={createMutation.isPending}
               />
             )}
           </form.Field>
 
           <div className="sm:col-span-2">
-            <form.TextField
+            <form.Field
               name="phoneNumber"
-              type="tel"
-              label={t('customers.form.phone_number')}
-              placeholder={t('customers.form.phone_placeholder')}
-              autoComplete="tel"
-              inputMode="tel"
-              dir="ltr"
-            />
+              validators={{
+                onBlur: z.string().trim().refine((v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v), 'validation.invalid_phone'),
+              }}
+            >
+              {() => (
+                <TextField
+                  type="tel"
+                  label={t('customers.form.phone_number')}
+                  placeholder={t('customers.form.phone_placeholder')}
+                  autoComplete="tel"
+                />
+              )}
+            </form.Field>
           </div>
         </div>
 

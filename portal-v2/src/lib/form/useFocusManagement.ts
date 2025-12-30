@@ -12,7 +12,6 @@
  */
 
 import { useEffect, useRef } from 'react'
-import type { FormApi } from '@tanstack/react-form'
 
 /**
  * Focus Management Hook
@@ -33,13 +32,9 @@ export function useFocusOnError() {
   return () => {
     // Query for the first invalid input using ARIA attributes
     // This works because our field components automatically set aria-invalid
-    const invalidInput = document.querySelector('[aria-invalid="true"]') as
-      | HTMLInputElement
-      | HTMLTextAreaElement
-      | HTMLSelectElement
-      | null
+    const invalidInput = document.querySelector('[aria-invalid="true"]')
 
-    if (invalidInput) {
+    if (invalidInput && invalidInput instanceof HTMLElement) {
       // Focus the invalid field
       invalidInput.focus()
 
@@ -116,13 +111,9 @@ export function useAutoFocus<T extends HTMLElement = HTMLInputElement>(
 export function createFocusManagement() {
   return {
     onSubmitInvalid: () => {
-      const invalidInput = document.querySelector('[aria-invalid="true"]') as
-        | HTMLInputElement
-        | HTMLTextAreaElement
-        | HTMLSelectElement
-        | null
+      const invalidInput = document.querySelector('[aria-invalid="true"]')
 
-      if (invalidInput) {
+      if (invalidInput && invalidInput instanceof HTMLElement) {
         invalidInput.focus()
         invalidInput.scrollIntoView({
           behavior: 'smooth',

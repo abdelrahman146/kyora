@@ -28,7 +28,7 @@ export function translateValidationError(error: unknown, t: TFunction): string {
   let errorStr: string
   if (typeof error === 'string') {
     errorStr = error
-  } else if (typeof error === 'object' && error !== null) {
+  } else if (typeof error === 'object') {
     // Try to extract message from error object
     const errorObj = error as Record<string, unknown>
     if ('message' in errorObj && typeof errorObj.message === 'string') {

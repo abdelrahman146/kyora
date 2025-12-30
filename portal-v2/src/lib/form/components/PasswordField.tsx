@@ -19,9 +19,9 @@
 
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PasswordInput } from '@/components/atoms/PasswordInput'
 import { useFieldContext } from '../contexts'
 import type { PasswordFieldProps } from '../types'
+import { PasswordInput } from '@/components/atoms/PasswordInput'
 
 export function PasswordField(props: PasswordFieldProps) {
   const field = useFieldContext<string>()
@@ -30,7 +30,7 @@ export function PasswordField(props: PasswordFieldProps) {
   // Extract error from field state and translate
   const error = useMemo(() => {
     const errors = field.state.meta.errors
-    if (!errors || errors.length === 0) return undefined
+    if (errors.length === 0) return undefined
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {

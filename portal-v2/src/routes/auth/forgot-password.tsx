@@ -2,12 +2,13 @@ import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, CheckCircle, Mail } from 'lucide-react'
+import { z } from 'zod'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { z } from 'zod'
+import { TextField } from '@/lib/form/components'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -25,12 +26,7 @@ function ForgotPasswordPage() {
     defaultValues: {
       email: '',
     },
-    validators: {
-      email: {
-        onBlur: z.string().email('invalid_email'),
-      },
-    },
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: { email: string } }) => {
       await authApi.forgotPassword(value)
       setSubmittedEmail(value.email)
       setIsSuccess(true)
@@ -123,11 +119,14 @@ function ForgotPasswordPage() {
             <form.FormRoot className="space-y-6">
               <form.FormError />
 
-              <form.Field name="email">
-                {(field) => (
-                  <form.TextField
-                    {...field}
-                    id="email"
+              <form.Field 
+                name="email"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
+                }}
+              >
+                {() => (
+                  <TextField
                     type="email"
                     label={t('auth.email')}
                     placeholder={t('auth.email_placeholder')}

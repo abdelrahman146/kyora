@@ -13,8 +13,8 @@
  * ```
  */
 
-import type { FormHTMLAttributes } from 'react'
 import { useFormContext } from '../contexts'
+import type { FormHTMLAttributes } from 'react'
 
 interface FormRootProps extends Omit<FormHTMLAttributes<HTMLFormElement>, 'onSubmit'> {
   children: React.ReactNode

@@ -6,7 +6,7 @@ import { onboardingQueries, useStartSessionMutation } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { createEmailFormValidators } from '@/schemas/onboarding'
+import { TextField } from '@/lib/form/components'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema for URL-driven state
@@ -50,7 +50,6 @@ export const Route = createFileRoute('/onboarding/email')({
 function EmailEntryPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
-  const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
   const { plan } = Route.useLoaderData()
   const { plan: planDescriptor } = Route.useSearch()
@@ -71,7 +70,6 @@ function EmailEntryPage() {
     defaultValues: {
       email: '',
     },
-    validators: createEmailFormValidators(),
     onSubmit: async ({ value }) => {
       await startSessionMutation.mutateAsync({
         email: value.email,
@@ -87,7 +85,6 @@ function EmailEntryPage() {
       sessionStorage.setItem('kyora_onboarding_plan', planDescriptor)
       window.location.href = url
     } catch (err) {
-      await translateErrorAsync(err, tTranslation)
       startSessionMutation.reset()
       startSessionMutation.error = err as Error
     }
@@ -136,11 +133,14 @@ function EmailEntryPage() {
       <div className="card bg-base-100 border border-base-300 shadow-lg">
         <div className="card-body">
           <form.FormRoot className="space-y-6">
-            <form.Field name="email">
-              {(field) => (
-                <form.TextField
-                  {...field}
-                  id="email"
+            <form.Field
+              name="email"
+              validators={{
+                onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
+              }}
+            >
+              {() => (
+                <TextField
                   type="email"
                   label={tCommon('email')}
                   placeholder={tOnboarding('email.emailPlaceholder')}

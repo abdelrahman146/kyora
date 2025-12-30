@@ -5,7 +5,7 @@
  * Provides search query management and filtered options.
  */
 
-import { useState, useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import type { FormSelectOption } from './FormSelect'
 
 interface UseSelectSearchProps<T> {

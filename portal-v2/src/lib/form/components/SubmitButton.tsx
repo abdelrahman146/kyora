@@ -13,18 +13,20 @@
  */
 
 import { Loader2 } from 'lucide-react'
-import { Button } from '@/components/atoms/Button'
 import { useFormContext } from '../contexts'
 import type { ButtonHTMLAttributes } from 'react'
+import { Button } from '@/components/atoms/Button'
 
 interface SubmitButtonProps extends Omit<ButtonHTMLAttributes<HTMLButtonElement>, 'type'> {
   children: React.ReactNode
   /** Text to show while form is submitting */
   loadingText?: string
   /** Variant for button styling */
-  variant?: 'primary' | 'secondary' | 'accent' | 'ghost' | 'link'
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'error'
   /** Size variant */
   size?: 'xs' | 'sm' | 'md' | 'lg'
+  /** Full width button */
+  fullWidth?: boolean
 }
 
 export function SubmitButton({
@@ -32,6 +34,7 @@ export function SubmitButton({
   loadingText,
   variant = 'primary',
   size = 'md',
+  fullWidth,
   disabled,
   ...props
 }: SubmitButtonProps) {
@@ -49,6 +52,7 @@ export function SubmitButton({
           type="submit"
           variant={variant}
           size={size}
+          fullWidth={fullWidth}
           disabled={!canSubmit || isSubmitting || disabled}
           {...props}
         >

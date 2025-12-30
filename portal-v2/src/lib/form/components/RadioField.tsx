@@ -24,9 +24,9 @@
 
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormRadio } from '@/components/atoms/FormRadio'
 import { useFieldContext } from '../contexts'
 import type { FormRadioProps } from '@/components/atoms/FormRadio'
+import { FormRadio } from '@/components/atoms/FormRadio'
 
 export interface RadioFieldProps extends Omit<FormRadioProps, 'name' | 'value' | 'onChange'> {
   disabled?: boolean
@@ -39,7 +39,7 @@ export function RadioField(props: RadioFieldProps) {
   // Extract error from field state and translate
   const error = useMemo(() => {
     const errors = field.state.meta.errors
-    if (!errors || errors.length === 0) return undefined
+    if (errors.length === 0) return undefined
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {

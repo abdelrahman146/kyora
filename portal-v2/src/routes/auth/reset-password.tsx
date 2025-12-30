@@ -2,11 +2,12 @@ import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
+import { z } from 'zod'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { createResetPasswordValidators } from '@/schemas/auth'
+import { PasswordField } from '@/lib/form/components'
 
 export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -153,8 +154,7 @@ function ResetPasswordPage() {
       password: '',
       confirmPassword: '',
     },
-    validators: createResetPasswordValidators(),
-    onSubmit: async ({ value }) => {
+    onSubmit: async ({ value }: { value: { password: string; confirmPassword: string } }) => {
       await authApi.resetPassword({
         token,
         password: value.password,
@@ -186,25 +186,44 @@ function ResetPasswordPage() {
             <form.FormRoot className="space-y-6">
               <form.FormError />
 
-              <form.Field name="password">
-                {(field) => (
-                  <form.PasswordField
-                    {...field}
-                    id="newPassword"
+              <form.Field 
+                name="password"
+                validators={{
+                  onBlur: z.string().min(8, 'validation.password_min_length'),
+                  onChange: ({ value }: { value: string }) => {
+                    if (value.length > 0 && value.length < 8) {
+                      return 'validation.password_min_length'
+                    }
+                    return undefined
+                  },
+                }}
+              >
+                {() => (
+                  <PasswordField
                     label={t('auth.new_password')}
                     placeholder={t('auth.new_password_placeholder')}
-                    helperText={t('auth.password_requirements')}
+                    hint={t('auth.password_requirements')}
                     autoComplete="new-password"
                     autoFocus
                   />
                 )}
               </form.Field>
 
-              <form.Field name="confirmPassword">
-                {(field) => (
-                  <form.PasswordField
-                    {...field}
-                    id="confirmPassword"
+              <form.Field 
+                name="confirmPassword"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                  onChangeListenTo: ['password'],
+                  onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
+                    if (value !== fieldApi.form.getFieldValue('password')) {
+                      return 'validation.passwords_must_match'
+                    }
+                    return undefined
+                  },
+                }}
+              >
+                {() => (
+                  <PasswordField
                     label={t('auth.confirm_password')}
                     placeholder={t('auth.confirm_password_placeholder')}
                     autoComplete="new-password"

@@ -16,7 +16,7 @@ import { isHTTPError } from '@/lib/errorParser'
 import { formatCountdownDuration } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
-import { createOTPVerificationValidators } from '@/schemas/onboarding'
+import { PasswordField, TextField } from '@/lib/form/components'
 
 // Search params schema
 const VerifySearchSchema = z.object({
@@ -127,11 +127,6 @@ function VerifyEmailPage() {
     defaultValues: {
       code: ['', '', '', '', '', ''],
     },
-    validators: {
-      code: {
-        onBlur: z.array(z.string().regex(/^\d$/)).length(6, 'otp_length'),
-      },
-    },
     onSubmit: ({ value }) => {
       const codeString = value.code.join('')
       if (codeString.length === 6) {
@@ -149,7 +144,6 @@ function VerifyEmailPage() {
       password: '',
       confirmPassword: '',
     },
-    validators: createOTPVerificationValidators(),
     onSubmit: async ({ value }) => {
       setShowLoginCta(false)
       sessionStorage.removeItem(`kyora_verify_step_${sessionToken}`)
@@ -356,11 +350,14 @@ function VerifyEmailPage() {
             </div>
 
             <profileForm.FormRoot className="space-y-5">
-              <profileForm.Field name="firstName">
-                {(field) => (
-                  <profileForm.TextField
-                    {...field}
-                    id="firstName"
+              <profileForm.Field
+                name="firstName"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {() => (
+                  <TextField
                     type="text"
                     label={tCommon('firstName')}
                     placeholder={tCommon('firstName')}
@@ -368,11 +365,14 @@ function VerifyEmailPage() {
                 )}
               </profileForm.Field>
 
-              <profileForm.Field name="lastName">
-                {(field) => (
-                  <profileForm.TextField
-                    {...field}
-                    id="lastName"
+              <profileForm.Field
+                name="lastName"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {() => (
+                  <TextField
                     type="text"
                     label={tCommon('lastName')}
                     placeholder={tCommon('lastName')}
@@ -380,23 +380,42 @@ function VerifyEmailPage() {
                 )}
               </profileForm.Field>
 
-              <profileForm.Field name="password">
-                {(field) => (
-                  <profileForm.PasswordField
-                    {...field}
-                    id="password"
+              <profileForm.Field
+                name="password"
+                validators={{
+                  onBlur: z.string().min(8, 'validation.password_min_length'),
+                  onChange: ({ value }: { value: string }) => {
+                    if (value.length > 0 && value.length < 8) {
+                      return 'validation.password_min_length'
+                    }
+                    return undefined
+                  },
+                }}
+              >
+                {() => (
+                  <PasswordField
                     label={tCommon('password')}
                     placeholder={tCommon('password')}
-                    helperText={tOnboarding('verify.passwordHint')}
+                    hint={tOnboarding('verify.passwordHint')}
                   />
                 )}
               </profileForm.Field>
 
-              <profileForm.Field name="confirmPassword">
-                {(field) => (
-                  <profileForm.PasswordField
-                    {...field}
-                    id="confirmPassword"
+              <profileForm.Field
+                name="confirmPassword"
+                validators={{
+                  onChangeListenTo: ['password'],
+                  onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
+                    const password = fieldApi.form.getFieldValue('password')
+                    if (value !== password) {
+                      return 'validation.passwords_must_match'
+                    }
+                    return undefined
+                  },
+                }}
+              >
+                {() => (
+                  <PasswordField
                     label={tCommon('confirmPassword')}
                     placeholder={tCommon('confirmPassword')}
                   />

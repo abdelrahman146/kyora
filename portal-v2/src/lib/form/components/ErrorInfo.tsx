@@ -27,7 +27,7 @@ export function ErrorInfo() {
 
   const translatedError = useMemo(() => {
     const errors = field.state.meta.errors
-    if (!errors || errors.length === 0) return null
+    if (errors.length === 0) return null
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {

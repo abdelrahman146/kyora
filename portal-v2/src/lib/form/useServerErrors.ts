@@ -12,8 +12,7 @@
  * - Type-safe error injection
  */
 
-import { useMemo, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
+import { useCallback } from 'react'
 import { parseProblemDetails } from '../errorParser'
 import type { ServerErrors } from './types'
 import type { HTTPError } from 'ky'
@@ -44,8 +43,6 @@ import type { HTTPError } from 'ky'
  * ```
  */
 export function useServerErrors() {
-  const { t } = useTranslation('errors')
-
   /**
    * Parse server error response into field-specific errors
    *

@@ -20,9 +20,9 @@
 
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormToggle } from '@/components/atoms/FormToggle'
 import { useFieldContext } from '../contexts'
 import type { ToggleFieldProps } from '../types'
+import { FormToggle } from '@/components/atoms/FormToggle'
 
 export function ToggleField(props: ToggleFieldProps) {
   const field = useFieldContext<boolean>()
@@ -31,7 +31,7 @@ export function ToggleField(props: ToggleFieldProps) {
   // Extract error from field state and translate
   const error = useMemo(() => {
     const errors = field.state.meta.errors
-    if (!errors || errors.length === 0) return undefined
+    if (errors.length === 0) return undefined
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {

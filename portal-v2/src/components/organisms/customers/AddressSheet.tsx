@@ -22,10 +22,10 @@ import { PhoneCodeSelect } from '../../molecules/PhoneCodeSelect'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress } from '@/api/customer'
 import { useKyoraForm } from '@/lib/form'
+import { TextField } from '@/lib/form/components'
 import { useCountriesQuery } from '@/api/metadata'
 import { buildE164Phone, parseE164Phone } from '@/lib/phone'
 import { showErrorToast, showSuccessToast } from '@/lib/toast'
-import { translateErrorAsync } from '@/lib/translateError'
 
 export interface AddressSheetProps {
   isOpen: boolean
@@ -58,7 +58,6 @@ export function AddressSheet({
   submitLabel,
 }: AddressSheetProps) {
   const { t } = useTranslation()
-  const { t: tErrors } = useTranslation('errors')
 
   // Fetch countries using TanStack Query
   const { data: countries = [], isLoading: countriesLoading } =
@@ -92,15 +91,6 @@ export function AddressSheet({
   // TanStack Form setup with useKyoraForm
   const form = useKyoraForm({
     defaultValues,
-    validators: {
-      countryCode: { onBlur: z.string().length(2, 'country_required') },
-      state: { onBlur: z.string().min(1, 'state_required') },
-      city: { onBlur: z.string().min(1, 'city_required') },
-      phoneCode: { onBlur: z.string().min(1, 'phone_code_required') },
-      phoneNumber: { onBlur: z.string().min(1, 'phone_required') },
-      street: { onBlur: z.string().optional() },
-      zipCode: { onBlur: z.string().optional() },
-    },
     onSubmit: async ({ value }) => {
       try {
         // Build E.164 phone
@@ -140,9 +130,17 @@ export function AddressSheet({
     },
   })
 
-  // Subscribe to specific form state to minimize re-renders
-  const isSubmitting = form.useStore((state) => state.isSubmitting)
-  const isDirty = form.useStore((state) => state.isDirty)
+  // Get form state
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = form.store.subscribe(() => {
+      setIsSubmitting(form.store.state.isSubmitting)
+      setIsDirty(form.store.state.isDirty)
+    })
+    return unsubscribe
+  }, [form])
 
   // Reset form when sheet opens or address changes
   useEffect(() => {
@@ -185,7 +183,12 @@ export function AddressSheet({
         aria-busy={isSubmitting}
       >
         {/* Country */}
-        <form.Field name="countryCode">
+        <form.Field
+          name="countryCode"
+          validators={{
+            onBlur: z.string().length(2, 'validation.country_required'),
+          }}
+        >
           {(field: any) => (
             <CountrySelect
               value={field.state.value}
@@ -199,42 +202,68 @@ export function AddressSheet({
         </form.Field>
 
         {/* State */}
-        <form.TextField
+        <form.Field
           name="state"
-          label={t('customers.form.state')}
-          placeholder={t('customers.form.state_placeholder')}
-          required
-        />
+          validators={{
+            onBlur: z.string().min(1, 'validation.state_required'),
+          }}
+        >
+          {() => (
+            <TextField
+              label={t('customers.form.state')}
+              placeholder={t('customers.form.state_placeholder')}
+              required
+            />
+          )}
+        </form.Field>
 
         {/* City */}
-        <form.TextField
+        <form.Field
           name="city"
-          label={t('customers.form.city')}
-          placeholder={t('customers.form.city_placeholder')}
-          required
-        />
+          validators={{
+            onBlur: z.string().min(1, 'validation.city_required'),
+          }}
+        >
+          {() => (
+            <TextField
+              label={t('customers.form.city')}
+              placeholder={t('customers.form.city_placeholder')}
+              required
+            />
+          )}
+        </form.Field>
 
         {/* Street (Optional) */}
-        <form.TextField
-          name="street"
-          label={t('customers.form.street')}
-          placeholder={t('customers.form.street_placeholder')}
-        />
+        <form.Field name="street">
+          {() => (
+            <TextField
+              label={t('customers.form.street')}
+              placeholder={t('customers.form.street_placeholder')}
+            />
+          )}
+        </form.Field>
 
         {/* Zip Code (Optional) */}
-        <form.TextField
-          name="zipCode"
-          label={t('customers.form.zip_code')}
-          placeholder={t('customers.form.zip_placeholder')}
-        />
+        <form.Field name="zipCode">
+          {() => (
+            <TextField
+              label={t('customers.form.zip_code')}
+              placeholder={t('customers.form.zip_placeholder')}
+            />
+          )}
+        </form.Field>
 
         {/* Phone Code - Auto-updated from country, disabled */}
-        <form.Field name="phoneCode">
+        <form.Field
+          name="phoneCode"
+          validators={{
+            onBlur: z.string().min(1, 'validation.phone_code_required'),
+          }}
+        >
           {(field: any) => (
             <PhoneCodeSelect
               value={field.state.value}
               onChange={(value: string) => field.handleChange(value)}
-              countryCode={selectedCountryCode}
               disabled
               required
             />
@@ -242,15 +271,21 @@ export function AddressSheet({
         </form.Field>
 
         {/* Phone Number */}
-        <form.TextField
+        <form.Field
           name="phoneNumber"
-          type="tel"
-          label={t('customers.form.phone_number')}
-          placeholder={t('customers.form.phone_placeholder')}
-          inputMode="tel"
-          required
-          dir="ltr"
-        />
+          validators={{
+            onBlur: z.string().min(1, 'validation.phone_required'),
+          }}
+        >
+          {() => (
+            <TextField
+              type="tel"
+              label={t('customers.form.phone_number')}
+              placeholder={t('customers.form.phone_placeholder')}
+              required
+            />
+          )}
+        </form.Field>
 
         {/* Footer Actions */}
         <div className="flex gap-2 pt-4">

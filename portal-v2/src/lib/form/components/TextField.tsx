@@ -21,9 +21,9 @@
 
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { FormInput } from '@/components/atoms/FormInput'
 import { useFieldContext } from '../contexts'
 import type { TextFieldProps } from '../types'
+import { FormInput } from '@/components/atoms/FormInput'
 
 export function TextField(props: TextFieldProps) {
   const field = useFieldContext<string>()
@@ -32,7 +32,7 @@ export function TextField(props: TextFieldProps) {
   // Extract error from field state and translate
   const error = useMemo(() => {
     const errors = field.state.meta.errors
-    if (!errors || errors.length === 0) return undefined
+    if (errors.length === 0) return undefined
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {

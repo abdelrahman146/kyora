@@ -49,10 +49,18 @@
  * ```
  */
 
-import { createFormHook, revalidateLogic } from '@tanstack/react-form'
-import { zodValidator } from '@tanstack/zod-form-adapter'
+import { createFormHook } from '@tanstack/react-form'
 import { fieldContext, formContext } from './contexts'
-import { TextField, PasswordField, ErrorInfo } from './components'
+import {
+  CheckboxField,
+  ErrorInfo,
+  PasswordField,
+  RadioField,
+  SelectField,
+  TextField,
+  TextareaField,
+  ToggleField,
+} from './components'
 import { FormRoot } from './components/FormRoot'
 import { SubmitButton } from './components/SubmitButton'
 import { FormError } from './components/FormError'
@@ -60,7 +68,7 @@ import { FormError } from './components/FormError'
 /**
  * Create Kyora Form hook with pre-bound components and default configuration
  */
-export const { useKyoraForm, withKyoraForm } = createFormHook({
+const { useAppForm, withForm } = createFormHook({
   fieldContext,
   formContext,
 
@@ -68,6 +76,11 @@ export const { useKyoraForm, withKyoraForm } = createFormHook({
   fieldComponents: {
     TextField,
     PasswordField,
+    TextareaField,
+    SelectField,
+    CheckboxField,
+    RadioField,
+    ToggleField,
     ErrorInfo,
   },
 
@@ -77,19 +90,8 @@ export const { useKyoraForm, withKyoraForm } = createFormHook({
     SubmitButton,
     FormError,
   },
-
-  // Default form configuration
-  defaultValues: {},
-
-  // Enable Zod schema validation
-  validatorAdapter: zodValidator(),
-
-  // Progressive validation disclosure for optimal UX:
-  // - Before first submit: only validate on submit (mode: 'submit')
-  // - After first submit: validate on blur (modeAfterSubmission: 'blur')
-  // This prevents annoying errors while typing, but provides feedback after interaction
-  validationLogic: revalidateLogic({
-    mode: 'submit',
-    modeAfterSubmission: 'blur',
-  }),
 })
+
+// Export with Kyora naming for consistency
+export const useKyoraForm = useAppForm
+export const withKyoraForm = withForm

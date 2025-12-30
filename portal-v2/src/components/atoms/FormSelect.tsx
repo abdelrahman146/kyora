@@ -18,11 +18,11 @@ import { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'rea
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
-import { getErrorText } from '@/lib/formErrors'
 import { useSelectSearch } from './useSelectSearch'
 import { useSelectKeyboard } from './useSelectKeyboard'
 import { useClickOutside } from './useClickOutside'
 import type { ReactNode } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormSelectOption<T = string> {
   value: T
