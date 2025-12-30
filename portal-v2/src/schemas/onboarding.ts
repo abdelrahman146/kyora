@@ -17,6 +17,15 @@ export const EmailFormSchema = z.object({
 export type EmailFormData = z.infer<typeof EmailFormSchema>
 
 /**
+ * Email Form Validators
+ */
+export const createEmailFormValidators = () => ({
+  email: {
+    onBlur: EmailFormSchema.shape.email,
+  },
+})
+
+/**
  * OTP Verification Schema
  */
 export const OTPVerificationSchema = z.object({
@@ -32,6 +41,27 @@ export const OTPVerificationSchema = z.object({
 })
 
 export type OTPVerificationFormData = z.infer<typeof OTPVerificationSchema>
+
+/**
+ * OTP Verification Form Validators
+ */
+export const createOTPVerificationValidators = () => ({
+  code: {
+    onBlur: OTPVerificationSchema.shape.code,
+  },
+  fullName: {
+    onBlur: OTPVerificationSchema.shape.fullName,
+  },
+  password: {
+    onBlur: OTPVerificationSchema.shape.password,
+    // Real-time password strength feedback
+    onChange: ({ value }: { value: string }) => {
+      if (value.length === 0) return undefined
+      if (value.length < 8) return 'validation.password_min_length'
+      return undefined
+    },
+  },
+})
 
 /**
  * Business Setup Schema
@@ -51,3 +81,34 @@ export const BusinessSetupSchema = z.object({
 })
 
 export type BusinessSetupFormData = z.infer<typeof BusinessSetupSchema>
+
+/**
+ * Business Setup Form Validators
+ *
+ * With dynamic descriptor generation:
+ * - descriptor field uses listeners to auto-generate from business name
+ * - onChange validation for slug format
+ */
+export const createBusinessSetupValidators = () => ({
+  name: {
+    onBlur: BusinessSetupSchema.shape.name,
+  },
+  descriptor: {
+    onBlur: BusinessSetupSchema.shape.descriptor,
+    // Real-time slug validation for immediate feedback
+    onChange: ({ value }: { value: string }) => {
+      if (value.length === 0) return undefined
+      if (value.length < 3) return 'validation.min_length'
+      if (value.length > 20) return 'validation.max_length'
+      if (!/^[a-z0-9-]+$/.test(value))
+        return 'validation.business_descriptor_format'
+      return undefined
+    },
+  },
+  country: {
+    onBlur: BusinessSetupSchema.shape.country,
+  },
+  currency: {
+    onBlur: BusinessSetupSchema.shape.currency,
+  },
+})

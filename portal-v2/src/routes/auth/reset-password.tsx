@@ -1,15 +1,12 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
-import { ResetPasswordSchema } from '@/schemas/auth'
-import { translateErrorAsync } from '@/lib/translateError'
 import { Button } from '@/components/atoms/Button'
-import { PasswordInput } from '@/components/atoms/PasswordInput'
-import { getErrorText } from '@/lib/formErrors'
+import { useKyoraForm } from '@/lib/form'
+import { createResetPasswordValidators } from '@/schemas/auth'
 
 export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -25,10 +22,8 @@ function ResetPasswordPage() {
   const navigate = useNavigate()
   const { token } = useSearch({ from: '/auth/reset-password' })
   const { t } = useTranslation()
-  const { t: tErrors } = useTranslation('errors')
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState('')
-  const [submitErrorMessage, setSubmitErrorMessage] = useState<string>('')
 
   useEffect(() => {
     if (!token) {
@@ -153,40 +148,28 @@ function ResetPasswordPage() {
     )
   }
 
-  const form = useForm({
+  const form = useKyoraForm({
     defaultValues: {
       password: '',
       confirmPassword: '',
     },
+    validators: createResetPasswordValidators(),
     onSubmit: async ({ value }) => {
-      try {
-        setSubmitErrorMessage('')
-        await authApi.resetPassword({
-          token,
-          password: value.password,
-        })
+      await authApi.resetPassword({
+        token,
+        password: value.password,
+      })
 
-        setPageStatus('success')
-        void setTimeout(() => {
-          void navigate({
-            to: '/auth/login',
-            search: { redirect: '/' },
-            replace: true,
-          })
-        }, 2000)
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        setSubmitErrorMessage(message)
-      }
-    },
-    validators: {
-      onBlur: ResetPasswordSchema,
+      setPageStatus('success')
+      void setTimeout(() => {
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
+      }, 2000)
     },
   })
-
-  // Extract form.state.isSubmitting to minimize subscriptions
-  // Accessing form.state multiple times in JSX creates multiple subscriptions
-  const isSubmitting = form.state.isSubmitting
 
   return (
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
@@ -200,85 +183,38 @@ function ResetPasswordPage() {
               {t('auth.reset_password_description')}
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                void form.handleSubmit()
-              }}
-              className="space-y-6"
-              noValidate
-            >
-              {submitErrorMessage ? (
-                <div role="alert" className="alert alert-error">
-                  <span>{submitErrorMessage}</span>
-                </div>
-              ) : null}
+            <form.FormRoot className="space-y-6">
+              <form.FormError />
 
-              <form.Field
-                name="password"
-                validators={{
-                  onBlur: ResetPasswordSchema.shape.password,
-                }}
-              >
-                {(field) => {
-                  const errorKey = getErrorText(field.state.meta.errors)
-
-                  return (
-                    <PasswordInput
-                      id="newPassword"
-                      label={t('auth.new_password')}
-                      placeholder={t('auth.new_password_placeholder')}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      error={errorKey ? tErrors(errorKey) : undefined}
-                      helperText={t('auth.password_requirements')}
-                      autoComplete="new-password"
-                      autoFocus
-                      disabled={isSubmitting}
-                      showPasswordToggle
-                    />
-                  )
-                }}
+              <form.Field name="password">
+                {(field) => (
+                  <form.PasswordField
+                    {...field}
+                    id="newPassword"
+                    label={t('auth.new_password')}
+                    placeholder={t('auth.new_password_placeholder')}
+                    helperText={t('auth.password_requirements')}
+                    autoComplete="new-password"
+                    autoFocus
+                  />
+                )}
               </form.Field>
 
-              <form.Field
-                name="confirmPassword"
-                validators={{
-                  onBlur: ResetPasswordSchema.shape.confirmPassword,
-                }}
-              >
-                {(field) => {
-                  const errorKey = getErrorText(field.state.meta.errors)
-
-                  return (
-                    <PasswordInput
-                      id="confirmPassword"
-                      label={t('auth.confirm_password')}
-                      placeholder={t('auth.confirm_password_placeholder')}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      error={errorKey ? tErrors(errorKey) : undefined}
-                      autoComplete="new-password"
-                      disabled={isSubmitting}
-                      showPasswordToggle
-                    />
-                  )
-                }}
+              <form.Field name="confirmPassword">
+                {(field) => (
+                  <form.PasswordField
+                    {...field}
+                    id="confirmPassword"
+                    label={t('auth.confirm_password')}
+                    placeholder={t('auth.confirm_password_placeholder')}
+                    autoComplete="new-password"
+                  />
+                )}
               </form.Field>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={isSubmitting}
-                disabled={isSubmitting}
-              >
+              <form.SubmitButton variant="primary" size="lg" fullWidth>
                 {t('auth.reset_password_submit')}
-              </Button>
+              </form.Submitform.SubmitButton>
 
               <div className="text-center">
                 <p className="text-sm text-base-content/60">
@@ -294,7 +230,7 @@ function ResetPasswordPage() {
                   </button>
                 </p>
               </div>
-            </form>
+            </form.FormRoot>
           </div>
         </div>
       </div>

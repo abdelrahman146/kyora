@@ -1,6 +1,5 @@
 import { useEffect, useMemo } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { Building2 } from 'lucide-react'
 import { z } from 'zod'
@@ -8,14 +7,11 @@ import type { RouterContext } from '@/router'
 import type { CountryMetadata } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
-import { FormInput } from '@/components/atoms/FormInput'
 import { Button } from '@/components/atoms/Button'
-import { BusinessSetupSchema } from '@/schemas/onboarding'
-import { translateErrorAsync } from '@/lib/translateError'
-import { translateValidationError } from '@/lib/translateValidationError'
-import { getErrorText } from '@/lib/formErrors'
 import { cn } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
+import { useKyoraForm } from '@/lib/form'
+import { createBusinessSetupValidators } from '@/schemas/onboarding'
 
 // Search params schema
 const BusinessSearchSchema = z.object({
@@ -150,14 +146,15 @@ function BusinessSetupPage() {
     },
   })
 
-  // TanStack Form with Zod validation
-  const form = useForm({
+  // TanStack Form with Zod validation and field listeners
+  const form = useKyoraForm({
     defaultValues: {
       name: session.businessName ?? '',
       descriptor: session.businessDescriptor ?? '',
       country: '',
       currency: '',
     },
+    validators: createBusinessSetupValidators(),
     onSubmit: async ({ value }) => {
       await setBusinessMutation.mutateAsync({
         sessionToken,
@@ -167,18 +164,14 @@ function BusinessSetupPage() {
         currency: value.currency,
       })
     },
-    validators: {
-      onBlur: BusinessSetupSchema,
-    },
   })
 
-  // Auto-generate descriptor from business name
+  // Auto-generate descriptor from business name using field listener
   useEffect(() => {
-    const subscription = form.store.subscribe(() => {
+    const unsubscribe = form.store.subscribe(() => {
       const businessName = form.getFieldValue('name')
       const descriptor = form.getFieldValue('descriptor')
       
-      // Only auto-generate if descriptor is empty or hasn't been manually edited
       if (businessName && !descriptor) {
         const generated = businessName
           .toLowerCase()
@@ -190,12 +183,12 @@ function BusinessSetupPage() {
       }
     })
 
-    return () => subscription()
+    return unsubscribe
   }, [form])
 
   // Auto-select currency when country changes
   useEffect(() => {
-    const subscription = form.store.subscribe(() => {
+    const unsubscribe = form.store.subscribe(() => {
       const country = form.getFieldValue('country')
       if (country) {
         const selected = countryByCode.get(country)
@@ -206,11 +199,8 @@ function BusinessSetupPage() {
       }
     })
 
-    return () => subscription()
+    return unsubscribe
   }, [form, countryByCode])
-
-  const isSubmitting =
-    form.state.isSubmitting || setBusinessMutation.isPending
 
   return (
     <OnboardingLayout>
@@ -230,51 +220,35 @@ function BusinessSetupPage() {
             </p>
           </div>
 
-          <form
-            onSubmit={(e) => {
-              e.preventDefault()
-              e.stopPropagation()
-              void form.handleSubmit()
-            }}
-            className="space-y-6"
-          >
+          <form.FormRoot className="space-y-6">
             {/* Business Name */}
             <form.Field name="name">
               {(field) => (
-                  <FormInput
-                    id={field.name}
-                    type="text"
-                    label={tOnboarding('business.name')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    placeholder={tOnboarding('business.namePlaceholder')}
-                    disabled={isSubmitting}
-                    autoFocus
-                    error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                    helperText={tOnboarding('business.nameHint')}
-                    startIcon={<Building2 className="w-5 h-5" />}
-                  />
+                <form.TextField
+                  {...field}
+                  id="name"
+                  type="text"
+                  label={tOnboarding('business.name')}
+                  placeholder={tOnboarding('business.namePlaceholder')}
+                  autoFocus
+                  helperText={tOnboarding('business.nameHint')}
+                  startIcon={<Building2 className="w-5 h-5" />}
+                />
               )}
             </form.Field>
 
             {/* Business Descriptor */}
             <form.Field name="descriptor">
               {(field) => (
-                  <FormInput
-                    id={field.name}
-                    type="text"
-                    label={tOnboarding('business.descriptor')}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) =>
-                      field.handleChange(e.target.value.toLowerCase())
-                    }
-                    placeholder={tOnboarding('business.descriptorPlaceholder')}
-                    disabled={isSubmitting}
-                    error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                    helperText={tOnboarding('business.descriptorHint')}
-                  />
+                <form.TextField
+                  {...field}
+                  id="descriptor"
+                  type="text"
+                  label={tOnboarding('business.descriptor')}
+                  placeholder={tOnboarding('business.descriptorPlaceholder')}
+                  helperText={tOnboarding('business.descriptorHint')}
+                  onChange={(e) => field.handleChange(e.target.value.toLowerCase())}
+                />
               )}
             </form.Field>
 
@@ -282,47 +256,44 @@ function BusinessSetupPage() {
             <form.Field name="country">
               {(field) => (
                 <div>
-                  <label htmlFor={field.name} className="label">
+                  <label htmlFor="country" className="label">
                     <span className="label-text">
                       {tOnboarding('business.country')}
                     </span>
                   </label>
-                  <select
-                    id={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => {
-                      const value = e.target.value
-                      field.handleChange(value)
-                      
-                      // Auto-select currency
-                      const country = countryByCode.get(value)
-                      if (country?.currencyCode) {
-                        form.setFieldValue('currency', country.currencyCode)
-                      }
-                    }}
-                    disabled={isSubmitting || isLoadingCountries || isCountriesError}
-                    className={cn(
-                      'select select-bordered w-full',
-                      field.state.meta.errors.length > 0 ? 'select-error' : ''
+                  <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
+                    {({ isSubmitting }) => (
+                      <select
+                        id="country"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => {
+                          const value = e.target.value
+                          field.handleChange(value)
+                          
+                          const country = countryByCode.get(value)
+                          if (country?.currencyCode) {
+                            form.setFieldValue('currency', country.currencyCode)
+                          }
+                        }}
+                        disabled={isSubmitting || isLoadingCountries || isCountriesError}
+                        className={cn(
+                          'select select-bordered w-full',
+                          field.state.meta.errors.length > 0 ? 'select-error' : ''
+                        )}
+                      >
+                        <option value="" disabled>
+                          {tOnboarding('business.selectCountry')}
+                        </option>
+                        {countryOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     )}
-                  >
-                    <option value="" disabled>
-                      {tOnboarding('business.selectCountry')}
-                    </option>
-                    {countryOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  {field.state.meta.errors.length > 0 && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {getErrorText(field.state.meta.errors[0])}
-                      </span>
-                    </label>
-                  )}
+                  </form.Subscribe>
+                  <form.ErrorInfo />
                 </div>
               )}
             </form.Field>
@@ -331,38 +302,36 @@ function BusinessSetupPage() {
             <form.Field name="currency">
               {(field) => (
                 <div>
-                  <label htmlFor={field.name} className="label">
+                  <label htmlFor="currency" className="label">
                     <span className="label-text">
                       {tOnboarding('business.currency')}
                     </span>
                   </label>
-                  <select
-                    id={field.name}
-                    value={field.state.value}
-                    onBlur={field.handleBlur}
-                    onChange={(e) => field.handleChange(e.target.value)}
-                    disabled={isSubmitting || isLoadingCountries || isCountriesError}
-                    className={cn(
-                      'select select-bordered w-full',
-                      field.state.meta.errors.length > 0 ? 'select-error' : ''
+                  <form.Subscribe selector={(state) => ({ isSubmitting: state.isSubmitting })}>
+                    {({ isSubmitting }) => (
+                      <select
+                        id="currency"
+                        value={field.state.value}
+                        onBlur={field.handleBlur}
+                        onChange={(e) => field.handleChange(e.target.value)}
+                        disabled={isSubmitting || isLoadingCountries || isCountriesError}
+                        className={cn(
+                          'select select-bordered w-full',
+                          field.state.meta.errors.length > 0 ? 'select-error' : ''
+                        )}
+                      >
+                        <option value="" disabled>
+                          {tOnboarding('business.selectCurrency')}
+                        </option>
+                        {currencyOptions.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
                     )}
-                  >
-                    <option value="" disabled>
-                      {tOnboarding('business.selectCurrency')}
-                    </option>
-                    {currencyOptions.map((opt) => (
-                      <option key={opt.value} value={opt.value}>
-                        {opt.label}
-                      </option>
-                    ))}
-                  </select>
-                  {field.state.meta.errors.length > 0 && (
-                    <label className="label">
-                      <span className="label-text-alt text-error">
-                        {getErrorText(field.state.meta.errors[0])}
-                      </span>
-                    </label>
-                  )}
+                  </form.Subscribe>
+                  <form.ErrorInfo />
                 </div>
               )}
             </form.Field>
@@ -378,25 +347,20 @@ function BusinessSetupPage() {
             {setBusinessMutation.error && (
               <div className="alert alert-error">
                 <span className="text-sm">
-                  {translateErrorAsync(
-                    setBusinessMutation.error,
-                    tTranslation
-                  )}
+                  {setBusinessMutation.error.message}
                 </span>
               </div>
             )}
 
-            <Button
-              type="submit"
+            <form.SubmitButton
               variant="primary"
               size="lg"
               fullWidth
-              disabled={isSubmitting}
-              loading={isSubmitting}
+              disabled={setBusinessMutation.isPending}
             >
               {tCommon('continue')}
-            </Button>
-          </form>
+            </form.SubmitButton>
+          </form.FormRoot>
         </div>
       </div>
       </div>

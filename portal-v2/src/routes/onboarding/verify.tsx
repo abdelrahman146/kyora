@@ -1,6 +1,5 @@
 import { useEffect, useState } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { Check, Mail, User } from 'lucide-react'
 import { z } from 'zod'
@@ -11,38 +10,18 @@ import {
   useVerifyEmailMutation,
 } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
-import { FormInput } from '@/components/atoms/FormInput'
-import { PasswordInput } from '@/components/atoms/PasswordInput'
 import { Button } from '@/components/atoms/Button'
 import { OTPInput, ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
-import { translateErrorAsync } from '@/lib/translateError'
-import { translateValidationError } from '@/lib/translateValidationError'
 import { formatCountdownDuration } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
+import { useKyoraForm } from '@/lib/form'
+import { createOTPVerificationValidators } from '@/schemas/onboarding'
 
 // Search params schema
 const VerifySearchSchema = z.object({
   sessionToken: z.string().min(1),
 })
-
-// OTP form schema
-const OTPFormSchema = z.object({
-  code: z.array(z.string().regex(/^\d$/)).length(6),
-})
-
-// Profile form schema
-const ProfileFormSchema = z
-  .object({
-    firstName: z.string().trim().min(1, 'validation.required'),
-    lastName: z.string().trim().min(1, 'validation.required'),
-    password: z.string().min(8, 'validation.password_min_length'),
-    confirmPassword: z.string().min(1, 'validation.required'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
-    message: 'validation.passwords_must_match',
-    path: ['confirmPassword'],
-  })
 
 export const Route = createFileRoute('/onboarding/verify')({
   validateSearch: (search): z.infer<typeof VerifySearchSchema> => {
@@ -144,35 +123,35 @@ function VerifyEmailPage() {
   })
 
   // OTP form
-  const otpForm = useForm({
+  const otpForm = useKyoraForm({
     defaultValues: {
       code: ['', '', '', '', '', ''],
+    },
+    validators: {
+      code: {
+        onBlur: z.array(z.string().regex(/^\d$/)).length(6, 'otp_length'),
+      },
     },
     onSubmit: ({ value }) => {
       const codeString = value.code.join('')
       if (codeString.length === 6) {
-        // Persist step to sessionStorage
         sessionStorage.setItem(`kyora_verify_step_${sessionToken}`, 'profile')
         setStep('profile')
       }
     },
-    validators: {
-      onBlur: OTPFormSchema,
-    },
   })
 
   // Profile form  
-  const profileForm = useForm({
+  const profileForm = useKyoraForm({
     defaultValues: {
       firstName: '',
       lastName: '',
       password: '',
       confirmPassword: '',
     },
+    validators: createOTPVerificationValidators(),
     onSubmit: async ({ value }) => {
       setShowLoginCta(false)
-
-      // Clear step from sessionStorage on successful submission
       sessionStorage.removeItem(`kyora_verify_step_${sessionToken}`)
 
       await verifyEmailMutation.mutateAsync({
@@ -182,9 +161,6 @@ function VerifyEmailPage() {
         lastName: value.lastName,
         password: value.password,
       })
-    },
-    validators: {
-      onBlur: ProfileFormSchema,
     },
   })
 
@@ -254,10 +230,6 @@ function VerifyEmailPage() {
     otpForm.state.isSubmitting ||
     profileForm.state.isSubmitting
 
-  // Separate state for profile form fields
-  const isProfileSubmitting =
-    verifyEmailMutation.isPending || profileForm.state.isSubmitting
-
   return (
     <OnboardingLayout>
       <div className="max-w-lg mx-auto">
@@ -285,9 +257,7 @@ function VerifyEmailPage() {
 
             {sendOTPMutation.error && (
               <div className="alert alert-error mb-4">
-                <span>
-                  {translateErrorAsync(sendOTPMutation.error, tTranslation)}
-                </span>
+                <span>{sendOTPMutation.error.message}</span>
               </div>
             )}
 
@@ -385,74 +355,51 @@ function VerifyEmailPage() {
               </p>
             </div>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                void profileForm.handleSubmit()
-              }}
-              className="space-y-5"
-            >
+            <profileForm.FormRoot className="space-y-5">
               <profileForm.Field name="firstName">
                 {(field) => (
-                    <FormInput
-                      id={field.name}
-                      type="text"
-                      label={tCommon('firstName')}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={tCommon('firstName')}
-                      disabled={isProfileSubmitting}
-                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                    />
+                  <profileForm.TextField
+                    {...field}
+                    id="firstName"
+                    type="text"
+                    label={tCommon('firstName')}
+                    placeholder={tCommon('firstName')}
+                  />
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="lastName">
                 {(field) => (
-                    <FormInput
-                      id={field.name}
-                      type="text"
-                      label={tCommon('lastName')}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={tCommon('lastName')}
-                      disabled={isProfileSubmitting}
-                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                    />
+                  <profileForm.TextField
+                    {...field}
+                    id="lastName"
+                    type="text"
+                    label={tCommon('lastName')}
+                    placeholder={tCommon('lastName')}
+                  />
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="password">
                 {(field) => (
-                    <PasswordInput
-                      id={field.name}
-                      label={tCommon('password')}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={tCommon('password')}
-                      disabled={isProfileSubmitting}
-                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                      helperText={tOnboarding('verify.passwordHint')}
-                    />
+                  <profileForm.PasswordField
+                    {...field}
+                    id="password"
+                    label={tCommon('password')}
+                    placeholder={tCommon('password')}
+                    helperText={tOnboarding('verify.passwordHint')}
+                  />
                 )}
               </profileForm.Field>
 
               <profileForm.Field name="confirmPassword">
                 {(field) => (
-                    <PasswordInput
-                      id={field.name}
-                      label={tCommon('confirmPassword')}
-                      value={field.state.value}
-                      onBlur={field.handleBlur}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      placeholder={tCommon('confirmPassword')}
-                      disabled={isProfileSubmitting}
-                      error={translateValidationError(field.state.meta.errors[0], tTranslation)}
-                    />
+                  <profileForm.PasswordField
+                    {...field}
+                    id="confirmPassword"
+                    label={tCommon('confirmPassword')}
+                    placeholder={tCommon('confirmPassword')}
+                  />
                 )}
               </profileForm.Field>
 
@@ -460,10 +407,7 @@ function VerifyEmailPage() {
                 <div className="alert alert-error">
                   <div className="flex flex-col gap-2">
                     <span className="text-sm">
-                      {translateErrorAsync(
-                        verifyEmailMutation.error,
-                        tTranslation
-                      )}
+                      {verifyEmailMutation.error.message}
                     </span>
                     {showLoginCta && (
                       <Button
@@ -484,17 +428,15 @@ function VerifyEmailPage() {
                 </div>
               )}
 
-              <Button
-                type="submit"
+              <profileForm.SubmitButton
                 variant="primary"
                 size="lg"
                 fullWidth
-                disabled={isProfileSubmitting}
-                loading={isProfileSubmitting}
+                disabled={verifyEmailMutation.isPending}
               >
                 {tCommon('continue')}
-              </Button>
-            </form>
+              </profileForm.SubmitButton>
+            </profileForm.FormRoot>
           </div>
         </div>
       )}

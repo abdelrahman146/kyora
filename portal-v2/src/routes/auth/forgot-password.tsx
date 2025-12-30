@@ -1,16 +1,13 @@
 import { useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { ArrowLeft, CheckCircle, Mail } from 'lucide-react'
 import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
-import { ForgotPasswordSchema } from '@/schemas/auth'
-import { translateErrorAsync } from '@/lib/translateError'
 import { useLanguage } from '@/hooks/useLanguage'
 import { Button } from '@/components/atoms/Button'
-import { FormInput } from '@/components/atoms/FormInput'
-import { getErrorText } from '@/lib/formErrors'
+import { useKyoraForm } from '@/lib/form'
+import { z } from 'zod'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -20,36 +17,25 @@ export const Route = createFileRoute('/auth/forgot-password')({
 function ForgotPasswordPage() {
   const navigate = useNavigate()
   const { t } = useTranslation()
-  const { t: tErrors } = useTranslation('errors')
   const { isRTL } = useLanguage()
   const [isSuccess, setIsSuccess] = useState(false)
   const [submittedEmail, setSubmittedEmail] = useState('')
-  const [submitErrorMessage, setSubmitErrorMessage] =
-    useState<string>('')
 
-  const form = useForm({
+  const form = useKyoraForm({
     defaultValues: {
       email: '',
     },
-    onSubmit: async ({ value }) => {
-      try {
-        setSubmitErrorMessage('')
-        await authApi.forgotPassword(value)
-        setSubmittedEmail(value.email)
-        setIsSuccess(true)
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        setSubmitErrorMessage(message)
-      }
-    },
     validators: {
-      onBlur: ForgotPasswordSchema,
+      email: {
+        onBlur: z.string().email('invalid_email'),
+      },
+    },
+    onSubmit: async ({ value }) => {
+      await authApi.forgotPassword(value)
+      setSubmittedEmail(value.email)
+      setIsSuccess(true)
     },
   })
-
-  // Extract form.state.isSubmitting to minimize subscriptions
-  // Accessing form.state multiple times in JSX creates multiple subscriptions
-  const isSubmitting = form.state.isSubmitting
 
   const handleBackToLogin = async () => {
     await navigate({
@@ -134,59 +120,27 @@ function ForgotPasswordPage() {
               {t('auth.forgot_password_description')}
             </p>
 
-            <form
-              onSubmit={(e) => {
-                e.preventDefault()
-                e.stopPropagation()
-                void form.handleSubmit()
-              }}
-              className="space-y-6"
-              noValidate
-            >
-              {submitErrorMessage ? (
-                <div role="alert" className="alert alert-error">
-                  <span>{submitErrorMessage}</span>
-                </div>
-              ) : null}
+            <form.FormRoot className="space-y-6">
+              <form.FormError />
 
-              <form.Field
-                name="email"
-                validators={{
-                  onBlur: ForgotPasswordSchema.shape.email,
-                }}
-              >
-                {(field) => {
-                  const errorKey = getErrorText(field.state.meta.errors)
-
-                  return (
-                    <FormInput
-                      id="email"
-                      type="email"
-                      label={t('auth.email')}
-                      placeholder={t('auth.email_placeholder')}
-                      value={field.state.value}
-                      onChange={(e) => field.handleChange(e.target.value)}
-                      onBlur={field.handleBlur}
-                      error={errorKey ? tErrors(errorKey) : undefined}
-                      startIcon={<Mail size={20} />}
-                      autoComplete="email"
-                      autoFocus
-                      disabled={isSubmitting}
-                    />
-                  )
-                }}
+              <form.Field name="email">
+                {(field) => (
+                  <form.TextField
+                    {...field}
+                    id="email"
+                    type="email"
+                    label={t('auth.email')}
+                    placeholder={t('auth.email_placeholder')}
+                    startIcon={<Mail size={20} />}
+                    autoComplete="email"
+                    autoFocus
+                  />
+                )}
               </form.Field>
 
-              <Button
-                type="submit"
-                variant="primary"
-                size="lg"
-                fullWidth
-                loading={isSubmitting}
-                disabled={isSubmitting}
-              >
+              <form.SubmitButton variant="primary" size="lg" fullWidth>
                 {t('auth.send_reset_link')}
-              </Button>
+              </form.Submitform.SubmitButton>
 
               <div className="text-center">
                 <p className="text-sm text-base-content/60">
@@ -202,7 +156,7 @@ function ForgotPasswordPage() {
                   </button>
                 </p>
               </div>
-            </form>
+            </form.FormRoot>
           </div>
         </div>
       </div>

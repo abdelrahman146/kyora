@@ -29,16 +29,7 @@
     "search_options": "Search options",
     "search_placeholder_generic": "Search...",
     "no_options_found": "No options found",
-    "selected_count": "{{count}} selected",
-    "validation": {
-      "required": "This field is required",
-      "invalid_email": "Enter a valid email address",
-      "invalid_phone": "Enter a valid phone number",
-      "invalid_phone_code": "Enter a valid country calling code",
-      "address_requires_phone": "Phone is required when adding an address",
-      "password_min_length": "Password must be at least 8 characters",
-      "passwords_must_match": "Passwords must match"
-    }
+    "selected_count": "{{count}} selected"
   },
   "auth": {
     "email": "Email Address",

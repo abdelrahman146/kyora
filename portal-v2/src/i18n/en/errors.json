@@ -28,12 +28,21 @@
     "required": "This field is required.",
     "invalid_email": "Please enter a valid email address.",
     "invalid_phone": "Please enter a valid phone number.",
-    "invalid_country": "Invalid country",
+    "invalid_country": "Invalid country.",
     "invalid_phone_code": "Please enter a valid country calling code.",
     "address_requires_phone": "Phone is required when adding an address.",
     "invalid_password": "Password must be at least 8 characters.",
+    "password_min_length": "Password must be at least 8 characters.",
     "password_mismatch": "Passwords do not match.",
-    "invalid_format": "Invalid format. Please check your input."
+    "passwords_must_match": "Passwords must match.",
+    "invalid_format": "Invalid format. Please check your input.",
+    "min_length": "Must be at least {{min}} characters.",
+    "max_length": "Must be at most {{max}} characters.",
+    "otp_length": "Code must be exactly 6 digits.",
+    "otp_digits_only": "Code must contain only digits.",
+    "business_descriptor_format": "Only lowercase letters, numbers, and hyphens allowed.",
+    "country_code": "Invalid country code.",
+    "currency_code": "Invalid currency code."
   },
   "auth": {
     "invalid_credentials": "Invalid email or password.",
