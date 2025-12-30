@@ -1,8 +1,6 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import {
   Suspense,
-  useCallback,
-  useEffect,
   useMemo,
   useState,
 } from 'react'
@@ -13,14 +11,14 @@ import type { MouseEvent } from 'react'
 
 import type { Customer } from '@/api/customer'
 import type { TableColumn } from '@/components/organisms/Table'
-import { customerApi } from '@/api/customer'
+import { customerQueries, useCustomersQuery, useDeleteCustomerMutation } from '@/api/customer'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
 import { CustomerListSkeleton } from '@/components/atoms/skeletons/CustomerListSkeleton'
 import { CustomerCard } from '@/components/molecules/CustomerCard'
-import { InfiniteScroll } from '@/components/molecules/InfiniteScroll'
 import { Pagination } from '@/components/molecules/Pagination'
 import { SearchInput } from '@/components/molecules/SearchInput'
+import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { FilterButton } from '@/components/organisms/FilterButton'
 import { Table } from '@/components/organisms/Table'
 import { AddCustomerSheet, EditCustomerSheet } from '@/components/organisms/customers'
@@ -61,6 +59,32 @@ export const Route = createFileRoute(
     return CustomersSearchSchema.parse(search)
   },
 
+  // Prefetch customer list data based on search params
+  loader: async ({ context, params, location }) => {
+    const { queryClient } = context as any
+    
+    // Parse search params from location
+    const searchParams = CustomersSearchSchema.parse(location.search)
+    
+    // Build orderBy from sortBy/sortOrder
+    let orderBy: string[] | undefined
+    if (searchParams.sortBy) {
+      orderBy = [`${searchParams.sortBy}:${searchParams.sortOrder || 'desc'}`]
+    }
+    
+    // Prefetch customer list (non-blocking, uses cache if available)
+    void queryClient.prefetchQuery(
+      customerQueries.list(params.businessDescriptor, {
+        search: searchParams.search,
+        page: searchParams.page,
+        pageSize: searchParams.pageSize,
+        orderBy,
+      })
+    )
+  },
+
+  errorComponent: RouteErrorFallback,
+
   component: () => (
     <Suspense fallback={<CustomerListSkeleton />}>
       <CustomersListPage />
@@ -78,77 +102,43 @@ function CustomersListPage() {
   const search = Route.useSearch()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  const [customers, setCustomers] = useState<Array<Customer>>([])
-  const [isLoading, setIsLoading] = useState(true)
-  const [isLoadingMore, setIsLoadingMore] = useState(false)
-  const [totalItems, setTotalItems] = useState(0)
-  const [totalPages, setTotalPages] = useState(0)
-
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false)
   const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
     null,
   )
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
-  const [isDeleting, setIsDeleting] = useState(false)
 
   const orderBy = useMemo<Array<string>>(() => {
     if (!search.sortBy) return ['-createdAt']
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
 
-  const fetchCustomers = useCallback(
-    async (append?: boolean) => {
-      try {
-        if (append) {
-          setIsLoadingMore(true)
-        } else {
-          setIsLoading(true)
-        }
+  // Use TanStack Query with keepPreviousData for smooth pagination
+  const {
+    data: customersResponse,
+    isLoading,
+  } = useCustomersQuery(businessDescriptor, {
+    search: search.search,
+    page: search.page,
+    pageSize: search.pageSize,
+    orderBy,
+  })
 
-        const pageToFetch = append ? search.page + 1 : search.page
+  const customers = customersResponse?.items ?? []
+  const totalItems = customersResponse?.totalCount ?? 0
+  const totalPages = customersResponse?.totalPages ?? 0
 
-        const response = await customerApi.listCustomers(businessDescriptor, {
-          search: search.search,
-          page: pageToFetch,
-          pageSize: search.pageSize,
-          orderBy,
-        })
-
-        if (append) {
-          setCustomers((prev) => [...prev, ...response.items])
-          void navigate({
-            to: '.',
-            search: { ...search, page: pageToFetch },
-          })
-        } else {
-          setCustomers(response.items)
-        }
-
-        setTotalItems(response.totalCount)
-        setTotalPages(response.totalPages)
-      } catch (error) {
-        void showErrorFromException(error, t)
-      } finally {
-        setIsLoading(false)
-        setIsLoadingMore(false)
-      }
+  const deleteMutation = useDeleteCustomerMutation(businessDescriptor, {
+    onSuccess: () => {
+      showSuccessToast(t('customers.delete_success'))
+      setIsDeleteDialogOpen(false)
+      setSelectedCustomer(null)
     },
-    [
-      businessDescriptor,
-      navigate,
-      orderBy,
-      search,
-      t,
-      setCustomers,
-      setTotalItems,
-      setTotalPages,
-    ],
-  )
-
-  useEffect(() => {
-    void fetchCustomers(false)
-  }, [fetchCustomers])
+    onError: (error) => {
+      void showErrorFromException(error, t)
+    },
+  })
 
   const handleSearch = (value: string) => {
     void navigate({
@@ -190,10 +180,6 @@ function CustomersListPage() {
     })
   }
 
-  const handleLoadMore = () => {
-    void fetchCustomers(true)
-  }
-
   const handleCustomerClick = (customer: Customer) => {
     void navigate({
       to: '/business/$businessDescriptor/customers/$customerId',
@@ -213,25 +199,19 @@ function CustomersListPage() {
     setIsDeleteDialogOpen(true)
   }
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!selectedCustomer) return
+    deleteMutation.mutate(selectedCustomer.id)
+  }
 
-    try {
-      setIsDeleting(true)
-      await customerApi.deleteCustomer(businessDescriptor, selectedCustomer.id)
-      showSuccessToast(t('customers.delete_success'))
-      await fetchCustomers(false)
-    } catch (error) {
-      void showErrorFromException(error, t)
-    } finally {
-      setIsDeleting(false)
-      setIsDeleteDialogOpen(false)
-      setSelectedCustomer(null)
-    }
+  const handleCustomerCreated = () => {
+    // Query will automatically refetch due to invalidation in mutation
+    setIsAddCustomerOpen(false)
   }
 
   const handleCustomerUpdated = () => {
-    void fetchCustomers(false)
+    // Query will automatically refetch due to invalidation in mutation
+    setIsEditCustomerOpen(false)
   }
 
   // Get selected business country code for form defaults
@@ -457,15 +437,9 @@ function CustomersListPage() {
           </>
         )}
 
-        {/* Mobile: Card View with Infinite Scroll */}
+        {/* Mobile: Card View with Pagination */}
         {isMobile && (
-          <InfiniteScroll
-            hasMore={search.page < totalPages}
-            isLoading={isLoadingMore}
-            onLoadMore={handleLoadMore}
-            loadingMessage={t('common.loading_more')}
-            endMessage={t('customers.no_more_customers')}
-          >
+          <>
             <div className="space-y-3">
               {isLoading && customers.length === 0 ? (
                 Array.from({ length: 5 }).map((_, i) => (
@@ -494,7 +468,7 @@ function CustomersListPage() {
                         }}
                         aria-label={t('common.edit')}
                       >
-                        <Edit size={14} />
+                        <Edit size={16} />
                       </button>
                       <button
                         type="button"
@@ -504,14 +478,23 @@ function CustomersListPage() {
                         }}
                         aria-label={t('common.delete')}
                       >
-                        <Trash2 size={14} />
+                        <Trash2 size={16} />
                       </button>
                     </div>
                   </div>
                 ))
               )}
             </div>
-          </InfiniteScroll>
+            <Pagination
+              currentPage={search.page}
+              totalPages={totalPages}
+              pageSize={search.pageSize}
+              totalItems={totalItems}
+              onPageChange={handlePageChange}
+              onPageSizeChange={handlePageSizeChange}
+              itemsName={t('customers.customers').toLowerCase()}
+            />
+          </>
         )}
       </div>
 
@@ -522,9 +505,7 @@ function CustomersListPage() {
         }}
         businessDescriptor={businessDescriptor}
         businessCountryCode={businessCountryCode}
-        onCreated={async () => {
-          await fetchCustomers(false)
-        }}
+        onCreated={handleCustomerCreated}
       />
 
       {selectedCustomer && (
@@ -557,27 +538,29 @@ function CustomersListPage() {
                 setIsDeleteDialogOpen(false)
                 setSelectedCustomer(null)
               }}
-              disabled={isDeleting}
+              disabled={deleteMutation.isPending}
             >
               {t('common.cancel')}
             </button>
             <button
               type="button"
               className="btn btn-error"
-              onClick={() => {
-                void handleDelete()
-              }}
-              disabled={isDeleting}
+              onClick={handleDelete}
+              disabled={deleteMutation.isPending}
             >
-              {isDeleting && (
-                <span className="loading loading-spinner loading-sm" />
+              {deleteMutation.isPending ? (
+                <>
+                  <span className="loading loading-spinner loading-sm"></span>
+                  {t('common.deleting')}
+                </>
+              ) : (
+                t('common.delete')
               )}
-              {t('common.delete')}
             </button>
           </div>
         }
       >
-        <p>
+        <p className="text-base-content/70">
           {t('customers.delete_confirm_message', {
             name: selectedCustomer?.name,
           })}

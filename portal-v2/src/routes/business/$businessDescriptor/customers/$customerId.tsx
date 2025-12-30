@@ -25,6 +25,7 @@ import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
 import { CustomerDetailSkeleton } from '@/components/atoms/skeletons/CustomerDetailSkeleton'
 import { AddressCard } from '@/components/molecules/AddressCard'
+import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { SocialMediaHandles } from '@/components/molecules/SocialMediaHandles'
 import { AddressSheet } from '@/components/organisms/customers/AddressSheet'
 import { EditCustomerSheet } from '@/components/organisms/customers'
@@ -63,6 +64,8 @@ export const Route = createFileRoute(
     )
     void queryClient.prefetchQuery(metadataQueries.countries())
   },
+
+  errorComponent: RouteErrorFallback,
 
   component: () => (
     <Suspense fallback={<CustomerDetailSkeleton />}>

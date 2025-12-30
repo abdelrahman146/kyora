@@ -4,6 +4,7 @@ import { Suspense } from 'react'
 import type { RouterContext } from '@/router'
 
 import { businessQueries } from '@/api/business'
+import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { invalidateBusinessScopedQueries } from '@/lib/queryInvalidation'
 import { requireAuth } from '@/lib/routeGuards'
 import { selectBusiness } from '@/stores/businessStore'
@@ -39,6 +40,8 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
 
     return { business }
   },
+
+  errorComponent: RouteErrorFallback,
 
   component: BusinessLayout,
 })

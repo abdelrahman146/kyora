@@ -1,4 +1,9 @@
-import { queryOptions, useMutation, useQuery } from '@tanstack/react-query'
+import {
+  keepPreviousData,
+  queryOptions,
+  useMutation,
+  useQuery,
+} from '@tanstack/react-query'
 
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
@@ -214,6 +219,7 @@ export const customerQueries = {
       queryFn: () => customerApi.listCustomers(businessDescriptor, params),
       staleTime: STALE_TIME.THIRTY_SECONDS,
       enabled: !!businessDescriptor,
+      placeholderData: keepPreviousData, // Smooth pagination transitions
     }),
 
   /**

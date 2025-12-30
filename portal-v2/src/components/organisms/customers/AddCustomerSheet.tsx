@@ -173,6 +173,10 @@ export function AddCustomerSheet({
     },
   })
 
+  // Note: In TanStack Form v0.x, accessing form.state creates subscriptions.
+  // The best practice is to use form.Subscribe component with selectors,
+  // but for pragmatic inline state access, form.state is acceptable for boolean flags
+  // when the component already has other reasons to re-render (e.g., mutation state)
   const isSubmitting = form.state.isSubmitting || createMutation.isPending
 
   // Auto-link country to phone code when country changes

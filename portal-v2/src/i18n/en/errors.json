@@ -43,5 +43,11 @@
   },
   "onboarding": {
     "email_already_exists": "This email is already registered. Please log in to continue."
+  },
+  "route": {
+    "route_error_title": "Something went wrong",
+    "unknown_error": "An unexpected error occurred",
+    "retry": "Try Again",
+    "go_home": "Go Home"
   }
 }

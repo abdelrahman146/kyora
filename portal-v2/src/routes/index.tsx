@@ -28,6 +28,7 @@ import type { Business } from '@/stores/businessStore'
 import { businessQueries } from '@/api/business'
 import { Logo } from '@/components/atoms/Logo'
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher'
+import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { requireAuth } from '@/lib/routeGuards'
@@ -48,6 +49,8 @@ export const Route = createFileRoute('/')({
   beforeLoad: requireAuth,
 
   pendingComponent: HomePending,
+
+  errorComponent: RouteErrorFallback,
 
   loader: async ({ context }) => {
     const queryClient = (context as any).queryClient
