@@ -5,7 +5,11 @@ import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Building2, Loader2 } from 'lucide-react'
-import { onboardingStore, setBusiness, updateStage } from '@/stores/onboardingStore'
+import {
+  onboardingStore,
+  setBusiness,
+  updateStage,
+} from '@/stores/onboardingStore'
 import { useSetBusinessMutation } from '@/api/onboarding'
 import { BusinessSetupSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
@@ -31,19 +35,19 @@ function BusinessSetupPage() {
   const { language } = useLanguage()
   const state = useStore(onboardingStore)
   const setBusinessMutation = useSetBusinessMutation()
-  
+
   // Fetch countries and currencies
   const {
     data: countries = [],
     isLoading: isLoadingCountries,
     isError: isCountriesError,
   } = useCountriesQuery()
-  
+
   // Extract unique currencies from countries
   const currencies = useMemo(() => {
     return countries.length > 0 ? getUniqueCurrencies(countries) : []
   }, [countries])
-  
+
   // Sort countries by name based on language
   const sortedCountries = useMemo(() => {
     return [...countries].sort((a, b) => {
@@ -322,7 +326,9 @@ function BusinessSetupPage() {
           {({ canSubmit, isSubmitting }) => (
             <button
               type="submit"
-              disabled={!canSubmit || isSubmitting || setBusinessMutation.isPending}
+              disabled={
+                !canSubmit || isSubmitting || setBusinessMutation.isPending
+              }
               className="btn btn-primary w-full"
             >
               {(isSubmitting || setBusinessMutation.isPending) && (

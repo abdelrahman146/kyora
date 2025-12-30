@@ -35,8 +35,13 @@ export function BusinessSwitcher() {
   const { t } = useTranslation()
   const isMobile = useMediaQuery('(max-width: 640px)')
   const businesses = useStore(businessStore, (state) => state.businesses)
-  const selectedBusinessDescriptor = useStore(businessStore, (state) => state.selectedBusinessDescriptor)
-  const selectedBusiness = businesses.find(b => b.descriptor === selectedBusinessDescriptor)
+  const selectedBusinessDescriptor = useStore(
+    businessStore,
+    (state) => state.selectedBusinessDescriptor,
+  )
+  const selectedBusiness = businesses.find(
+    (b) => b.descriptor === selectedBusinessDescriptor,
+  )
   const [isLoading, setIsLoading] = useState(false)
 
   // Fetch businesses on mount if not already loaded
@@ -48,11 +53,21 @@ export function BusinessSwitcher() {
       setIsLoading(true)
       try {
         const fetchedBusinesses = await businessApi.listBusinesses()
-        businessStore.setState((state) => ({ ...state, businesses: fetchedBusinesses.businesses }))
+        businessStore.setState((state) => ({
+          ...state,
+          businesses: fetchedBusinesses.businesses,
+        }))
 
         // Auto-select first business if none selected
-        if (!selectedBusinessDescriptor && fetchedBusinesses.businesses.length > 0) {
-          businessStore.setState((state) => ({ ...state, selectedBusinessDescriptor: fetchedBusinesses.businesses[0].descriptor }))
+        if (
+          !selectedBusinessDescriptor &&
+          fetchedBusinesses.businesses.length > 0
+        ) {
+          businessStore.setState((state) => ({
+            ...state,
+            selectedBusinessDescriptor:
+              fetchedBusinesses.businesses[0].descriptor,
+          }))
         }
       } catch {
         // Silent fail - component will handle empty state
@@ -65,7 +80,10 @@ export function BusinessSwitcher() {
   }, [businesses.length, selectedBusinessDescriptor])
 
   const handleSelectBusiness = (businessDescriptor: string) => {
-    businessStore.setState((state) => ({ ...state, selectedBusinessDescriptor: businessDescriptor }))
+    businessStore.setState((state) => ({
+      ...state,
+      selectedBusinessDescriptor: businessDescriptor,
+    }))
   }
 
   const handleSelectBusinessById = (businessId: string) => {
@@ -101,7 +119,7 @@ export function BusinessSwitcher() {
           type="button"
           className={cn(
             'btn btn-ghost h-auto min-h-0 py-2 hover:bg-base-200 transition-colors',
-            isMobile ? 'gap-1 px-2' : 'gap-2 px-3'
+            isMobile ? 'gap-1 px-2' : 'gap-2 px-3',
           )}
         >
           <Avatar
@@ -145,7 +163,7 @@ export function BusinessSwitcher() {
                 'hover:bg-base-200',
                 selectedBusiness?.id === business.id
                   ? 'bg-primary/10 text-primary'
-                  : 'text-base-content'
+                  : 'text-base-content',
               )}
             >
               <Avatar
@@ -159,7 +177,7 @@ export function BusinessSwitcher() {
                 <div
                   className={cn(
                     'text-sm truncate',
-                    selectedBusiness?.id === business.id && 'font-semibold'
+                    selectedBusiness?.id === business.id && 'font-semibold',
                   )}
                 >
                   {business.name}

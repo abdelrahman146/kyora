@@ -80,19 +80,19 @@ if (persistedMetadata) {
 // Now implement loadCountries after store is created
 metadataStore.setState((state) => ({
   ...state,
-  loadCountries: () => {
-    if (state.status === 'loading') return Promise.resolve()
+  loadCountries: async () => {
+    if (state.status === 'loading') return
 
     metadataStore.setState((s) => ({ ...s, status: 'loading' }))
 
-    // TODO: Replace with actual API call when metadataApi is available
-    // For now, this is a placeholder that just marks as loaded
+    // Note: Countries are loaded via useCountriesQuery() which syncs with this store
+    // This method is kept for compatibility with components that need imperative loading
+    // The actual API call happens in api/metadata.ts useCountriesQuery
     metadataStore.setState((s) => ({
       ...s,
       status: 'loaded',
       lastFetched: Date.now(),
     }))
-
     return Promise.resolve()
   },
 }))

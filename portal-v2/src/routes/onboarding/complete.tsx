@@ -99,7 +99,7 @@ function CompletePage() {
       setIsCompleting(false)
       const message = await translateErrorAsync(error, t)
       toast.error(message)
-      
+
       // Allow retry
       setCompletionSteps({
         finalizingAccount: false,

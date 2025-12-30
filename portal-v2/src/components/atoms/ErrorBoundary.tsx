@@ -1,11 +1,7 @@
-import {
-  Component
-  
-  
-} from 'react'
+import { Component } from 'react'
 import { AlertTriangle } from 'lucide-react'
 import { Button } from './Button'
-import type {ErrorInfo, ReactNode} from 'react';
+import type { ErrorInfo, ReactNode } from 'react'
 
 export interface ErrorBoundaryProps {
   children: ReactNode
@@ -73,12 +69,14 @@ export class ErrorBoundary extends Component<
             compact ? 'gap-2' : 'gap-4',
           )}
         >
-          <AlertTriangle
-            className="text-error"
-            size={compact ? 24 : 32}
-          />
+          <AlertTriangle className="text-error" size={compact ? 24 : 32} />
           <div className="text-center">
-            <p className={cn('font-semibold text-error', compact ? 'text-sm' : 'text-base')}>
+            <p
+              className={cn(
+                'font-semibold text-error',
+                compact ? 'text-sm' : 'text-base',
+              )}
+            >
               حدث خطأ
             </p>
             {!compact && (

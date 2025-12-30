@@ -25,7 +25,7 @@
 import { useMemo } from 'react'
 import { cn } from '../../lib/utils'
 import { SocialMediaLink } from '../atoms/SocialMediaLink'
-import type {SocialPlatform} from '../icons/social';
+import type { SocialPlatform } from '../icons/social'
 
 export interface SocialMediaHandlesProps {
   instagramUsername?: string | null
@@ -71,12 +71,10 @@ export function SocialMediaHandles({
 
     return allHandles
       .filter(
-        (
-          handle
-        ): handle is { platform: SocialPlatform; username: string } => {
+        (handle): handle is { platform: SocialPlatform; username: string } => {
           // Filter out null, undefined, and empty strings
           return handle.username != null && handle.username.trim() !== ''
-        }
+        },
       )
       .map(({ platform, username }) => ({
         platform,
@@ -105,7 +103,7 @@ export function SocialMediaHandles({
           // Mobile: 1 column, Tablet+: 2 columns
           'grid-cols-1 sm:grid-cols-2',
           // Ensure proper alignment in RTL
-          'items-start'
+          'items-start',
         )}
       >
         {handles.map(({ platform, username }) => (

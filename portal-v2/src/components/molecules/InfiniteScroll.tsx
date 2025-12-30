@@ -48,7 +48,7 @@ export function InfiniteScroll({
         root: null,
         rootMargin: `${String(threshold)}px`,
         threshold: 0,
-      }
+      },
     )
 
     const currentTarget = observerTarget.current

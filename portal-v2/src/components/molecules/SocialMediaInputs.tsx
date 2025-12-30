@@ -113,7 +113,7 @@ export function SocialMediaInputs({
 
   // Auto-expand if data exists, otherwise respect defaultExpanded
   const [isExpanded, setIsExpanded] = useState(
-    defaultExpanded || filledCount > 0
+    defaultExpanded || filledCount > 0,
   )
 
   return (
@@ -130,7 +130,7 @@ export function SocialMediaInputs({
           'bg-base-200/50 hover:bg-base-200',
           'transition-colors duration-200',
           'focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2',
-          disabled && 'opacity-60 cursor-not-allowed'
+          disabled && 'opacity-60 cursor-not-allowed',
         )}
         disabled={disabled}
         aria-expanded={isExpanded}
@@ -158,7 +158,7 @@ export function SocialMediaInputs({
           className={cn(
             'grid gap-3',
             'grid-cols-1 sm:grid-cols-2',
-            'animate-in fade-in slide-in-from-top-2 duration-200'
+            'animate-in fade-in slide-in-from-top-2 duration-200',
           )}
         >
           {/* Instagram */}

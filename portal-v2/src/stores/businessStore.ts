@@ -24,13 +24,15 @@ export interface Business {
 interface BusinessState {
   businesses: Array<Business>
   selectedBusinessDescriptor: string | null
-  sidebarCollapsed: boolean
+  sidebarCollapsed: boolean // Desktop: collapsed (icon-only) state
+  sidebarOpen: boolean // Mobile: drawer open state
 }
 
 const initialState: BusinessState = {
   businesses: [],
   selectedBusinessDescriptor: null,
   sidebarCollapsed: false,
+  sidebarOpen: false,
 }
 
 /**
@@ -133,6 +135,26 @@ export function setSidebarCollapsed(collapsed: boolean): void {
   businessStore.setState((state) => ({
     ...state,
     sidebarCollapsed: collapsed,
+  }))
+}
+
+/**
+ * Open mobile sidebar drawer
+ */
+export function openSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarOpen: true,
+  }))
+}
+
+/**
+ * Close mobile sidebar drawer
+ */
+export function closeSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarOpen: false,
   }))
 }
 

@@ -52,14 +52,10 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
  * Wraps business routes with DashboardLayout template.
  */
 function BusinessLayout() {
-  const { business } = Route.useRouteContext()
   const { businessDescriptor } = Route.useParams()
 
   return (
-    <DashboardLayout
-      businessDescriptor={businessDescriptor}
-      businessName={business.name}
-    >
+    <DashboardLayout businessDescriptor={businessDescriptor}>
       {/* Content outlet with Suspense boundary */}
       <Suspense
         fallback={

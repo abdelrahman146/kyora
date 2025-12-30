@@ -59,11 +59,7 @@ const SOCIAL_ICON_MAP: Record<
  * <SocialIcon platform="instagram" className="w-5 h-5 text-[#E4405F]" />
  * ```
  */
-export function SocialIcon({
-  platform,
-  className,
-  ...props
-}: SocialIconProps) {
+export function SocialIcon({ platform, className, ...props }: SocialIconProps) {
   const Icon = SOCIAL_ICON_MAP[platform]
   return <Icon className={className} {...props} />
 }

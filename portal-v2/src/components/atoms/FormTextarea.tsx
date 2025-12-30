@@ -2,8 +2,10 @@ import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { TextareaHTMLAttributes } from 'react'
 
-export interface FormTextareaProps
-  extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, 'size'> {
+export interface FormTextareaProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'size'
+> {
   label?: string
   error?: string
   helperText?: string
@@ -38,10 +40,7 @@ export interface FormTextareaProps
  * />
  * ```
  */
-export const FormTextarea = forwardRef<
-  HTMLTextAreaElement,
-  FormTextareaProps
->(
+export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
   (
     {
       label,
@@ -59,7 +58,7 @@ export const FormTextarea = forwardRef<
       value,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -112,7 +111,7 @@ export const FormTextarea = forwardRef<
             error &&
               'textarea-error border-error focus:border-error focus:ring-error/20',
             disabled && 'opacity-60 cursor-not-allowed',
-            className
+            className,
           )}
           aria-invalid={error ? 'true' : 'false'}
           aria-describedby={
@@ -150,7 +149,7 @@ export const FormTextarea = forwardRef<
         )}
       </div>
     )
-  }
+  },
 )
 
 FormTextarea.displayName = 'FormTextarea'

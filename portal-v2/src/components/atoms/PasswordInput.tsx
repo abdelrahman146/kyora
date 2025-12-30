@@ -3,8 +3,10 @@ import { Eye, EyeOff, Lock } from 'lucide-react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
 
-export interface PasswordInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type'> {
+export interface PasswordInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type'
+> {
   label?: string
   error?: string
   helperText?: string
@@ -52,7 +54,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
       required,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -98,7 +100,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
               disabled && 'opacity-60 cursor-not-allowed',
               showDefaultIcon ? 'ps-10' : '',
               showPasswordToggle ? 'pe-10' : '',
-              className
+              className,
             )}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={
@@ -123,7 +125,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
                 'text-base-content/50 hover:text-base-content/70',
                 'transition-colors duration-200',
                 'focus:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded',
-                disabled && 'opacity-60 cursor-not-allowed'
+                disabled && 'opacity-60 cursor-not-allowed',
               )}
               aria-label={isPasswordVisible ? 'Hide password' : 'Show password'}
               tabIndex={disabled ? -1 : 0}
@@ -163,7 +165,7 @@ export const PasswordInput = forwardRef<HTMLInputElement, PasswordInputProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 PasswordInput.displayName = 'PasswordInput'

@@ -8,7 +8,7 @@ import { authStore } from '@/stores/authStore'
 
 /**
  * Router Context Type
- * 
+ *
  * Provides auth state and queryClient to all routes via context.
  */
 export interface RouterContext {
@@ -22,7 +22,7 @@ export interface RouterContext {
 
 /**
  * Create a new router instance
- * 
+ *
  * Configured with:
  * - defaultPreload: 'intent' for hover-based prefetching
  * - Context with auth state from authStore and queryClient

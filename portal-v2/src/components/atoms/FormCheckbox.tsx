@@ -2,8 +2,10 @@ import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
 
-export interface FormCheckboxProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface FormCheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   label?: string
   description?: string
   error?: string
@@ -47,7 +49,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -70,7 +72,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
           htmlFor={inputId}
           className={cn(
             'label cursor-pointer justify-start gap-3',
-            disabled && 'opacity-60 cursor-not-allowed'
+            disabled && 'opacity-60 cursor-not-allowed',
           )}
         >
           <input
@@ -83,7 +85,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
               sizeClasses[size],
               variantClasses[variant],
               error && 'checkbox-error',
-              className
+              className,
             )}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={
@@ -126,7 +128,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 FormCheckbox.displayName = 'FormCheckbox'

@@ -16,8 +16,8 @@ import {
   SetBusinessResponseSchema,
   StartSessionRequestSchema,
   StartSessionResponseSchema,
-  VerifyEmailRequestSchema,
-  VerifyEmailResponseSchema,
+  VerifyOTPRequestSchema,
+  VerifyOTPResponseSchema,
 } from './types/onboarding'
 import type { UseMutationOptions } from '@tanstack/react-query'
 import type {
@@ -35,8 +35,8 @@ import type {
   SetBusinessResponse,
   StartSessionRequest,
   StartSessionResponse,
-  VerifyEmailRequest,
-  VerifyEmailResponse,
+  VerifyOTPRequest,
+  VerifyOTPResponse,
 } from './types/onboarding'
 
 /**
@@ -102,14 +102,14 @@ export const onboardingApi = {
    * @returns Updated session stage
    * @throws HTTPError with parsed ProblemDetails on failure
    */
-  async verifyEmail(data: VerifyEmailRequest): Promise<VerifyEmailResponse> {
-    const validatedRequest = VerifyEmailRequestSchema.parse(data)
+  async verifyEmail(data: VerifyOTPRequest): Promise<VerifyOTPResponse> {
+    const validatedRequest = VerifyOTPRequestSchema.parse(data)
 
     const response = await post<unknown>('v1/onboarding/email/verify', {
       json: validatedRequest,
     })
 
-    return VerifyEmailResponseSchema.parse(response)
+    return VerifyOTPResponseSchema.parse(response)
   },
 
   /**
@@ -281,10 +281,10 @@ export function useSendOTPMutation(
  * Mutation to verify email with OTP
  */
 export function useVerifyEmailMutation(
-  options?: UseMutationOptions<VerifyEmailResponse, Error, VerifyEmailRequest>,
+  options?: UseMutationOptions<VerifyOTPResponse, Error, VerifyOTPRequest>,
 ) {
   return useMutation({
-    mutationFn: (data: VerifyEmailRequest) => onboardingApi.verifyEmail(data),
+    mutationFn: (data: VerifyOTPRequest) => onboardingApi.verifyEmail(data),
     ...options,
   })
 }

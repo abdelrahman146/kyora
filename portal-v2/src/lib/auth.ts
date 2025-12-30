@@ -1,5 +1,6 @@
 import type { User } from '@/api/types/auth'
 import { authApi } from '@/api/auth'
+import { userApi } from '@/api/user'
 import { clearTokens, getRefreshToken, setTokens } from '@/api/client'
 
 /**
@@ -25,12 +26,9 @@ export async function restoreSession(): Promise<User | null> {
     // Store new tokens
     setTokens(response.token, response.refreshToken)
 
-    // TODO: Fetch user profile - will be implemented when user API is available
-    // For now, return null to force re-login
-    // const user = await userApi.getCurrentUser();
-    // return user;
-
-    return null
+    // Fetch and return user profile
+    const user = await userApi.getCurrentUser()
+    return user
   } catch {
     // Refresh failed - clear invalid tokens
     clearTokens()

@@ -71,7 +71,20 @@ export { BottomNav, type BottomNavProps } from './organisms/BottomNav'
 export { LoginForm } from './organisms/LoginForm'
 export { FilterButton, type FilterButtonProps } from './organisms/FilterButton'
 export { Table, type TableProps, type TableColumn } from './organisms/Table'
-export { CustomerForm, type CustomerFormProps } from './organisms/CustomerForm'
+
+// Customer Organisms
+export {
+  AddCustomerSheet,
+  type AddCustomerSheetProps,
+} from './organisms/customers/AddCustomerSheet'
+export {
+  EditCustomerSheet,
+  type EditCustomerSheetProps,
+} from './organisms/customers/EditCustomerSheet'
+export {
+  AddressSheet,
+  type AddressSheetProps,
+} from './organisms/customers/AddressSheet'
 
 // Templates
 export {

@@ -9,8 +9,10 @@ export interface FormRadioOption {
   disabled?: boolean
 }
 
-export interface FormRadioProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface FormRadioProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   label?: string
   options: Array<FormRadioOption>
   error?: string
@@ -63,7 +65,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
       onChange,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const groupId = `${generatedId}-group`
@@ -97,7 +99,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
           aria-describedby={error ? `${groupId}-error` : undefined}
           className={cn(
             'flex gap-4',
-            orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap'
+            orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap',
           )}
         >
           {options.map((option) => {
@@ -111,7 +113,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                 className={cn(
                   'label cursor-pointer justify-start gap-3',
                   (option.disabled ?? props.disabled) &&
-                    'opacity-60 cursor-not-allowed'
+                    'opacity-60 cursor-not-allowed',
                 )}
               >
                 <input
@@ -128,7 +130,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                     sizeClasses[size],
                     variantClasses[variant],
                     error && 'radio-error',
-                    className
+                    className,
                   )}
                   {...props}
                 />
@@ -161,7 +163,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 FormRadio.displayName = 'FormRadio'

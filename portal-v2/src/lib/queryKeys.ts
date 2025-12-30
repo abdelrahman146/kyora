@@ -59,6 +59,7 @@ export const staleTime = {
  */
 export const user = {
   all: ['user'] as const,
+  current: () => [...user.all, 'current'] as const,
   profile: () => [...user.all, 'profile'] as const,
   businesses: () => [...user.all, 'businesses'] as const,
 } as const
@@ -102,6 +103,27 @@ export const customers = {
   details: () => [...customers.all, 'detail'] as const,
   detail: (businessDescriptor: string, customerId: string) =>
     [...customers.details(), businessDescriptor, customerId] as const,
+} as const
+
+/**
+ * Address queries (business-scoped, nested under customer)
+ * StaleTime: 30 seconds (business-critical data)
+ * Invalidated on business switch
+ */
+export const addresses = {
+  all: ['addresses'] as const,
+  businessScoped: true,
+  lists: () => [...addresses.all, 'list'] as const,
+  list: (businessDescriptor: string, customerId: string) =>
+    [...addresses.lists(), businessDescriptor, customerId] as const,
+  details: () => [...addresses.all, 'detail'] as const,
+  detail: (businessDescriptor: string, customerId: string, addressId: string) =>
+    [
+      ...addresses.details(),
+      businessDescriptor,
+      customerId,
+      addressId,
+    ] as const,
 } as const
 
 /**
@@ -210,6 +232,7 @@ export const queryKeys = {
   businesses,
   business, // Legacy compatibility
   customers,
+  addresses,
   orders,
   inventory,
   analytics,
@@ -232,6 +255,7 @@ export function isBusinessScopedQuery(
   const rootKey = queryKey[0]
   return (
     rootKey === 'customers' ||
+    rootKey === 'addresses' ||
     rootKey === 'orders' ||
     rootKey === 'inventory' ||
     rootKey === 'analytics'

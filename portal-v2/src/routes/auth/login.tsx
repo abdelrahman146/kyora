@@ -86,9 +86,7 @@ function LoginPage() {
           {/* Mobile Logo */}
           <div className="text-center mb-8 lg:hidden">
             <h1 className="text-4xl font-bold text-primary mb-2">Kyora</h1>
-            <p className="text-base-content/60">
-              {t('auth:login_subtitle')}
-            </p>
+            <p className="text-base-content/60">{t('auth:login_subtitle')}</p>
           </div>
 
           {/* Page Title */}
@@ -96,7 +94,9 @@ function LoginPage() {
             <h2 className="text-3xl font-bold text-base-content mb-2">
               {t('auth:welcome_back')}
             </h2>
-            <p className="text-base-content/60">{t('auth:login_description')}</p>
+            <p className="text-base-content/60">
+              {t('auth:login_description')}
+            </p>
           </div>
 
           {/* Login Form */}

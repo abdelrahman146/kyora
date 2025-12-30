@@ -10,19 +10,73 @@ export interface ModalProps {
   title?: ReactNode
   children: ReactNode
   footer?: ReactNode
-  size?: 'sm' | 'md' | 'lg' | 'xl'
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
   closeOnBackdropClick?: boolean
   closeOnEscape?: boolean
+  /**
+   * Whether to show the close button (X) in the header
+   * @default true
+   */
   showCloseButton?: boolean
+
+  /**
+   * Additional CSS classes for the modal container
+   */
   className?: string
+
+  /**
+   * Additional CSS classes for the modal content box
+   */
   contentClassName?: string
+
+  /**
+   * Whether the modal content should be scrollable
+   * @default true
+   */
+  scrollable?: boolean
+
+  /**
+   * Custom z-index for the modal
+   * @default 50
+   */
+  zIndex?: number
 }
 
 /**
- * Modal Component
+ * Modal Component - Production-Grade Reusable Modal
  *
- * DaisyUI modal with backdrop, keyboard navigation, and focus trap.
- * Uses native <dialog> element for accessibility.
+ * Features:
+ * - Mobile-first design (bottom sheet on mobile, centered on desktop)
+ * - Responsive sizing with multiple size options
+ * - Portal-based rendering for proper stacking context
+ * - Keyboard navigation (Escape to close)
+ * - Focus trap for accessibility
+ * - Backdrop click to close (optional)
+ * - Smooth animations with CSS transitions
+ * - RTL support with logical properties
+ * - Scroll lock when open
+ * - DaisyUI theming support
+ *
+ * @example
+ * ```tsx
+ * <Modal
+ *   isOpen={isOpen}
+ *   onClose={() => setIsOpen(false)}
+ *   title="Delete Item"
+ *   footer={
+ *     <>
+ *       <button onClick={() => setIsOpen(false)} className="btn btn-ghost">
+ *         Cancel
+ *       </button>
+ *       <button onClick={handleDelete} className="btn btn-error">
+ *         Delete
+ *       </button>
+ *     </>
+ *   }
+ * >
+ *   <p>Are you sure you want to delete this item?</p>
+ * </Modal>
+ * ```
  */
 export function Modal({
   isOpen,
@@ -36,17 +90,21 @@ export function Modal({
   showCloseButton = true,
   className,
   contentClassName,
+  scrollable = true,
+  zIndex = 50,
 }: ModalProps) {
-  const modalRef = useRef<HTMLDialogElement>(null)
+  const modalRef = useRef<HTMLDivElement>(null)
 
+  // Size mapping for responsive modal widths
   const sizeClasses = {
-    sm: 'modal-box max-w-sm',
-    md: 'modal-box max-w-md',
-    lg: 'modal-box max-w-2xl',
-    xl: 'modal-box max-w-4xl',
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-full mx-4',
   }
 
-  // Handle Escape key
+  // Handle Escape key press
   useEffect(() => {
     if (!isOpen || !closeOnEscape) return
 
@@ -57,11 +115,45 @@ export function Modal({
     }
 
     document.addEventListener('keydown', handleEscape)
-    return () => document.removeEventListener('keydown', handleEscape)
+    return () => {
+      document.removeEventListener('keydown', handleEscape)
+    }
   }, [isOpen, closeOnEscape, onClose])
 
+  // Lock body scroll when modal is open
+  useEffect(() => {
+    if (!isOpen) return
+
+    const originalOverflow = document.body.style.overflow
+    const originalPaddingRight = document.body.style.paddingRight
+
+    // Prevent body scroll
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = `${scrollbarWidth.toString()}px`
+
+    return () => {
+      document.body.style.overflow = originalOverflow
+      document.body.style.paddingRight = originalPaddingRight
+    }
+  }, [isOpen])
+
+  // Focus trap - focus first focusable element when modal opens
+  useEffect(() => {
+    if (!isOpen) return
+
+    const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
+
+    if (focusableElements && focusableElements.length > 0) {
+      focusableElements[0].focus()
+    }
+  }, [isOpen])
+
   // Handle backdrop click
-  const handleBackdropClick = (e: React.MouseEvent<HTMLElement>) => {
+  const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (closeOnBackdropClick && e.target === e.currentTarget) {
       onClose()
     }
@@ -69,18 +161,51 @@ export function Modal({
 
   if (!isOpen) return null
 
-  return createPortal(
-    <dialog className={cn('modal modal-open', className)} ref={modalRef}>
-      <div className={cn(sizeClasses[size], contentClassName)}>
+  const modalContent = (
+    <div
+      className={cn(
+        'fixed inset-0 flex items-end md:items-center justify-center',
+        className,
+      )}
+      style={{ zIndex }}
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby={title ? 'modal-title' : undefined}
+    >
+      {/* Backdrop */}
+      <div
+        className="absolute inset-0 bg-black/50 backdrop-blur-sm transition-opacity duration-300"
+        onClick={handleBackdropClick}
+        aria-hidden="true"
+      />
+
+      {/* Modal Box */}
+      <div
+        ref={modalRef}
+        className={cn(
+          'relative w-full bg-base-100 rounded-t-2xl md:rounded-2xl shadow-2xl',
+          'transform transition-transform duration-300 ease-out',
+          'max-h-[90vh] md:max-h-[85vh]',
+          'animate-in slide-in-from-bottom md:slide-in-from-bottom-0 md:fade-in',
+          sizeClasses[size],
+          contentClassName,
+        )}
+      >
         {/* Header */}
         {(title ?? showCloseButton) && (
-          <div className="mb-4 flex items-center justify-between">
-            {title && <h3 className="text-lg font-bold">{title}</h3>}
+          <div className="flex items-center justify-between gap-4 px-6 py-4 border-b border-base-300">
+            {title && (
+              <h3
+                id="modal-title"
+                className="text-lg md:text-xl font-bold text-base-content flex-1"
+              >
+                {title}
+              </h3>
+            )}
             {showCloseButton && (
               <button
-                type="button"
                 onClick={onClose}
-                className="btn btn-circle btn-ghost btn-sm ms-auto"
+                className="btn btn-sm btn-circle btn-ghost shrink-0"
                 aria-label="Close modal"
               >
                 <X size={20} />
@@ -90,19 +215,33 @@ export function Modal({
         )}
 
         {/* Content */}
-        <div className="py-4">{children}</div>
+        <div
+          className={cn(
+            'px-6 py-4',
+            scrollable && 'overflow-y-auto',
+            !footer && 'pb-6',
+          )}
+          style={{
+            maxHeight: footer
+              ? 'calc(90vh - 140px)'
+              : title || showCloseButton
+                ? 'calc(90vh - 80px)'
+                : 'calc(90vh - 40px)',
+          }}
+        >
+          {children}
+        </div>
 
         {/* Footer */}
-        {footer && <div className="modal-action">{footer}</div>}
+        {footer && (
+          <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-base-300 bg-base-100">
+            {footer}
+          </div>
+        )}
       </div>
-
-      {/* Backdrop */}
-      <form method="dialog" className="modal-backdrop">
-        <button type="button" onClick={handleBackdropClick}>
-          close
-        </button>
-      </form>
-    </dialog>,
-    document.body,
+    </div>
   )
+
+  // Render modal in a portal at the end of body
+  return createPortal(modalContent, document.body)
 }

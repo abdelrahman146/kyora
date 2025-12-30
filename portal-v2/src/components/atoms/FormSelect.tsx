@@ -102,7 +102,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       disabled,
       required,
     }: FormSelectProps<T>,
-    ref: React.ForwardedRef<HTMLDivElement>
+    ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -125,7 +125,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     const filteredOptions =
       searchable && searchQuery
         ? options.filter((option) =>
-            option.label.toLowerCase().includes(searchQuery.toLowerCase())
+            option.label.toLowerCase().includes(searchQuery.toLowerCase()),
           )
         : options
 
@@ -224,7 +224,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
           setFocusedIndex(-1)
         }
       },
-      [disabled, multiSelect, selectedValues, onChange]
+      [disabled, multiSelect, selectedValues, onChange],
     )
 
     const handleClear = useCallback(
@@ -236,7 +236,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
           onChange?.(null as unknown as T | Array<T>)
         }
       },
-      [multiSelect, onChange]
+      [multiSelect, onChange],
     )
 
     const handleKeyDown = useCallback(
@@ -305,7 +305,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             break
         }
       },
-      [disabled, isOpen, focusedIndex, filteredOptions, handleToggleOption]
+      [disabled, isOpen, focusedIndex, filteredOptions, handleToggleOption],
     )
 
     const getDisplayText = () => {
@@ -317,7 +317,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       }
 
       const selectedOption = options.find(
-        (opt) => opt.value === selectedValues[0]
+        (opt) => opt.value === selectedValues[0],
       )
       return selectedOption?.label ?? placeholder
     }
@@ -353,7 +353,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                 : '',
               disabled && 'opacity-60 cursor-not-allowed',
               isOpen && 'border-primary ring-2 ring-primary/20',
-              className ?? ''
+              className ?? '',
             )}
             aria-haspopup="listbox"
             aria-expanded={isOpen}
@@ -364,7 +364,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             <span
               className={cn(
                 'flex-1 truncate',
-                selectedValues.length === 0 && 'text-base-content/40'
+                selectedValues.length === 0 && 'text-base-content/40',
               )}
             >
               {getDisplayText()}
@@ -387,7 +387,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               <ChevronDown
                 className={cn(
                   'w-5 h-5 transition-transform duration-200',
-                  isOpen && 'rotate-180'
+                  isOpen && 'rotate-180',
                 )}
               />
             </div>
@@ -399,7 +399,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                 'absolute z-50 mt-2 w-full',
                 'bg-base-100 border border-base-300 rounded-lg shadow-xl',
                 'overflow-hidden',
-                'animate-in fade-in-0 zoom-in-95 duration-100'
+                'animate-in fade-in-0 zoom-in-95 duration-100',
               )}
               style={{ maxHeight }}
               role="presentation"
@@ -449,8 +449,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         aria-selected={isSelected}
                         aria-disabled={option.disabled}
                         onClick={() => {
-                          if (!option.disabled)
-                            handleToggleOption(option.value)
+                          if (!option.disabled) handleToggleOption(option.value)
                         }}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' || e.key === ' ') {
@@ -477,7 +476,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                           isFocused &&
                             'bg-base-200 ring-2 ring-inset ring-primary/30',
                           option.disabled &&
-                            'opacity-50 cursor-not-allowed pointer-events-none'
+                            'opacity-50 cursor-not-allowed pointer-events-none',
                         )}
                       >
                         {option.renderCustom ? (
@@ -538,9 +537,8 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         )}
       </div>
     )
-  }
+  },
 ) as (<T extends string>(
-  props: FormSelectProps<T> & { ref?: React.ForwardedRef<HTMLDivElement> }
+  props: FormSelectProps<T> & { ref?: React.ForwardedRef<HTMLDivElement> },
 ) => React.ReactElement) & { displayName?: string }
-
 ;(FormSelect as { displayName?: string }).displayName = 'FormSelect'

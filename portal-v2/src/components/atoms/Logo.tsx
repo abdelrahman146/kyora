@@ -58,7 +58,7 @@ export function Logo({ showText = true, size = 'md', className }: LogoProps) {
         className={cn(
           'flex aspect-square items-center justify-center rounded-lg bg-primary text-primary-content font-bold',
           sizeClasses[size],
-          iconSizeClasses[size]
+          iconSizeClasses[size],
         )}
       >
         K
@@ -67,10 +67,7 @@ export function Logo({ showText = true, size = 'md', className }: LogoProps) {
       {/* Text */}
       {showText && (
         <span
-          className={cn(
-            'font-bold text-base-content',
-            textSizeClasses[size]
-          )}
+          className={cn('font-bold text-base-content', textSizeClasses[size])}
         >
           Kyora
         </span>

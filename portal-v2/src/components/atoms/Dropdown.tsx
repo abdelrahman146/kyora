@@ -128,7 +128,7 @@ export function Dropdown({
             'animate-in fade-in slide-in-from-top-2 duration-200',
             align === 'end' && 'end-0',
             align === 'start' && 'start-0',
-            contentClassName
+            contentClassName,
           )}
           style={{ width }}
           onClick={handleClose}

@@ -29,11 +29,19 @@ export function UserMenu() {
   const handleLogout = () => {
     void logout()
       .then(() => {
-        void navigate({ to: '/auth/login', search: { redirect: '/' }, replace: true })
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
       })
       .catch(() => {
         // Silent fail - logout will clear local state anyway
-        void navigate({ to: '/auth/login', search: { redirect: '/' }, replace: true })
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
       })
   }
 

@@ -21,7 +21,7 @@
 
 import { useMemo } from 'react'
 import { cn } from '../../lib/utils'
-import { SocialIcon  } from '../icons/social'
+import { SocialIcon } from '../icons/social'
 import {
   SOCIAL_BG_CLASSES,
   SOCIAL_COLOR_CLASSES,
@@ -29,11 +29,13 @@ import {
   SOCIAL_HOVER_COLOR_CLASSES,
   SOCIAL_LABELS,
 } from '../icons/socialConstants'
-import type {SocialPlatform} from '../icons/social';
+import type { SocialPlatform } from '../icons/social'
 import type { AnchorHTMLAttributes } from 'react'
 
-export interface SocialMediaLinkProps
-  extends Omit<AnchorHTMLAttributes<HTMLAnchorElement>, 'href'> {
+export interface SocialMediaLinkProps extends Omit<
+  AnchorHTMLAttributes<HTMLAnchorElement>,
+  'href'
+> {
   platform: SocialPlatform
   username: string
   size?: 'sm' | 'md' | 'lg'
@@ -48,8 +50,7 @@ interface PlatformConfig {
 const platformConfigs: Record<SocialPlatform, PlatformConfig> = {
   instagram: {
     label: SOCIAL_LABELS.instagram,
-    getUrl: (username) =>
-      `https://instagram.com/${username.replace('@', '')}`,
+    getUrl: (username) => `https://instagram.com/${username.replace('@', '')}`,
   },
   facebook: {
     label: SOCIAL_LABELS.facebook,
@@ -114,14 +115,14 @@ export function SocialMediaLink({
           'bg-transparent',
           SOCIAL_COLOR_CLASSES[platform],
           SOCIAL_HOVER_COLOR_CLASSES[platform],
-          'hover:bg-base-200'
+          'hover:bg-base-200',
         )
       : cn(
           // Default variant - colored bg
           SOCIAL_BG_CLASSES[platform],
           SOCIAL_HOVER_BG_CLASSES[platform],
           SOCIAL_COLOR_CLASSES[platform],
-          SOCIAL_HOVER_COLOR_CLASSES[platform]
+          SOCIAL_HOVER_COLOR_CLASSES[platform],
         )
 
   return (
@@ -144,7 +145,7 @@ export function SocialMediaLink({
         // Variant
         variantClasses,
         // Custom
-        className
+        className,
       )}
       {...props}
     >
@@ -154,7 +155,7 @@ export function SocialMediaLink({
         className={cn(
           'shrink-0',
           sizeClasses[size].icon,
-          'transition-transform duration-200 group-hover:scale-110'
+          'transition-transform duration-200 group-hover:scale-110',
         )}
         aria-hidden="true"
       />

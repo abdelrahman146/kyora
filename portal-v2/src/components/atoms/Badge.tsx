@@ -1,9 +1,17 @@
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface BadgeProps {
   children: ReactNode
-  variant?: 'primary' | 'secondary' | 'success' | 'error' | 'warning' | 'info' | 'neutral' | 'ghost'
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'neutral'
+    | 'ghost'
   size?: 'xs' | 'sm' | 'md' | 'lg'
   outline?: boolean
   className?: string

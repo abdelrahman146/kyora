@@ -11,21 +11,11 @@
  * - Mobile-optimized (min 44px touch target)
  */
 
+import { useTranslation } from 'react-i18next'
 import { DollarSign, Phone, ShoppingBag } from 'lucide-react'
-import { Avatar } from '../atoms/Avatar'
 
-// Define Customer interface inline (until customer types are properly set up)
-interface Customer {
-  id: string
-  name: string
-  email?: string
-  phone?: string
-  phoneCode?: string
-  phoneNumber?: string
-  avatarUrl?: string
-  totalOrders?: number
-  totalSpent?: number
-}
+import { Avatar } from '../atoms/Avatar'
+import type { Customer } from '@/api/customer'
 
 export interface CustomerCardProps {
   customer: Customer
@@ -42,6 +32,8 @@ export function CustomerCard({
   totalSpent = 0,
   currency = 'AED',
 }: CustomerCardProps) {
+  const { t } = useTranslation()
+
   const getInitials = (name: string): string => {
     return name
       .split(' ')
@@ -112,7 +104,7 @@ export function CustomerCard({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs text-base-content/60 truncate">
-                Orders
+                {t('customers.orders_count')}
               </div>
               <div className="font-semibold">{ordersCount}</div>
             </div>
@@ -124,7 +116,9 @@ export function CustomerCard({
               <DollarSign size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-base-content/60 truncate">Total</div>
+              <div className="text-xs text-base-content/60 truncate">
+                {t('customers.total_spent')}
+              </div>
               <div className="font-semibold truncate">
                 {currency} {formatCurrency(totalSpent)}
               </div>

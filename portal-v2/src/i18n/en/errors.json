@@ -1,6 +1,7 @@
 {
   "generic": {
     "unexpected": "An unexpected error occurred. Please try again.",
+    "load_failed": "Failed to load data. Please try again.",
     "message": "{{message}}"
   },
   "network": {

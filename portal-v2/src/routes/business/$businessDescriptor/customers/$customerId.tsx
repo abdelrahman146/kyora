@@ -2,17 +2,21 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Suspense, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
-import { ArrowLeft, Edit2, Instagram, Mail, MapPin, MessageCircle, Phone, Trash2 } from 'lucide-react'
-import type {UpdateCustomerRequest} from '@/api/customer';
 import {
-  
-  useCustomerQuery,
-  useDeleteCustomerMutation,
-  useUpdateCustomerMutation
-} from '@/api/customer'
-import { BottomSheet } from '@/components/molecules/BottomSheet'
+  ArrowLeft,
+  Edit2,
+  Facebook,
+  Instagram,
+  Mail,
+  MapPin,
+  MessageCircle,
+  Phone,
+  Trash2,
+} from 'lucide-react'
+
+import { useCustomerQuery, useDeleteCustomerMutation } from '@/api/customer'
 import { Dialog } from '@/components/atoms/Dialog'
-import { CustomerForm } from '@/components/organisms/CustomerForm'
+import { EditCustomerSheet } from '@/components/organisms/customers'
 import { CustomerDetailSkeleton } from '@/components/atoms/skeletons/CustomerDetailSkeleton'
 import { queryKeys } from '@/lib/queryKeys'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
@@ -41,7 +45,7 @@ export const Route = createFileRoute(
  * Customer Detail Page Component
  */
 function CustomerDetailPage() {
-  const { t } = useTranslation(['common', 'errors'])
+  const { t } = useTranslation()
   const { businessDescriptor, customerId } = Route.useParams()
   const navigate = useNavigate()
   const queryClient = useQueryClient()
@@ -49,57 +53,11 @@ function CustomerDetailPage() {
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
 
   // Fetch customer data
-  const { data: customer, isLoading, error } = useCustomerQuery(
-    businessDescriptor,
-    customerId,
-  )
-
-  // Update mutation with optimistic updates
-  const updateMutation = useUpdateCustomerMutation(businessDescriptor, {
-    onMutate: async (variables: { customerId: string; data: UpdateCustomerRequest }) => {
-      const { data: updatedData } = variables
-      // Cancel outgoing refetches
-      await queryClient.cancelQueries({
-        queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
-      })
-
-      // Snapshot previous value
-      const previousCustomer = queryClient.getQueryData(
-        queryKeys.customers.detail(businessDescriptor, customerId)
-      )
-
-      // Optimistically update cache
-      queryClient.setQueryData(
-        queryKeys.customers.detail(businessDescriptor, customerId),
-        (old: any) => ({ ...old, ...updatedData })
-      )
-
-      return { previousCustomer }
-    },
-    onSuccess: () => {
-      // Invalidate and refetch
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.customers.list(businessDescriptor),
-      })
-      void queryClient.invalidateQueries({
-        queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
-      })
-      
-      showSuccessToast(t('common:customer.updated_success'))
-      setShowEditSheet(false)
-    },
-    onError: (err: Error, _variables: { customerId: string; data: UpdateCustomerRequest }, context: unknown) => {
-      // Rollback on error
-      const ctx = context as { previousCustomer: any } | undefined
-      if (ctx?.previousCustomer) {
-        queryClient.setQueryData(
-          queryKeys.customers.detail(businessDescriptor, customerId),
-          ctx.previousCustomer
-        )
-      }
-      void showErrorFromException(err, t)
-    },
-  })
+  const {
+    data: customer,
+    isLoading,
+    error,
+  } = useCustomerQuery(businessDescriptor, customerId)
 
   // Delete mutation
   const deleteMutation = useDeleteCustomerMutation(businessDescriptor, {
@@ -108,9 +66,9 @@ function CustomerDetailPage() {
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.list(businessDescriptor),
       })
-      
-      showSuccessToast(t('common:customer.deleted_success'))
-      
+
+      showSuccessToast(t('customers.delete_success'))
+
       // Navigate back to customers list
       void navigate({
         to: '/business/$businessDescriptor/customers',
@@ -122,11 +80,6 @@ function CustomerDetailPage() {
       void showErrorFromException(err, t)
     },
   })
-
-  // Handle edit customer form submission
-  const handleUpdateCustomer = async (values: UpdateCustomerRequest) => {
-    await updateMutation.mutateAsync({ customerId, data: values })
-  }
 
   // Handle delete customer
   const handleDelete = () => {
@@ -140,16 +93,27 @@ function CustomerDetailPage() {
   if (error || !customer) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-error">{t('errors:generic.load_failed')}</p>
-        <button
-          className="btn btn-sm"
-          onClick={() => window.location.reload()}
-        >
-          {t('common:actions.retry')}
+        <p className="text-error">{t('errors.generic.load_failed')}</p>
+        <button className="btn btn-sm" onClick={() => window.location.reload()}>
+          {t('common.retry')}
         </button>
       </div>
     )
   }
+
+  // Format phone display
+  const phoneDisplay =
+    customer.phoneCode && customer.phoneNumber
+      ? `${customer.phoneCode} ${customer.phoneNumber}`
+      : null
+
+  // Get primary address if exists
+  const primaryAddress = customer.addresses?.[0]
+  const addressDisplay = primaryAddress
+    ? [primaryAddress.street, primaryAddress.city, primaryAddress.state]
+        .filter(Boolean)
+        .join(', ')
+    : null
 
   return (
     <>
@@ -170,9 +134,9 @@ function CustomerDetailPage() {
               <ArrowLeft size={20} />
             </button>
             <div>
-              <h1 className="text-2xl font-bold">{customer.fullName}</h1>
+              <h1 className="text-2xl font-bold">{customer.name}</h1>
               <p className="text-sm text-base-content/70">
-                {t('common:customer.customer_details')}
+                {t('customers.details_title')}
               </p>
             </div>
           </div>
@@ -182,14 +146,14 @@ function CustomerDetailPage() {
               onClick={() => setShowEditSheet(true)}
             >
               <Edit2 size={16} />
-              {t('common:actions.edit')}
+              {t('common.edit')}
             </button>
             <button
               className="btn btn-error btn-outline btn-sm gap-2"
               onClick={() => setShowDeleteDialog(true)}
             >
               <Trash2 size={16} />
-              {t('common:actions.delete')}
+              {t('common.delete')}
             </button>
           </div>
         </div>
@@ -202,7 +166,7 @@ function CustomerDetailPage() {
               <div className="avatar placeholder">
                 <div className="w-24 h-24 bg-primary/10 text-primary rounded-full">
                   <span className="text-3xl font-bold">
-                    {customer.fullName.charAt(0).toUpperCase()}
+                    {customer.name.charAt(0).toUpperCase()}
                   </span>
                 </div>
               </div>
@@ -210,9 +174,9 @@ function CustomerDetailPage() {
               {/* Customer Info */}
               <div className="flex-1 space-y-4">
                 <div>
-                  <h2 className="text-2xl font-bold">{customer.fullName}</h2>
+                  <h2 className="text-2xl font-bold">{customer.name}</h2>
                   <p className="text-sm text-base-content/70">
-                    {t('common:customer.since', {
+                    {t('customers.since', {
                       date: new Date(customer.createdAt).toLocaleDateString(),
                     })}
                   </p>
@@ -228,66 +192,71 @@ function CustomerDetailPage() {
                   )}
 
                   {/* Phone */}
-                  {customer.phonePrefix && customer.phoneNumber && (
+                  {phoneDisplay && (
                     <div className="flex items-center gap-2">
                       <Phone size={16} className="text-base-content/60" />
-                      <span className="text-sm">
-                        {customer.phonePrefix} {customer.phoneNumber}
-                      </span>
+                      <span className="text-sm">{phoneDisplay}</span>
                     </div>
                   )}
 
                   {/* Address */}
-                  {(customer.address || customer.city || customer.country) && (
+                  {addressDisplay && (
                     <div className="flex items-center gap-2">
                       <MapPin size={16} className="text-base-content/60" />
-                      <span className="text-sm">
-                        {[customer.address, customer.city, customer.country]
-                          .filter(Boolean)
-                          .join(', ')}
-                      </span>
+                      <span className="text-sm">{addressDisplay}</span>
+                    </div>
+                  )}
+
+                  {/* WhatsApp */}
+                  {customer.whatsappNumber && (
+                    <div className="flex items-center gap-2">
+                      <MessageCircle
+                        size={16}
+                        className="text-base-content/60"
+                      />
+                      <span className="text-sm">{customer.whatsappNumber}</span>
                     </div>
                   )}
 
                   {/* Instagram */}
-                  {customer.instagramHandle && (
+                  {customer.instagramUsername && (
                     <div className="flex items-center gap-2">
                       <Instagram size={16} className="text-base-content/60" />
                       <a
-                        href={`https://instagram.com/${customer.instagramHandle.replace('@', '')}`}
+                        href={`https://instagram.com/${customer.instagramUsername.replace('@', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm link link-primary"
                       >
-                        {customer.instagramHandle}
+                        @{customer.instagramUsername.replace('@', '')}
                       </a>
                     </div>
                   )}
 
                   {/* Facebook */}
-                  {customer.facebookHandle && (
+                  {customer.facebookUsername && (
                     <div className="flex items-center gap-2">
-                      <MessageCircle size={16} className="text-base-content/60" />
+                      <Facebook size={16} className="text-base-content/60" />
                       <a
-                        href={`https://facebook.com/${customer.facebookHandle.replace('@', '')}`}
+                        href={`https://facebook.com/${customer.facebookUsername.replace('@', '')}`}
                         target="_blank"
                         rel="noopener noreferrer"
                         className="text-sm link link-primary"
                       >
-                        {customer.facebookHandle}
+                        {customer.facebookUsername}
                       </a>
                     </div>
                   )}
                 </div>
 
                 {/* Notes */}
-                {customer.notes && (
+                {customer.notes && customer.notes.length > 0 && (
                   <div className="pt-4 border-t border-base-300">
                     <h3 className="text-sm font-semibold mb-2">
-                      {t('common:customer.notes')}
+                      {t('customers.details.notes')}
                     </h3>
                     <p className="text-sm text-base-content/70 whitespace-pre-wrap">
-                      {customer.notes}
+                      {customer.notes[0].content}
                     </p>
                   </div>
                 )}
@@ -301,19 +270,10 @@ function CustomerDetailPage() {
           <div className="card bg-base-100 shadow">
             <div className="card-body">
               <div className="text-sm text-base-content/70">
-                {t('common:customer.total_orders')}
-              </div>
-              <div className="text-3xl font-bold">{customer.totalOrders}</div>
-            </div>
-          </div>
-
-          <div className="card bg-base-100 shadow">
-            <div className="card-body">
-              <div className="text-sm text-base-content/70">
-                {t('common:customer.total_spent')}
+                {t('customers.total_orders')}
               </div>
               <div className="text-3xl font-bold">
-                {customer.totalSpent.toFixed(2)}
+                {customer.ordersCount ?? 0}
               </div>
             </div>
           </div>
@@ -321,11 +281,24 @@ function CustomerDetailPage() {
           <div className="card bg-base-100 shadow">
             <div className="card-body">
               <div className="text-sm text-base-content/70">
-                {t('common:customer.average_order')}
+                {t('customers.total_spent')}
               </div>
               <div className="text-3xl font-bold">
-                {customer.totalOrders > 0
-                  ? (customer.totalSpent / customer.totalOrders).toFixed(2)
+                {(customer.totalSpent ?? 0).toFixed(2)}
+              </div>
+            </div>
+          </div>
+
+          <div className="card bg-base-100 shadow">
+            <div className="card-body">
+              <div className="text-sm text-base-content/70">
+                {t('customers.average_order')}
+              </div>
+              <div className="text-3xl font-bold">
+                {(customer.ordersCount ?? 0) > 0
+                  ? (
+                      (customer.totalSpent ?? 0) / (customer.ordersCount ?? 1)
+                    ).toFixed(2)
                   : '0.00'}
               </div>
             </div>
@@ -336,61 +309,64 @@ function CustomerDetailPage() {
         <div className="card bg-base-100 shadow">
           <div className="card-body">
             <h3 className="text-lg font-semibold mb-4">
-              {t('common:customer.recent_orders')}
+              {t('customers.recent_orders')}
             </h3>
             <div className="text-center text-base-content/70 py-8">
-              {t('common:customer.no_orders_yet')}
+              {t('customers.no_orders_yet')}
             </div>
           </div>
         </div>
       </div>
 
-      {/* Edit Customer BottomSheet */}
-      <BottomSheet
+      {/* Edit Customer Sheet */}
+      <EditCustomerSheet
         isOpen={showEditSheet}
         onClose={() => setShowEditSheet(false)}
-        title={t('common:customer.edit_customer')}
-      >
-        <CustomerForm
-          customer={customer}
-          onSubmit={handleUpdateCustomer}
-          onCancel={() => setShowEditSheet(false)}
-          isSubmitting={updateMutation.isPending}
-        />
-      </BottomSheet>
+        businessDescriptor={businessDescriptor}
+        customer={customer}
+        onUpdated={() => {
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.customers.list(businessDescriptor),
+          })
+          void queryClient.invalidateQueries({
+            queryKey: queryKeys.customers.detail(
+              businessDescriptor,
+              customerId,
+            ),
+          })
+          setShowEditSheet(false)
+        }}
+      />
 
       {/* Delete Confirmation Dialog */}
       <Dialog
         open={showDeleteDialog}
         onClose={() => setShowDeleteDialog(false)}
-        title={t('common:customer.confirm_delete')}
-        description={t('common:customer.confirm_delete_message', {
-          name: customer.fullName,
+        title={t('customers.delete_confirm_title')}
+        description={t('customers.delete_confirm_message', {
+          name: customer.name,
         })}
-        footer={
-          <>
-            <button
-              className="btn btn-ghost"
-              onClick={() => setShowDeleteDialog(false)}
-              disabled={deleteMutation.isPending}
-            >
-              {t('common:actions.cancel')}
-            </button>
-            <button
-              className="btn btn-error"
-              onClick={handleDelete}
-              disabled={deleteMutation.isPending}
-            >
-              {deleteMutation.isPending ? (
-                <span className="loading loading-spinner loading-sm"></span>
-              ) : (
-                t('common:actions.delete')
-              )}
-            </button>
-          </>
-        }
       >
-        <p>{t('common:customer.confirm_delete_warning')}</p>
+        <div className="flex justify-end gap-2 mt-4">
+          <button
+            className="btn btn-ghost"
+            onClick={() => setShowDeleteDialog(false)}
+            disabled={deleteMutation.isPending}
+          >
+            {t('common.cancel')}
+          </button>
+          <button
+            className="btn btn-error"
+            onClick={handleDelete}
+            disabled={deleteMutation.isPending}
+          >
+            {deleteMutation.isPending ? (
+              <span className="loading loading-spinner loading-sm"></span>
+            ) : (
+              t('common.delete')
+            )}
+          </button>
+        </div>
       </Dialog>
     </>
   )

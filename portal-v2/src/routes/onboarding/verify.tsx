@@ -107,7 +107,8 @@ function VerifyEmailPage() {
           {t('onboarding:verify_email')}
         </h1>
         <p className="text-base-content/70">
-          {t('onboarding:verification_code_sent')} <strong>{state.email}</strong>
+          {t('onboarding:verification_code_sent')}{' '}
+          <strong>{state.email}</strong>
         </p>
       </div>
 

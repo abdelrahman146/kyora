@@ -31,12 +31,24 @@ export function CustomerListSkeleton() {
             {/* Header */}
             <thead>
               <tr>
-                <th><div className="h-4 w-24 bg-base-300 rounded" /></th>
-                <th><div className="h-4 w-20 bg-base-300 rounded" /></th>
-                <th><div className="h-4 w-24 bg-base-300 rounded" /></th>
-                <th><div className="h-4 w-20 bg-base-300 rounded" /></th>
-                <th><div className="h-4 w-20 bg-base-300 rounded" /></th>
-                <th><div className="h-4 w-16 bg-base-300 rounded" /></th>
+                <th>
+                  <div className="h-4 w-24 bg-base-300 rounded" />
+                </th>
+                <th>
+                  <div className="h-4 w-20 bg-base-300 rounded" />
+                </th>
+                <th>
+                  <div className="h-4 w-24 bg-base-300 rounded" />
+                </th>
+                <th>
+                  <div className="h-4 w-20 bg-base-300 rounded" />
+                </th>
+                <th>
+                  <div className="h-4 w-20 bg-base-300 rounded" />
+                </th>
+                <th>
+                  <div className="h-4 w-16 bg-base-300 rounded" />
+                </th>
               </tr>
             </thead>
             <tbody>
@@ -48,11 +60,21 @@ export function CustomerListSkeleton() {
                       <div className="h-4 w-32 bg-base-300 rounded" />
                     </div>
                   </td>
-                  <td><div className="h-4 w-28 bg-base-300 rounded" /></td>
-                  <td><div className="h-4 w-24 bg-base-300 rounded" /></td>
-                  <td><div className="h-4 w-16 bg-base-300 rounded" /></td>
-                  <td><div className="h-4 w-20 bg-base-300 rounded" /></td>
-                  <td><div className="h-8 w-20 bg-base-300 rounded" /></td>
+                  <td>
+                    <div className="h-4 w-28 bg-base-300 rounded" />
+                  </td>
+                  <td>
+                    <div className="h-4 w-24 bg-base-300 rounded" />
+                  </td>
+                  <td>
+                    <div className="h-4 w-16 bg-base-300 rounded" />
+                  </td>
+                  <td>
+                    <div className="h-4 w-20 bg-base-300 rounded" />
+                  </td>
+                  <td>
+                    <div className="h-8 w-20 bg-base-300 rounded" />
+                  </td>
                 </tr>
               ))}
             </tbody>

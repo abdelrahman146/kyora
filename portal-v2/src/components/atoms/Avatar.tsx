@@ -1,4 +1,4 @@
-import type {ReactNode} from 'react';
+import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
 export interface AvatarProps {
@@ -43,14 +43,22 @@ export function Avatar({
 
   return (
     <div className={cn('avatar', onlineIndicator && 'online', className)}>
-      {online && <div className="indicator-item badge badge-success badge-xs"></div>}
-      {offline && <div className="indicator-item badge badge-error badge-xs"></div>}
+      {online && (
+        <div className="indicator-item badge badge-success badge-xs"></div>
+      )}
+      {offline && (
+        <div className="indicator-item badge badge-error badge-xs"></div>
+      )}
       <div className={cn(sizeClasses[size], shapeClass)}>
         {src ? (
           <img src={src} alt={alt ?? 'Avatar'} />
         ) : (
           <div className="flex h-full w-full items-center justify-center bg-neutral text-neutral-content">
-            {fallback ? <span>{fallback.charAt(0).toUpperCase()}</span> : placeholder ?? <span>?</span>}
+            {fallback ? (
+              <span>{fallback.charAt(0).toUpperCase()}</span>
+            ) : (
+              (placeholder ?? <span>?</span>)
+            )}
           </div>
         )}
       </div>

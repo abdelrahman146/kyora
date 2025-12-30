@@ -64,7 +64,10 @@ export function CustomerDetailSkeleton() {
           <div className="h-6 w-32 bg-base-300 rounded mb-4" />
           <div className="space-y-3">
             {Array.from({ length: 4 }).map((_, i) => (
-              <div key={i} className="flex items-center justify-between p-3 bg-base-200 rounded">
+              <div
+                key={i}
+                className="flex items-center justify-between p-3 bg-base-200 rounded"
+              >
                 <div className="flex-1 space-y-2">
                   <div className="h-4 w-40 bg-base-300 rounded" />
                   <div className="h-3 w-24 bg-base-300 rounded" />

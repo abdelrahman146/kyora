@@ -2,8 +2,10 @@ import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes, ReactNode } from 'react'
 
-export interface FormInputProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'size'> {
+export interface FormInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
   label?: string
   error?: string
   helperText?: string
@@ -50,7 +52,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       required,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -102,7 +104,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
               disabled && 'opacity-60 cursor-not-allowed',
               startIcon ? 'ps-10' : '',
               endIcon ? 'pe-10' : '',
-              className
+              className,
             )}
             aria-invalid={error ? 'true' : 'false'}
             aria-describedby={
@@ -147,7 +149,7 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 FormInput.displayName = 'FormInput'

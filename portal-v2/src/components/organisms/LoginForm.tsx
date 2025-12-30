@@ -1,17 +1,17 @@
-import { useState } from "react";
-import { useForm } from "@tanstack/react-form";
-import { Loader2, Mail } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import { Button } from "../atoms/Button";
-import { Input } from "../atoms/Input";
-import { PasswordInput } from "../atoms/PasswordInput";
-import { LoginSchema } from "../../schemas/auth";
-import type { LoginFormData } from "../../schemas/auth";
+import { useState } from 'react'
+import { useForm } from '@tanstack/react-form'
+import { Loader2, Mail } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { Button } from '../atoms/Button'
+import { Input } from '../atoms/Input'
+import { PasswordInput } from '../atoms/PasswordInput'
+import { LoginSchema } from '../../schemas/auth'
+import type { LoginFormData } from '../../schemas/auth'
 
 interface LoginFormProps {
-  onSubmit: (data: LoginFormData) => Promise<void>;
-  onGoogleLogin?: () => void;
-  isGoogleLoading?: boolean;
+  onSubmit: (data: LoginFormData) => Promise<void>
+  onGoogleLogin?: () => void
+  isGoogleLoading?: boolean
 }
 
 /**
@@ -39,63 +39,63 @@ export function LoginForm({
   onGoogleLogin,
   isGoogleLoading = false,
 }: LoginFormProps) {
-  const { t } = useTranslation();
-  const { t: tErrors } = useTranslation("errors");
+  const { t } = useTranslation()
+  const { t: tErrors } = useTranslation('errors')
 
   // State for root-level errors (like server errors)
-  const [rootError, setRootError] = useState<string | null>(null);
+  const [rootError, setRootError] = useState<string | null>(null)
   // State for password field server errors (invalid credentials)
-  const [passwordServerError, setPasswordServerError] = useState<
-    string | null
-  >(null);
+  const [passwordServerError, setPasswordServerError] = useState<string | null>(
+    null,
+  )
 
   const form = useForm({
     defaultValues: {
-      email: "",
-      password: "",
+      email: '',
+      password: '',
     },
     onSubmit: async ({ value }) => {
       // Clear previous errors
-      setRootError(null);
-      setPasswordServerError(null);
+      setRootError(null)
+      setPasswordServerError(null)
 
       try {
-        await onSubmit(value);
+        await onSubmit(value)
       } catch (err: unknown) {
         // Login-specific UX:
         // - 400/401: show invalid credentials on password field
         // - 500: show a generic error message at root level
         if (
           err &&
-          typeof err === "object" &&
-          "response" in err &&
+          typeof err === 'object' &&
+          'response' in err &&
           (err as { response?: unknown }).response instanceof Response
         ) {
-          const response = (err as { response: Response }).response;
-          const status = response.status;
+          const response = (err as { response: Response }).response
+          const status = response.status
 
           if (status === 400 || status === 401) {
-            setPasswordServerError("auth.invalid_credentials");
-            return;
+            setPasswordServerError('auth.invalid_credentials')
+            return
           }
 
           if (status >= 500) {
-            setRootError("generic.unexpected");
-            return;
+            setRootError('generic.unexpected')
+            return
           }
         }
 
-        setRootError("generic.unexpected");
+        setRootError('generic.unexpected')
       }
     },
-  });
+  })
 
   return (
     <form
       onSubmit={(e) => {
-        e.preventDefault();
-        e.stopPropagation();
-        void form.handleSubmit();
+        e.preventDefault()
+        e.stopPropagation()
+        void form.handleSubmit()
       }}
       className="space-y-6"
       noValidate
@@ -117,8 +117,8 @@ export function LoginForm({
           <Input
             id="email"
             type="email"
-            label={t("auth.email")}
-            placeholder={t("auth.email_placeholder")}
+            label={t('auth.email')}
+            placeholder={t('auth.email_placeholder')}
             value={field.state.value}
             onChange={(e) => field.handleChange(e.target.value)}
             onBlur={field.handleBlur}
@@ -144,12 +144,12 @@ export function LoginForm({
         {(field) => (
           <PasswordInput
             id="password"
-            label={t("auth.password")}
-            placeholder={t("auth.password_placeholder")}
+            label={t('auth.password')}
+            placeholder={t('auth.password_placeholder')}
             value={field.state.value}
             onChange={(e) => {
-              field.handleChange(e.target.value);
-              setPasswordServerError(null); // Clear server error on change
+              field.handleChange(e.target.value)
+              setPasswordServerError(null) // Clear server error on change
             }}
             onBlur={field.handleBlur}
             error={
@@ -172,7 +172,7 @@ export function LoginForm({
           href="/forgot-password"
           className="text-sm text-primary hover:text-primary-focus hover:underline transition-colors"
         >
-          {t("auth.forgot_password")}
+          {t('auth.forgot_password')}
         </a>
       </div>
 
@@ -185,14 +185,14 @@ export function LoginForm({
         loading={form.state.isSubmitting}
         disabled={form.state.isSubmitting}
       >
-        {form.state.isSubmitting ? t("auth.logging_in") : t("auth.login")}
+        {form.state.isSubmitting ? t('auth.logging_in') : t('auth.login')}
       </Button>
 
       {/* Divider */}
       {onGoogleLogin && (
         <>
           <div className="divider text-neutral-500 text-sm">
-            {t("auth.or_continue_with")}
+            {t('auth.or_continue_with')}
           </div>
 
           {/* Google Login Button */}
@@ -205,7 +205,9 @@ export function LoginForm({
             {isGoogleLoading ? (
               <>
                 <Loader2 size={20} className="animate-spin" />
-                <span className="font-semibold">{t("auth.connecting_google")}</span>
+                <span className="font-semibold">
+                  {t('auth.connecting_google')}
+                </span>
               </>
             ) : (
               <>
@@ -231,12 +233,14 @@ export function LoginForm({
                     fill="#EA4335"
                   />
                 </svg>
-                <span className="font-semibold">{t("auth.continue_with_google")}</span>
+                <span className="font-semibold">
+                  {t('auth.continue_with_google')}
+                </span>
               </>
             )}
           </button>
         </>
       )}
     </form>
-  );
+  )
 }

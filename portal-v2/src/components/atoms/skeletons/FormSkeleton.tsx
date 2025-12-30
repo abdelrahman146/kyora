@@ -18,7 +18,10 @@ interface FormSkeletonProps {
   showCancel?: boolean
 }
 
-export function FormSkeleton({ fields = 6, showCancel = false }: FormSkeletonProps) {
+export function FormSkeleton({
+  fields = 6,
+  showCancel = false,
+}: FormSkeletonProps) {
   return (
     <div className="space-y-6 animate-pulse">
       {/* Form Fields */}
@@ -32,10 +35,10 @@ export function FormSkeleton({ fields = 6, showCancel = false }: FormSkeletonPro
       </div>
 
       {/* Form Actions */}
-      <div className={`flex gap-3 ${showCancel ? 'justify-end' : 'justify-start'}`}>
-        {showCancel && (
-          <div className="h-12 w-24 bg-base-300 rounded" />
-        )}
+      <div
+        className={`flex gap-3 ${showCancel ? 'justify-end' : 'justify-start'}`}
+      >
+        {showCancel && <div className="h-12 w-24 bg-base-300 rounded" />}
         <div className="h-12 w-32 bg-base-300 rounded" />
       </div>
     </div>

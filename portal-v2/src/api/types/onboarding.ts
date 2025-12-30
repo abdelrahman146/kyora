@@ -130,20 +130,20 @@ export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>
 
 // Verify Email - POST /v1/onboarding/email/verify
 
-export const VerifyEmailRequestSchema = z.object({
+export const VerifyOTPRequestSchema = z.object({
   sessionToken: z.string().min(1, 'Session token is required'),
   otp: z.string().length(6, 'OTP must be 6 digits'),
   fullName: z.string().min(1, 'Full name is required'),
   password: z.string().min(8, 'Password must be at least 8 characters'),
 })
 
-export type VerifyEmailRequest = z.infer<typeof VerifyEmailRequestSchema>
+export type VerifyOTPRequest = z.infer<typeof VerifyOTPRequestSchema>
 
-export const VerifyEmailResponseSchema = z.object({
+export const VerifyOTPResponseSchema = z.object({
   stage: SessionStageSchema,
 })
 
-export type VerifyEmailResponse = z.infer<typeof VerifyEmailResponseSchema>
+export type VerifyOTPResponse = z.infer<typeof VerifyOTPResponseSchema>
 
 // OAuth Google - POST /v1/onboarding/oauth/google
 

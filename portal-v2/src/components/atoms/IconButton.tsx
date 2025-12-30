@@ -57,7 +57,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const sizeClasses = {
       sm: 'h-8 w-8 btn-sm',
@@ -79,7 +79,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
           'btn btn-square',
           sizeClasses[size],
           variantClasses[variant],
-          className
+          className,
         )}
         {...props}
       >
@@ -90,7 +90,7 @@ export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
         )}
       </button>
     )
-  }
+  },
 )
 
 IconButton.displayName = 'IconButton'

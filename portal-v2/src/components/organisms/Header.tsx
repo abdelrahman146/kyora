@@ -1,71 +1,83 @@
-import { Bell, Settings } from 'lucide-react'
-import { ErrorBoundary } from '@/components/atoms/ErrorBoundary'
-import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher'
+import { useTranslation } from 'react-i18next'
+import { Menu } from 'lucide-react'
+import { useStore } from '@tanstack/react-store'
+import { IconButton } from '../atoms/IconButton'
+import { BusinessSwitcher } from '../molecules/BusinessSwitcher'
+import { UserMenu } from '../molecules/UserMenu'
+import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
+import { businessStore, openSidebar } from '@/stores/businessStore'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
+
+interface HeaderProps {
+  title?: string
+}
 
 /**
  * Header Component
  *
- * Top navigation bar with notifications and settings.
- * Wrapped in ErrorBoundary to prevent layout crashes.
+ * Top header bar containing business switcher, page title, and user menu.
+ *
+ * Features:
+ * - Business switcher dropdown
+ * - Page title (responsive, hidden on mobile if space is tight)
+ * - User profile menu
+ * - Mobile: Hamburger menu to open sidebar drawer
+ * - Desktop: No hamburger (sidebar is always visible)
+ * - RTL support with logical properties
+ * - Responsive padding based on sidebar state
+ * - Fixed positioning with proper z-index stacking
  */
-function HeaderContent() {
+export function Header({ title }: HeaderProps) {
+  const { t } = useTranslation()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
+
   return (
-    <header className="border-b border-base-300 bg-base-100">
-      <div className="navbar">
-        <div className="flex-1">
-          {/* Empty - can add breadcrumbs later */}
+    <header
+      className={cn(
+        'fixed top-0 end-0 h-16 bg-base-100 border-b border-base-300 z-30 transition-all duration-300',
+        // Desktop: Adjust start position based on sidebar width
+        isDesktop && !sidebarCollapsed && 'md:start-64',
+        isDesktop && sidebarCollapsed && 'md:start-20',
+        // Mobile: Full width
+        'start-0',
+      )}
+    >
+      <div className="h-full flex items-center justify-between gap-2 px-4">
+        {/* Left Section: Mobile Menu + Title */}
+        <div className="flex items-center gap-3 flex-1 min-w-0">
+          {/* Mobile Menu Toggle - Opens Sidebar Drawer */}
+          {!isDesktop && (
+            <IconButton
+              icon={Menu}
+              size="md"
+              variant="ghost"
+              onClick={openSidebar}
+              aria-label={t('dashboard.open_menu')}
+            />
+          )}
+
+          {/* Page Title - Hidden on small screens to save space */}
+          {title && (
+            <h1 className="text-lg font-bold text-base-content truncate">
+              {title}
+            </h1>
+          )}
         </div>
 
-        <div className="flex-none gap-2">
-          {/* Language Switcher */}
+        {/* Right Section: Business Switcher + Language Toggle + User Menu */}
+        <div className="flex items-center gap-2 shrink-0">
+          {/* Business Switcher - Compact on mobile */}
+          <BusinessSwitcher />
+
+          {/* Language Toggle - Always visible, icon variant for compact display */}
           <LanguageSwitcher variant="icon" />
 
-          {/* Notifications */}
-          <button className="btn btn-circle btn-ghost" aria-label="Notifications">
-            <Bell size={20} />
-          </button>
-
-          {/* Settings */}
-          <button className="btn btn-circle btn-ghost" aria-label="Settings">
-            <Settings size={20} />
-          </button>
-
           {/* User Menu */}
-          <div className="dropdown dropdown-end">
-            <div
-              tabIndex={0}
-              role="button"
-              className="avatar btn btn-circle btn-ghost"
-            >
-              <div className="w-10 rounded-full bg-neutral text-neutral-content">
-                <span className="text-lg">👤</span>
-              </div>
-            </div>
-            <ul
-              tabIndex={0}
-              className="menu dropdown-content menu-sm z-[1] mt-3 w-52 rounded-box bg-base-100 p-2 shadow"
-            >
-              <li>
-                <a>الملف الشخصي</a>
-              </li>
-              <li>
-                <a>الإعدادات</a>
-              </li>
-              <li>
-                <a>تسجيل الخروج</a>
-              </li>
-            </ul>
-          </div>
+          <UserMenu />
         </div>
       </div>
     </header>
-  )
-}
-
-export function Header() {
-  return (
-    <ErrorBoundary compact>
-      <HeaderContent />
-    </ErrorBoundary>
   )
 }

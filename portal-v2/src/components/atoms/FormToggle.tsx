@@ -2,8 +2,10 @@ import { forwardRef, useId } from 'react'
 import { cn } from '../../lib/utils'
 import type { InputHTMLAttributes } from 'react'
 
-export interface FormToggleProps
-  extends Omit<InputHTMLAttributes<HTMLInputElement>, 'type' | 'size'> {
+export interface FormToggleProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
   label?: string
   description?: string
   error?: string
@@ -50,7 +52,7 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const generatedId = useId()
     const inputId = id ?? generatedId
@@ -94,7 +96,7 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
             labelPosition === 'start'
               ? 'justify-between'
               : 'justify-start gap-3',
-            disabled && 'opacity-60 cursor-not-allowed'
+            disabled && 'opacity-60 cursor-not-allowed',
           )}
         >
           {labelPosition === 'start' && labelContent}
@@ -109,7 +111,7 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
               sizeClasses[size],
               variantClasses[variant],
               error && 'toggle-error',
-              className
+              className,
             )}
             role="switch"
             aria-checked={props.checked}
@@ -140,7 +142,7 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
         )}
       </div>
     )
-  }
+  },
 )
 
 FormToggle.displayName = 'FormToggle'

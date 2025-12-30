@@ -53,7 +53,7 @@ function EmailEntryPage() {
           value.email,
           state.planId!,
           state.planDescriptor!,
-          response.isPaid
+          response.isPaid,
         )
 
         // Send OTP
@@ -85,9 +85,7 @@ function EmailEntryPage() {
         <h1 className="text-3xl font-bold text-base-content mb-2">
           {t('onboarding:enter_email')}
         </h1>
-        <p className="text-base-content/70">
-          {t('onboarding:email_subtitle')}
-        </p>
+        <p className="text-base-content/70">{t('onboarding:email_subtitle')}</p>
       </div>
 
       {/* Form */}
@@ -147,10 +145,17 @@ function EmailEntryPage() {
           {({ canSubmit, isSubmitting }) => (
             <button
               type="submit"
-              disabled={!canSubmit || isSubmitting || startSessionMutation.isPending || sendOTPMutation.isPending}
+              disabled={
+                !canSubmit ||
+                isSubmitting ||
+                startSessionMutation.isPending ||
+                sendOTPMutation.isPending
+              }
               className="btn btn-primary w-full"
             >
-              {(isSubmitting || startSessionMutation.isPending || sendOTPMutation.isPending) && (
+              {(isSubmitting ||
+                startSessionMutation.isPending ||
+                sendOTPMutation.isPending) && (
                 <Loader2 className="w-4 h-4 animate-spin" />
               )}
               {t('onboarding:send_verification_code')}

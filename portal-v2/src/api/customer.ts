@@ -1,64 +1,108 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
-import { z } from 'zod'
+
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 
 /**
- * Customer API Types and Schemas
+ * Customer API Types
+ * Based on backend swagger.json definitions
  */
 
-export const CustomerSchema = z.object({
-  id: z.string(),
-  businessId: z.string(),
-  fullName: z.string(),
-  email: z.string().email().optional().nullable(),
-  phoneNumber: z.string().optional().nullable(),
-  phonePrefix: z.string().optional().nullable(),
-  address: z.string().optional().nullable(),
-  city: z.string().optional().nullable(),
-  country: z.string().optional().nullable(),
-  instagramHandle: z.string().optional().nullable(),
-  facebookHandle: z.string().optional().nullable(),
-  notes: z.string().optional().nullable(),
-  totalOrders: z.number().default(0),
-  totalSpent: z.number().default(0),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
+export type CustomerGender = 'male' | 'female' | 'other'
 
-export type Customer = z.infer<typeof CustomerSchema>
+export interface CustomerAddress {
+  id: string
+  customerId: string
+  street: string | null
+  city: string
+  state: string
+  zipCode: string | null
+  countryCode: string
+  phoneCode: string
+  phoneNumber: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
 
-export const ListCustomersResponseSchema = z.object({
-  customers: z.array(CustomerSchema),
-  pagination: z.object({
-    page: z.number(),
-    limit: z.number(),
-    total: z.number(),
-    totalPages: z.number(),
-  }),
-})
+export interface CustomerNote {
+  id: string
+  customerId: string
+  content: string
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+}
 
-export type ListCustomersResponse = z.infer<typeof ListCustomersResponseSchema>
+export interface Customer {
+  id: string
+  businessId: string
+  name: string
+  email: string | null
+  phoneCode: string | null
+  phoneNumber: string | null
+  countryCode: string
+  whatsappNumber: string | null
+  gender: CustomerGender
+  joinedAt: string
+  instagramUsername: string | null
+  facebookUsername: string | null
+  tiktokUsername: string | null
+  snapchatUsername: string | null
+  xUsername: string | null
+  addresses?: Array<CustomerAddress>
+  notes?: Array<CustomerNote>
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
+  // Computed fields from backend aggregation
+  ordersCount?: number
+  totalSpent?: number
+  avatarUrl?: string
+}
 
-export const CreateCustomerRequestSchema = z.object({
-  fullName: z.string().min(1, 'الاسم مطلوب'),
-  email: z.string().email('البريد الإلكتروني غير صالح').optional(),
-  phoneNumber: z.string().optional(),
-  phonePrefix: z.string().optional(),
-  address: z.string().optional(),
-  city: z.string().optional(),
-  country: z.string().optional(),
-  instagramHandle: z.string().optional(),
-  facebookHandle: z.string().optional(),
-  notes: z.string().optional(),
-})
+export interface ListCustomersResponse {
+  customers: Array<Customer>
+  pagination: {
+    page: number
+    limit: number
+    total: number
+    totalPages: number
+  }
+}
 
-export type CreateCustomerRequest = z.infer<typeof CreateCustomerRequestSchema>
+export interface CreateCustomerRequest {
+  name: string
+  email: string
+  phoneCode?: string
+  phoneNumber?: string
+  countryCode: string
+  whatsappNumber?: string
+  gender?: CustomerGender
+  joinedAt?: string
+  instagramUsername?: string
+  facebookUsername?: string
+  tiktokUsername?: string
+  snapchatUsername?: string
+  xUsername?: string
+}
 
-export const UpdateCustomerRequestSchema = CreateCustomerRequestSchema.partial()
-
-export type UpdateCustomerRequest = z.infer<typeof UpdateCustomerRequestSchema>
+export interface UpdateCustomerRequest {
+  name?: string
+  email?: string
+  phoneCode?: string
+  phoneNumber?: string
+  countryCode?: string
+  whatsappNumber?: string
+  gender?: CustomerGender
+  joinedAt?: string
+  instagramUsername?: string
+  facebookUsername?: string
+  tiktokUsername?: string
+  snapchatUsername?: string
+  xUsername?: string
+}
 
 /**
  * Customer API Client
@@ -81,10 +125,9 @@ export const customerApi = {
     if (params?.limit) searchParams.set('limit', params.limit.toString())
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
-    const response = await get<unknown>(
+    return get<ListCustomersResponse>(
       `v1/businesses/${businessDescriptor}/customers${query}`,
     )
-    return ListCustomersResponseSchema.parse(response)
   },
 
   /**
@@ -94,10 +137,9 @@ export const customerApi = {
     businessDescriptor: string,
     customerId: string,
   ): Promise<Customer> {
-    const response = await get<unknown>(
+    return get<Customer>(
       `v1/businesses/${businessDescriptor}/customers/${customerId}`,
     )
-    return CustomerSchema.parse(response)
   },
 
   /**
@@ -107,12 +149,9 @@ export const customerApi = {
     businessDescriptor: string,
     data: CreateCustomerRequest,
   ): Promise<Customer> {
-    const validatedData = CreateCustomerRequestSchema.parse(data)
-    const response = await post<unknown>(
-      `v1/businesses/${businessDescriptor}/customers`,
-      { json: validatedData },
-    )
-    return CustomerSchema.parse(response)
+    return post<Customer>(`v1/businesses/${businessDescriptor}/customers`, {
+      json: data,
+    })
   },
 
   /**
@@ -123,12 +162,10 @@ export const customerApi = {
     customerId: string,
     data: UpdateCustomerRequest,
   ): Promise<Customer> {
-    const validatedData = UpdateCustomerRequestSchema.parse(data)
-    const response = await patch<unknown>(
+    return patch<Customer>(
       `v1/businesses/${businessDescriptor}/customers/${customerId}`,
-      { json: validatedData },
+      { json: data },
     )
-    return CustomerSchema.parse(response)
   },
 
   /**

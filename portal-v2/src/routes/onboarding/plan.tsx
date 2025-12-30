@@ -6,7 +6,11 @@ import { Check, Loader2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import type { Plan } from '@/api/types/onboarding'
 import { usePlansQuery } from '@/api/onboarding'
-import { clearSession, onboardingStore, setPlan } from '@/stores/onboardingStore'
+import {
+  clearSession,
+  onboardingStore,
+  setPlan,
+} from '@/stores/onboardingStore'
 
 export const Route = createFileRoute('/onboarding/plan')({
   component: PlanSelectionPage,
@@ -27,7 +31,7 @@ function PlanSelectionPage() {
   const navigate = useNavigate()
   const state = useStore(onboardingStore)
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
-    state.planId
+    state.planId,
   )
 
   const { data: plans, isLoading, error } = usePlansQuery()
@@ -51,17 +55,28 @@ function PlanSelectionPage() {
 
   const getEnabledFeatures = (plan: Plan) => {
     const features: Array<string> = []
-    if (plan.features.orderManagement) features.push(t('onboarding:feature_order_management'))
-    if (plan.features.inventoryManagement) features.push(t('onboarding:feature_inventory_management'))
-    if (plan.features.customerManagement) features.push(t('onboarding:feature_customer_management'))
-    if (plan.features.expenseManagement) features.push(t('onboarding:feature_expense_management'))
-    if (plan.features.accounting) features.push(t('onboarding:feature_accounting'))
-    if (plan.features.basicAnalytics) features.push(t('onboarding:feature_basic_analytics'))
-    if (plan.features.financialReports) features.push(t('onboarding:feature_financial_reports'))
-    if (plan.features.advancedAnalytics) features.push(t('onboarding:feature_advanced_analytics'))
-    if (plan.features.orderPaymentLinks) features.push(t('onboarding:feature_order_payment_links'))
-    if (plan.features.invoiceGeneration) features.push(t('onboarding:feature_invoice_generation'))
-    if (plan.features.aiBusinessAssistant) features.push(t('onboarding:feature_ai_assistant'))
+    if (plan.features.orderManagement)
+      features.push(t('onboarding:feature_order_management'))
+    if (plan.features.inventoryManagement)
+      features.push(t('onboarding:feature_inventory_management'))
+    if (plan.features.customerManagement)
+      features.push(t('onboarding:feature_customer_management'))
+    if (plan.features.expenseManagement)
+      features.push(t('onboarding:feature_expense_management'))
+    if (plan.features.accounting)
+      features.push(t('onboarding:feature_accounting'))
+    if (plan.features.basicAnalytics)
+      features.push(t('onboarding:feature_basic_analytics'))
+    if (plan.features.financialReports)
+      features.push(t('onboarding:feature_financial_reports'))
+    if (plan.features.advancedAnalytics)
+      features.push(t('onboarding:feature_advanced_analytics'))
+    if (plan.features.orderPaymentLinks)
+      features.push(t('onboarding:feature_order_payment_links'))
+    if (plan.features.invoiceGeneration)
+      features.push(t('onboarding:feature_invoice_generation'))
+    if (plan.features.aiBusinessAssistant)
+      features.push(t('onboarding:feature_ai_assistant'))
     return features
   }
 
@@ -82,10 +97,7 @@ function PlanSelectionPage() {
         <div className="alert alert-error">
           <span>{error.message || t('errors:something_went_wrong')}</span>
         </div>
-        <button
-          onClick={() => clearSession()}
-          className="btn btn-primary mt-4"
-        >
+        <button onClick={() => clearSession()} className="btn btn-primary mt-4">
           {t('common:try_again')}
         </button>
       </div>
@@ -145,7 +157,9 @@ function PlanSelectionPage() {
 
                 {/* Description */}
                 {plan.description && (
-                  <p className="text-base-content/70 mb-4">{plan.description}</p>
+                  <p className="text-base-content/70 mb-4">
+                    {plan.description}
+                  </p>
                 )}
 
                 {/* Features */}
@@ -167,13 +181,25 @@ function PlanSelectionPage() {
                 <div className="divider"></div>
                 <div className="text-sm space-y-1 text-base-content/70">
                   <p>
-                    • {plan.limits.maxOrdersPerMonth === -1 ? t('onboarding:unlimited') : plan.limits.maxOrdersPerMonth} {t('onboarding:orders_per_month')}
+                    •{' '}
+                    {plan.limits.maxOrdersPerMonth === -1
+                      ? t('onboarding:unlimited')
+                      : plan.limits.maxOrdersPerMonth}{' '}
+                    {t('onboarding:orders_per_month')}
                   </p>
                   <p>
-                    • {plan.limits.maxTeamMembers === -1 ? t('onboarding:unlimited') : plan.limits.maxTeamMembers} {t('onboarding:team_members')}
+                    •{' '}
+                    {plan.limits.maxTeamMembers === -1
+                      ? t('onboarding:unlimited')
+                      : plan.limits.maxTeamMembers}{' '}
+                    {t('onboarding:team_members')}
                   </p>
                   <p>
-                    • {plan.limits.maxBusinesses === -1 ? t('onboarding:unlimited') : plan.limits.maxBusinesses} {t('onboarding:businesses')}
+                    •{' '}
+                    {plan.limits.maxBusinesses === -1
+                      ? t('onboarding:unlimited')
+                      : plan.limits.maxBusinesses}{' '}
+                    {t('onboarding:businesses')}
                   </p>
                 </div>
 

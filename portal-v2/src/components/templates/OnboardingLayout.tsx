@@ -52,7 +52,10 @@ export function OnboardingLayout() {
           <div className="container mx-auto px-4 pb-4 max-w-7xl">
             <div className="flex items-center gap-3">
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
-                {t('onboarding:progress.step', { current: currentStage, total: totalStages })}
+                {t('onboarding:progress.step', {
+                  current: currentStage,
+                  total: totalStages,
+                })}
               </span>
               <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
                 <div
@@ -62,7 +65,9 @@ export function OnboardingLayout() {
                   aria-valuenow={currentStage}
                   aria-valuemin={0}
                   aria-valuemax={totalStages}
-                  aria-label={t('onboarding:progress.label', { percentage: progressPercentage })}
+                  aria-label={t('onboarding:progress.label', {
+                    percentage: progressPercentage,
+                  })}
                 />
               </div>
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
@@ -87,7 +92,10 @@ export function OnboardingLayout() {
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-base-content/60">
             <p>
-              {t('common:copyright', { year: new Date().getFullYear(), company: 'Kyora' })}
+              {t('common:copyright', {
+                year: new Date().getFullYear(),
+                company: 'Kyora',
+              })}
             </p>
             <div className="flex gap-4">
               <a

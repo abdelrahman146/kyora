@@ -1,37 +1,37 @@
-@import "tailwindcss";
+@import 'tailwindcss';
 
 @plugin "daisyui";
 
 @plugin "daisyui/theme" {
-  name: "kyora";
+  name: 'kyora';
   default: true;
   prefersdark: false;
   color-scheme: light;
 
   /* Kyora Brand Colors - Based on KDS v1.0 */
-  
+
   /* Primary (Teal #0D9488 - The Brand) */
   --color-primary: oklch(52% 0.11 192);
   --color-primary-content: oklch(100% 0 0);
-  
+
   /* Secondary (Gold #EAB308 - Action/Accent) */
   --color-secondary: oklch(75% 0.15 90);
   --color-secondary-content: oklch(15% 0.02 240);
-  
+
   /* Accent (Yellow #FACC15 for CTAs) */
   --color-accent: oklch(87% 0.14 100);
   --color-accent-content: oklch(15% 0.02 240);
-  
+
   /* Neutral (Text #0F172A & Surface) */
   --color-neutral: oklch(15% 0.02 240);
   --color-neutral-content: oklch(100% 0 0);
-  
+
   /* Base (Backgrounds) */
   --color-base-100: oklch(100% 0 0);
   --color-base-200: oklch(98% 0.01 240);
   --color-base-300: oklch(91% 0.02 240);
   --color-base-content: oklch(15% 0.02 240);
-  
+
   /* Semantic Colors */
   --color-info: oklch(60% 0.12 192);
   --color-info-content: oklch(100% 0 0);
@@ -58,31 +58,42 @@
 
 @theme {
   /* Extended Palette for direct access */
-  --color-primary-50: #F0FDFA;
-  --color-primary-100: #CCFBF1;
-  --color-primary-500: #14B8A6;
-  --color-primary-600: #0D9488;
-  --color-primary-700: #0F766E;
-  --color-primary-900: #134E4A;
-  
-  --color-secondary-400: #FACC15;
-  --color-secondary-500: #EAB308;
-  --color-secondary-600: #CA8A04;
-  
-  --color-neutral-50: #F8FAFC;
-  --color-neutral-100: #F1F5F9;
-  --color-neutral-200: #E2E8F0;
-  --color-neutral-500: #64748B;
-  --color-neutral-900: #0F172A;
+  --color-primary-50: #f0fdfa;
+  --color-primary-100: #ccfbf1;
+  --color-primary-500: #14b8a6;
+  --color-primary-600: #0d9488;
+  --color-primary-700: #0f766e;
+  --color-primary-900: #134e4a;
+
+  --color-secondary-400: #facc15;
+  --color-secondary-500: #eab308;
+  --color-secondary-600: #ca8a04;
+
+  --color-neutral-50: #f8fafc;
+  --color-neutral-100: #f1f5f9;
+  --color-neutral-200: #e2e8f0;
+  --color-neutral-500: #64748b;
+  --color-neutral-900: #0f172a;
 }
 
 @layer base {
   body {
-    font-family: 'IBM Plex Sans Arabic', -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen', 'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue', sans-serif;
+    font-family:
+      'IBM Plex Sans Arabic',
+      -apple-system,
+      BlinkMacSystemFont,
+      'Segoe UI',
+      'Roboto',
+      'Oxygen',
+      'Ubuntu',
+      'Cantarell',
+      'Fira Sans',
+      'Droid Sans',
+      'Helvetica Neue',
+      sans-serif;
     font-synthesis: none;
     text-rendering: optimizeLegibility;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 }
-

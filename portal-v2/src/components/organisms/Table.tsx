@@ -13,29 +13,29 @@
  * - RTL-compatible
  */
 
-import { ChevronDown, ChevronUp } from "lucide-react";
-import { Skeleton } from "../atoms/Skeleton";
-import type { ReactNode } from "react";
+import { ChevronDown, ChevronUp } from 'lucide-react'
+import { Skeleton } from '../atoms/Skeleton'
+import type { ReactNode } from 'react'
 
 export interface TableColumn<T> {
-  key: string;
-  label: string;
-  sortable?: boolean;
-  render: (item: T) => ReactNode;
-  width?: string; // e.g., "w-1/4", "w-32"
-  align?: "start" | "center" | "end";
+  key: string
+  label: string
+  sortable?: boolean
+  render: (item: T) => ReactNode
+  width?: string // e.g., "w-1/4", "w-32"
+  align?: 'start' | 'center' | 'end'
 }
 
 export interface TableProps<T> {
-  columns: Array<TableColumn<T>>;
-  data: Array<T>;
-  keyExtractor: (item: T) => string;
-  isLoading?: boolean;
-  emptyMessage?: string;
-  sortBy?: string;
-  sortOrder?: "asc" | "desc";
-  onSort?: (key: string) => void;
-  stickyHeader?: boolean;
+  columns: Array<TableColumn<T>>
+  data: Array<T>
+  keyExtractor: (item: T) => string
+  isLoading?: boolean
+  emptyMessage?: string
+  sortBy?: string
+  sortOrder?: 'asc' | 'desc'
+  onSort?: (key: string) => void
+  stickyHeader?: boolean
 }
 
 export function Table<T>({
@@ -43,7 +43,7 @@ export function Table<T>({
   data,
   keyExtractor,
   isLoading = false,
-  emptyMessage = "No data available",
+  emptyMessage = 'No data available',
   sortBy,
   sortOrder,
   onSort,
@@ -51,35 +51,41 @@ export function Table<T>({
 }: TableProps<T>) {
   const handleSort = (columnKey: string, sortable?: boolean) => {
     if (sortable && onSort) {
-      onSort(columnKey);
+      onSort(columnKey)
     }
-  };
+  }
 
-  const getAlignClass = (align?: "start" | "center" | "end") => {
+  const getAlignClass = (align?: 'start' | 'center' | 'end') => {
     switch (align) {
-      case "center":
-        return "text-center";
-      case "end":
-        return "text-end";
+      case 'center':
+        return 'text-center'
+      case 'end':
+        return 'text-end'
       default:
-        return "text-start";
+        return 'text-start'
     }
-  };
+  }
 
   return (
     <div className="overflow-x-auto rounded-box border border-base-300">
       <table className="table table-sm md:table-md">
         {/* Head */}
-        <thead className={stickyHeader ? "sticky top-0 z-10 bg-base-200" : "bg-base-200"}>
+        <thead
+          className={
+            stickyHeader ? 'sticky top-0 z-10 bg-base-200' : 'bg-base-200'
+          }
+        >
           <tr>
             {columns.map((column) => (
               <th
                 key={column.key}
-                className={`${column.width ?? ""} ${getAlignClass(column.align)} ${
-                  column.sortable ? "cursor-pointer select-none hover:bg-base-300" : ""
+                className={`${column.width ?? ''} ${getAlignClass(column.align)} ${
+                  column.sortable
+                    ? 'cursor-pointer select-none hover:bg-base-300'
+                    : ''
                 }`}
                 onClick={() => {
-                  handleSort(column.key, column.sortable);
+                  handleSort(column.key, column.sortable)
                 }}
               >
                 <div className="flex items-center gap-2">
@@ -87,7 +93,7 @@ export function Table<T>({
                   {column.sortable && (
                     <span className="inline-flex flex-col opacity-50">
                       {sortBy === column.key ? (
-                        sortOrder === "asc" ? (
+                        sortOrder === 'asc' ? (
                           <ChevronUp size={16} className="text-primary" />
                         ) : (
                           <ChevronDown size={16} className="text-primary" />
@@ -141,5 +147,5 @@ export function Table<T>({
         </tbody>
       </table>
     </div>
-  );
+  )
 }

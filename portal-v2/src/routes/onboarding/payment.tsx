@@ -4,8 +4,16 @@ import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import toast from 'react-hot-toast'
 import { ArrowLeft, Check, CreditCard, Loader2 } from 'lucide-react'
-import { onboardingStore, setCheckoutUrl, setPaymentCompleted, updateStage } from '@/stores/onboardingStore'
-import { useOnboardingSessionQuery, useStartPaymentMutation } from '@/api/onboarding'
+import {
+  onboardingStore,
+  setCheckoutUrl,
+  setPaymentCompleted,
+  updateStage,
+} from '@/stores/onboardingStore'
+import {
+  useOnboardingSessionQuery,
+  useStartPaymentMutation,
+} from '@/api/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
 
 export const Route = createFileRoute('/onboarding/payment')({
@@ -25,9 +33,9 @@ function PaymentPage() {
   const navigate = useNavigate()
   const state = useStore(onboardingStore)
   const [isRedirecting, setIsRedirecting] = useState(false)
-  
+
   const startPaymentMutation = useStartPaymentMutation()
-  
+
   // Poll session to check payment status
   const { data: session } = useOnboardingSessionQuery(state.sessionToken)
 
@@ -47,8 +55,11 @@ function PaymentPage() {
   useEffect(() => {
     if (session) {
       updateStage(session.stage)
-      
-      if (session.stage === 'payment_confirmed' || session.stage === 'ready_to_commit') {
+
+      if (
+        session.stage === 'payment_confirmed' ||
+        session.stage === 'ready_to_commit'
+      ) {
         setPaymentCompleted(true)
         toast.success(t('onboarding:payment_success'))
         void navigate({ to: '/onboarding/complete' })
@@ -63,9 +74,9 @@ function PaymentPage() {
       const response = await startPaymentMutation.mutateAsync({
         sessionToken: state.sessionToken!,
       })
-      
+
       setCheckoutUrl(response.checkoutUrl)
-      
+
       // Redirect to Stripe Checkout
       window.location.href = response.checkoutUrl
     } catch (error) {
@@ -77,7 +88,8 @@ function PaymentPage() {
 
   // If already has checkout URL and payment is pending, show polling UI
   const isPolling = state.checkoutUrl && state.stage === 'payment_pending'
-  const isPaymentConfirmed = state.paymentCompleted || session?.stage === 'payment_confirmed'
+  const isPaymentConfirmed =
+    state.paymentCompleted || session?.stage === 'payment_confirmed'
 
   if (isPolling || isRedirecting) {
     return (
@@ -89,13 +101,14 @@ function PaymentPage() {
             </div>
           </div>
           <h1 className="text-3xl font-bold text-base-content mb-2">
-            {isRedirecting ? t('onboarding:redirecting_to_payment') : t('onboarding:waiting_for_payment')}
+            {isRedirecting
+              ? t('onboarding:redirecting_to_payment')
+              : t('onboarding:waiting_for_payment')}
           </h1>
           <p className="text-base-content/70 mb-6">
-            {isRedirecting 
+            {isRedirecting
               ? t('onboarding:redirecting_description')
-              : t('onboarding:payment_polling_description')
-            }
+              : t('onboarding:payment_polling_description')}
           </p>
           {!isRedirecting && state.checkoutUrl && (
             <a
@@ -158,7 +171,9 @@ function PaymentPage() {
       {/* Plan Summary */}
       <div className="card bg-base-200 mb-6">
         <div className="card-body">
-          <h2 className="card-title text-lg">{t('onboarding:selected_plan')}</h2>
+          <h2 className="card-title text-lg">
+            {t('onboarding:selected_plan')}
+          </h2>
           <div className="flex justify-between items-center">
             <span className="text-base-content/70">{state.planDescriptor}</span>
             <span className="text-2xl font-bold text-primary">
