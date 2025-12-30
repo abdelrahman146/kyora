@@ -1,6 +1,6 @@
 ---
 description: end-to-end guide for building client-side applications
-applyTo: "portal-web/**,storefront-web/**"
+applyTo: "portal-v2/**,storefront-web/**"
 ---
 
 Below is a pragmatic, end-to-end guide for building **client-side SPAs** with **TanStack Query + Router + Form + Store**. It is opinionated toward: (1) type-safety, (2) predictable data flow, (3) minimal re-renders, and (4) operational reliability (errors, retries, offline-ish behavior).
