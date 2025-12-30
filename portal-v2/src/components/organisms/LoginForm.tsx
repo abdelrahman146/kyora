@@ -1,5 +1,6 @@
 import { useState } from 'react'
 import { useForm } from '@tanstack/react-form'
+import { Link } from '@tanstack/react-router'
 import { Loader2, Mail } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { Button } from '../atoms/Button'
@@ -190,12 +191,12 @@ export function LoginForm({
 
       {/* Forgot Password Link */}
       <div className="text-end">
-        <a
-          href="/auth/forgot-password"
+        <Link
+          to="/auth/forgot-password"
           className="text-sm text-primary hover:text-primary-focus hover:underline transition-colors"
         >
           {t('auth.forgot_password')}
-        </a>
+        </Link>
       </div>
 
       {/* Submit Button */}

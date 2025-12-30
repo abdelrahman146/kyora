@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import type { LoginFormData } from '@/schemas/auth'
@@ -26,7 +26,11 @@ function LoginPage() {
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [googleErrorMessage, setGoogleErrorMessage] = useState<string>('')
 
-  if (authState.isLoading) {
+  // Don't show loading spinner during login - LoginForm handles its own loading state
+  // Only show loading when initializing auth on page load
+  const isInitializing = authState.isLoading && !authState.user && !authState.isAuthenticated
+
+  if (isInitializing) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-base-100">
         <div className="flex flex-col items-center gap-4">
@@ -40,6 +44,8 @@ function LoginPage() {
   const handleLogin = async (data: LoginFormData) => {
     setGoogleErrorMessage('')
 
+    // The error will be handled by LoginForm component
+    // We only navigate on success
     await login(data.email, data.password)
     await navigate({ to: redirect as never, replace: true })
   }
@@ -117,12 +123,12 @@ function LoginPage() {
           <div className="mt-8 text-center">
             <p className="text-base-content/60">
               {t('auth.no_account')}{' '}
-              <a
-                href="/onboarding"
+              <Link
+                to="/onboarding"
                 className="text-primary hover:text-primary-focus font-semibold hover:underline transition-colors"
               >
                 {t('auth.sign_up')}
-              </a>
+              </Link>
             </p>
           </div>
 

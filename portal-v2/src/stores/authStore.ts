@@ -122,14 +122,15 @@ export function setAuthLoading(isLoading: boolean): void {
  */
 export async function login(email: string, password: string): Promise<void> {
   try {
-    setAuthLoading(true)
+    // Don't set loading state here - it causes the login form to unmount
+    // The form component handles its own loading state
     const user = await loginUser(email, password)
     setUser(user)
 
     // Consider auth initialized after explicit login.
     initPromise = Promise.resolve()
   } catch (error) {
-    setAuthLoading(false)
+    // Don't set loading false - we didn't set it to true
     throw error
   }
 }
