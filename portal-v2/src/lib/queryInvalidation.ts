@@ -10,18 +10,30 @@ import type { QueryClient } from '@tanstack/react-query'
 /**
  * Invalidate all business-scoped queries
  *
- * Called when switching businesses to clear all data from the previous business.
- * Only invalidates queries marked as business-scoped in queryKeys factory.
+ * **When to use:**
+ * - After mutations that affect multiple business-scoped resources (e.g., deleting a business)
+ * - When explicitly "refreshing" all data for the current business (user-triggered)
+ *
+ * **When NOT to use:**
+ * - In route loaders/beforeLoad (causes immediate refetch of data you just loaded)
+ * - After every navigation (wastes bandwidth, violates staleTime strategy)
+ * - Instead: let TanStack Query's staleTime handle refetching, or invalidate specific queries
+ *
+ * **Prefer targeted invalidation:**
+ * - After creating an order: `invalidateQueries({ queryKey: ['businesses', descriptor, 'orders'] })`
+ * - After updating a customer: `invalidateQueries({ queryKey: ['businesses', descriptor, 'customers', customerId] })`
  *
  * @param queryClient - TanStack Query client instance
  * @param businessDescriptor - Optional business descriptor to invalidate specific business queries
  *
  * @example
  * ```ts
- * // Clear all business-scoped queries (any business)
- * invalidateBusinessScopedQueries(queryClient)
+ * // In a mutation handler after deleting a business
+ * onSuccess: () => {
+ *   invalidateBusinessScopedQueries(queryClient)
+ * }
  *
- * // Clear queries for specific business
+ * // For specific business refresh (e.g., user clicks "Refresh" button)
  * invalidateBusinessScopedQueries(queryClient, 'my-shop')
  * ```
  */

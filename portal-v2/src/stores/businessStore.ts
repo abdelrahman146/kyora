@@ -1,19 +1,6 @@
 import { Store } from '@tanstack/react-store'
 import { createPersistencePlugin } from '@/lib/storePersistence'
-
-/**
- * Business entity from API
- */
-export interface Business {
-  id: string
-  descriptor: string
-  name: string
-  country: string
-  currency: string
-  logoUrl?: string
-  createdAt: string
-  updatedAt: string
-}
+import type { Business } from '@/api/business'
 
 /**
  * Business Store State
@@ -190,3 +177,6 @@ if (import.meta.env.DEV) {
     '[businessStore] TanStack Store devtools enabled in development mode',
   )
 }
+
+// Re-export Business type for convenience
+export type { Business } from '@/api/business'

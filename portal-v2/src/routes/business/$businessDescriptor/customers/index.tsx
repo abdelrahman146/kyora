@@ -216,7 +216,7 @@ function CustomersListPage() {
 
   // Get selected business country code for form defaults
   const selectedBusiness = getSelectedBusiness()
-  const businessCountryCode = selectedBusiness?.country ?? 'AE'
+  const businessCountryCode = selectedBusiness?.countryCode ?? 'AE'
   const currency = selectedBusiness?.currency ?? 'AED'
 
   const tableColumns = useMemo<Array<TableColumn<Customer>>>(

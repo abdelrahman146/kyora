@@ -3,7 +3,6 @@ import { z } from 'zod'
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
 
-import type { Business } from '@/stores/businessStore'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 
 /**
@@ -12,13 +11,43 @@ import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 
 export const BusinessSchema = z.object({
   id: z.string(),
+  workspaceId: z.string(),
   descriptor: z.string(),
   name: z.string(),
-  country: z.string(),
+  brand: z.string(),
+  logoUrl: z.string(),
+  countryCode: z.string(),
   currency: z.string(),
+  storefrontPublicId: z.string(),
+  storefrontEnabled: z.boolean(),
+  storefrontTheme: z.object({
+    primaryColor: z.string(),
+    secondaryColor: z.string(),
+    accentColor: z.string(),
+    backgroundColor: z.string(),
+    textColor: z.string(),
+    fontFamily: z.string(),
+    headingFontFamily: z.string(),
+  }),
+  supportEmail: z.string(),
+  phoneNumber: z.string(),
+  whatsappNumber: z.string(),
+  address: z.string(),
+  websiteUrl: z.string(),
+  instagramUrl: z.string(),
+  facebookUrl: z.string(),
+  tiktokUrl: z.string(),
+  xUrl: z.string(),
+  snapchatUrl: z.string(),
+  vatRate: z.string(),
+  safetyBuffer: z.string(),
+  establishedAt: z.string(),
+  archivedAt: z.string().nullable().optional(),
   createdAt: z.string(),
   updatedAt: z.string(),
 })
+
+export type Business = z.infer<typeof BusinessSchema>
 
 export const ListBusinessesResponseSchema = z.object({
   businesses: z.array(BusinessSchema),
@@ -27,6 +56,12 @@ export const ListBusinessesResponseSchema = z.object({
 export type ListBusinessesResponse = z.infer<
   typeof ListBusinessesResponseSchema
 >
+
+export const GetBusinessResponseSchema = z.object({
+  business: BusinessSchema,
+})
+
+export type GetBusinessResponse = z.infer<typeof GetBusinessResponseSchema>
 
 export const CreateBusinessRequestSchema = z.object({
   name: z.string(),
@@ -62,7 +97,8 @@ export const businessApi = {
    */
   async getBusiness(descriptor: string): Promise<Business> {
     const response = await get<unknown>(`v1/businesses/${descriptor}`)
-    return BusinessSchema.parse(response)
+    const parsed = GetBusinessResponseSchema.parse(response)
+    return parsed.business
   },
 
   /**
@@ -73,7 +109,8 @@ export const businessApi = {
     const response = await post<unknown>('v1/businesses', {
       json: validatedData,
     })
-    return BusinessSchema.parse(response)
+    const parsed = GetBusinessResponseSchema.parse(response)
+    return parsed.business
   },
 
   /**
@@ -87,7 +124,8 @@ export const businessApi = {
     const response = await patch<unknown>(`v1/businesses/${descriptor}`, {
       json: validatedData,
     })
-    return BusinessSchema.parse(response)
+    const parsed = GetBusinessResponseSchema.parse(response)
+    return parsed.business
   },
 
   /**
@@ -113,7 +151,6 @@ export const businessQueries = {
       queryKey: queryKeys.businesses.list(),
       queryFn: () => businessApi.listBusinesses(),
       staleTime: STALE_TIME.FIVE_MINUTES,
-      select: (data) => data.businesses,
     }),
 
   /**

@@ -5,7 +5,6 @@ import type { RouterContext } from '@/router'
 
 import { businessQueries } from '@/api/business'
 import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
-import { invalidateBusinessScopedQueries } from '@/lib/queryInvalidation'
 import { requireAuth } from '@/lib/routeGuards'
 import { selectBusiness } from '@/stores/businessStore'
 import { DashboardLayout } from '@/components/templates/DashboardLayout'
@@ -16,8 +15,11 @@ import { DashboardLayout } from '@/components/templates/DashboardLayout'
  * Parent layout for all business-scoped routes.
  * - Validates business access by descriptor
  * - Updates businessStore with selected business
- * - Invalidates all business-scoped queries on business switch
+ * - Preloads business details into Query cache
  * - Wraps children with DashboardLayout (Sidebar, Header, BottomNav)
+ *
+ * Note: Query invalidation happens in mutations, not in loaders.
+ * This prevents unnecessary refetches of data we just loaded.
  */
 export const Route = createFileRoute('/business/$businessDescriptor')({
   beforeLoad: async ({ context, params }) => {
@@ -34,9 +36,6 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
 
     // Update selected business in store
     selectBusiness(params.businessDescriptor)
-
-    // Invalidate all business-scoped queries to ensure fresh data
-    invalidateBusinessScopedQueries(queryClient)
 
     return { business }
   },

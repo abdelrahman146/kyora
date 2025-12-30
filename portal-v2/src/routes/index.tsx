@@ -59,29 +59,14 @@ export const Route = createFileRoute('/')({
     }
 
     // Use businessQueries.list() for type-safe data fetching
-    const data = await queryClient.ensureQueryData(businessQueries.list())
+    const response = await queryClient.ensureQueryData(businessQueries.list())
+    
+    // Extract businesses array from response (ensureQueryData doesn't apply select)
+    const businesses = response.businesses
 
-    setBusinesses(data)
+    setBusinesses(businesses)
 
-    const state = businessStore.state
-    if (
-      state.selectedBusinessDescriptor &&
-      data.some((b: Business) => b.descriptor === state.selectedBusinessDescriptor)
-    ) {
-      throw redirect({
-        to: '/business/$businessDescriptor',
-        params: { businessDescriptor: state.selectedBusinessDescriptor },
-      })
-    }
-
-    if (data.length === 1) {
-      throw redirect({
-        to: '/business/$businessDescriptor',
-        params: { businessDescriptor: data[0].descriptor },
-      })
-    }
-
-    return { businesses: data }
+    return { businesses }
   },
 
   component: HomePage,
