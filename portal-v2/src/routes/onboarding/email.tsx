@@ -1,120 +1,101 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
-import { Mail } from 'lucide-react'
-import type { Plan } from '@/api/types/onboarding'
-import { onboardingApi } from '@/api/onboarding'
+import { z } from 'zod'
+import type { RouterContext } from '@/router'
+import { onboardingQueries, useStartSessionMutation } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
-import { FormInput } from '@/components'
-import { onboardingStore, startSession } from '@/stores/onboardingStore'
+import { Input } from '@/components/atoms/Input'
+import { Button } from '@/components/atoms/Button'
+import { EmailFormSchema } from '@/schemas/onboarding'
 import { translateErrorAsync } from '@/lib/translateError'
+import { getErrorText } from '@/lib/formErrors'
+
+// Search params schema for URL-driven state
+const EmailSearchSchema = z.object({
+  plan: z.string().min(1),
+})
 
 export const Route = createFileRoute('/onboarding/email')({
+  validateSearch: (search): z.infer<typeof EmailSearchSchema> => {
+    return EmailSearchSchema.parse(search)
+  },
+  // Prefetch plan data before rendering
+  loader: async ({ context, location }) => {
+    const { queryClient } = context as RouterContext
+    const parsed = EmailSearchSchema.parse(location.search)
+    
+    // Redirect if no plan selected
+    if (!parsed.plan) {
+      throw redirect({ to: '/onboarding/plan' })
+    }
+
+    // Prefetch plan details for summary card
+    const plan = await queryClient.ensureQueryData(
+      onboardingQueries.plan(parsed.plan)
+    )
+
+    return { plan }
+  },
   component: EmailEntryPage,
 })
 
 /**
  * Email Entry Step - Step 2 of Onboarding
  *
- * User enters email and receives OTP for verification
+ * User enters email to start onboarding session
+ * - Plan descriptor is in URL (URL-driven state)
+ * - TanStack Form for validation
+ * - Mutation hook for API call
+ * - Prefetched plan data from loader
  */
 function EmailEntryPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
   const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
-  const state = useStore(onboardingStore)
+  const { plan } = Route.useLoaderData()
+  const { plan: planDescriptor } = Route.useSearch()
 
-  const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null)
-  const [email, setEmail] = useState(state.email ?? '')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-
-  // Redirect if no plan selected
-  useEffect(() => {
-    if (!state.planDescriptor) {
-      void navigate({ to: '/onboarding/plan', replace: true })
-    }
-  }, [state.planDescriptor, navigate])
-
-  // Load selected plan details for summary card
-  useEffect(() => {
-    const loadSelectedPlan = async () => {
-      if (!state.planDescriptor) return
-
-      try {
-        const plan = await onboardingApi.getPlan(state.planDescriptor)
-        setSelectedPlan(plan)
-      } catch {
-        // Non-blocking; the page can still function without plan summary.
-      }
-    }
-
-    void loadSelectedPlan()
-  }, [state.planDescriptor])
-
-  const handleEmailSubmit: React.FormEventHandler<HTMLFormElement> = async (
-    e,
-  ) => {
-    e.preventDefault()
-    setError('')
-
-    if (!state.planDescriptor) {
-      setError(tOnboarding('plan.selectPlanRequired'))
-      return
-    }
-
-    if (!email || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-      setError(tOnboarding('plan.invalidEmail'))
-      return
-    }
-
-    try {
-      setIsSubmitting(true)
-
-      const response = await onboardingApi.startSession({
-        email,
-        planDescriptor: state.planDescriptor,
+  // Start session mutation
+  const startSessionMutation = useStartSessionMutation({
+    onSuccess: async (response) => {
+      // Navigate to verify with session token in URL
+      await navigate({
+        to: '/onboarding/verify',
+        search: { sessionToken: response.sessionToken },
       })
+    },
+  })
 
-      const planId = selectedPlan?.id ?? state.planId
-      if (!planId) {
-        setError(tOnboarding('plan.selectPlanRequired'))
-        return
-      }
+  // TanStack Form with Zod validation
+  const form = useForm({
+    defaultValues: {
+      email: '',
+    },
+    onSubmit: async ({ value }) => {
+      await startSessionMutation.mutateAsync({
+        email: value.email,
+        planDescriptor,
+      })
+    },
+    validators: {
+      onBlur: EmailFormSchema,
+    },
+  })
 
-      startSession(
-        response.sessionToken,
-        response.stage,
-        email,
-        planId,
-        state.planDescriptor,
-        response.isPaid,
-      )
-
-      void navigate({ to: '/onboarding/verify' })
-    } catch (err) {
-      const message = await translateErrorAsync(err, tTranslation)
-      setError(message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
+  const isSubmitting = form.state.isSubmitting || startSessionMutation.isPending
 
   const handleGoogleSignIn = async () => {
-    if (!state.sessionToken) {
-      setError(tOnboarding('oauth.noSession'))
-      return
-    }
-
     try {
       const { url } = await authApi.getGoogleAuthUrl()
-      sessionStorage.setItem('kyora_onboarding_google_session', state.sessionToken)
+      // Store plan descriptor for OAuth callback
+      sessionStorage.setItem('kyora_onboarding_plan', planDescriptor)
       window.location.href = url
     } catch (err) {
-      const message = await translateErrorAsync(err, tTranslation)
-      setError(message)
+      await translateErrorAsync(err, tTranslation)
+      startSessionMutation.reset()
+      startSessionMutation.error = err as Error
     }
   }
 
@@ -130,80 +111,104 @@ function EmailEntryPage() {
       </div>
 
       {/* Selected Plan Summary */}
-      {selectedPlan && (
-        <div className="card bg-base-200 mb-6">
-          <div className="card-body">
-            <div className="flex justify-between items-center">
-              <div>
-                <h3 className="font-semibold text-lg">{selectedPlan.name}</h3>
-                <p className="text-sm text-base-content/70">
-                  {selectedPlan.price === '0'
-                    ? tCommon('free')
-                    : `${selectedPlan.price} ${selectedPlan.currency.toUpperCase()}`}
-                  {selectedPlan.price !== '0' &&
-                    ` / ${selectedPlan.billingCycle}`}
-                </p>
-              </div>
-              <button
-                type="button"
-                onClick={() => {
-                  void navigate({ to: '/onboarding/plan' })
-                }}
-                className="btn btn-ghost btn-sm"
-              >
-                {tCommon('change')}
-              </button>
+      <div className="card bg-base-200 mb-6">
+        <div className="card-body">
+          <div className="flex justify-between items-center">
+            <div>
+              <h3 className="font-semibold text-lg">{plan.name}</h3>
+              <p className="text-sm text-base-content/70">
+                {plan.price === '0'
+                  ? tCommon('free')
+                  : `${plan.price} ${plan.currency.toUpperCase()}`}
+                {plan.price !== '0' && ` / ${plan.billingCycle}`}
+              </p>
             </div>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={async () => {
+                await navigate({ to: '/onboarding/plan' })
+              }}
+            >
+              {tCommon('change')}
+            </Button>
           </div>
         </div>
-      )}
+      </div>
 
       {/* Email Form */}
       <div className="card bg-base-100 border border-base-300 shadow-lg">
         <div className="card-body">
-          <form onSubmit={(e) => void handleEmailSubmit(e)} className="space-y-6">
-            <FormInput
-              label={tCommon('email')}
-              type="email"
-              value={email}
-              onChange={(e) => {
-                setEmail(e.target.value)
-              }}
-              placeholder={tOnboarding('email.emailPlaceholder')}
-              required
-              disabled={isSubmitting}
-              autoFocus
-              startIcon={<Mail className="w-5 h-5" />}
-            />
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              e.stopPropagation()
+              void form.handleSubmit()
+            }}
+            className="space-y-6"
+          >
+            <form.Field name="email">
+              {(field) => (
+                <div>
+                  <label htmlFor={field.name} className="label">
+                    <span className="label-text">{tCommon('email')}</span>
+                  </label>
+                  <Input
+                    id={field.name}
+                    type="email"
+                    value={field.state.value}
+                    onBlur={field.handleBlur}
+                    onChange={(e) => field.handleChange(e.target.value)}
+                    placeholder={tOnboarding('email.emailPlaceholder')}
+                    disabled={isSubmitting}
+                    autoFocus
+                    className={
+                      field.state.meta.errors.length > 0 ? 'input-error' : ''
+                    }
+                  />
+                  {field.state.meta.errors.length > 0 && (
+                    <label className="label">
+                      <span className="label-text-alt text-error">
+                        {getErrorText(field.state.meta.errors[0])}
+                      </span>
+                    </label>
+                  )}
+                </div>
+              )}
+            </form.Field>
 
-            {error && (
+            {startSessionMutation.error && (
               <div className="alert alert-error">
-                <span className="text-sm">{error}</span>
+                <span className="text-sm">
+                  {translateErrorAsync(
+                    startSessionMutation.error,
+                    tTranslation
+                  )}
+                </span>
               </div>
             )}
 
-            <button
+            <Button
               type="submit"
-              className="btn btn-primary btn-block"
+              variant="primary"
+              size="lg"
+              fullWidth
               disabled={isSubmitting}
+              loading={isSubmitting}
             >
-              {isSubmitting ? (
-                <>
-                  <span className="loading loading-spinner loading-sm"></span>
-                  {tCommon('loading')}
-                </>
-              ) : (
-                tOnboarding('email.continue')
-              )}
-            </button>
+              {tOnboarding('email.continue')}
+            </Button>
           </form>
 
           <div className="divider">{tCommon('or')}</div>
 
-          <button
+          <Button
             type="button"
+            variant="outline"
+            size="lg"
+            fullWidth
             onClick={() => void handleGoogleSignIn()}
-            className="btn btn-outline btn-block"
             disabled={isSubmitting}
           >
             <svg className="w-5 h-5" viewBox="0 0 24 24">
@@ -225,7 +230,7 @@ function EmailEntryPage() {
               />
             </svg>
             {tOnboarding('email.continueWithGoogle')}
-          </button>
+          </Button>
         </div>
       </div>
     </div>

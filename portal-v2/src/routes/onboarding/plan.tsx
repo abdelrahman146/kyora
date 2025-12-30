@@ -1,21 +1,11 @@
-import { useEffect, useState } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
-import { Check, Loader2 } from 'lucide-react'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { Check } from 'lucide-react'
 import { z } from 'zod'
 import type { Plan } from '@/api/types/onboarding'
 import type { RouterContext } from '@/router'
-import { onboardingApi, onboardingQueries } from '@/api/onboarding'
-import { Modal } from '@/components/atoms/Modal'
-import { ResumeSessionDialog } from '@/components/molecules/ResumeSessionDialog'
-import {
-  clearSession,
-  loadSessionFromStorage,
-  onboardingStore,
-  setPlan,
-} from '@/stores/onboardingStore'
-import { translateErrorAsync } from '@/lib/translateError'
+import { onboardingQueries } from '@/api/onboarding'
 
 const PlanSearchSchema = z.object({
   plan: z.string().optional(),
@@ -28,11 +18,24 @@ export const Route = createFileRoute('/onboarding/plan')({
 
   loader: async ({ context }) => {
     const { queryClient } = context as RouterContext
-    // Prefetch plans for faster page load
-    await queryClient.prefetchQuery(onboardingQueries.plans())
+    await queryClient.ensureQueryData(onboardingQueries.plans())
   },
 
   component: PlanSelectionPage,
+  
+  errorComponent: ({ error }) => {
+    const { t } = useTranslation('translation')
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+          <div className="card-body">
+            <h2 className="card-title text-error">{t('error.title')}</h2>
+            <p className="text-base-content/70">{error.message || t('error.generic')}</p>
+          </div>
+        </div>
+      </div>
+    )
+  },
 })
 
 /**
@@ -44,81 +47,22 @@ export const Route = createFileRoute('/onboarding/plan')({
  * - Highlights recommended plan
  * - Mobile-responsive card grid
  * - Proceeds to email entry after selection
+ * - Plan selection is URL-driven via search params
  */
 function PlanSelectionPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
-  const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
-  const state = useStore(onboardingStore)
   const { plan: planParam } = Route.useSearch()
 
-  const [plans, setPlans] = useState<Array<Plan>>([])
-  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(
-    state.planId,
-  )
-  const [isLoading, setIsLoading] = useState(true)
-  const [error, setError] = useState('')
-  const [viewingPlan, setViewingPlan] = useState<Plan | null>(null)
-  const [showResumeDialog, setShowResumeDialog] = useState(false)
-  const [isResuming, setIsResuming] = useState(false)
-  const [reloadKey, setReloadKey] = useState(0)
-
-  // Check for existing session on mount
-  useEffect(() => {
-    const checkExistingSession = async () => {
-      const hasSession = await loadSessionFromStorage()
-      if (hasSession) {
-        setShowResumeDialog(true)
-      }
-    }
-
-    void checkExistingSession()
-  }, [])
-
-  // Load plans on mount
-  useEffect(() => {
-    const loadPlans = async () => {
-      try {
-        setIsLoading(true)
-        setError('')
-
-        const fetchedPlans = await onboardingApi.listPlans()
-        setPlans(fetchedPlans)
-
-        // Pre-select plan from URL if provided
-        if (planParam) {
-          const matched = fetchedPlans.find((p) => p.descriptor === planParam)
-          if (matched) {
-            setSelectedPlanId(matched.id)
-          }
-        }
-      } catch (err) {
-        const message = await translateErrorAsync(err, tTranslation)
-        setError(message)
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    void loadPlans()
-  }, [planParam, reloadKey, tTranslation])
+  const { data: plans } = useSuspenseQuery(onboardingQueries.plans())
 
   const handleSelectPlan = (plan: Plan) => {
-    setSelectedPlanId(plan.id)
-  }
-
-  const handleContinue = async () => {
-    const plan = plans.find((p) => p.id === selectedPlanId)
-    if (!plan) {
-      setError(tOnboarding('plan.selectPlanRequired'))
-      return
-    }
-
-    const isPaid = parseFloat(plan.price) > 0
-
-    setPlan(plan.id, plan.descriptor, isPaid)
-    await navigate({ to: '/onboarding/email' })
+    // Navigate to email step with plan in URL
+    void navigate({ 
+      to: '/onboarding/email', 
+      search: { plan: plan.descriptor } 
+    })
   }
 
   const getEnabledFeatures = (plan: Plan) => {
@@ -156,77 +100,6 @@ function PlanSelectionPage() {
     return features
   }
 
-  const navigateToCurrentStage = async () => {
-    if (!state.stage) {
-      await navigate({ to: '/onboarding/email' })
-      return
-    }
-
-    switch (state.stage) {
-      case 'plan_selected':
-      case 'identity_pending':
-        await navigate({ to: '/onboarding/email' })
-        break
-      case 'identity_verified':
-        await navigate({ to: '/onboarding/business' })
-        break
-      case 'business_staged':
-      case 'payment_pending':
-        await navigate({ to: '/onboarding/payment' })
-        break
-      case 'payment_confirmed':
-      case 'ready_to_commit':
-        await navigate({ to: '/onboarding/complete' })
-        break
-      default:
-        await navigate({ to: '/onboarding/email' })
-    }
-  }
-
-  const handleResumeSession = async () => {
-    try {
-      setIsResuming(true)
-      setShowResumeDialog(false)
-      await navigateToCurrentStage()
-    } finally {
-      setIsResuming(false)
-    }
-  }
-
-  const handleStartFresh = async () => {
-    setShowResumeDialog(false)
-    await clearSession()
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center min-h-[400px]">
-        <div className="flex flex-col items-center gap-4">
-          <Loader2 className="w-12 h-12 text-primary animate-spin" />
-          <p className="text-base-content/60">{tCommon('loading')}</p>
-        </div>
-      </div>
-    )
-  }
-
-  if (error && plans.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto">
-        <div className="alert alert-error">
-          <span>{error}</span>
-        </div>
-        <button
-          onClick={() => {
-            setReloadKey((k) => k + 1)
-          }}
-          className="btn btn-primary mt-4"
-        >
-          {tCommon('retry')}
-        </button>
-      </div>
-    )
-  }
-
   return (
     <div className="max-w-8xl mx-auto px-4">
       {/* Header */}
@@ -242,7 +115,7 @@ function PlanSelectionPage() {
       {/* Plans Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 md:gap-6 mb-8">
         {plans.map((plan) => {
-          const isSelected = plan.id === selectedPlanId
+          const isSelected = plan.descriptor === planParam
           const isFree = plan.price === '0' || plan.price === '0.00'
           const isRecommended = plan.descriptor === 'starter'
           const enabledFeatures = getEnabledFeatures(plan)
@@ -360,18 +233,6 @@ function PlanSelectionPage() {
                   </>
                 )}
 
-                {/* View Details Button */}
-                <button
-                  type="button"
-                  onClick={(e) => {
-                    e.stopPropagation()
-                    setViewingPlan(plan)
-                  }}
-                  className="btn btn-ghost btn-sm btn-block mt-2 text-xs"
-                >
-                  {tOnboarding('plan.viewAllFeatures')}
-                </button>
-
                 {/* Select Button */}
                 <button
                   type="button"
@@ -386,155 +247,6 @@ function PlanSelectionPage() {
           )
         })}
       </div>
-
-      {/* Continue Button */}
-      <div className="max-w-md mx-auto">
-        {error && (
-          <div className="alert alert-error mb-4">
-            <span className="text-sm">{error}</span>
-          </div>
-        )}
-
-        <button
-          onClick={handleContinue}
-          disabled={!selectedPlanId}
-          className="btn btn-primary btn-block btn-lg"
-        >
-          {tOnboarding('plan.continue')}
-        </button>
-      </div>
-
-      {/* Plan Details Modal */}
-      <Modal
-        isOpen={viewingPlan !== null}
-        onClose={() => {
-          setViewingPlan(null)
-        }}
-        title={viewingPlan?.name}
-        size="lg"
-        footer={
-          <>
-            <button
-              onClick={() => {
-                setViewingPlan(null)
-              }}
-              className="btn btn-ghost"
-            >
-              {tCommon('close')}
-            </button>
-            <button
-              onClick={() => {
-                if (viewingPlan) {
-                  setSelectedPlanId(viewingPlan.id)
-                  setViewingPlan(null)
-                }
-              }}
-              className="btn btn-primary"
-            >
-              {tOnboarding('plan.selectThisPlan')}
-            </button>
-          </>
-        }
-      >
-        {viewingPlan && (
-          <>
-            <div className="flex items-baseline gap-2 mb-4">
-              <span className="text-3xl font-bold">
-                {viewingPlan.price === '0' || viewingPlan.price === '0.00'
-                  ? tCommon('free')
-                  : viewingPlan.price}
-              </span>
-              {viewingPlan.price !== '0' && viewingPlan.price !== '0.00' && (
-                <>
-                  <span className="text-lg text-base-content/60">
-                    {viewingPlan.currency.toUpperCase()}
-                  </span>
-                  <span className="text-sm text-base-content/60">
-                    / {viewingPlan.billingCycle}
-                  </span>
-                </>
-              )}
-            </div>
-
-            {viewingPlan.description && (
-              <p className="text-base-content/70 mb-6">
-                {viewingPlan.description}
-              </p>
-            )}
-
-            <div className="divider">{tOnboarding('plan.limitsTitle')}</div>
-
-            <ul className="space-y-3 mb-6">
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-success mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-semibold">
-                    {tOnboarding('plan.teamMembers')}
-                  </div>
-                  <div className="text-sm text-base-content/70">
-                    {viewingPlan.limits.maxTeamMembers === -1
-                      ? tOnboarding('plan.unlimitedTeamMembers')
-                      : tOnboarding('plan.maxTeamMembers', {
-                          count: viewingPlan.limits.maxTeamMembers,
-                        })}
-                  </div>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-success mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-semibold">
-                    {tOnboarding('plan.businesses')}
-                  </div>
-                  <div className="text-sm text-base-content/70">
-                    {viewingPlan.limits.maxBusinesses === -1
-                      ? tOnboarding('plan.unlimitedBusinesses')
-                      : tOnboarding('plan.maxBusinesses', {
-                          count: viewingPlan.limits.maxBusinesses,
-                        })}
-                  </div>
-                </div>
-              </li>
-              <li className="flex items-start gap-3">
-                <Check className="w-5 h-5 text-success mt-0.5 shrink-0" />
-                <div>
-                  <div className="font-semibold">
-                    {tOnboarding('plan.orders')}
-                  </div>
-                  <div className="text-sm text-base-content/70">
-                    {viewingPlan.limits.maxOrdersPerMonth === -1
-                      ? tOnboarding('plan.unlimitedOrders')
-                      : tOnboarding('plan.maxMonthlyOrders', {
-                          count: viewingPlan.limits.maxOrdersPerMonth,
-                        })}
-                  </div>
-                </div>
-              </li>
-            </ul>
-
-            <div className="divider">{tOnboarding('plan.allFeatures')}</div>
-
-            <ul className="space-y-2">
-              {getEnabledFeatures(viewingPlan).map((feature, idx) => (
-                <li key={idx} className="flex items-start gap-2">
-                  <Check className="w-5 h-5 text-primary mt-0.5 shrink-0" />
-                  <span className="text-sm">{feature}</span>
-                </li>
-              ))}
-            </ul>
-          </>
-        )}
-      </Modal>
-
-      {/* Resume Session Dialog */}
-      <ResumeSessionDialog
-        open={showResumeDialog}
-        onResume={handleResumeSession}
-        onStartFresh={handleStartFresh}
-        email={state.email ?? undefined}
-        stage={state.stage ?? undefined}
-        isLoading={isResuming}
-      />
     </div>
   )
 }

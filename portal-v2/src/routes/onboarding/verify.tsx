@@ -1,56 +1,180 @@
 import { useEffect, useRef, useState } from 'react'
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useForm } from '@tanstack/react-form'
 import { useTranslation } from 'react-i18next'
 import { Check, Mail, User } from 'lucide-react'
-import { onboardingApi } from '@/api/onboarding'
+import { z } from 'zod'
+import type { RouterContext } from '@/router'
+import {
+  onboardingQueries,
+  useSendOTPMutation,
+  useVerifyEmailMutation,
+} from '@/api/onboarding'
 import { authApi } from '@/api/auth'
-import { FormInput, PasswordInput, ResendCountdownButton } from '@/components'
+import { Input } from '@/components/atoms/Input'
+import { Button } from '@/components/atoms/Button'
+import { ResendCountdownButton } from '@/components'
 import { isHTTPError } from '@/lib/errorParser'
 import { translateErrorAsync } from '@/lib/translateError'
 import { formatCountdownDuration } from '@/lib/utils'
-import { loadSession, onboardingStore } from '@/stores/onboardingStore'
+import { getErrorText } from '@/lib/formErrors'
+
+// Search params schema
+const VerifySearchSchema = z.object({
+  sessionToken: z.string().min(1),
+})
+
+// OTP form schema
+const OTPFormSchema = z.object({
+  code: z.array(z.string().regex(/^\d$/)).length(6),
+})
+
+// Profile form schema
+const ProfileFormSchema = z
+  .object({
+    firstName: z.string().trim().min(1, 'validation.required'),
+    lastName: z.string().trim().min(1, 'validation.required'),
+    password: z.string().min(8, 'validation.password_min_length'),
+    confirmPassword: z.string().min(1, 'validation.required'),
+  })
+  .refine((data) => data.password === data.confirmPassword, {
+    message: 'validation.passwords_must_match',
+    path: ['confirmPassword'],
+  })
 
 export const Route = createFileRoute('/onboarding/verify')({
+  validateSearch: (search): z.infer<typeof VerifySearchSchema> => {
+    return VerifySearchSchema.parse(search)
+  },
+  loader: async ({ context, location }) => {
+    const parsed = VerifySearchSchema.parse(location.search)
+    const { queryClient } = context as unknown as RouterContext
+    
+    // Redirect if no session token
+    if (!parsed.sessionToken) {
+      throw redirect({ to: '/onboarding/plan' })
+    }
+
+    // Prefetch and validate session
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.sessionToken)
+    )
+
+    // Redirect if wrong stage
+    if (session.stage !== 'plan_selected') {
+      if (session.stage === 'identity_verified' || session.stage === 'business_staged') {
+        throw redirect({ 
+          to: '/onboarding/business', 
+          search: { sessionToken: parsed.sessionToken } 
+        })
+      }
+    }
+
+    return { session }
+  },
   component: VerifyEmailPage,
 })
 
 /**
  * Email Verification Step - Step 3 of Onboarding
  *
+ * Two-step process:
+ * 1. OTP Verification: User enters 6-digit code
+ * 2. Profile Setup: User provides name and password
+ *
  * Features:
- * - 6-digit OTP verification
- * - Profile information (firstName, lastName)
- * - Password setup
+ * - Separate TanStack Forms for each step
+ * - Auto-send OTP on mount
  * - Resend OTP with rate limiting
+ * - OAuth option
  */
 function VerifyEmailPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
   const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
-  const state = useStore(onboardingStore)
+  const { session } = Route.useLoaderData()
+  const { sessionToken } = Route.useSearch()
+
   const [step, setStep] = useState<'otp' | 'profile'>('otp')
-  const [otpCode, setOtpCode] = useState(['', '', '', '', '', ''])
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [password, setPassword] = useState('')
-  const [confirmPassword, setConfirmPassword] = useState('')
-  const [isSubmitting, setIsSubmitting] = useState(false)
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
   const [resendCooldownSeconds, setResendCooldownSeconds] = useState(0)
   const [showLoginCta, setShowLoginCta] = useState(false)
   const [didSendInitialOtp, setDidSendInitialOtp] = useState(false)
 
   const otpInputRefs = useRef<Array<HTMLInputElement | null>>([])
 
-  // Redirect if no session
-  useEffect(() => {
-    if (!state.sessionToken || !state.email) {
-      void navigate({ to: '/onboarding/plan', replace: true })
-    }
-  }, [state.sessionToken, state.email, navigate])
+  // Send OTP mutation
+  const sendOTPMutation = useSendOTPMutation({
+    onSuccess: (response) => {
+      setResendCooldownSeconds(response.retryAfterSeconds ?? 0)
+    },
+    onError: async (error) => {
+      // Extract retry-after from error response
+      const retryAfter = await extractRetryAfterSeconds(error)
+      if (retryAfter !== null && retryAfter > 0) {
+        setResendCooldownSeconds(retryAfter)
+      }
+    },
+  })
+
+  // Verify email mutation
+  const verifyEmailMutation = useVerifyEmailMutation({
+    onSuccess: async () => {
+      await navigate({
+        to: '/onboarding/business',
+        search: { sessionToken },
+      })
+    },
+    onError: (error) => {
+      // Check for user already exists error (409)
+      if (
+        isHTTPError(error) &&
+        error.response.status === 409
+      ) {
+        setShowLoginCta(true)
+      }
+    },
+  })
+
+  // OTP form
+  const otpForm = useForm({
+    defaultValues: {
+      code: ['', '', '', '', '', ''],
+    },
+    onSubmit: ({ value }) => {
+      const codeString = value.code.join('')
+      if (codeString.length === 6) {
+        setStep('profile')
+      }
+    },
+    validators: {
+      onBlur: OTPFormSchema,
+    },
+  })
+
+  // Profile form  
+  const profileForm = useForm({
+    defaultValues: {
+      firstName: '',
+      lastName: '',
+      password: '',
+      confirmPassword: '',
+    },
+    onSubmit: async ({ value }) => {
+      setShowLoginCta(false)
+
+      await verifyEmailMutation.mutateAsync({
+        sessionToken,
+        code: otpForm.state.values.code.join(''),
+        firstName: value.firstName,
+        lastName: value.lastName,
+        password: value.password,
+      })
+    },
+    validators: {
+      onBlur: ProfileFormSchema,
+    },
+  })
 
   const extractRetryAfterSeconds = async (err: unknown): Promise<number | null> => {
     if (isHTTPError(err)) {
@@ -78,43 +202,25 @@ function VerifyEmailPage() {
   }
 
   const sendOTP = async () => {
-    if (!state.sessionToken) return
-
-    try {
-      setError('')
-      setIsSubmitting(true)
-      const { retryAfterSeconds } = await onboardingApi.sendEmailOTP({
-        sessionToken: state.sessionToken,
-      })
-      setSuccess(tOnboarding('verify.otpSent'))
-      setResendCooldownSeconds(retryAfterSeconds ?? 0)
-    } catch (err) {
-      const retryAfterSeconds = await extractRetryAfterSeconds(err)
-      if (retryAfterSeconds !== null && retryAfterSeconds > 0) {
-        setResendCooldownSeconds(retryAfterSeconds)
-      }
-      const message = await translateErrorAsync(err, tTranslation)
-      setError(message)
-    } finally {
-      setIsSubmitting(false)
-    }
+    await sendOTPMutation.mutateAsync({ sessionToken })
   }
 
-  // Send initial OTP
+  // Send initial OTP on mount
   useEffect(() => {
     if (didSendInitialOtp) return
-    if (state.sessionToken && state.stage === 'plan_selected') {
+    if (session.stage === 'plan_selected') {
       setDidSendInitialOtp(true)
       void sendOTP()
     }
-  }, [didSendInitialOtp, state.sessionToken, state.stage])
+  }, [didSendInitialOtp, session.stage])
 
   const handleOtpChange = (index: number, value: string) => {
     if (!/^\d*$/.test(value)) return
 
-    const next = [...otpCode]
-    next[index] = value.slice(-1)
-    setOtpCode(next)
+    const currentCode = [...otpForm.state.values.code]
+    currentCode[index] = value.slice(-1)
+    
+    otpForm.setFieldValue('code', currentCode)
 
     if (value && index < 5) {
       otpInputRefs.current[index + 1]?.focus()
@@ -125,7 +231,7 @@ function VerifyEmailPage() {
     index: number,
     e: React.KeyboardEvent<HTMLInputElement>,
   ) => {
-    if (e.key === 'Backspace' && !otpCode[index] && index > 0) {
+    if (e.key === 'Backspace' && !otpForm.state.values.code[index] && index > 0) {
       otpInputRefs.current[index - 1]?.focus()
     }
   }
@@ -134,88 +240,26 @@ function VerifyEmailPage() {
     e.preventDefault()
     const pasted = e.clipboardData.getData('text').trim()
     if (/^\d{6}$/.test(pasted)) {
-      setOtpCode(pasted.split(''))
+      otpForm.setFieldValue('code', pasted.split(''))
       otpInputRefs.current[5]?.focus()
     }
   }
 
-  const handleVerifyOtp = () => {
-    const code = otpCode.join('')
-    if (code.length !== 6) {
-      setError(tOnboarding('verify.invalidCode'))
-      return
-    }
-
-    setStep('profile')
-    setError('')
-    setSuccess('')
-  }
-
-  const submitProfile = async () => {
-    setError('')
-    setShowLoginCta(false)
-
-    if (password !== confirmPassword) {
-      setError(tOnboarding('verify.passwordMismatch'))
-      return
-    }
-
-    if (password.length < 8) {
-      setError(tOnboarding('verify.passwordTooShort'))
-      return
-    }
-
-    if (!state.sessionToken) return
-
-    try {
-      setIsSubmitting(true)
-
-      await onboardingApi.verifyEmail({
-        sessionToken: state.sessionToken,
-        code: otpCode.join(''),
-        firstName,
-        lastName,
-        password,
-      })
-
-      await loadSession(state.sessionToken)
-      void navigate({ to: '/onboarding/business' })
-    } catch (err) {
-      if (
-        isHTTPError(err) &&
-        err.response.status === 409 &&
-        typeof err.response.url === 'string' &&
-        err.response.url.endsWith('/v1/onboarding/email/verify')
-      ) {
-        setShowLoginCta(true)
-      }
-      const message = await translateErrorAsync(err, tTranslation)
-      setError(message)
-    } finally {
-      setIsSubmitting(false)
-    }
-  }
-
-  const handleSubmitProfile: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault()
-    void submitProfile()
-  }
-
   const handleGoogleOAuth = async () => {
     try {
-      setIsSubmitting(true)
       const { url } = await authApi.getGoogleAuthUrl()
-      sessionStorage.setItem(
-        'kyora_onboarding_google_session',
-        state.sessionToken ?? '',
-      )
+      sessionStorage.setItem('kyora_onboarding_google_session', sessionToken)
       window.location.href = url
     } catch (err) {
-      const message = await translateErrorAsync(err, tTranslation)
-      setError(message)
-      setIsSubmitting(false)
+      sendOTPMutation.error = err as Error
     }
   }
+
+  const isSubmitting =
+    sendOTPMutation.isPending ||
+    verifyEmailMutation.isPending ||
+    otpForm.state.isSubmitting ||
+    profileForm.state.isSubmitting
 
   return (
     <div className="max-w-lg mx-auto">
@@ -230,55 +274,66 @@ function VerifyEmailPage() {
               </div>
               <h2 className="text-2xl font-bold">{tOnboarding('verify.title')}</h2>
               <p className="text-base-content/70 mt-2">
-                {tOnboarding('verify.subtitle', { email: state.email })}
+                {tOnboarding('verify.subtitle', { email: session.email })}
               </p>
             </div>
 
-            {success && (
+            {sendOTPMutation.isSuccess && (
               <div className="alert alert-success mb-4">
                 <Check className="w-5 h-5" />
-                <span>{success}</span>
+                <span>{tOnboarding('verify.otpSent')}</span>
               </div>
             )}
 
-            {error && (
+            {sendOTPMutation.error && (
               <div className="alert alert-error mb-4">
-                <span>{error}</span>
+                <span>
+                  {translateErrorAsync(sendOTPMutation.error, tTranslation)}
+                </span>
               </div>
             )}
 
-            <div className="flex justify-center gap-2 mb-6">
-              {otpCode.map((digit, index) => (
-                <input
-                  key={index}
-                  ref={(el) => {
-                    otpInputRefs.current[index] = el
-                  }}
-                  type="text"
-                  inputMode="numeric"
-                  maxLength={1}
-                  value={digit}
-                  onChange={(e) => {
-                    handleOtpChange(index, e.target.value)
-                  }}
-                  onKeyDown={(e) => {
-                    handleOtpKeyDown(index, e)
-                  }}
-                  onPaste={index === 0 ? handleOtpPaste : undefined}
-                  className="input input-bordered w-12 h-14 text-center text-xl font-bold"
-                  disabled={isSubmitting}
-                />
-              ))}
-            </div>
-
-            <button
-              type="button"
-              onClick={handleVerifyOtp}
-              disabled={isSubmitting}
-              className="btn btn-primary btn-block"
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                void otpForm.handleSubmit()
+              }}
             >
-              {tOnboarding('verify.verifyCode')}
-            </button>
+              <div className="flex justify-center gap-2 mb-6">
+                {otpForm.state.values.code.map((digit, index) => (
+                  <input
+                    key={index}
+                    ref={(el) => {
+                      otpInputRefs.current[index] = el
+                    }}
+                    type="text"
+                    inputMode="numeric"
+                    maxLength={1}
+                    value={digit}
+                    onChange={(e) => {
+                      handleOtpChange(index, e.target.value)
+                    }}
+                    onKeyDown={(e) => {
+                      handleOtpKeyDown(index, e)
+                    }}
+                    onPaste={index === 0 ? handleOtpPaste : undefined}
+                    className="input input-bordered w-12 h-14 text-center text-xl font-bold"
+                    disabled={isSubmitting}
+                  />
+                ))}
+              </div>
+
+              <Button
+                type="submit"
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={isSubmitting}
+              >
+                {tOnboarding('verify.verifyCode')}
+              </Button>
+            </form>
 
             <div className="text-center mt-4">
               <ResendCountdownButton
@@ -298,12 +353,13 @@ function VerifyEmailPage() {
 
             <div className="divider">{tCommon('or')}</div>
 
-            <button
-              onClick={() => {
-                void handleGoogleOAuth()
-              }}
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              fullWidth
+              onClick={() => void handleGoogleOAuth()}
               disabled={isSubmitting}
-              className="btn btn-outline btn-block gap-2"
             >
               <svg className="w-5 h-5" viewBox="0 0 24 24">
                 <path
@@ -324,7 +380,7 @@ function VerifyEmailPage() {
                 />
               </svg>
               {tOnboarding('verify.continueWithGoogle')}
-            </button>
+            </Button>
           </div>
         </div>
       ) : (
@@ -340,98 +396,177 @@ function VerifyEmailPage() {
                 {tOnboarding('verify.completeProfile')}
               </h2>
               <p className="text-base-content/70 mt-2">
-                {tOnboarding('verify.subtitle', { email: state.email })}
+                {tOnboarding('verify.subtitle', { email: session.email })}
               </p>
             </div>
 
-            <form onSubmit={handleSubmitProfile} className="space-y-5">
-              <FormInput
-                label={tCommon('firstName')}
-                value={firstName}
-                onChange={(e) => {
-                  setFirstName(e.target.value)
-                }}
-                required
-                disabled={isSubmitting}
-                placeholder={tCommon('firstName')}
-              />
+            <form
+              onSubmit={(e) => {
+                e.preventDefault()
+                e.stopPropagation()
+                void profileForm.handleSubmit()
+              }}
+              className="space-y-5"
+            >
+              <profileForm.Field name="firstName">
+                {(field) => (
+                  <div>
+                    <label htmlFor={field.name} className="label">
+                      <span className="label-text">{tCommon('firstName')}</span>
+                    </label>
+                    <Input
+                      id={field.name}
+                      type="text"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder={tCommon('firstName')}
+                      disabled={isSubmitting}
+                      className={
+                        field.state.meta.errors.length > 0 ? 'input-error' : ''
+                      }
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">
+                          {getErrorText(field.state.meta.errors[0])}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </profileForm.Field>
 
-              <FormInput
-                label={tCommon('lastName')}
-                value={lastName}
-                onChange={(e) => {
-                  setLastName(e.target.value)
-                }}
-                required
-                disabled={isSubmitting}
-                placeholder={tCommon('lastName')}
-              />
+              <profileForm.Field name="lastName">
+                {(field) => (
+                  <div>
+                    <label htmlFor={field.name} className="label">
+                      <span className="label-text">{tCommon('lastName')}</span>
+                    </label>
+                    <Input
+                      id={field.name}
+                      type="text"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder={tCommon('lastName')}
+                      disabled={isSubmitting}
+                      className={
+                        field.state.meta.errors.length > 0 ? 'input-error' : ''
+                      }
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">
+                          {getErrorText(field.state.meta.errors[0])}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </profileForm.Field>
 
-              <PasswordInput
-                label={tCommon('password')}
-                value={password}
-                onChange={(e) => {
-                  setPassword(e.target.value)
-                }}
-                minLength={8}
-                required
-                disabled={isSubmitting}
-                placeholder={tCommon('password')}
-                helperText={tOnboarding('verify.passwordHint')}
-                showPasswordToggle
-                showDefaultIcon
-              />
+              <profileForm.Field name="password">
+                {(field) => (
+                  <div>
+                    <label htmlFor={field.name} className="label">
+                      <span className="label-text">{tCommon('password')}</span>
+                    </label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder={tCommon('password')}
+                      disabled={isSubmitting}
+                      className={
+                        field.state.meta.errors.length > 0 ? 'input-error' : ''
+                      }
+                    />
+                    <label className="label">
+                      <span className="label-text-alt">
+                        {tOnboarding('verify.passwordHint')}
+                      </span>
+                    </label>
+                    {field.state.meta.errors.length > 0 && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">
+                          {getErrorText(field.state.meta.errors[0])}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </profileForm.Field>
 
-              <PasswordInput
-                label={tCommon('confirmPassword')}
-                value={confirmPassword}
-                onChange={(e) => {
-                  setConfirmPassword(e.target.value)
-                }}
-                minLength={8}
-                required
-                disabled={isSubmitting}
-                placeholder={tCommon('confirmPassword')}
-                showPasswordToggle
-                showDefaultIcon
-              />
+              <profileForm.Field name="confirmPassword">
+                {(field) => (
+                  <div>
+                    <label htmlFor={field.name} className="label">
+                      <span className="label-text">{tCommon('confirmPassword')}</span>
+                    </label>
+                    <Input
+                      id={field.name}
+                      type="password"
+                      value={field.state.value}
+                      onBlur={field.handleBlur}
+                      onChange={(e) => field.handleChange(e.target.value)}
+                      placeholder={tCommon('confirmPassword')}
+                      disabled={isSubmitting}
+                      className={
+                        field.state.meta.errors.length > 0 ? 'input-error' : ''
+                      }
+                    />
+                    {field.state.meta.errors.length > 0 && (
+                      <label className="label">
+                        <span className="label-text-alt text-error">
+                          {getErrorText(field.state.meta.errors[0])}
+                        </span>
+                      </label>
+                    )}
+                  </div>
+                )}
+              </profileForm.Field>
 
-              {error && (
+              {verifyEmailMutation.error && (
                 <div className="alert alert-error">
                   <div className="flex flex-col gap-2">
-                    <span className="text-sm">{error}</span>
+                    <span className="text-sm">
+                      {translateErrorAsync(
+                        verifyEmailMutation.error,
+                        tTranslation
+                      )}
+                    </span>
                     {showLoginCta && (
-                      <button
+                      <Button
                         type="button"
-                        className="btn btn-outline btn-sm self-start"
-                        onClick={() => {
-                          void navigate({
+                        variant="outline"
+                        size="sm"
+                        onClick={async () => {
+                          await navigate({
                             to: '/auth/login',
                             search: { redirect: '/' },
                           })
                         }}
                       >
                         {tTranslation('auth.login')}
-                      </button>
+                      </Button>
                     )}
                   </div>
                 </div>
               )}
 
-              <button
+              <Button
                 type="submit"
-                className="btn btn-primary btn-block"
+                variant="primary"
+                size="lg"
+                fullWidth
                 disabled={isSubmitting}
+                loading={isSubmitting}
               >
-                {isSubmitting ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    {tCommon('loading')}
-                  </>
-                ) : (
-                  tCommon('continue')
-                )}
-              </button>
+                {tCommon('continue')}
+              </Button>
             </form>
           </div>
         </div>

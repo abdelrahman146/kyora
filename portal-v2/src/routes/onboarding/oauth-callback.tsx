@@ -1,23 +1,48 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
+import { useSuspenseQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { AlertCircle } from 'lucide-react'
+import { AlertCircle, Loader2 } from 'lucide-react'
 import { z } from 'zod'
-import { onboardingApi } from '@/api/onboarding'
-import { loadSession, onboardingStore } from '@/stores/onboardingStore'
-import { translateErrorAsync } from '@/lib/translateError'
+import type { RouterContext } from '@/router'
+import { onboardingQueries, useOAuthGoogleMutation } from '@/api/onboarding'
 
 const OAuthCallbackSearchSchema = z.object({
+  session: z.string().min(1),
   code: z.string().optional(),
   error: z.string().optional(),
   error_description: z.string().optional(),
 })
 
 export const Route = createFileRoute('/onboarding/oauth-callback')({
-  component: OAuthCallbackPage,
   validateSearch: (search): z.infer<typeof OAuthCallbackSearchSchema> => {
     return OAuthCallbackSearchSchema.parse(search)
+  },
+
+  loader: async ({ location, context }) => {
+    const { queryClient } = context as unknown as RouterContext
+    const parsed = OAuthCallbackSearchSchema.parse(location.search)
+    
+    // Preload session data
+    await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
+  },
+
+  component: OAuthCallbackPage,
+  
+  errorComponent: ({ error }) => {
+    const { t } = useTranslation('translation')
+    return (
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+          <div className="card-body">
+            <h2 className="card-title text-error">{t('error.title')}</h2>
+            <p className="text-base-content/70">{error.message || t('error.generic')}</p>
+          </div>
+        </div>
+      </div>
+    )
   },
 })
 
@@ -32,75 +57,77 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
  */
 function OAuthCallbackPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
-  const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
-  const { code, error, error_description } = Route.useSearch()
-  const storeState = useStore(onboardingStore)
-  const [isProcessing, setIsProcessing] = useState(true)
-  const [errorMessage, setErrorMessage] = useState('')
+  const { session: sessionToken, code, error, error_description } = Route.useSearch()
+  
+  useSuspenseQuery(onboardingQueries.session(sessionToken))
+  const oauthMutation = useOAuthGoogleMutation()
 
   useEffect(() => {
     const handleCallback = async () => {
       const oauthError = error_description || error
 
+      // Handle OAuth error
       if (oauthError) {
-        setErrorMessage(tOnboarding('oauth.error', { error: oauthError }))
         setTimeout(() => {
-          void navigate({ to: '/onboarding/verify', replace: true })
+          void navigate({
+            to: '/onboarding/verify',
+            search: { sessionToken },
+            replace: true,
+          })
         }, 3000)
         return
       }
 
+      // Missing authorization code
       if (!code) {
-        setErrorMessage(tOnboarding('oauth.noCode'))
         setTimeout(() => {
-          void navigate({ to: '/onboarding/verify', replace: true })
+          void navigate({
+            to: '/onboarding/verify',
+            search: { sessionToken },
+            replace: true,
+          })
         }, 3000)
         return
       }
 
-      const storedToken =
-        storeState.sessionToken ??
-        sessionStorage.getItem('kyora_onboarding_google_session')
-
-      if (!storedToken) {
-        setErrorMessage(tOnboarding('oauth.noSession'))
-        setTimeout(() => {
-          void navigate({ to: '/onboarding/plan', replace: true })
-        }, 3000)
-        return
-      }
-
+      // Process OAuth callback
       try {
-        await onboardingApi.oauthGoogle({
-          sessionToken: storedToken,
+        await oauthMutation.mutateAsync({
+          sessionToken,
           code,
         })
 
-        sessionStorage.removeItem('kyora_onboarding_google_session')
-        await loadSession(storedToken)
-
-        void navigate({ to: '/onboarding/business', replace: true })
+        // Navigate to business step on success
+        void navigate({
+          to: '/onboarding/business',
+          search: { sessionToken },
+          replace: true,
+        })
       } catch (err) {
-        const message = await translateErrorAsync(err, tTranslation)
-        setErrorMessage(message)
+        // Error is handled by mutation, redirect after delay
         setTimeout(() => {
-          void navigate({ to: '/onboarding/verify', replace: true })
+          void navigate({
+            to: '/onboarding/verify',
+            search: { sessionToken },
+            replace: true,
+          })
         }, 3000)
-      } finally {
-        setIsProcessing(false)
       }
     }
 
     void handleCallback()
-  }, [code, error, error_description, navigate, storeState.sessionToken, tOnboarding, tTranslation])
+  }, [code, error, error_description, sessionToken, oauthMutation, navigate])
+
+  const oauthError = error_description || error
+  const hasError = !!oauthError || !code || oauthMutation.isError
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
       <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
         <div className="card-body">
           <div className="text-center">
-            {errorMessage ? (
+            {hasError ? (
               <>
                 <div className="flex justify-center mb-4">
                   <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center">
@@ -110,16 +137,16 @@ function OAuthCallbackPage() {
                 <h2 className="text-xl font-bold text-error mb-3">
                   {tOnboarding('oauth.errorTitle')}
                 </h2>
-                <p className="text-base-content/70 mb-4">{errorMessage}</p>
+                <p className="text-base-content/70 mb-4">
+                  {oauthError || oauthMutation.error?.message || tOnboarding('oauth.noCode')}
+                </p>
                 <p className="text-sm text-base-content/50">
                   {tOnboarding('oauth.redirecting')}
                 </p>
               </>
             ) : (
               <>
-                {isProcessing && (
-                  <span className="loading loading-spinner loading-lg text-primary mb-4"></span>
-                )}
+                <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto mb-4" />
                 <h2 className="text-xl font-bold mb-2">
                   {tOnboarding('oauth.processing')}
                 </h2>
