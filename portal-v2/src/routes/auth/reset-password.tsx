@@ -184,6 +184,10 @@ function ResetPasswordPage() {
     },
   })
 
+  // Extract form.state.isSubmitting to minimize subscriptions
+  // Accessing form.state multiple times in JSX creates multiple subscriptions
+  const isSubmitting = form.state.isSubmitting
+
   return (
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
@@ -232,7 +236,7 @@ function ResetPasswordPage() {
                       helperText={t('auth.password_requirements')}
                       autoComplete="new-password"
                       autoFocus
-                      disabled={form.state.isSubmitting}
+                      disabled={isSubmitting}
                       showPasswordToggle
                     />
                   )
@@ -258,7 +262,7 @@ function ResetPasswordPage() {
                       onBlur={field.handleBlur}
                       error={errorKey ? tErrors(errorKey) : undefined}
                       autoComplete="new-password"
-                      disabled={form.state.isSubmitting}
+                      disabled={isSubmitting}
                       showPasswordToggle
                     />
                   )
@@ -270,8 +274,8 @@ function ResetPasswordPage() {
                 variant="primary"
                 size="lg"
                 fullWidth
-                loading={form.state.isSubmitting}
-                disabled={form.state.isSubmitting}
+                loading={isSubmitting}
+                disabled={isSubmitting}
               >
                 {t('auth.reset_password_submit')}
               </Button>

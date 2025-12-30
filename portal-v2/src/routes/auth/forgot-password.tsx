@@ -47,6 +47,10 @@ function ForgotPasswordPage() {
     },
   })
 
+  // Extract form.state.isSubmitting to minimize subscriptions
+  // Accessing form.state multiple times in JSX creates multiple subscriptions
+  const isSubmitting = form.state.isSubmitting
+
   const handleBackToLogin = async () => {
     await navigate({
       to: '/auth/login',
@@ -167,7 +171,7 @@ function ForgotPasswordPage() {
                       startIcon={<Mail size={20} />}
                       autoComplete="email"
                       autoFocus
-                      disabled={form.state.isSubmitting}
+                      disabled={isSubmitting}
                     />
                   )
                 }}
@@ -178,8 +182,8 @@ function ForgotPasswordPage() {
                 variant="primary"
                 size="lg"
                 fullWidth
-                loading={form.state.isSubmitting}
-                disabled={form.state.isSubmitting}
+                loading={isSubmitting}
+                disabled={isSubmitting}
               >
                 {t('auth.send_reset_link')}
               </Button>

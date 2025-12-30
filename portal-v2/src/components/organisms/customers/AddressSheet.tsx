@@ -136,6 +136,9 @@ export function AddressSheet({
     },
   })
 
+  // Subscribe to specific form state to minimize re-renders
+  // TanStack Form pattern: extract form state subscriptions early to avoid
+  // repeated subscriptions in JSX
   const isSubmitting = form.state.isSubmitting
   const isDirty = form.state.isDirty
 

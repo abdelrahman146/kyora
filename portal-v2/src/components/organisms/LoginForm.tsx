@@ -91,6 +91,10 @@ export function LoginForm({
     },
   })
 
+  // Extract form.state.isSubmitting to minimize subscriptions
+  // Accessing form.state multiple times in JSX creates multiple subscriptions
+  const isSubmitting = form.state.isSubmitting
+
   return (
     <form
       onSubmit={(e) => {
@@ -131,7 +135,7 @@ export function LoginForm({
             }
             startIcon={<Mail size={20} />}
             autoComplete="email"
-            disabled={form.state.isSubmitting}
+            disabled={isSubmitting}
           />
         )}
       </form.Field>
@@ -163,7 +167,7 @@ export function LoginForm({
               })()
             }
             autoComplete="current-password"
-            disabled={form.state.isSubmitting}
+            disabled={isSubmitting}
             showPasswordToggle
           />
         )}
@@ -185,10 +189,10 @@ export function LoginForm({
         variant="primary"
         size="lg"
         fullWidth
-        loading={form.state.isSubmitting}
-        disabled={form.state.isSubmitting}
+        loading={isSubmitting}
+        disabled={isSubmitting}
       >
-        {form.state.isSubmitting ? t('auth.logging_in') : t('auth.login')}
+        {isSubmitting ? t('auth.logging_in') : t('auth.login')}
       </Button>
 
       {/* Divider */}
@@ -202,7 +206,7 @@ export function LoginForm({
           <button
             type="button"
             onClick={onGoogleLogin}
-            disabled={form.state.isSubmitting || isGoogleLoading}
+            disabled={isSubmitting || isGoogleLoading}
             className="btn btn-outline btn-lg w-full h-13 rounded-xl border-2 border-neutral-200 hover:border-neutral-300 hover:bg-base-200 disabled:opacity-50 disabled:cursor-not-allowed transition-all"
           >
             {isGoogleLoading ? (
