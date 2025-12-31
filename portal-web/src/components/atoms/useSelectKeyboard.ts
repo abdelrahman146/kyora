@@ -2,7 +2,7 @@
  * useSelectKeyboard Hook
  *
  * Manages keyboard navigation for select components.
- * Handles arrow keys, Enter, Escape, Home, End, and Tab.
+ * Handles arrow keys, Enter, Escape, Home, End, Tab, and Backspace (for multi-select).
  */
 
 import { useCallback, useState } from 'react'
@@ -15,6 +15,9 @@ interface UseSelectKeyboardProps<T> {
   onSelectOption: (value: T) => void
   onClose: () => void
   disabled?: boolean
+  multiSelect?: boolean
+  selectedValues?: Array<T>
+  onRemoveLast?: () => void
 }
 
 interface UseSelectKeyboardReturn {
@@ -30,6 +33,9 @@ export function useSelectKeyboard<T extends string>({
   onSelectOption,
   onClose,
   disabled = false,
+  multiSelect = false,
+  selectedValues = [],
+  onRemoveLast,
 }: UseSelectKeyboardProps<T>): UseSelectKeyboardReturn {
   const [focusedIndex, setFocusedIndex] = useState(-1)
 
@@ -57,6 +63,19 @@ export function useSelectKeyboard<T extends string>({
         case 'Escape':
           if (isOpen) {
             onClose()
+            e.preventDefault()
+          }
+          break
+
+        case 'Backspace':
+          // Multi-select: Remove last chip when dropdown is closed
+          if (
+            !isOpen &&
+            multiSelect &&
+            selectedValues.length > 0 &&
+            onRemoveLast
+          ) {
+            onRemoveLast()
             e.preventDefault()
           }
           break
@@ -109,6 +128,9 @@ export function useSelectKeyboard<T extends string>({
       onSelectOption,
       onClose,
       setIsOpen,
+      multiSelect,
+      selectedValues,
+      onRemoveLast,
     ],
   )
 

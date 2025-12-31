@@ -213,26 +213,103 @@ Multi-line text input with character counter.
 
 Dropdown select with search and multi-select support.
 
+**Single Select:**
 ```tsx
-<form.SelectField
+<form.AppField
   name="country"
-  label="Country"
-  options={[
-    { value: 'us', label: 'United States' },
-    { value: 'uk', label: 'United Kingdom' },
-  ]}
-  searchable                      // Enable search
-  multiSelect={false}             // Single or multi select
-  clearable                       // Show clear button
-  required
-/>
+  validators={{
+    onBlur: z.string().min(1, 'required'),
+  }}
+>
+  {(field) => (
+    <field.SelectField
+      label={t('customer.country')}
+      options={[
+        { value: 'us', label: 'United States' },
+        { value: 'uk', label: 'United Kingdom' },
+        { value: 'eg', label: 'Egypt' },
+      ]}
+      searchable                      // Enable search
+      clearable                       // Show clear button
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Multi-Select with Chip UI:**
+```tsx
+<form.AppField
+  name="tags"
+  validators={{
+    onBlur: z.array(z.string())
+      .min(1, 'select_at_least_one')
+      .max(5, 'select_too_many'),
+  }}
+>
+  {(field) => (
+    <field.SelectField
+      label={t('customer.tags')}
+      options={[
+        { value: 'vip', label: 'VIP Customer', icon: <Star /> },
+        { value: 'wholesale', label: 'Wholesale', icon: <Package /> },
+        { value: 'repeat', label: 'Repeat Buyer', icon: <RefreshCw /> },
+      ]}
+      multiSelect                     // Enable multi-select mode
+      searchable                      // Enable search
+      clearable                       // Clear all selections
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Validation Patterns:**
+```typescript
+// Minimum selections
+z.array(z.string()).min(1, 'select_at_least_one')
+
+// Maximum selections
+z.array(z.string()).max(5, 'select_too_many')
+
+// Min and max
+z.array(z.string()).min(1).max(5)
+
+// Unique values (no duplicates)
+z.array(z.string()).refine(
+  (arr) => new Set(arr).size === arr.length,
+  { message: 'duplicate_selection' }
+)
+
+// Custom validation
+z.array(z.string()).refine(
+  (arr) => arr.every((v) => validValues.includes(v)),
+  { message: 'invalid_selection' }
+)
 ```
 
 **Features:**
-- Search/filtering
-- Multi-select mode
-- Keyboard navigation
-- Clear functionality
+- Search/filtering with real-time results
+- Multi-select with chip-based UI
+- Keyboard navigation (Arrow keys, Space/Enter, Backspace to remove last chip)
+- Chip removal (click X button or Backspace/Delete keys)
+- Clear all selections button
+- RTL support (chips flow right-to-left in Arabic)
+- Mobile bottom sheet / Desktop dropdown
+- Touch-optimized (50px minimum height)
+- Screen reader accessible
+
+**Translation Keys Used:**
+- `common.selected_count`: "{{count}} selected"
+- `common.remove`: "Remove {{item}}"
+- `common.clear_selection`: "Clear selection"
+- `common.search_placeholder_generic`: "Search..."
+- `common.no_options_found`: "No options found"
+- `errors.validation.select_at_least_one`: "Please select at least one option."
+- `errors.validation.select_too_many`: "You can select at most {{max}} options."
+- `errors.validation.duplicate_selection`: "Duplicate selections are not allowed."
+- `errors.validation.array_min_items`: "Please select at least {{min}} item(s)."
+- `errors.validation.array_max_items`: "You can select at most {{max}} item(s)."
 
 #### `<form.CheckboxField>`
 
@@ -780,6 +857,129 @@ See [src/routes/onboarding/verify.tsx](../src/routes/onboarding/verify.tsx)
 ### Complex Form with Dependencies
 
 See [src/routes/onboarding/business.tsx](../src/routes/onboarding/business.tsx)
+
+### Multi-Select Form with Validation
+
+Complete example with array validation, chip UI, and keyboard support:
+
+```tsx
+import { useKyoraForm } from '@/lib/form'
+import { z } from 'zod'
+import { Star, Package, RefreshCw } from 'lucide-react'
+
+function CustomerTagsForm() {
+  const { t } = useTranslation()
+  
+  const form = useKyoraForm({
+    defaultValues: {
+      customerName: '',
+      tags: [], // Array for multi-select
+      priority: '',
+    },
+    onSubmit: async ({ value }) => {
+      await api.updateCustomer(customerId, value)
+      toast.success(t('customer.updated'))
+    },
+  })
+
+  const tagOptions = [
+    { value: 'vip', label: 'VIP Customer', icon: <Star className="w-4 h-4" /> },
+    { value: 'wholesale', label: 'Wholesale', icon: <Package className="w-4 h-4" /> },
+    { value: 'repeat', label: 'Repeat Buyer', icon: <RefreshCw className="w-4 h-4" /> },
+    { value: 'new', label: 'New Customer' },
+    { value: 'discount', label: 'Discount Eligible' },
+  ]
+
+  const priorityOptions = [
+    { value: 'high', label: 'High Priority' },
+    { value: 'medium', label: 'Medium Priority' },
+    { value: 'low', label: 'Low Priority' },
+  ]
+
+  return (
+    <form.AppForm>
+      <form.FormRoot className="space-y-6 max-w-2xl">
+        <form.FormError />
+        
+        {/* Customer Name */}
+        <form.AppField
+          name="customerName"
+          validators={{
+            onBlur: z.string().min(2, 'min_length').max(100, 'max_length'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              label={t('customer.name')}
+              placeholder={t('customer.name_placeholder')}
+              required
+            />
+          )}
+        </form.AppField>
+
+        {/* Multi-Select Tags with Validation */}
+        <form.AppField
+          name="tags"
+          validators={{
+            onBlur: z.array(z.string())
+              .min(1, 'select_at_least_one')
+              .max(3, 'select_too_many')
+              .refine(
+                (arr) => new Set(arr).size === arr.length,
+                { message: 'duplicate_selection' }
+              ),
+          }}
+        >
+          {(field) => (
+            <field.SelectField
+              label={t('customer.tags')}
+              helperText={t('customer.tags_helper')}
+              options={tagOptions}
+              multiSelect
+              searchable
+              clearable
+              required
+            />
+          )}
+        </form.AppField>
+
+        {/* Single Select Priority */}
+        <form.AppField
+          name="priority"
+          validators={{
+            onBlur: z.string().min(1, 'required'),
+          }}
+        >
+          {(field) => (
+            <field.SelectField
+              label={t('customer.priority')}
+              options={priorityOptions}
+              searchable
+              clearable
+              required
+            />
+          )}
+        </form.AppField>
+
+        {/* Submit Button */}
+        <form.SubmitButton variant="primary" size="lg">
+          {t('customer.save_changes')}
+        </form.SubmitButton>
+      </form.FormRoot>
+    </form.AppForm>
+  )
+}
+```
+
+**Key Features Demonstrated:**
+- Multi-select with chip UI (tags field)
+- Array validation (min 1, max 3, unique values)
+- Single select with search (priority field)
+- Icons in select options
+- Keyboard navigation (Backspace to remove last tag)
+- Translated error messages
+- Helper text for guidance
+- RTL layout support
 
 ## Troubleshooting
 

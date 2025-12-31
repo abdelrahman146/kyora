@@ -78,11 +78,11 @@ ALL components using form context (FormRoot, SubmitButton, FormError, Subscribe)
 
 ---
 
-## 🚧 Future Enhancements (PLANNED)
+## 🚧 Future Enhancements
 
 ---
 
-## Phase 1: Multi-Select Support in FormSelect (PLANNED)
+## Phase 1: Multi-Select Support in FormSelect (COMPLETED)
 
 ### Current Status
 

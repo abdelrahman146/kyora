@@ -17,7 +17,7 @@
  * - Standard error prop integration
  */
 
-import { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -159,6 +159,14 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       [disabled, multiSelect, selectedValues, onChange, handleClose],
     )
 
+    // Remove last chip (for Backspace key on trigger)
+    const handleRemoveLast = useCallback(() => {
+      if (multiSelect && selectedValues.length > 0) {
+        const newValues = selectedValues.slice(0, -1)
+        onChange?.(newValues as T | Array<T>)
+      }
+    }, [multiSelect, selectedValues, onChange])
+
     // Keyboard navigation
     const { focusedIndex, setFocusedIndex, handleKeyDown } = useSelectKeyboard({
       isOpen,
@@ -167,6 +175,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       onSelectOption: handleToggleOption,
       onClose: handleClose,
       disabled,
+      multiSelect,
+      selectedValues,
+      onRemoveLast: handleRemoveLast,
     })
 
     // Click outside detection (desktop only)
@@ -220,18 +231,48 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       [multiSelect, onChange],
     )
 
-    // Display text
+    // Remove chip handler
+    const handleRemoveChip = useCallback(
+      (valueToRemove: T, e?: React.MouseEvent | React.KeyboardEvent) => {
+        e?.stopPropagation()
+        if (disabled) return
+        
+        const newValues = selectedValues.filter((v) => v !== valueToRemove)
+        onChange?.(newValues as T | Array<T>)
+      },
+      [disabled, selectedValues, onChange],
+    )
+
+    // Keyboard handler for chips
+    const handleChipKeyDown = useCallback(
+      (valueToRemove: T, e: React.KeyboardEvent) => {
+        if (e.key === 'Backspace' || e.key === 'Delete') {
+          e.preventDefault()
+          handleRemoveChip(valueToRemove, e)
+        }
+      },
+      [handleRemoveChip],
+    )
+
+    // Display text (for single-select trigger)
     const getDisplayText = () => {
       if (selectedValues.length === 0) return placeholder
 
-      if (multiSelect) {
-        const count = selectedValues.length
-        return count > 0 ? t('common.selected_count', { count }) : placeholder
+      if (!multiSelect) {
+        const selectedOption = options.find((opt) => opt.value === selectedValues[0])
+        return selectedOption?.label ?? placeholder
       }
 
-      const selectedOption = options.find((opt) => opt.value === selectedValues[0])
-      return selectedOption?.label ?? placeholder
+      // Multi-select: return placeholder to be replaced by chips
+      return placeholder
     }
+
+    // Get selected option objects for chip display
+    const selectedOptions = useMemo(() => {
+      return selectedValues
+        .map((value) => options.find((opt) => opt.value === value))
+        .filter((opt): opt is FormSelectOption<T> => opt !== undefined)
+    }, [selectedValues, options])
 
     const sizeClasses = {
       sm: 'h-[44px] text-sm',
@@ -281,6 +322,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               hasError && 'input-error border-error focus:border-error focus:ring-error/20',
               disabled && 'opacity-60 cursor-not-allowed',
               isOpen && 'border-primary ring-2 ring-primary/20',
+              multiSelect && selectedValues.length > 0 && 'min-h-fit py-2',
               className,
             )}
             aria-haspopup="listbox"
@@ -289,11 +331,46 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             aria-required={required}
             aria-invalid={hasError}
           >
-            <span className={cn('flex-1 truncate', selectedValues.length === 0 && 'text-base-content/40')}>
-              {getDisplayText()}
-            </span>
+            {multiSelect && selectedValues.length > 0 ? (
+              // Multi-select: Show chips/badges
+              <div className="flex-1 flex flex-wrap gap-1.5">
+                {selectedOptions.map((option) => (
+                  <span
+                    key={option.value}
+                    className={cn(
+                      'badge badge-neutral gap-1.5 pe-1 ps-2.5 h-7 text-sm font-medium',
+                      'transition-colors duration-200',
+                    )}
+                    tabIndex={0}
+                    role="button"
+                    aria-label={t('common.remove_option', { option: option.label })}
+                    onKeyDown={(e) => handleChipKeyDown(option.value, e)}
+                  >
+                    {option.icon && <span className="shrink-0">{option.icon}</span>}
+                    <span className="truncate max-w-[150px]">{option.label}</span>
+                    <button
+                      type="button"
+                      onClick={(e) => handleRemoveChip(option.value, e)}
+                      className={cn(
+                        'btn btn-ghost btn-circle btn-xs',
+                        'hover:bg-base-content/10 transition-colors',
+                      )}
+                      aria-label={t('common.remove', { item: option.label })}
+                      tabIndex={-1}
+                    >
+                      <X className="w-3.5 h-3.5" />
+                    </button>
+                  </span>
+                ))}
+              </div>
+            ) : (
+              // Single-select or empty: Show text
+              <span className={cn('flex-1 truncate', selectedValues.length === 0 && 'text-base-content/40')}>
+                {getDisplayText()}
+              </span>
+            )}
 
-            <div className="flex items-center gap-1">
+            <div className="flex items-center gap-1 shrink-0">
               {clearable && selectedValues.length > 0 && !disabled && (
                 <button
                   type="button"

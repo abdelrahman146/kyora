@@ -42,7 +42,12 @@
     "otp_digits_only": "Code must contain only digits.",
     "business_descriptor_format": "Only lowercase letters, numbers, and hyphens allowed.",
     "country_code": "Invalid country code.",
-    "currency_code": "Invalid currency code."
+    "currency_code": "Invalid currency code.",
+    "select_at_least_one": "Please select at least one option.",
+    "select_too_many": "You can select at most {{max}} options.",
+    "duplicate_selection": "Duplicate selections are not allowed.",
+    "array_min_items": "Please select at least {{min}} item(s).",
+    "array_max_items": "You can select at most {{max}} item(s)."
   },
   "auth": {
     "invalid_credentials": "Invalid email or password.",
