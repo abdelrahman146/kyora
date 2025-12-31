@@ -186,7 +186,6 @@ export type SetBusinessRequest = z.infer<typeof SetBusinessRequestSchema>
 
 export const SetBusinessResponseSchema = z.object({
   stage: SessionStageSchema,
-  paymentRequired: z.boolean(),
 })
 
 export type SetBusinessResponse = z.infer<typeof SetBusinessResponseSchema>

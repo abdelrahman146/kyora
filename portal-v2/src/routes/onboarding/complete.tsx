@@ -74,8 +74,8 @@ function CompleteOnboardingPage() {
         setTokens(result.token, result.refreshToken)
         setUser(result.user)
         deleteSessionMutation.mutate(sessionToken)
-        // Success - navigate to dashboard
-        window.location.href = '/dashboard'
+        // Success - navigate to home page
+        window.location.href = '/'
       } catch (error) {
         console.error('[Complete] Failed to complete onboarding:', error)
       }

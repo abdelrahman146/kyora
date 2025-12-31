@@ -16,10 +16,11 @@ import { isHTTPError } from '@/lib/errorParser'
 import { formatCountdownDuration } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
+import { redirectToCorrectStage } from '@/lib/onboarding'
 
 // Search params schema
 const VerifySearchSchema = z.object({
-  sessionToken: z.string().min(1),
+  session: z.string().min(1),
 })
 
 export const Route = createFileRoute('/onboarding/verify')({
@@ -31,23 +32,23 @@ export const Route = createFileRoute('/onboarding/verify')({
     const { queryClient } = context as unknown as RouterContext
     
     // Redirect if no session token
-    if (!parsed.sessionToken) {
+    if (!parsed.session) {
       throw redirect({ to: '/onboarding/plan' })
     }
 
     // Prefetch and validate session
     const session = await queryClient.ensureQueryData(
-      onboardingQueries.session(parsed.sessionToken)
+      onboardingQueries.session(parsed.session)
     )
 
-    // Redirect if wrong stage
-    if (session.stage !== 'plan_selected') {
-      if (session.stage === 'identity_verified' || session.stage === 'business_staged') {
-        throw redirect({ 
-          to: '/onboarding/business', 
-          search: { sessionToken: parsed.sessionToken } 
-        })
-      }
+    // Automatically redirect to correct stage based on session
+    const stageRedirect = redirectToCorrectStage(
+      '/onboarding/verify',
+      session.stage,
+      parsed.session
+    )
+    if (stageRedirect) {
+      throw stageRedirect
     }
 
     return { session }
@@ -74,7 +75,7 @@ function VerifyEmailPage() {
   const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
   const { session } = Route.useLoaderData()
-  const { sessionToken } = Route.useSearch()
+  const { session: sessionToken } = Route.useSearch()
 
   // Initialize step from sessionStorage to persist across page refresh
   const getInitialStep = (): 'otp' | 'profile' => {

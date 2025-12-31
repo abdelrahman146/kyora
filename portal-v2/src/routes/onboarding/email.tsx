@@ -59,7 +59,7 @@ function EmailEntryPage() {
       // Navigate to verify with session token in URL
       await navigate({
         to: '/onboarding/verify',
-        search: { sessionToken: response.sessionToken },
+        search: { session: response.sessionToken },
       })
     },
   })

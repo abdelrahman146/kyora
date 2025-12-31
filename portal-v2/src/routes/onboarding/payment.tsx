@@ -8,6 +8,7 @@ import type { RouterContext } from '@/router'
 import { onboardingQueries, useStartPaymentMutation } from '@/api/onboarding'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
+import { redirectToCorrectStage } from '@/lib/onboarding'
 
 const PaymentSearchSchema = z.object({
   session: z.string().min(1),
@@ -58,11 +59,23 @@ export const Route = createFileRoute('/onboarding/payment')({
     const { queryClient } = context as unknown as RouterContext
     const parsed = PaymentSearchSchema.parse(location.search)
     
-    // Load session data and plan details in parallel
-    await Promise.all([
-      queryClient.ensureQueryData(onboardingQueries.session(parsed.session)),
-      queryClient.ensureQueryData(onboardingQueries.plans()),
-    ])
+    // Load session data
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
+
+    // Automatically redirect to correct stage based on session
+    const stageRedirect = redirectToCorrectStage(
+      '/onboarding/payment',
+      session.stage,
+      parsed.session
+    )
+    if (stageRedirect) {
+      throw stageRedirect
+    }
+    
+    // Load plan details
+    await queryClient.ensureQueryData(onboardingQueries.plans())
   },
 
   component: PaymentPage,

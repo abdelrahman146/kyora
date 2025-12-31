@@ -1,4 +1,4 @@
-import { useEffect, useMemo } from 'react'
+import { useEffect, useMemo, useRef } from 'react'
 import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { Building2 } from 'lucide-react'
@@ -10,10 +10,11 @@ import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
 
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
+import { redirectToCorrectStage } from '@/lib/onboarding'
 
 // Search params schema
 const BusinessSearchSchema = z.object({
-  sessionToken: z.string().min(1),
+  session: z.string().min(1),
 })
 
 export const Route = createFileRoute('/onboarding/business')({
@@ -25,26 +26,23 @@ export const Route = createFileRoute('/onboarding/business')({
     const { queryClient } = context as RouterContext
     
     // Redirect if no session token
-    if (!parsed.sessionToken) {
+    if (!parsed.session) {
       throw redirect({ to: '/onboarding/plan' })
     }
 
     // Prefetch and validate session
     const session = await queryClient.ensureQueryData(
-      onboardingQueries.session(parsed.sessionToken)
+      onboardingQueries.session(parsed.session)
     )
 
-    // Redirect if wrong stage
-    if (
-      session.stage !== 'identity_verified' &&
-      session.stage !== 'business_staged'
-    ) {
-      if (session.stage === 'plan_selected') {
-        throw redirect({
-          to: '/onboarding/verify',
-          search: { sessionToken: parsed.sessionToken },
-        })
-      }
+    // Automatically redirect to correct stage based on session
+    const stageRedirect = redirectToCorrectStage(
+      '/onboarding/business',
+      session.stage,
+      parsed.session
+    )
+    if (stageRedirect) {
+      throw stageRedirect
     }
 
     return { session }
@@ -67,7 +65,7 @@ function BusinessSetupPage() {
   const { t: tTranslation } = useTranslation('translation')
   const navigate = useNavigate()
   const { session } = Route.useLoaderData()
-  const { sessionToken } = Route.useSearch()
+  const { session: sessionToken } = Route.useSearch()
 
   // Fetch countries and currencies
   const {
@@ -144,13 +142,49 @@ function BusinessSetupPage() {
     },
   })
 
-  // TanStack Form with Zod validation and field listeners
+  // TanStack Form with Zod validation
   const form = useKyoraForm({
     defaultValues: {
       name: session.businessName ?? '',
       descriptor: session.businessDescriptor ?? '',
       country: '',
       currency: '',
+    },
+    listeners: {
+      onChange: ({ formApi, fieldApi }) => {
+        // Auto-generate descriptor when name changes
+        if (fieldApi.name === 'name') {
+          const businessName = fieldApi.state.value as string
+          const currentDescriptor = formApi.getFieldValue('descriptor') as string
+          
+          // Generate what the descriptor should be based on current name
+          const expectedDescriptor = businessName
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .slice(0, 20)
+          
+          // Only auto-update if:
+          // 1. Descriptor is empty, OR
+          // 2. Descriptor matches what we would have generated (user hasn't customized it)
+          if (businessName && (!currentDescriptor || currentDescriptor === expectedDescriptor.slice(0, currentDescriptor.length))) {
+            formApi.setFieldValue('descriptor', expectedDescriptor)
+          }
+        }
+        
+        // Auto-select currency when country changes
+        if (fieldApi.name === 'country') {
+          const country = fieldApi.state.value as string
+          const currentCurrency = formApi.getFieldValue('currency')
+          
+          if (country && !currentCurrency) {
+            const selected = countryByCode.get(country)
+            if (selected?.currencyCode) {
+              formApi.setFieldValue('currency', selected.currencyCode)
+            }
+          }
+        }
+      },
     },
     onSubmit: async ({ value }: { value: { name: string; descriptor: string; country: string; currency: string } }) => {
       await setBusinessMutation.mutateAsync({
@@ -162,42 +196,6 @@ function BusinessSetupPage() {
       })
     },
   })
-
-  // Auto-generate descriptor from business name using field listener
-  useEffect(() => {
-    const unsubscribe = form.store.subscribe(() => {
-      const businessName = form.getFieldValue('name')
-      const descriptor = form.getFieldValue('descriptor')
-      
-      if (businessName && !descriptor) {
-        const generated = businessName
-          .toLowerCase()
-          .replace(/[^a-z0-9\s-]/g, '')
-          .replace(/\s+/g, '-')
-          .slice(0, 20)
-
-        form.setFieldValue('descriptor', generated)
-      }
-    })
-
-    return unsubscribe
-  }, [form])
-
-  // Auto-select currency when country changes
-  useEffect(() => {
-    const unsubscribe = form.store.subscribe(() => {
-      const country = form.getFieldValue('country')
-      if (country) {
-        const selected = countryByCode.get(country)
-        const currency = form.getFieldValue('currency')
-        if (selected?.currencyCode && !currency) {
-          form.setFieldValue('currency', selected.currencyCode)
-        }
-      }
-    })
-
-    return unsubscribe
-  }, [form, countryByCode])
 
   return (
     <OnboardingLayout>

@@ -135,8 +135,15 @@ export const onboardingApi = {
   async setBusiness(data: SetBusinessRequest): Promise<SetBusinessResponse> {
     const validatedRequest = SetBusinessRequestSchema.parse(data)
 
+    // Transform field names to match backend expectations
     const response = await post<unknown>('v1/onboarding/business', {
-      json: validatedRequest,
+      json: {
+        sessionToken: validatedRequest.sessionToken,
+        name: validatedRequest.businessName,
+        descriptor: validatedRequest.businessDescriptor,
+        country: validatedRequest.country,
+        currency: validatedRequest.currency,
+      },
     })
 
     return SetBusinessResponseSchema.parse(response)
