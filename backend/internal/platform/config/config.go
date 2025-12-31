@@ -75,15 +75,20 @@ const (
 	EmailHelpURL      = "email.help_url"        // help/knowledge base URL
 
 	// blob storage / uploads
-	StorageProvider        = "storage.provider"          // values: local, s3
-	StorageBucket          = "storage.bucket"            // bucket/container name
-	StorageRegion          = "storage.region"            // region (e.g., nyc3 for DO Spaces)
-	StorageEndpoint        = "storage.endpoint"          // optional (e.g., https://nyc3.digitaloceanspaces.com)
-	StorageAccessKeyID     = "storage.access_key_id"     // S3-compatible access key
-	StorageSecretAccessKey = "storage.secret_access_key" // S3-compatible secret
-	StoragePublicBaseURL   = "storage.public_base_url"   // optional public base URL (e.g., https://bucket.endpoint)
+	StorageProvider          = "storage.provider"               // values: local, s3
+	StorageBucket            = "storage.bucket"                 // bucket/container name
+	StorageRegion            = "storage.region"                 // region (e.g., nyc3 for DO Spaces)
+	StorageEndpoint          = "storage.endpoint"               // optional (e.g., https://nyc3.digitaloceanspaces.com)
+	StorageAccessKeyID       = "storage.access_key_id"          // S3-compatible access key
+	StorageSecretAccessKey   = "storage.secret_access_key"      // S3-compatible secret
+	StoragePublicBaseURL     = "storage.public_base_url"        // optional public base URL (e.g., https://bucket.endpoint)
+	StorageLocalPath         = "storage.local_path"             // local file storage directory (default: ./tmp/assets)
+	StorageMultipartPartSize = "storage.multipart_part_size_mb" // S3 multipart part size in MB (default: 10)
 
 	UploadsMaxBytes = "uploads.max_bytes" // max file size in bytes for direct uploads
+
+	// inventory configuration
+	InventoryMaxPhotosPerProduct = "inventory.max_photos_per_product" // max photos per product/variant (default: 10)
 )
 
 var configured bool
@@ -104,7 +109,10 @@ func Configure() {
 	viper.SetDefault(BillingAutoSyncPlans, true)
 	viper.SetDefault(DatabaseAutoMigrate, true)
 	viper.SetDefault(StorageProvider, "local")
+	viper.SetDefault(StorageLocalPath, "./tmp/assets")
+	viper.SetDefault(StorageMultipartPartSize, 10)        // 10 MB per part
 	viper.SetDefault(UploadsMaxBytes, int64(5*1024*1024)) // 5 MiB per upload default
+	viper.SetDefault(InventoryMaxPhotosPerProduct, 10)
 	// CORS defaults - allow all origins in development
 	viper.SetDefault(CORSAllowedOrigins, []string{"*"})
 	// Auth defaults

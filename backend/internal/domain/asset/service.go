@@ -2,11 +2,10 @@ package asset
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"io"
+	"math"
 	"mime"
-	"net/http"
 	"os"
 	"path/filepath"
 	"strings"
@@ -18,255 +17,215 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
-	"github.com/abdelrahman146/kyora/internal/platform/types/role"
-	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
-	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"github.com/spf13/viper"
 )
 
+// Service provides business logic for asset management.
 type Service struct {
 	storage *Storage
 	atomic  *database.AtomicProcess
 	blob    blob.Provider
 
-	localDir string
+	localDir            string
+	multipartPartSizeMB int
+	maxUploadBytes      int64
 }
 
-type NewServiceParams struct {
-	Storage  *Storage
-	Atomic   *database.AtomicProcess
-	Blob     blob.Provider
-	LocalDir string
-}
-
+// NewService creates a new asset service instance.
 func NewService(storage *Storage, atomic *database.AtomicProcess, provider blob.Provider) *Service {
-	return NewServiceWithParams(NewServiceParams{Storage: storage, Atomic: atomic, Blob: provider})
-}
-
-func NewServiceWithParams(p NewServiceParams) *Service {
-	localDir := strings.TrimSpace(p.LocalDir)
+	localDir := viper.GetString(config.StorageLocalPath)
 	if localDir == "" {
-		localDir = filepath.Join("tmp", "assets")
+		localDir = "./tmp/assets"
 	}
-	return &Service{storage: p.Storage, atomic: p.Atomic, blob: p.Blob, localDir: localDir}
+
+	multipartPartSizeMB := viper.GetInt(config.StorageMultipartPartSize)
+	if multipartPartSizeMB <= 0 {
+		multipartPartSizeMB = 10
+	}
+
+	maxUploadBytes := viper.GetInt64(config.UploadsMaxBytes)
+	if maxUploadBytes <= 0 {
+		maxUploadBytes = 5 * 1024 * 1024 // 5MB default
+	}
+
+	return &Service{
+		storage:             storage,
+		atomic:              atomic,
+		blob:                provider,
+		localDir:            localDir,
+		multipartPartSizeMB: multipartPartSizeMB,
+		maxUploadBytes:      maxUploadBytes,
+	}
 }
 
-func (s *Service) CreateUpload(ctx context.Context, actor *account.User, biz *business.Business, purpose Purpose, req *CreateUploadRequest) (*CreateUploadResponse, error) {
+// GenerateUploadURLs generates pre-signed URLs for direct file uploads.
+// Supports both S3 multipart uploads and local simple uploads.
+func (s *Service) GenerateUploadURLs(ctx context.Context, actor *account.User, biz *business.Business, req *GenerateUploadURLsRequest) (*GenerateUploadURLsResponse, error) {
 	if actor == nil {
 		return nil, problem.Unauthorized("unauthorized")
 	}
 	if biz == nil {
 		return nil, problem.BadRequest("business is required")
 	}
-	if req == nil {
-		return nil, problem.BadRequest("request is required")
+	if len(req.Files) == 0 {
+		return nil, problem.BadRequest("at least one file is required").With("field", "files")
+	}
+	if len(req.Files) > 50 {
+		return nil, problem.BadRequest("maximum 50 files per request").With("field", "files")
 	}
 
-	// Abuse protection: per-business+actor token bucket.
-	if !throttle.Allow(s.storage.Cache(), fmt.Sprintf("rl:asset:upload:%s:%s:%s", biz.ID, actor.ID, purpose), time.Minute, 60, 250*time.Millisecond) {
-		return nil, ErrRateLimited()
-	}
-
-	fileName := strings.TrimSpace(req.FileName)
-	contentType := strings.TrimSpace(req.ContentType)
-	size := req.SizeBytes
-	if fileName == "" {
-		return nil, problem.BadRequest("fileName is required").With("field", "fileName")
-	}
-	if contentType == "" {
-		return nil, problem.BadRequest("contentType is required").With("field", "contentType")
-	}
-	if size <= 0 {
-		return nil, problem.BadRequest("sizeBytes must be > 0").With("field", "sizeBytes")
-	}
-
-	maxBytes := viper.GetInt64(config.UploadsMaxBytes)
-	if maxBytes > 0 && size > maxBytes {
-		return nil, problem.BadRequest("file is too large").With("field", "sizeBytes").With("maxBytes", maxBytes)
-	}
-
-	// Only allow image uploads for current use-cases.
-	if !isAllowedImageContentType(contentType) {
-		return nil, ErrUploadNotAllowed("contentType", "only image uploads are supported")
-	}
-
-	idem, err := NormalizeIdempotencyKey(req.IdempotencyKey)
-	if err != nil {
-		return nil, err
-	}
-
-	visibility := VisibilityPublic
-	fingerprint := RequestFingerprint(purpose, visibility, fileName, contentType, size)
-
-	// Idempotency fast-path.
-	if idem != "" {
-		if existing, gerr := s.storage.FindByBusinessAndIdempotencyKey(ctx, biz.ID, idem); gerr == nil && existing != nil {
-			if existing.RequestHash != fingerprint {
-				return nil, ErrIdempotencyConflict()
-			}
-			resp := &CreateUploadResponse{AssetID: existing.ID, PublicURL: existing.PublicURL, Status: existing.Status}
-			if existing.Status == StatusPending {
-				u, uerr := s.buildUploadDescriptor(ctx, biz, existing)
-				if uerr != nil {
-					return nil, uerr
-				}
-				resp.Upload = u
-				if existing.UploadExpiresAt != nil {
-					resp.ExpiresAt = existing.UploadExpiresAt
-				}
-			}
-			return resp, nil
+	// Validate content types (images only for now)
+	for i, file := range req.Files {
+		if !isImageContentType(file.ContentType) {
+			return nil, problem.BadRequest("only image files are supported").
+				With("field", fmt.Sprintf("files[%d].contentType", i)).
+				With("contentType", file.ContentType)
 		}
 	}
 
-	out := &CreateUploadResponse{}
-	err = s.atomic.Exec(ctx, func(tctx context.Context) error {
-		a := &Asset{
-			WorkspaceID:     biz.WorkspaceID,
-			BusinessID:      biz.ID,
-			CreatedByUserID: actor.ID,
-			Purpose:         purpose,
-			Visibility:      visibility,
-			Status:          StatusPending,
-			ContentType:     contentType,
-			SizeBytes:       size,
-			IdempotencyKey:  idem,
-			RequestHash:     fingerprint,
-		}
-		// Pre-generate ID so we can use it in the object key.
-		if a.ID == "" {
-			a.ID = id.KsuidWithPrefix(AssetPrefix)
-		}
-		a.ObjectKey = s.buildObjectKey(biz.ID, a.ID, fileName)
+	uploads := make([]UploadDescriptor, 0, len(req.Files))
 
-		if err := s.storage.Create(tctx, a); err != nil {
-			if database.IsUniqueViolation(err) && idem != "" {
-				// Another request won the race. Re-fetch and return.
-				existing, gerr := s.storage.FindByBusinessAndIdempotencyKey(tctx, biz.ID, idem)
-				if gerr != nil {
-					return gerr
-				}
-				if existing.RequestHash != fingerprint {
-					return ErrIdempotencyConflict()
-				}
-				out.AssetID = existing.ID
-				out.PublicURL = existing.PublicURL
-				out.Status = existing.Status
-				if existing.Status == StatusPending {
-					u, uerr := s.buildUploadDescriptor(tctx, biz, existing)
-					if uerr != nil {
-						return uerr
-					}
-					out.Upload = u
-					out.ExpiresAt = existing.UploadExpiresAt
-				}
-				return nil
-			}
-			return err
+	for _, file := range req.Files {
+		descriptor, err := s.generateSingleUpload(ctx, actor, biz, file)
+		if err != nil {
+			return nil, err
 		}
-
-		u, uerr := s.buildUploadDescriptor(tctx, biz, a)
-		if uerr != nil {
-			return uerr
-		}
-		a.PublicURL = s.buildPublicURL(biz, a)
-		if u == nil {
-			return problem.InternalError().With("asset", "upload_descriptor_missing")
-		}
-
-		// Persist expiry for idempotent replay.
-		if u.URL != "" {
-			exp := time.Now().UTC().Add(10 * time.Minute)
-			a.UploadExpiresAt = &exp
-			_ = s.storage.Update(tctx, a)
-			out.ExpiresAt = &exp
-		}
-
-		out.AssetID = a.ID
-		out.Upload = u
-		out.PublicURL = a.PublicURL
-		out.Status = a.Status
-		return nil
-	})
-	if err != nil {
-		return nil, err
+		uploads = append(uploads, *descriptor)
 	}
 
-	return out, nil
+	return &GenerateUploadURLsResponse{Uploads: uploads}, nil
 }
 
-func (s *Service) CompleteUpload(ctx context.Context, actor *account.User, biz *business.Business, assetID string, expectedPurpose Purpose) (*CompleteUploadResponse, error) {
-	if actor == nil {
-		return nil, problem.Unauthorized("unauthorized")
-	}
-	if biz == nil {
-		return nil, problem.BadRequest("business is required")
-	}
-	assetID = strings.TrimSpace(assetID)
-	if assetID == "" {
-		return nil, problem.BadRequest("assetId is required")
-	}
-
-	// Abuse protection: completion calls are cheap but can be spammed.
-	if !throttle.Allow(s.storage.Cache(), fmt.Sprintf("rl:asset:complete:%s:%s", biz.ID, actor.ID), time.Minute, 120, 150*time.Millisecond) {
-		return nil, ErrRateLimited()
+// generateSingleUpload generates upload instructions for a single file.
+func (s *Service) generateSingleUpload(ctx context.Context, actor *account.User, biz *business.Business, file FileUploadRequest) (*UploadDescriptor, error) {
+	// Create asset record immediately
+	asset := &Asset{
+		WorkspaceID:     biz.WorkspaceID,
+		BusinessID:      biz.ID,
+		CreatedByUserID: actor.ID,
+		ContentType:     file.ContentType,
+		SizeBytes:       file.SizeBytes,
+		ObjectKey:       s.buildObjectKey(biz.ID, "", sanitizeFilename(file.FileName)),
 	}
 
-	a, err := s.storage.GetByID(ctx, biz.ID, assetID)
-	if err != nil || a == nil {
-		return nil, ErrAssetNotFound(assetID, err)
-	}
-	if a.Purpose != expectedPurpose {
-		return nil, problem.Forbidden("invalid asset purpose").With("assetPurpose", a.Purpose).With("expectedPurpose", expectedPurpose)
-	}
-	if a.Status == StatusReady {
-		return &CompleteUploadResponse{AssetID: a.ID, PublicURL: a.PublicURL, Status: a.Status}, nil
+	// Generate assetId before creating upload
+	if err := asset.BeforeCreate(nil); err != nil {
+		return nil, err
 	}
 
-	provider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
+	// Update object key with actual assetId
+	asset.ObjectKey = s.buildObjectKey(biz.ID, asset.ID, sanitizeFilename(file.FileName))
 
-	// Local uploads: content must have been PUT to us already.
-	if provider == "local" {
-		if strings.TrimSpace(a.LocalFilePath) == "" {
-			return nil, ErrUploadNotReady()
-		}
-		st, statErr := os.Stat(a.LocalFilePath)
-		if statErr != nil {
-			return nil, ErrUploadNotReady()
-		}
-		if st.Size() != a.SizeBytes {
-			return nil, problem.Conflict("uploaded size mismatch").With("expected", a.SizeBytes).With("actual", st.Size())
-		}
+	provider := viper.GetString(config.StorageProvider)
+	isLocal := provider == "local" || provider == ""
 
-		return s.markReady(ctx, a, s.buildPublicURL(biz, a))
+	if isLocal {
+		// Local simple upload
+		return s.generateLocalUpload(ctx, asset, file)
 	}
 
+	// S3 multipart upload
+	return s.generateS3MultipartUpload(ctx, asset, file)
+}
+
+// generateLocalUpload creates a simple local upload endpoint.
+func (s *Service) generateLocalUpload(ctx context.Context, asset *Asset, file FileUploadRequest) (*UploadDescriptor, error) {
+	// For local, we store files in configured directory
+	localPath := filepath.Join(s.localDir, asset.ID)
+	asset.LocalFilePath = localPath
+	asset.PublicURL = s.buildPublicURL(asset)
+
+	if err := s.storage.Create(ctx, asset); err != nil {
+		return nil, err
+	}
+
+	baseURL := viper.GetString(config.HTTPBaseURL)
+	uploadURL := fmt.Sprintf("%s/v1/assets/internal/upload/%s", baseURL, asset.ID)
+
+	return &UploadDescriptor{
+		AssetID:     asset.ID,
+		FileName:    file.FileName,
+		Method:      "POST",
+		URL:         uploadURL,
+		Headers:     map[string]string{"Content-Type": file.ContentType},
+		PublicURL:   asset.PublicURL,
+		ContentType: file.ContentType,
+		SizeBytes:   file.SizeBytes,
+	}, nil
+}
+
+// generateS3MultipartUpload creates a multipart upload with presigned part URLs.
+func (s *Service) generateS3MultipartUpload(ctx context.Context, asset *Asset, file FileUploadRequest) (*UploadDescriptor, error) {
 	if s.blob == nil {
-		return nil, problem.InternalError().With("blob", "not_configured")
+		return nil, problem.InternalError()
 	}
 
-	info, err := s.blob.Head(ctx, a.ObjectKey)
+	// Calculate parts
+	partSizeBytes := int64(s.multipartPartSizeMB) * 1024 * 1024
+	totalParts := int(math.Ceil(float64(file.SizeBytes) / float64(partSizeBytes)))
+
+	if totalParts > 10000 {
+		return nil, problem.BadRequest("file too large").
+			With("maxParts", 10000).
+			With("partSize", partSizeBytes).
+			With("maxFileSize", 10000*partSizeBytes)
+	}
+
+	// Initiate multipart upload
+	uploadID, err := s.blob.CreateMultipartUpload(ctx, asset.ObjectKey, file.ContentType)
 	if err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	// Generate presigned URLs for each part
+	partURLs := make([]PartURLInfo, totalParts)
+	expiresIn := 24 * time.Hour // Long expiry for large uploads
+
+	for i := 1; i <= totalParts; i++ {
+		partURL, err := s.blob.PresignMultipartPart(ctx, asset.ObjectKey, uploadID, i, expiresIn)
+		if err != nil {
+			// Abort multipart upload on failure
+			_ = s.blob.AbortMultipartUpload(ctx, asset.ObjectKey, uploadID)
+			return nil, problem.InternalError().WithError(err)
+		}
+		partURLs[i-1] = PartURLInfo{
+			PartNumber: i,
+			URL:        partURL,
+		}
+	}
+
+	// Get public URL
+	publicURL, ok := s.blob.PublicURL(asset.ObjectKey)
+	if !ok {
+		publicURL = ""
+	}
+	asset.PublicURL = publicURL
+	asset.UploadID = uploadID
+	asset.IsMultipart = true
+	asset.TotalParts = totalParts
+
+	if err := s.storage.Create(ctx, asset); err != nil {
+		// Abort multipart upload on failure
+		_ = s.blob.AbortMultipartUpload(ctx, asset.ObjectKey, uploadID)
 		return nil, err
 	}
-	if info.SizeBytes != a.SizeBytes {
-		return nil, problem.Conflict("uploaded size mismatch").With("expected", a.SizeBytes).With("actual", info.SizeBytes)
-	}
-	if strings.TrimSpace(info.ContentType) != "" && strings.TrimSpace(info.ContentType) != strings.TrimSpace(a.ContentType) {
-		return nil, problem.Conflict("uploaded contentType mismatch").With("expected", a.ContentType).With("actual", info.ContentType)
-	}
 
-	publicURL := s.buildPublicURL(biz, a)
-	if publicURL == "" {
-		return nil, problem.InternalError().With("asset", "public_url_unavailable")
-	}
-
-	return s.markReady(ctx, a, publicURL)
+	return &UploadDescriptor{
+		AssetID:     asset.ID,
+		FileName:    file.FileName,
+		Method:      "PUT",
+		UploadID:    uploadID,
+		PartSize:    partSizeBytes,
+		TotalParts:  totalParts,
+		PartURLs:    partURLs,
+		PublicURL:   publicURL,
+		ContentType: file.ContentType,
+		SizeBytes:   file.SizeBytes,
+	}, nil
 }
 
-// DeleteAsset removes an uploaded asset if it belongs to the business, the actor is authorized,
-// and the asset is not currently referenced by any business, product, or variant.
-func (s *Service) DeleteAsset(ctx context.Context, actor *account.User, biz *business.Business, assetID string) error {
+// CompleteMultipartUpload completes a multipart upload after all parts are uploaded.
+func (s *Service) CompleteMultipartUpload(ctx context.Context, actor *account.User, biz *business.Business, assetID string, req *CompleteMultipartUploadRequest) error {
 	if actor == nil {
 		return problem.Unauthorized("unauthorized")
 	}
@@ -274,276 +233,171 @@ func (s *Service) DeleteAsset(ctx context.Context, actor *account.User, biz *bus
 		return problem.BadRequest("business is required")
 	}
 
-	assetID = strings.TrimSpace(assetID)
-	if assetID == "" {
-		return problem.BadRequest("assetId is required")
-	}
-
-	if !throttle.Allow(s.storage.Cache(), fmt.Sprintf("rl:asset:delete:%s:%s", biz.ID, actor.ID), time.Minute, 120, 150*time.Millisecond) {
-		return ErrRateLimited()
-	}
-
-	a, err := s.storage.GetByID(ctx, biz.ID, assetID)
-	if err != nil || a == nil {
-		return ErrAssetNotFound(assetID, err)
-	}
-	if a.WorkspaceID != biz.WorkspaceID {
-		return problem.Forbidden("asset does not belong to workspace")
-	}
-
-	if err := s.authorizeDelete(actor, a); err != nil {
+	asset, err := s.storage.GetByID(ctx, biz.ID, assetID)
+	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return problem.NotFound("asset not found").With("assetId", assetID)
+		}
 		return err
 	}
 
-	if a.Status == StatusReady {
-		referenced, rerr := s.storage.IsReferenced(ctx, a)
-		if rerr != nil {
-			return rerr
-		}
-		if referenced {
-			return ErrAssetInUse(a.ID)
-		}
+	if !asset.IsMultipart {
+		return problem.BadRequest("asset is not a multipart upload").With("assetId", assetID)
 	}
 
-	_, derr := s.deleteAsset(ctx, a)
-	return derr
-}
-
-func (s *Service) authorizeDelete(actor *account.User, a *Asset) error {
-	switch a.Purpose {
-	case PurposeBusinessLogo:
-		return actor.Role.HasPermission(role.ActionManage, role.ResourceBusiness)
-	case PurposeProductPhoto, PurposeVariantPhoto:
-		return actor.Role.HasPermission(role.ActionManage, role.ResourceInventory)
-	default:
-		return problem.Forbidden("unsupported asset purpose").With("purpose", a.Purpose)
-	}
-}
-
-type deleteOutcome struct {
-	deletedFile bool
-	deletedBlob bool
-}
-
-func (s *Service) deleteAsset(ctx context.Context, a *Asset) (*deleteOutcome, error) {
-	out := &deleteOutcome{}
-	if a == nil {
-		return out, nil
+	if asset.UploadID == "" {
+		return problem.BadRequest("asset has no upload ID").With("assetId", assetID)
 	}
 
-	if a.LocalFilePath != "" {
-		if err := os.Remove(a.LocalFilePath); err == nil {
-			out.deletedFile = true
-		} else if !os.IsNotExist(err) {
-			return out, err
+	if len(req.Parts) == 0 {
+		return problem.BadRequest("at least one part is required").With("field", "parts")
+	}
+
+	// Convert to blob.CompletedPart
+	completedParts := make([]blob.CompletedPart, len(req.Parts))
+	for i, part := range req.Parts {
+		completedParts[i] = blob.CompletedPart{
+			PartNumber: part.PartNumber,
+			ETag:       part.ETag,
 		}
 	}
 
-	if s.blob != nil && a.ObjectKey != "" {
-		if err := s.blob.Delete(ctx, a.ObjectKey); err != nil {
-			return out, err
-		}
-		out.deletedBlob = true
+	// Complete on S3
+	if err := s.blob.CompleteMultipartUpload(ctx, asset.ObjectKey, asset.UploadID, completedParts); err != nil {
+		return problem.InternalError().WithError(err)
 	}
 
-	if err := s.storage.Delete(ctx, a); err != nil {
-		return out, err
+	// Mark upload as complete in DB
+	if err := s.storage.MarkUploadComplete(ctx, assetID); err != nil {
+		return err
 	}
-	return out, nil
+
+	return nil
 }
 
-func (s *Service) StoreLocalContent(ctx context.Context, actor *account.User, biz *business.Business, assetID string, expectedPurpose Purpose, contentType string, r io.Reader) (*Asset, error) {
-	if actor == nil {
-		return nil, problem.Unauthorized("unauthorized")
-	}
-	if biz == nil {
-		return nil, problem.BadRequest("business is required")
-	}
-	assetID = strings.TrimSpace(assetID)
-	if assetID == "" {
-		return nil, problem.BadRequest("assetId is required")
-	}
-	provider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
-	if provider != "local" {
-		return nil, problem.BadRequest("local upload endpoint is disabled")
-	}
-
-	a, err := s.storage.GetByID(ctx, biz.ID, assetID)
-	if err != nil || a == nil {
-		return nil, ErrAssetNotFound(assetID, err)
-	}
-	if a.Purpose != expectedPurpose {
-		return nil, problem.Forbidden("invalid asset purpose").With("assetPurpose", a.Purpose).With("expectedPurpose", expectedPurpose)
-	}
-	if a.Status == StatusReady {
-		return a, nil
-	}
-
-	if !isAllowedImageContentType(a.ContentType) {
-		return nil, ErrUploadNotAllowed("contentType", "only image uploads are supported")
-	}
-
-	// Ensure the client isn't smuggling a different Content-Type.
-	ct := strings.TrimSpace(contentType)
-	if ct != "" && strings.TrimSpace(a.ContentType) != "" && ct != a.ContentType {
-		return nil, problem.Conflict("contentType mismatch").With("expected", a.ContentType).With("actual", ct)
-	}
-
-	maxBytes := viper.GetInt64(config.UploadsMaxBytes)
-	limit := a.SizeBytes
-	if maxBytes > 0 && limit > maxBytes {
-		limit = maxBytes
-	}
-	if limit <= 0 {
-		limit = maxBytes
-	}
-	if limit <= 0 {
-		limit = 5 * 1024 * 1024
-	}
-
-	// Read with a hard limit to prevent abuse.
-	data, err := io.ReadAll(io.LimitReader(r, limit+1))
+// StoreLocalContent stores uploaded content for local provider.
+// This is an internal handler called by the local upload endpoint.
+func (s *Service) StoreLocalContent(ctx context.Context, assetID string, contentType string, r io.Reader) error {
+	asset, err := s.storage.FindByID(ctx, assetID)
 	if err != nil {
-		return nil, problem.InternalError().WithError(err)
-	}
-	if int64(len(data)) != a.SizeBytes {
-		return nil, problem.BadRequest("uploaded size must match sizeBytes").With("expected", a.SizeBytes).With("actual", len(data))
-	}
-
-	// Persist to disk.
-	if err := os.MkdirAll(s.localDir, 0o755); err != nil {
-		return nil, problem.InternalError().WithError(err)
-	}
-	path := filepath.Join(s.localDir, a.ID)
-	if err := os.WriteFile(path, data, 0o644); err != nil {
-		return nil, problem.InternalError().WithError(err)
+		if database.IsRecordNotFound(err) {
+			return problem.NotFound("asset not found").With("assetId", assetID)
+		}
+		return err
 	}
 
-	a.LocalFilePath = path
-	if err := s.storage.Update(ctx, a); err != nil {
-		return nil, problem.InternalError().WithError(err)
+	if asset.LocalFilePath == "" {
+		return problem.BadRequest("asset is not configured for local upload").With("assetId", assetID)
 	}
 
-	return a, nil
+	// Verify content type matches
+	if asset.ContentType != contentType {
+		return problem.BadRequest("content type mismatch").
+			With("expected", asset.ContentType).
+			With("actual", contentType)
+	}
+
+	// Ensure directory exists
+	dir := filepath.Dir(asset.LocalFilePath)
+	if err := os.MkdirAll(dir, 0755); err != nil {
+		return problem.InternalError().WithError(err)
+	}
+
+	// Write file
+	f, err := os.Create(asset.LocalFilePath)
+	if err != nil {
+		return problem.InternalError().WithError(err)
+	}
+	defer f.Close()
+
+	written, err := io.Copy(f, r)
+	if err != nil {
+		return problem.InternalError().WithError(err)
+	}
+
+	// Verify size matches
+	if written != asset.SizeBytes {
+		// Clean up partial file
+		_ = os.Remove(asset.LocalFilePath)
+		return problem.BadRequest("size mismatch").
+			With("expected", asset.SizeBytes).
+			With("actual", written)
+	}
+
+	return nil
 }
 
+// GetPublicAsset returns an asset for public serving.
+// No authentication required - assets are public by design.
 func (s *Service) GetPublicAsset(ctx context.Context, assetID string) (*Asset, error) {
-	assetID = strings.TrimSpace(assetID)
-	if assetID == "" {
-		return nil, problem.BadRequest("assetId is required")
-	}
-	// Public assets are safe to resolve without auth; still enforce visibility + status.
-	// We query by ID without a business scope.
-	a, err := s.storage.asset.FindByID(ctx, assetID)
-	if err != nil || a == nil {
-		return nil, ErrAssetNotFound(assetID, err)
-	}
-	if a.Visibility != VisibilityPublic {
-		return nil, problem.NotFound("asset not found")
-	}
-	if a.Status != StatusReady {
-		return nil, problem.NotFound("asset not found")
-	}
-	return a, nil
-}
-
-func (s *Service) buildObjectKey(businessID, assetID, fileName string) string {
-	name := sanitizeFilename(fileName)
-	return fmt.Sprintf("business/%s/assets/%s/%s", businessID, assetID, name)
-}
-
-func (s *Service) buildPublicURL(biz *business.Business, a *Asset) string {
-	if a == nil {
-		return ""
-	}
-	provider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
-	if provider == "local" {
-		base := strings.TrimRight(strings.TrimSpace(viper.GetString(config.HTTPBaseURL)), "/")
-		if base == "" {
-			base = "http://localhost:8080"
-		}
-		return fmt.Sprintf("%s/v1/public/assets/%s", base, a.ID)
-	}
-	if s.blob == nil {
-		return ""
-	}
-	if url, ok := s.blob.PublicURL(a.ObjectKey); ok {
-		return url
-	}
-	return ""
-}
-
-func (s *Service) buildUploadDescriptor(ctx context.Context, biz *business.Business, a *Asset) (*UploadDescriptor, error) {
-	provider := strings.ToLower(strings.TrimSpace(viper.GetString(config.StorageProvider)))
-	base := strings.TrimRight(strings.TrimSpace(viper.GetString(config.HTTPBaseURL)), "/")
-	if base == "" {
-		base = "http://localhost:8080"
-	}
-
-	if provider == "local" {
-		// Local dev: upload directly to the API.
-		return &UploadDescriptor{
-			Method:  http.MethodPut,
-			URL:     fmt.Sprintf("%s/v1/businesses/%s/assets/uploads/%s/content/%s", base, biz.Descriptor, a.ID, a.Purpose),
-			Headers: map[string]string{"Content-Type": a.ContentType},
-		}, nil
-	}
-
-	if s.blob == nil {
-		return nil, problem.InternalError().With("blob", "not_configured")
-	}
-
-	expires := 10 * time.Minute
-	out, err := s.blob.PresignPut(ctx, blob.PresignPutInput{
-		Key:         a.ObjectKey,
-		ContentType: a.ContentType,
-		SizeBytes:   a.SizeBytes,
-		ExpiresIn:   expires,
-	})
+	asset, err := s.storage.FindByID(ctx, assetID)
 	if err != nil {
+		if database.IsRecordNotFound(err) {
+			return nil, problem.NotFound("asset not found").With("assetId", assetID)
+		}
 		return nil, err
 	}
 
-	return &UploadDescriptor{Method: out.Method, URL: out.URL, Headers: out.Headers}, nil
+	return asset, nil
 }
 
-func (s *Service) markReady(ctx context.Context, a *Asset, publicURL string) (*CompleteUploadResponse, error) {
-	now := time.Now().UTC()
-	a.Status = StatusReady
-	a.CompletedAt = &now
-	a.PublicURL = publicURL
-	if err := s.storage.Update(ctx, a); err != nil {
-		return nil, problem.InternalError().WithError(err)
+// buildObjectKey creates the blob storage key for an asset.
+func (s *Service) buildObjectKey(businessID, assetID, fileName string) string {
+	if assetID == "" {
+		assetID = "temp"
 	}
-	return &CompleteUploadResponse{AssetID: a.ID, PublicURL: a.PublicURL, Status: a.Status}, nil
+	sanitized := sanitizeFilename(fileName)
+	return fmt.Sprintf("assets/%s/%s/%s", businessID, assetID, sanitized)
 }
 
-func isAllowedImageContentType(ct string) bool {
-	ct = strings.TrimSpace(strings.ToLower(ct))
-	if ct == "" {
-		return false
-	}
-	// Normalize common "image/jpg".
-	if ct == "image/jpg" {
-		ct = "image/jpeg"
-	}
+// buildPublicURL constructs the public URL for an asset.
+func (s *Service) buildPublicURL(asset *Asset) string {
+	baseURL := viper.GetString(config.HTTPBaseURL)
+	return fmt.Sprintf("%s/v1/public/assets/%s", baseURL, asset.ID)
+}
+
+// isImageContentType checks if the content type is a supported image format.
+func isImageContentType(ct string) bool {
+	ct = strings.ToLower(strings.TrimSpace(ct))
 	switch ct {
-	case "image/png", "image/jpeg", "image/webp", "image/gif":
+	case "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif":
 		return true
 	default:
 		return false
 	}
 }
 
-func sniffContentType(headerValue string) string {
-	if headerValue == "" {
-		return ""
+// sanitizeFilename removes dangerous characters from filenames.
+func sanitizeFilename(name string) string {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return "file"
 	}
-	mt, _, err := mime.ParseMediaType(headerValue)
-	if err != nil {
-		return ""
+	// Remove path traversal and exotic chars
+	name = strings.ReplaceAll(name, "\\", "_")
+	name = strings.ReplaceAll(name, "/", "_")
+	name = strings.ReplaceAll(name, "..", "_")
+	name = strings.ReplaceAll(name, " ", "_")
+	if len(name) > 80 {
+		ext := filepath.Ext(name)
+		base := name[:len(name)-len(ext)]
+		if len(base) > 75 {
+			base = base[:75]
+		}
+		name = base + ext
 	}
-	return strings.ToLower(strings.TrimSpace(mt))
+	return name
 }
 
-var errMissingLocalFile = errors.New("local file missing")
+// getMimeType attempts to detect MIME type from file extension.
+func getMimeType(filename string) string {
+	ext := filepath.Ext(filename)
+	if ext == "" {
+		return "application/octet-stream"
+	}
+	mimeType := mime.TypeByExtension(ext)
+	if mimeType == "" {
+		return "application/octet-stream"
+	}
+	return mimeType
+}

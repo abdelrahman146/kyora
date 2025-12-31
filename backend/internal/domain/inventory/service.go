@@ -9,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
@@ -134,13 +135,13 @@ type CreateProductWithVariantsRequest struct {
 // CreateProductVariantRequest is used when creating a product with variants in a single request.
 // It intentionally does not include ProductID because the product is created atomically.
 type CreateProductVariantRequest struct {
-	Code               string           `json:"code" binding:"required"`
-	SKU                string           `json:"sku" binding:"omitempty"`
-	Photos             []string         `json:"photos" binding:"omitempty,max=10,dive,required"`
-	CostPrice          *decimal.Decimal `json:"costPrice" binding:"required"`
-	SalePrice          *decimal.Decimal `json:"salePrice" binding:"required"`
-	StockQuantity      *int             `json:"stockQuantity" binding:"required,gte=0"`
-	StockQuantityAlert *int             `json:"stockQuantityAlert" binding:"required,gte=0"`
+	Code               string                 `json:"code" binding:"required"`
+	SKU                string                 `json:"sku" binding:"omitempty"`
+	Photos             []asset.AssetReference `json:"photos" binding:"omitempty,max=10,dive"`
+	CostPrice          *decimal.Decimal       `json:"costPrice" binding:"required"`
+	SalePrice          *decimal.Decimal       `json:"salePrice" binding:"required"`
+	StockQuantity      *int                   `json:"stockQuantity" binding:"required,gte=0"`
+	StockQuantityAlert *int                   `json:"stockQuantityAlert" binding:"required,gte=0"`
 }
 
 func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.User, biz *business.Business, req *CreateProductWithVariantsRequest) (*Product, error) {
@@ -152,7 +153,7 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 			return err
 		}
 
-		photos := PhotoURLList(req.Product.Photos)
+		photos := AssetReferenceList(req.Product.Photos)
 		product = &Product{
 			BusinessID:  biz.ID,
 			Name:        req.Product.Name,
@@ -184,7 +185,7 @@ func (s *Service) CreateProductWithVariants(ctx context.Context, actor *account.
 			if variantReq.SalePrice.IsNegative() {
 				return problem.BadRequest("salePrice must be >= 0").With("field", "salePrice")
 			}
-			photos := PhotoURLList(variantReq.Photos)
+			photos := AssetReferenceList(variantReq.Photos)
 			sku := strings.TrimSpace(variantReq.SKU)
 			if sku == "" {
 				sku = CreateProductSKU(biz.Descriptor, product.Name, variantReq.Code)
@@ -239,7 +240,7 @@ func (s *Service) CreateProduct(ctx context.Context, actor *account.User, biz *b
 		return nil, err
 	}
 
-	photos := PhotoURLList(req.Photos)
+	photos := AssetReferenceList(req.Photos)
 	product := &Product{
 		BusinessID:  biz.ID,
 		Name:        req.Name,
@@ -281,7 +282,7 @@ func (s *Service) CreateVariant(ctx context.Context, actor *account.User, biz *b
 	if sku == "" {
 		sku = CreateProductSKU(biz.Descriptor, product.Name, req.Code)
 	}
-	photos := PhotoURLList(req.Photos)
+	photos := AssetReferenceList(req.Photos)
 	variant := &Variant{
 		BusinessID:         biz.ID,
 		ProductID:          product.ID,
@@ -322,7 +323,7 @@ func (s *Service) UpdateProduct(ctx context.Context, actor *account.User, biz *b
 			product.Description = req.Description
 		}
 		if req.Photos != nil {
-			product.Photos = PhotoURLList(req.Photos)
+			product.Photos = AssetReferenceList(req.Photos)
 		}
 		if req.CategoryID != "" {
 			if _, err := s.GetCategoryByID(tctx, actor, biz, req.CategoryID); err != nil {
@@ -351,7 +352,7 @@ func (s *Service) UpdateVariant(ctx context.Context, actor *account.User, biz *b
 		variant.SKU = strings.TrimSpace(*req.SKU)
 	}
 	if req.Photos != nil {
-		variant.Photos = PhotoURLList(req.Photos)
+		variant.Photos = AssetReferenceList(req.Photos)
 	}
 	if req.CostPrice != nil {
 		if req.CostPrice.IsNegative() {

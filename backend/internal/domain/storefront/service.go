@@ -13,6 +13,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/inventory"
 	"github.com/abdelrahman146/kyora/internal/domain/order"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
@@ -44,7 +45,7 @@ type PublicBusiness struct {
 	Name               string                   `json:"name"`
 	Descriptor         string                   `json:"descriptor"`
 	Brand              string                   `json:"brand,omitempty"`
-	LogoURL            string                   `json:"logoUrl,omitempty"`
+	Logo               *asset.AssetReference    `json:"logo,omitempty"`
 	CountryCode        string                   `json:"countryCode"`
 	Currency           string                   `json:"currency"`
 	StorefrontPublicID string                   `json:"storefrontPublicId"`
@@ -63,23 +64,23 @@ type PublicBusiness struct {
 }
 
 type PublicVariant struct {
-	ID        string                 `json:"id"`
-	ProductID string                 `json:"productId"`
-	Code      string                 `json:"code"`
-	Name      string                 `json:"name"`
-	SKU       string                 `json:"sku"`
-	SalePrice string                 `json:"salePrice"`
-	Currency  string                 `json:"currency"`
-	Photos    inventory.PhotoURLList `json:"photos"`
+	ID        string                       `json:"id"`
+	ProductID string                       `json:"productId"`
+	Code      string                       `json:"code"`
+	Name      string                       `json:"name"`
+	SKU       string                       `json:"sku"`
+	SalePrice string                       `json:"salePrice"`
+	Currency  string                       `json:"currency"`
+	Photos    inventory.AssetReferenceList `json:"photos"`
 }
 
 type PublicProduct struct {
-	ID          string                 `json:"id"`
-	Name        string                 `json:"name"`
-	Description string                 `json:"description,omitempty"`
-	CategoryID  string                 `json:"categoryId"`
-	Photos      inventory.PhotoURLList `json:"photos"`
-	Variants    []PublicVariant        `json:"variants"`
+	ID          string                       `json:"id"`
+	Name        string                       `json:"name"`
+	Description string                       `json:"description,omitempty"`
+	CategoryID  string                       `json:"categoryId"`
+	Photos      inventory.AssetReferenceList `json:"photos"`
+	Variants    []PublicVariant              `json:"variants"`
 }
 
 type PublicCategory struct {
@@ -129,7 +130,7 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 	for _, v := range vars {
 		photos := v.Photos
 		if photos == nil {
-			photos = inventory.PhotoURLList{}
+			photos = inventory.AssetReferenceList{}
 		}
 		variantsByProduct[v.ProductID] = append(variantsByProduct[v.ProductID], PublicVariant{
 			ID:        v.ID,
@@ -152,7 +153,7 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 	for _, p := range prods {
 		photos := p.Photos
 		if photos == nil {
-			photos = inventory.PhotoURLList{}
+			photos = inventory.AssetReferenceList{}
 		}
 		outProds = append(outProds, PublicProduct{
 			ID:          p.ID,
@@ -170,7 +171,7 @@ func (s *Service) GetCatalog(ctx context.Context, storefrontPublicID string) (*C
 			Name:               biz.Name,
 			Descriptor:         biz.Descriptor,
 			Brand:              biz.Brand,
-			LogoURL:            biz.LogoURL,
+			Logo:               biz.Logo,
 			CountryCode:        biz.CountryCode,
 			Currency:           biz.Currency,
 			StorefrontPublicID: biz.StorefrontPublicID,

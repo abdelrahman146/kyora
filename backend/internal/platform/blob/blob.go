@@ -23,6 +23,28 @@ type Provider interface {
 	// PublicURL returns a public URL for the given key, if the provider is configured for public access.
 	// If the provider cannot produce a public URL, ok will be false.
 	PublicURL(key string) (url string, ok bool)
+
+	// CreateMultipartUpload initiates a multipart upload and returns an uploadId.
+	// The uploadId is used to identify this specific multipart upload session.
+	CreateMultipartUpload(ctx context.Context, key string, contentType string) (uploadId string, err error)
+
+	// PresignMultipartPart generates a presigned URL for uploading a specific part of a multipart upload.
+	// partNumber must be between 1 and 10,000. Returns the presigned URL that clients use to upload the part.
+	PresignMultipartPart(ctx context.Context, key string, uploadId string, partNumber int, expiresIn time.Duration) (url string, err error)
+
+	// CompleteMultipartUpload finalizes a multipart upload by assembling the uploaded parts.
+	// parts should contain the ETag for each part number in order.
+	CompleteMultipartUpload(ctx context.Context, key string, uploadId string, parts []CompletedPart) error
+
+	// AbortMultipartUpload cancels a multipart upload and cleans up any uploaded parts.
+	// This is optional - abandoned uploads can be cleaned up via S3 lifecycle policies.
+	AbortMultipartUpload(ctx context.Context, key string, uploadId string) error
+}
+
+// CompletedPart represents a successfully uploaded part of a multipart upload.
+type CompletedPart struct {
+	PartNumber int    `json:"partNumber"`
+	ETag       string `json:"etag"`
 }
 
 type PresignPutInput struct {

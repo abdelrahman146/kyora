@@ -1,15 +1,11 @@
 package asset
 
 import (
-	"crypto/sha256"
-	"encoding/hex"
-	"fmt"
-	"strings"
-	"time"
+	"encoding/json"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"gorm.io/gorm"
@@ -24,66 +20,42 @@ const (
 	AssetPrefix = "ast"
 )
 
-type Purpose string
-
-const (
-	PurposeBusinessLogo Purpose = "business_logo"
-	PurposeProductPhoto Purpose = "product_photo"
-	PurposeVariantPhoto Purpose = "variant_photo"
-)
-
-type Visibility string
-
-const (
-	VisibilityPublic  Visibility = "public"
-	VisibilityPrivate Visibility = "private"
-)
-
-type Status string
-
-const (
-	StatusPending Status = "pending"
-	StatusReady   Status = "ready"
-)
-
+// Asset represents an uploaded file in blob storage.
+// This model tracks both S3 multipart uploads and simple local file uploads.
 type Asset struct {
 	gorm.Model
 	ID              string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	WorkspaceID     string             `gorm:"column:workspace_id;type:text;not null;index" json:"workspaceId"`
 	Workspace       *account.Workspace `gorm:"foreignKey:WorkspaceID;references:ID" json:"workspace,omitempty"`
-	BusinessID      string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:uniq_business_idem" json:"businessId"`
+	BusinessID      string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
 	Business        *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	CreatedByUserID string             `gorm:"column:created_by_user_id;type:text;not null;index" json:"createdByUserId"`
-	Purpose         Purpose            `gorm:"column:purpose;type:text;not null;index" json:"purpose"`
-	Visibility      Visibility         `gorm:"column:visibility;type:text;not null;default:'public';index" json:"visibility"`
-	Status          Status             `gorm:"column:status;type:text;not null;default:'pending';index" json:"status"`
 	ObjectKey       string             `gorm:"column:object_key;type:text;not null;uniqueIndex" json:"objectKey"`
 	PublicURL       string             `gorm:"column:public_url;type:text" json:"publicUrl"`
 	ContentType     string             `gorm:"column:content_type;type:text;not null" json:"contentType"`
 	SizeBytes       int64              `gorm:"column:size_bytes;type:bigint;not null" json:"sizeBytes"`
-	IdempotencyKey  string             `gorm:"column:idempotency_key;type:text;uniqueIndex:uniq_business_idem" json:"idempotencyKey"`
-	RequestHash     string             `gorm:"column:request_hash;type:text;not null" json:"requestHash"`
-	UploadExpiresAt *time.Time         `gorm:"column:upload_expires_at;type:timestamp with time zone" json:"uploadExpiresAt,omitempty"`
-	CompletedAt     *time.Time         `gorm:"column:completed_at;type:timestamp with time zone" json:"completedAt,omitempty"`
 	LocalFilePath   string             `gorm:"column:local_file_path;type:text" json:"-"`
+
+	// Multipart upload tracking (S3 only)
+	UploadID       string          `gorm:"column:upload_id;type:text" json:"uploadId,omitempty"`
+	IsMultipart    bool            `gorm:"column:is_multipart;type:boolean;default:false" json:"isMultipart"`
+	TotalParts     int             `gorm:"column:total_parts;type:integer;default:0" json:"totalParts,omitempty"`
+	CompletedParts json.RawMessage `gorm:"column:completed_parts;type:jsonb;default:'[]'" json:"completedParts,omitempty"`
 }
 
+// AssetSchema defines the field mappings for ordering and searching.
 var AssetSchema = struct {
 	ID              schema.Field
 	WorkspaceID     schema.Field
 	BusinessID      schema.Field
 	CreatedByUserID schema.Field
-	Purpose         schema.Field
-	Visibility      schema.Field
-	Status          schema.Field
 	ObjectKey       schema.Field
 	PublicURL       schema.Field
 	ContentType     schema.Field
 	SizeBytes       schema.Field
-	IdempotencyKey  schema.Field
-	RequestHash     schema.Field
-	UploadExpiresAt schema.Field
-	CompletedAt     schema.Field
+	UploadID        schema.Field
+	IsMultipart     schema.Field
+	TotalParts      schema.Field
 	CreatedAt       schema.Field
 	UpdatedAt       schema.Field
 	DeletedAt       schema.Field
@@ -92,17 +64,13 @@ var AssetSchema = struct {
 	WorkspaceID:     schema.NewField("workspace_id", "workspaceId"),
 	BusinessID:      schema.NewField("business_id", "businessId"),
 	CreatedByUserID: schema.NewField("created_by_user_id", "createdByUserId"),
-	Purpose:         schema.NewField("purpose", "purpose"),
-	Visibility:      schema.NewField("visibility", "visibility"),
-	Status:          schema.NewField("status", "status"),
 	ObjectKey:       schema.NewField("object_key", "objectKey"),
 	PublicURL:       schema.NewField("public_url", "publicUrl"),
 	ContentType:     schema.NewField("content_type", "contentType"),
 	SizeBytes:       schema.NewField("size_bytes", "sizeBytes"),
-	IdempotencyKey:  schema.NewField("idempotency_key", "idempotencyKey"),
-	RequestHash:     schema.NewField("request_hash", "requestHash"),
-	UploadExpiresAt: schema.NewField("upload_expires_at", "uploadExpiresAt"),
-	CompletedAt:     schema.NewField("completed_at", "completedAt"),
+	UploadID:        schema.NewField("upload_id", "uploadId"),
+	IsMultipart:     schema.NewField("is_multipart", "isMultipart"),
+	TotalParts:      schema.NewField("total_parts", "totalParts"),
 	CreatedAt:       schema.NewField("created_at", "createdAt"),
 	UpdatedAt:       schema.NewField("updated_at", "updatedAt"),
 	DeletedAt:       schema.NewField("deleted_at", "deletedAt"),
@@ -117,60 +85,57 @@ func (m *Asset) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-type CreateUploadRequest struct {
-	IdempotencyKey string `json:"idempotencyKey" binding:"omitempty,max=128"`
-	FileName       string `json:"fileName" binding:"required,max=255"`
-	ContentType    string `json:"contentType" binding:"required,max=128"`
-	SizeBytes      int64  `json:"sizeBytes" binding:"required,gt=0"`
+// AssetMetadata and AssetReference are defined in internal/platform/types/asset
+// to avoid circular dependencies with other domains.
+type AssetMetadata = asset.AssetMetadata
+type AssetReference = asset.AssetReference
+
+// PartInfo represents a completed part of a multipart upload.
+type PartInfo struct {
+	PartNumber int    `json:"partNumber"`
+	ETag       string `json:"etag"`
 }
 
-type CreateUploadResponse struct {
-	AssetID   string            `json:"assetId"`
-	Upload    *UploadDescriptor `json:"upload"`
-	PublicURL string            `json:"publicUrl"`
-	Status    Status            `json:"status"`
-	ExpiresAt *time.Time        `json:"expiresAt,omitempty"`
+// GenerateUploadURLsRequest is the request to generate pre-signed URLs for file uploads.
+type GenerateUploadURLsRequest struct {
+	Files []FileUploadRequest `json:"files" binding:"required,min=1,max=50,dive"`
 }
 
+// FileUploadRequest represents a single file to be uploaded.
+type FileUploadRequest struct {
+	FileName    string `json:"fileName" binding:"required,max=255"`
+	ContentType string `json:"contentType" binding:"required,max=128"`
+	SizeBytes   int64  `json:"sizeBytes" binding:"required,gt=0"`
+}
+
+// GenerateUploadURLsResponse is the response containing upload descriptors for each file.
+type GenerateUploadURLsResponse struct {
+	Uploads []UploadDescriptor `json:"uploads"`
+}
+
+// UploadDescriptor contains all information needed to upload a file.
 type UploadDescriptor struct {
-	Method  string            `json:"method"`
-	URL     string            `json:"url"`
-	Headers map[string]string `json:"headers"`
+	AssetID     string            `json:"assetId"`
+	FileName    string            `json:"fileName"`
+	Method      string            `json:"method"`
+	URL         string            `json:"url,omitempty"`
+	Headers     map[string]string `json:"headers,omitempty"`
+	UploadID    string            `json:"uploadId,omitempty"`
+	PartSize    int64             `json:"partSize,omitempty"`
+	TotalParts  int               `json:"totalParts,omitempty"`
+	PartURLs    []PartURLInfo     `json:"partUrls,omitempty"`
+	PublicURL   string            `json:"publicUrl"`
+	ContentType string            `json:"contentType"`
+	SizeBytes   int64             `json:"sizeBytes"`
 }
 
-type CompleteUploadResponse struct {
-	AssetID   string `json:"assetId"`
-	PublicURL string `json:"publicUrl"`
-	Status    Status `json:"status"`
+// PartURLInfo contains the pre-signed URL for a specific part.
+type PartURLInfo struct {
+	PartNumber int    `json:"partNumber"`
+	URL        string `json:"url"`
 }
 
-func NormalizeIdempotencyKey(k string) (string, error) {
-	k = strings.TrimSpace(k)
-	if k == "" {
-		return "", nil
-	}
-	if len(k) > 128 {
-		return "", problem.BadRequest("idempotencyKey is too long").With("field", "idempotencyKey")
-	}
-	return k, nil
-}
-
-func RequestFingerprint(purpose Purpose, visibility Visibility, fileName, contentType string, sizeBytes int64) string {
-	h := sha256.Sum256([]byte(string(purpose) + "|" + string(visibility) + "|" + strings.TrimSpace(fileName) + "|" + strings.TrimSpace(contentType) + "|" + fmt.Sprintf("%d", sizeBytes)))
-	return hex.EncodeToString(h[:])
-}
-
-func sanitizeFilename(name string) string {
-	name = strings.TrimSpace(name)
-	if name == "" {
-		return "file"
-	}
-	// Keep it simple; avoid path traversal and exotic chars.
-	name = strings.ReplaceAll(name, "\\", "_")
-	name = strings.ReplaceAll(name, "/", "_")
-	name = strings.ReplaceAll(name, "..", "_")
-	if len(name) > 80 {
-		name = name[:80]
-	}
-	return name
+// CompleteMultipartUploadRequest is the request to complete a multipart upload.
+type CompleteMultipartUploadRequest struct {
+	Parts []PartInfo `json:"parts" binding:"required,min=1,dive"`
 }

@@ -196,3 +196,122 @@ func (p *S3CompatibleProvider) PublicURL(key string) (string, bool) {
 	u.Path = strings.TrimRight(u.Path, "/") + "/" + path
 	return u.String(), true
 }
+
+// CreateMultipartUpload initiates a multipart upload and returns an uploadId.
+func (p *S3CompatibleProvider) CreateMultipartUpload(ctx context.Context, key string, contentType string) (string, error) {
+	if p == nil || p.client == nil {
+		return "", ErrProviderNotConfigured()
+	}
+	if strings.TrimSpace(key) == "" {
+		return "", errors.New("blob s3: key is required")
+	}
+	if strings.TrimSpace(contentType) == "" {
+		return "", errors.New("blob s3: contentType is required")
+	}
+
+	out, err := p.client.CreateMultipartUpload(ctx, &s3.CreateMultipartUploadInput{
+		Bucket:      aws.String(p.bucket),
+		Key:         aws.String(key),
+		ContentType: aws.String(contentType),
+	})
+	if err != nil {
+		return "", err
+	}
+
+	if out.UploadId == nil {
+		return "", errors.New("blob s3: no uploadId returned")
+	}
+
+	return *out.UploadId, nil
+}
+
+// PresignMultipartPart generates a presigned URL for uploading a specific part.
+func (p *S3CompatibleProvider) PresignMultipartPart(ctx context.Context, key string, uploadId string, partNumber int, expiresIn time.Duration) (string, error) {
+	if p == nil || p.presignClient == nil {
+		return "", ErrProviderNotConfigured()
+	}
+	if strings.TrimSpace(key) == "" {
+		return "", errors.New("blob s3: key is required")
+	}
+	if strings.TrimSpace(uploadId) == "" {
+		return "", errors.New("blob s3: uploadId is required")
+	}
+	if partNumber < 1 || partNumber > 10000 {
+		return "", errors.New("blob s3: partNumber must be between 1 and 10000")
+	}
+	if expiresIn <= 0 {
+		expiresIn = 10 * time.Minute
+	}
+
+	req := &s3.UploadPartInput{
+		Bucket:     aws.String(p.bucket),
+		Key:        aws.String(key),
+		UploadId:   aws.String(uploadId),
+		PartNumber: aws.Int32(int32(partNumber)),
+	}
+
+	presigned, err := p.presignClient.PresignUploadPart(ctx, req, func(po *s3.PresignOptions) {
+		po.Expires = expiresIn
+	})
+	if err != nil {
+		return "", err
+	}
+
+	return presigned.URL, nil
+}
+
+// CompleteMultipartUpload finalizes a multipart upload by assembling the parts.
+func (p *S3CompatibleProvider) CompleteMultipartUpload(ctx context.Context, key string, uploadId string, parts []CompletedPart) error {
+	if p == nil || p.client == nil {
+		return ErrProviderNotConfigured()
+	}
+	if strings.TrimSpace(key) == "" {
+		return errors.New("blob s3: key is required")
+	}
+	if strings.TrimSpace(uploadId) == "" {
+		return errors.New("blob s3: uploadId is required")
+	}
+	if len(parts) == 0 {
+		return errors.New("blob s3: at least one part is required")
+	}
+
+	completedParts := make([]types.CompletedPart, 0, len(parts))
+	for _, part := range parts {
+		completedParts = append(completedParts, types.CompletedPart{
+			PartNumber: aws.Int32(int32(part.PartNumber)),
+			ETag:       aws.String(part.ETag),
+		})
+	}
+
+	_, err := p.client.CompleteMultipartUpload(ctx, &s3.CompleteMultipartUploadInput{
+		Bucket:   aws.String(p.bucket),
+		Key:      aws.String(key),
+		UploadId: aws.String(uploadId),
+		MultipartUpload: &types.CompletedMultipartUpload{
+			Parts: completedParts,
+		},
+	})
+
+	return err
+}
+
+// AbortMultipartUpload cancels a multipart upload and cleans up uploaded parts.
+func (p *S3CompatibleProvider) AbortMultipartUpload(ctx context.Context, key string, uploadId string) error {
+	if p == nil || p.client == nil {
+		return ErrProviderNotConfigured()
+	}
+	if strings.TrimSpace(key) == "" {
+		return nil // nothing to abort
+	}
+	if strings.TrimSpace(uploadId) == "" {
+		return nil // nothing to abort
+	}
+
+	_, err := p.client.AbortMultipartUpload(ctx, &s3.AbortMultipartUploadInput{
+		Bucket:   aws.String(p.bucket),
+		Key:      aws.String(key),
+		UploadId: aws.String(uploadId),
+	})
+
+	return err
+}

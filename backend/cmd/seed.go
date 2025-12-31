@@ -25,6 +25,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/config"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
+	assetTypes "github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
@@ -595,11 +596,15 @@ func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner
 			if !available {
 				continue
 			}
+			var logo *assetTypes.AssetReference
+			if decor.logoURL != "" {
+				logo = &assetTypes.AssetReference{URL: decor.logoURL}
+			}
 			created, err := svc.CreateBusiness(ctx, owner, &business.CreateBusinessInput{
 				Name:              cfg.BusinessName,
 				Descriptor:        candidate,
 				Brand:             cfg.Brand,
-				LogoURL:           decor.logoURL,
+				Logo:              logo,
 				CountryCode:       cfg.Country,
 				Currency:          cfg.Currency,
 				VatRate:           decimal.NewFromFloat(0.15),
@@ -739,16 +744,31 @@ func seedInventoryData(ctx context.Context, svc *inventory.Service, owner *accou
 			}
 			standardPhotos := []string{placeholderVariantImageURL(name, "standard")}
 			premiumPhotos := []string{placeholderVariantImageURL(name, "premium")}
+
+			// Convert to AssetReference
+			photoRefs := make([]assetTypes.AssetReference, len(photos))
+			for i, url := range photos {
+				photoRefs[i] = assetTypes.AssetReference{URL: url}
+			}
+			standardPhotoRefs := make([]assetTypes.AssetReference, len(standardPhotos))
+			for i, url := range standardPhotos {
+				standardPhotoRefs[i] = assetTypes.AssetReference{URL: url}
+			}
+			premiumPhotoRefs := make([]assetTypes.AssetReference, len(premiumPhotos))
+			for i, url := range premiumPhotos {
+				premiumPhotoRefs[i] = assetTypes.AssetReference{URL: url}
+			}
+
 			p, err := svc.CreateProductWithVariants(ctx, owner, biz, &inventory.CreateProductWithVariantsRequest{
 				Product: inventory.CreateProductRequest{
 					Name:        name,
 					Description: description,
-					Photos:      photos,
+					Photos:      photoRefs,
 					CategoryID:  cat.ID,
 				},
 				Variants: []inventory.CreateProductVariantRequest{
-					{Code: "standard", Photos: standardPhotos, CostPrice: &cost, SalePrice: &price, StockQuantity: &stock, StockQuantityAlert: &alert},
-					{Code: "premium", Photos: premiumPhotos, CostPrice: &cost, SalePrice: &premium, StockQuantity: &stock, StockQuantityAlert: &alert},
+					{Code: "standard", Photos: standardPhotoRefs, CostPrice: &cost, SalePrice: &price, StockQuantity: &stock, StockQuantityAlert: &alert},
+					{Code: "premium", Photos: premiumPhotoRefs, CostPrice: &cost, SalePrice: &premium, StockQuantity: &stock, StockQuantityAlert: &alert},
 				},
 			})
 			if err != nil {

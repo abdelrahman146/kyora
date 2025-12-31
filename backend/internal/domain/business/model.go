@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/date"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
@@ -63,15 +64,15 @@ func (t *StorefrontTheme) Scan(value any) error {
 
 type Business struct {
 	gorm.Model
-	ID          string             `gorm:"column:id;primaryKey;type:text" json:"id"`
-	Descriptor  string             `gorm:"column:descriptor;type:text;uniqueIndex:idx_workspace_id_descriptor" json:"descriptor"`
-	WorkspaceID string             `gorm:"column:workspace_id;type:text;uniqueIndex:idx_workspace_id_descriptor" json:"workspaceId"`
-	Workspace   *account.Workspace `gorm:"foreignKey:WorkspaceID;references:ID" json:"workspace,omitempty"`
-	Name        string             `gorm:"column:name;type:text" json:"name"`
-	Brand       string             `gorm:"column:brand;type:text" json:"brand"`
-	LogoURL     string             `gorm:"column:logo_url;type:text" json:"logoUrl"`
-	CountryCode string             `gorm:"column:country_code;type:text" json:"countryCode"`
-	Currency    string             `gorm:"column:currency;type:text" json:"currency"`
+	ID          string                `gorm:"column:id;primaryKey;type:text" json:"id"`
+	Descriptor  string                `gorm:"column:descriptor;type:text;uniqueIndex:idx_workspace_id_descriptor" json:"descriptor"`
+	WorkspaceID string                `gorm:"column:workspace_id;type:text;uniqueIndex:idx_workspace_id_descriptor" json:"workspaceId"`
+	Workspace   *account.Workspace    `gorm:"foreignKey:WorkspaceID;references:ID" json:"workspace,omitempty"`
+	Name        string                `gorm:"column:name;type:text" json:"name"`
+	Brand       string                `gorm:"column:brand;type:text" json:"brand"`
+	Logo        *asset.AssetReference `gorm:"column:logo;type:jsonb" json:"logo,omitempty"`
+	CountryCode string                `gorm:"column:country_code;type:text" json:"countryCode"`
+	Currency    string                `gorm:"column:currency;type:text" json:"currency"`
 
 	// Public storefront configuration.
 	StorefrontPublicID string          `gorm:"column:storefront_public_id;type:text;uniqueIndex" json:"storefrontPublicId"`
@@ -115,7 +116,7 @@ var BusinessSchema = struct {
 	WorkspaceID        schema.Field
 	Name               schema.Field
 	Brand              schema.Field
-	LogoURL            schema.Field
+	Logo               schema.Field
 	CountryCode        schema.Field
 	Currency           schema.Field
 	StorefrontPublicID schema.Field
@@ -144,7 +145,7 @@ var BusinessSchema = struct {
 	WorkspaceID:        schema.NewField("workspace_id", "workspaceId"),
 	Name:               schema.NewField("name", "name"),
 	Brand:              schema.NewField("brand", "brand"),
-	LogoURL:            schema.NewField("logo_url", "logoUrl"),
+	Logo:               schema.NewField("logo", "logo"),
 	CountryCode:        schema.NewField("country_code", "countryCode"),
 	Currency:           schema.NewField("currency", "currency"),
 	StorefrontPublicID: schema.NewField("storefront_public_id", "storefrontPublicId"),
@@ -170,51 +171,51 @@ var BusinessSchema = struct {
 }
 
 type CreateBusinessInput struct {
-	Name              string          `form:"name" json:"name" binding:"required"`
-	Brand             string          `form:"brand" json:"brand" binding:"omitempty"`
-	LogoURL           string          `form:"logoUrl" json:"logoUrl" binding:"omitempty,url"`
-	Descriptor        string          `form:"descriptor" json:"descriptor" binding:"required"`
-	CountryCode       string          `form:"countryCode" json:"countryCode" binding:"required,len=2"`
-	Currency          string          `form:"currency" json:"currency" binding:"required,len=3"`
-	StorefrontEnabled bool            `form:"storefrontEnabled" json:"storefrontEnabled" binding:"omitempty"`
-	StorefrontTheme   StorefrontTheme `form:"storefrontTheme" json:"storefrontTheme" binding:"omitempty"`
-	SupportEmail      string          `form:"supportEmail" json:"supportEmail" binding:"omitempty,email"`
-	PhoneNumber       string          `form:"phoneNumber" json:"phoneNumber" binding:"omitempty"`
-	WhatsappNumber    string          `form:"whatsappNumber" json:"whatsappNumber" binding:"omitempty"`
-	Address           string          `form:"address" json:"address" binding:"omitempty"`
-	WebsiteURL        string          `form:"websiteUrl" json:"websiteUrl" binding:"omitempty,url"`
-	InstagramURL      string          `form:"instagramUrl" json:"instagramUrl" binding:"omitempty,url"`
-	FacebookURL       string          `form:"facebookUrl" json:"facebookUrl" binding:"omitempty,url"`
-	TikTokURL         string          `form:"tiktokUrl" json:"tiktokUrl" binding:"omitempty,url"`
-	XURL              string          `form:"xUrl" json:"xUrl" binding:"omitempty,url"`
-	SnapchatURL       string          `form:"snapchatUrl" json:"snapchatUrl" binding:"omitempty,url"`
-	VatRate           decimal.Decimal `form:"vatRate" json:"vatRate" binding:"omitempty"`
-	SafetyBuffer      decimal.Decimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
-	EstablishedAt     date.Date       `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
+	Name              string                `form:"name" json:"name" binding:"required"`
+	Brand             string                `form:"brand" json:"brand" binding:"omitempty"`
+	Logo              *asset.AssetReference `form:"logo" json:"logo" binding:"omitempty"`
+	Descriptor        string                `form:"descriptor" json:"descriptor" binding:"required"`
+	CountryCode       string                `form:"countryCode" json:"countryCode" binding:"required,len=2"`
+	Currency          string                `form:"currency" json:"currency" binding:"required,len=3"`
+	StorefrontEnabled bool                  `form:"storefrontEnabled" json:"storefrontEnabled" binding:"omitempty"`
+	StorefrontTheme   StorefrontTheme       `form:"storefrontTheme" json:"storefrontTheme" binding:"omitempty"`
+	SupportEmail      string                `form:"supportEmail" json:"supportEmail" binding:"omitempty,email"`
+	PhoneNumber       string                `form:"phoneNumber" json:"phoneNumber" binding:"omitempty"`
+	WhatsappNumber    string                `form:"whatsappNumber" json:"whatsappNumber" binding:"omitempty"`
+	Address           string                `form:"address" json:"address" binding:"omitempty"`
+	WebsiteURL        string                `form:"websiteUrl" json:"websiteUrl" binding:"omitempty,url"`
+	InstagramURL      string                `form:"instagramUrl" json:"instagramUrl" binding:"omitempty,url"`
+	FacebookURL       string                `form:"facebookUrl" json:"facebookUrl" binding:"omitempty,url"`
+	TikTokURL         string                `form:"tiktokUrl" json:"tiktokUrl" binding:"omitempty,url"`
+	XURL              string                `form:"xUrl" json:"xUrl" binding:"omitempty,url"`
+	SnapchatURL       string                `form:"snapchatUrl" json:"snapchatUrl" binding:"omitempty,url"`
+	VatRate           decimal.Decimal       `form:"vatRate" json:"vatRate" binding:"omitempty"`
+	SafetyBuffer      decimal.Decimal       `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
+	EstablishedAt     date.Date             `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
 }
 
 type UpdateBusinessInput struct {
-	Name              *string             `form:"name" json:"name" binding:"omitempty"`
-	Brand             *string             `form:"brand" json:"brand" binding:"omitempty"`
-	LogoURL           *string             `form:"logoUrl" json:"logoUrl" binding:"omitempty,url"`
-	Descriptor        *string             `form:"descriptor" json:"descriptor" binding:"omitempty"`
-	CountryCode       *string             `form:"countryCode" json:"countryCode" binding:"omitempty,len=2"`
-	Currency          *string             `form:"currency" json:"currency" binding:"omitempty,len=3"`
-	StorefrontEnabled *bool               `form:"storefrontEnabled" json:"storefrontEnabled" binding:"omitempty"`
-	StorefrontTheme   *StorefrontTheme    `form:"storefrontTheme" json:"storefrontTheme" binding:"omitempty"`
-	SupportEmail      *string             `form:"supportEmail" json:"supportEmail" binding:"omitempty,email"`
-	PhoneNumber       *string             `form:"phoneNumber" json:"phoneNumber" binding:"omitempty"`
-	WhatsappNumber    *string             `form:"whatsappNumber" json:"whatsappNumber" binding:"omitempty"`
-	Address           *string             `form:"address" json:"address" binding:"omitempty"`
-	WebsiteURL        *string             `form:"websiteUrl" json:"websiteUrl" binding:"omitempty,url"`
-	InstagramURL      *string             `form:"instagramUrl" json:"instagramUrl" binding:"omitempty,url"`
-	FacebookURL       *string             `form:"facebookUrl" json:"facebookUrl" binding:"omitempty,url"`
-	TikTokURL         *string             `form:"tiktokUrl" json:"tiktokUrl" binding:"omitempty,url"`
-	XURL              *string             `form:"xUrl" json:"xUrl" binding:"omitempty,url"`
-	SnapchatURL       *string             `form:"snapchatUrl" json:"snapchatUrl" binding:"omitempty,url"`
-	VatRate           decimal.NullDecimal `form:"vatRate" json:"vatRate" binding:"omitempty"`
-	SafetyBuffer      decimal.NullDecimal `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
-	EstablishedAt     *date.Date          `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
+	Name              *string               `form:"name" json:"name" binding:"omitempty"`
+	Brand             *string               `form:"brand" json:"brand" binding:"omitempty"`
+	Logo              *asset.AssetReference `form:"logo" json:"logo" binding:"omitempty"`
+	Descriptor        *string               `form:"descriptor" json:"descriptor" binding:"omitempty"`
+	CountryCode       *string               `form:"countryCode" json:"countryCode" binding:"omitempty,len=2"`
+	Currency          *string               `form:"currency" json:"currency" binding:"omitempty,len=3"`
+	StorefrontEnabled *bool                 `form:"storefrontEnabled" json:"storefrontEnabled" binding:"omitempty"`
+	StorefrontTheme   *StorefrontTheme      `form:"storefrontTheme" json:"storefrontTheme" binding:"omitempty"`
+	SupportEmail      *string               `form:"supportEmail" json:"supportEmail" binding:"omitempty,email"`
+	PhoneNumber       *string               `form:"phoneNumber" json:"phoneNumber" binding:"omitempty"`
+	WhatsappNumber    *string               `form:"whatsappNumber" json:"whatsappNumber" binding:"omitempty"`
+	Address           *string               `form:"address" json:"address" binding:"omitempty"`
+	WebsiteURL        *string               `form:"websiteUrl" json:"websiteUrl" binding:"omitempty,url"`
+	InstagramURL      *string               `form:"instagramUrl" json:"instagramUrl" binding:"omitempty,url"`
+	FacebookURL       *string               `form:"facebookUrl" json:"facebookUrl" binding:"omitempty,url"`
+	TikTokURL         *string               `form:"tiktokUrl" json:"tiktokUrl" binding:"omitempty,url"`
+	XURL              *string               `form:"xUrl" json:"xUrl" binding:"omitempty,url"`
+	SnapchatURL       *string               `form:"snapchatUrl" json:"snapchatUrl" binding:"omitempty,url"`
+	VatRate           decimal.NullDecimal   `form:"vatRate" json:"vatRate" binding:"omitempty"`
+	SafetyBuffer      decimal.NullDecimal   `form:"safetyBuffer" json:"safetyBuffer" binding:"omitempty"`
+	EstablishedAt     *date.Date            `form:"establishedAt" json:"establishedAt" binding:"omitempty"`
 }
 
 const (

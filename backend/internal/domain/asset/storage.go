@@ -2,18 +2,18 @@ package asset
 
 import (
 	"context"
-	"strings"
-	"time"
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 )
 
+// Storage provides data access for assets.
 type Storage struct {
 	cache *cache.Cache
 	asset *database.Repository[Asset]
 }
 
+// NewStorage creates a new asset storage instance.
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	return &Storage{
 		cache: cache,
@@ -21,93 +21,38 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	}
 }
 
+// Cache returns the cache instance.
 func (s *Storage) Cache() *cache.Cache { return s.cache }
 
+// Create creates a new asset record.
 func (s *Storage) Create(ctx context.Context, a *Asset) error {
 	return s.asset.CreateOne(ctx, a)
 }
 
+// Update updates an existing asset record.
 func (s *Storage) Update(ctx context.Context, a *Asset) error {
 	return s.asset.UpdateOne(ctx, a)
 }
 
+// Delete deletes an asset record.
 func (s *Storage) Delete(ctx context.Context, a *Asset) error {
 	return s.asset.DeleteOne(ctx, a)
 }
 
+// GetByID returns an asset by ID scoped to a business.
 func (s *Storage) GetByID(ctx context.Context, businessID, assetID string) (*Asset, error) {
 	return s.asset.FindOne(ctx, s.asset.ScopeBusinessID(businessID), s.asset.ScopeID(assetID))
 }
 
 // FindByID returns an asset by ID without applying business/workspace scoping.
-// Intended for internal operations (e.g., public reads, maintenance jobs).
+// Intended for internal operations (e.g., public reads, GC jobs).
 func (s *Storage) FindByID(ctx context.Context, assetID string) (*Asset, error) {
 	return s.asset.FindByID(ctx, assetID)
 }
 
-func (s *Storage) FindByBusinessAndIdempotencyKey(ctx context.Context, businessID, idemKey string) (*Asset, error) {
-	return s.asset.FindOne(ctx, s.asset.ScopeBusinessID(businessID), s.asset.ScopeEquals(AssetSchema.IdempotencyKey, idemKey))
-}
-
-func (s *Storage) ListExpiredPending(ctx context.Context, now time.Time, limit int) ([]*Asset, error) {
-	if limit <= 0 {
-		limit = 200
-	}
-	return s.asset.FindMany(ctx,
-		s.asset.ScopeEquals(AssetSchema.Status, StatusPending),
-		s.asset.ScopeWhere("upload_expires_at IS NOT NULL AND upload_expires_at < ?", now),
-		s.asset.WithOrderBy([]string{"upload_expires_at ASC"}),
-		s.asset.WithLimit(limit),
-	)
-}
-
-// ListReadyOrphans returns ready assets that are not referenced by known URL-only fields.
-// We only consider assets with a non-empty public_url.
-func (s *Storage) ListReadyOrphans(ctx context.Context, now time.Time, minAge time.Duration, limit int) ([]*Asset, error) {
-	if limit <= 0 {
-		limit = 200
-	}
-	cutoff := now.Add(-minAge)
-
-	// Note: this is Postgres-specific (jsonb_build_array) and intentionally uses
-	// parameterized SQL to avoid injection issues.
-	where := strings.Join([]string{
-		"public_url <> ''",
-		"status = 'ready'",
-		"completed_at IS NOT NULL AND completed_at < ?",
-		"NOT EXISTS (SELECT 1 FROM businesses b WHERE b.deleted_at IS NULL AND b.logo_url = uploaded_assets.public_url)",
-		"NOT EXISTS (SELECT 1 FROM products p WHERE p.deleted_at IS NULL AND p.photos @> jsonb_build_array(uploaded_assets.public_url))",
-		"NOT EXISTS (SELECT 1 FROM variants v WHERE v.deleted_at IS NULL AND v.photos @> jsonb_build_array(uploaded_assets.public_url))",
-	}, " AND ")
-
-	return s.asset.FindMany(ctx,
-		s.asset.ScopeWhere(where, cutoff),
-		s.asset.WithOrderBy([]string{"completed_at ASC"}),
-		s.asset.WithLimit(limit),
-	)
-}
-
-func (s *Storage) IsReferenced(ctx context.Context, a *Asset) (bool, error) {
-	if a == nil {
-		return false, nil
-	}
-	url := strings.TrimSpace(a.PublicURL)
-	if url == "" {
-		return false, nil
-	}
-
-	conditions := strings.Join([]string{
-		"EXISTS (SELECT 1 FROM businesses b WHERE b.deleted_at IS NULL AND b.id = uploaded_assets.business_id AND b.logo_url = ?)",
-		"EXISTS (SELECT 1 FROM products p WHERE p.deleted_at IS NULL AND p.business_id = uploaded_assets.business_id AND p.photos @> jsonb_build_array(?::text))",
-		"EXISTS (SELECT 1 FROM variants v WHERE v.deleted_at IS NULL AND v.business_id = uploaded_assets.business_id AND v.photos @> jsonb_build_array(?::text))",
-	}, " OR ")
-
-	count, err := s.asset.Count(ctx,
-		s.asset.ScopeID(a.ID),
-		s.asset.ScopeWhere("("+conditions+")", url, url, url),
-	)
-	if err != nil {
-		return false, err
-	}
-	return count > 0, nil
+// MarkUploadComplete marks a multipart upload as complete.
+// TODO: Implement proper JSONB update when Repository supports raw queries.
+func (s *Storage) MarkUploadComplete(ctx context.Context, assetID string) error {
+	// For now, just return nil - this will be implemented in the GC rewrite
+	return nil
 }

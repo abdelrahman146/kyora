@@ -151,7 +151,7 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 			Descriptor:        normDescriptor,
 			Name:              input.Name,
 			Brand:             strings.TrimSpace(input.Brand),
-			LogoURL:           strings.TrimSpace(input.LogoURL),
+			Logo:              input.Logo,
 			CountryCode:       country,
 			VatRate:           input.VatRate,
 			Currency:          currency,
@@ -416,8 +416,8 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 	if input.Brand != nil {
 		business.Brand = strings.TrimSpace(*input.Brand)
 	}
-	if input.LogoURL != nil {
-		business.LogoURL = strings.TrimSpace(*input.LogoURL)
+	if input.Logo != nil {
+		business.Logo = input.Logo
 	}
 	if input.Descriptor != nil {
 		norm, err := normalizeBusinessDescriptor(*input.Descriptor)

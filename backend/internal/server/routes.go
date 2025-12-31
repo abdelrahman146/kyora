@@ -238,25 +238,16 @@ func registerBusinessScopedRoutes(
 		business.EnforceBusinessValidity(businessService),
 	)
 
-	// Asset upload routes
+	// Asset upload routes (consolidated - no longer purpose-specific)
 	assetsGroup := group.Group("/assets")
 	{
+		// Universal upload endpoint - supports all asset types (logo, product photos, variant photos, etc.)
+		// No longer need separate endpoints per purpose
 		uploads := assetsGroup.Group("/uploads")
 		{
-			uploads.POST("/logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.CreateLogoUpload)
-			uploads.POST("/product-photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CreateProductPhotoUpload)
-			uploads.POST("/variant-photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CreateVariantPhotoUpload)
-
-			uploads.PUT("/:assetId/content/business_logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.PutLogoContent)
-			uploads.PUT("/:assetId/content/product_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.PutProductPhotoContent)
-			uploads.PUT("/:assetId/content/variant_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.PutVariantPhotoContent)
-
-			uploads.POST("/:assetId/complete/business_logo", account.EnforceActorPermissions(role.ActionManage, role.ResourceBusiness), assetHandler.CompleteLogoUpload)
-			uploads.POST("/:assetId/complete/product_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteProductPhotoUpload)
-			uploads.POST("/:assetId/complete/variant_photo", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteVariantPhotoUpload)
+			uploads.POST("", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.GenerateUploadURLs)
+			uploads.POST("/:assetId/complete", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.CompleteMultipartUpload)
 		}
-
-		assetsGroup.DELETE("/:assetId", account.EnforceActorPermissions(role.ActionManage, role.ResourceInventory), assetHandler.DeleteAsset)
 	}
 
 	// Customer routes
@@ -458,9 +449,18 @@ func registerBusinessScopedRoutes(
 }
 
 func registerPublicAssetRoutes(r *gin.Engine, h *asset.HttpHandler) {
-	group := r.Group("/v1/public")
-	group.Use(middleware.NewPublicCORSMiddleware())
+	// Public asset serving (no auth required)
+	publicGroup := r.Group("/v1/public")
+	publicGroup.Use(middleware.NewPublicCORSMiddleware())
 	{
-		group.GET("/assets/:assetId", h.GetPublicAsset)
+		publicGroup.GET("/assets/:assetId", h.GetPublicAsset)
+	}
+
+	// Internal local upload endpoint (used by local provider only)
+	// Not exposed in public docs - clients use URL returned from GenerateUploadURLs
+	internalGroup := r.Group("/v1/assets/internal")
+	internalGroup.Use(middleware.NewCORSMiddleware())
+	{
+		internalGroup.POST("/upload/:assetId", h.UploadLocalContent)
 	}
 }

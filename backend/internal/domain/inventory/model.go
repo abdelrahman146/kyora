@@ -6,6 +6,7 @@ import (
 	"errors"
 
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
@@ -13,45 +14,45 @@ import (
 	"gorm.io/gorm"
 )
 
-// PhotoURLList is a JSONB-backed list of photo URLs.
-type PhotoURLList []string
+// AssetReferenceList is a JSONB-backed list of asset references.
+type AssetReferenceList []asset.AssetReference
 
-func (p PhotoURLList) Value() (driver.Value, error) {
-	if p == nil {
-		p = []string{}
+func (a AssetReferenceList) Value() (driver.Value, error) {
+	if a == nil {
+		a = []asset.AssetReference{}
 	}
-	b, err := json.Marshal([]string(p))
+	b, err := json.Marshal([]asset.AssetReference(a))
 	if err != nil {
 		return nil, err
 	}
 	return string(b), nil
 }
 
-func (p *PhotoURLList) Scan(value any) error {
-	if p == nil {
-		return problem.InternalError().WithError(errors.New("PhotoURLList scan into nil receiver"))
+func (a *AssetReferenceList) Scan(value any) error {
+	if a == nil {
+		return problem.InternalError().WithError(errors.New("AssetReferenceList scan into nil receiver"))
 	}
 	if value == nil {
-		*p = PhotoURLList{}
+		*a = AssetReferenceList{}
 		return nil
 	}
 	switch v := value.(type) {
 	case []byte:
-		var out []string
+		var out []asset.AssetReference
 		if err := json.Unmarshal(v, &out); err != nil {
 			return err
 		}
-		*p = PhotoURLList(out)
+		*a = AssetReferenceList(out)
 		return nil
 	case string:
-		var out []string
+		var out []asset.AssetReference
 		if err := json.Unmarshal([]byte(v), &out); err != nil {
 			return err
 		}
-		*p = PhotoURLList(out)
+		*a = AssetReferenceList(out)
 		return nil
 	default:
-		return problem.InternalError().WithError(errors.New("unexpected scan type for PhotoURLList"))
+		return problem.InternalError().WithError(errors.New("unexpected scan type for AssetReferenceList"))
 	}
 }
 
@@ -71,7 +72,7 @@ type Product struct {
 	Business    *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	Name        string             `gorm:"column:name;type:text;not null" json:"name"`
 	Description string             `gorm:"column:description;type:text" json:"description"`
-	Photos      PhotoURLList       `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
+	Photos      AssetReferenceList `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
 	CategoryID  string             `gorm:"column:category_id;type:text;index" json:"categoryId"`
 	Category    *Category          `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
 	Variants    []*Variant         `gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE;" json:"variants,omitempty"`
@@ -85,17 +86,17 @@ func (m *Product) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateProductRequest struct {
-	Name        string   `json:"name" binding:"required"`
-	Description string   `json:"description" binding:"omitempty"`
-	Photos      []string `json:"photos" binding:"omitempty,max=10,dive,required"`
-	CategoryID  string   `json:"categoryId" binding:"required"`
+	Name        string                 `json:"name" binding:"required"`
+	Description string                 `json:"description" binding:"omitempty"`
+	Photos      []asset.AssetReference `json:"photos" binding:"omitempty,max=10,dive"`
+	CategoryID  string                 `json:"categoryId" binding:"required"`
 }
 
 type UpdateProductRequest struct {
-	Name        string   `json:"name" binding:"omitempty"`
-	Description string   `json:"description" binding:"omitempty"`
-	Photos      []string `json:"photos" binding:"omitempty,max=10,dive,required"`
-	CategoryID  string   `json:"categoryId" binding:"omitempty"`
+	Name        string                 `json:"name" binding:"omitempty"`
+	Description string                 `json:"description" binding:"omitempty"`
+	Photos      []asset.AssetReference `json:"photos" binding:"omitempty,max=10,dive"`
+	CategoryID  string                 `json:"categoryId" binding:"omitempty"`
 }
 
 var ProductSchema = struct {
@@ -148,7 +149,7 @@ type Variant struct {
 	CostPrice          decimal.Decimal    `gorm:"column:cost_price;type:numeric;not null;default:0" json:"costPrice"`
 	SalePrice          decimal.Decimal    `gorm:"column:sale_price;type:numeric;not null;default:0" json:"salePrice"`
 	Currency           string             `gorm:"column:currency;type:text;not null;default:'USD'" json:"currency"`
-	Photos             PhotoURLList       `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
+	Photos             AssetReferenceList `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
 	StockQuantity      int                `gorm:"column:stock_quantity;type:int;not null;default:0" json:"stockQuantity"`
 	StockQuantityAlert int                `gorm:"column:stock_alert;type:int;not null;default:0" json:"stockQuantityAlert"`
 }
@@ -161,25 +162,25 @@ func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
 }
 
 type CreateVariantRequest struct {
-	ProductID          string           `form:"productId" json:"productId" binding:"required"`
-	Code               string           `form:"code" json:"code" binding:"required"`
-	SKU                string           `form:"sku" json:"sku" binding:"omitempty"`
-	Photos             []string         `form:"photos" json:"photos" binding:"omitempty,max=10,dive,required"`
-	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"required"`
-	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"required"`
-	StockQuantity      *int             `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
-	StockQuantityAlert *int             `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"required,gte=0"`
+	ProductID          string                 `form:"productId" json:"productId" binding:"required"`
+	Code               string                 `form:"code" json:"code" binding:"required"`
+	SKU                string                 `form:"sku" json:"sku" binding:"omitempty"`
+	Photos             []asset.AssetReference `form:"photos" json:"photos" binding:"omitempty,max=10,dive"`
+	CostPrice          *decimal.Decimal       `form:"costPrice" json:"costPrice" binding:"required"`
+	SalePrice          *decimal.Decimal       `form:"salePrice" json:"salePrice" binding:"required"`
+	StockQuantity      *int                   `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
+	StockQuantityAlert *int                   `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"required,gte=0"`
 }
 
 type UpdateVariantRequest struct {
-	Code               *string          `form:"code" json:"code" binding:"omitempty"`
-	SKU                *string          `form:"sku" json:"sku" binding:"omitempty"`
-	Photos             []string         `form:"photos" json:"photos" binding:"omitempty,max=10,dive,required"`
-	CostPrice          *decimal.Decimal `form:"costPrice" json:"costPrice" binding:"omitempty"`
-	SalePrice          *decimal.Decimal `form:"salePrice" json:"salePrice" binding:"omitempty"`
-	Currency           *string          `form:"currency" json:"currency" binding:"omitempty,len=3"`
-	StockQuantity      *int             `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
-	StockQuantityAlert *int             `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"omitempty,gte=0"`
+	Code               *string                `form:"code" json:"code" binding:"omitempty"`
+	SKU                *string                `form:"sku" json:"sku" binding:"omitempty"`
+	Photos             []asset.AssetReference `form:"photos" json:"photos" binding:"omitempty,max=10,dive"`
+	CostPrice          *decimal.Decimal       `form:"costPrice" json:"costPrice" binding:"omitempty"`
+	SalePrice          *decimal.Decimal       `form:"salePrice" json:"salePrice" binding:"omitempty"`
+	Currency           *string                `form:"currency" json:"currency" binding:"omitempty,len=3"`
+	StockQuantity      *int                   `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
+	StockQuantityAlert *int                   `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"omitempty,gte=0"`
 }
 
 var VariantSchema = struct {

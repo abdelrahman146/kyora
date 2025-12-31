@@ -58,6 +58,8 @@ email:
 # - `s3` supports S3-compatible providers like DigitalOcean Spaces
 storage:
   provider: "local" # options: local, s3
+  local_path: "./tmp/assets" # local file storage directory (used when provider is local)
+  multipart_part_size_mb: 10 # S3 multipart part size in MB (used when provider is s3)
   bucket: ""
   region: ""
   endpoint: "" # e.g. https://nyc3.digitaloceanspaces.com
@@ -66,4 +68,8 @@ storage:
   public_base_url: "" # e.g. https://my-bucket.nyc3.digitaloceanspaces.com
 
 uploads:
-  max_bytes: 5242880
+  max_bytes: 5242880 # max file size for single upload (5MB default)
+
+# Inventory limits
+inventory:
+  max_photos_per_product: 10 # max photos per product/variant

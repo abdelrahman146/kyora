@@ -9,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
+	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
@@ -26,33 +27,33 @@ func NewHttpHandler(svc *Service) *HttpHandler {
 }
 
 type businessResponse struct {
-	ID                 string          `json:"id"`
-	WorkspaceID        string          `json:"workspaceId"`
-	Descriptor         string          `json:"descriptor"`
-	Name               string          `json:"name"`
-	Brand              string          `json:"brand"`
-	LogoURL            string          `json:"logoUrl"`
-	CountryCode        string          `json:"countryCode"`
-	Currency           string          `json:"currency"`
-	StorefrontPublicID string          `json:"storefrontPublicId"`
-	StorefrontEnabled  bool            `json:"storefrontEnabled"`
-	StorefrontTheme    StorefrontTheme `json:"storefrontTheme"`
-	SupportEmail       string          `json:"supportEmail"`
-	PhoneNumber        string          `json:"phoneNumber"`
-	WhatsappNumber     string          `json:"whatsappNumber"`
-	Address            string          `json:"address"`
-	WebsiteURL         string          `json:"websiteUrl"`
-	InstagramURL       string          `json:"instagramUrl"`
-	FacebookURL        string          `json:"facebookUrl"`
-	TikTokURL          string          `json:"tiktokUrl"`
-	XURL               string          `json:"xUrl"`
-	SnapchatURL        string          `json:"snapchatUrl"`
-	VatRate            string          `json:"vatRate"`
-	SafetyBuffer       string          `json:"safetyBuffer"`
-	EstablishedAt      time.Time       `json:"establishedAt"`
-	ArchivedAt         *time.Time      `json:"archivedAt,omitempty"`
-	CreatedAt          time.Time       `json:"createdAt"`
-	UpdatedAt          time.Time       `json:"updatedAt"`
+	ID                 string                `json:"id"`
+	WorkspaceID        string                `json:"workspaceId"`
+	Descriptor         string                `json:"descriptor"`
+	Name               string                `json:"name"`
+	Brand              string                `json:"brand"`
+	Logo               *asset.AssetReference `json:"logo,omitempty"`
+	CountryCode        string                `json:"countryCode"`
+	Currency           string                `json:"currency"`
+	StorefrontPublicID string                `json:"storefrontPublicId"`
+	StorefrontEnabled  bool                  `json:"storefrontEnabled"`
+	StorefrontTheme    StorefrontTheme       `json:"storefrontTheme"`
+	SupportEmail       string                `json:"supportEmail"`
+	PhoneNumber        string                `json:"phoneNumber"`
+	WhatsappNumber     string                `json:"whatsappNumber"`
+	Address            string                `json:"address"`
+	WebsiteURL         string                `json:"websiteUrl"`
+	InstagramURL       string                `json:"instagramUrl"`
+	FacebookURL        string                `json:"facebookUrl"`
+	TikTokURL          string                `json:"tiktokUrl"`
+	XURL               string                `json:"xUrl"`
+	SnapchatURL        string                `json:"snapchatUrl"`
+	VatRate            string                `json:"vatRate"`
+	SafetyBuffer       string                `json:"safetyBuffer"`
+	EstablishedAt      time.Time             `json:"establishedAt"`
+	ArchivedAt         *time.Time            `json:"archivedAt,omitempty"`
+	CreatedAt          time.Time             `json:"createdAt"`
+	UpdatedAt          time.Time             `json:"updatedAt"`
 }
 
 type shippingZoneResponse struct {
@@ -116,7 +117,7 @@ func toBusinessResponse(b *Business) businessResponse {
 		Descriptor:         b.Descriptor,
 		Name:               b.Name,
 		Brand:              b.Brand,
-		LogoURL:            b.LogoURL,
+		Logo:               b.Logo,
 		CountryCode:        b.CountryCode,
 		Currency:           b.Currency,
 		StorefrontPublicID: b.StorefrontPublicID,
