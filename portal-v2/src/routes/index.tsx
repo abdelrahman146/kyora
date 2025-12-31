@@ -26,6 +26,7 @@ import {
 } from 'lucide-react'
 import type { Business } from '@/stores/businessStore'
 import { businessQueries } from '@/api/business'
+import { Avatar } from '@/components/atoms/Avatar'
 import { Logo } from '@/components/atoms/Logo'
 import { LanguageSwitcher } from '@/components/molecules/LanguageSwitcher'
 import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
@@ -260,21 +261,13 @@ function HomePage() {
                 >
                   <div className="card-body p-4">
                     <div className="flex items-start gap-3">
-                      {business.logoUrl ? (
-                        <img
-                          src={business.logoUrl}
-                          alt={business.name}
-                          className="h-12 w-12 rounded-lg object-cover"
-                        />
-                      ) : (
-                        <div className="avatar placeholder">
-                          <div className="h-12 w-12 rounded-lg bg-primary text-primary-content">
-                            <span className="text-lg font-bold">
-                              {business.name.charAt(0).toUpperCase()}
-                            </span>
-                          </div>
-                        </div>
-                      )}
+                      <Avatar
+                        src={business.logoUrl}
+                        fallback={business.name}
+                        size="md"
+                        shape="square"
+                        className="shrink-0"
+                      />
                       <div className="min-w-0 flex-1">
                         <h3 className="truncate font-semibold">{business.name}</h3>
                         <p className="truncate text-sm text-base-content/60">
@@ -286,11 +279,6 @@ function HomePage() {
                         className={`text-base-content/40 ${isRTL ? 'rotate-180' : ''}`}
                       />
                     </div>
-                    {state.selectedBusinessDescriptor === business.descriptor && (
-                      <span className="badge badge-primary badge-sm mt-2">
-                        {t('common.selected')}
-                      </span>
-                    )}
                   </div>
                 </button>
               ))}
