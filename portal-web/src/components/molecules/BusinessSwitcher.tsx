@@ -166,7 +166,7 @@ export function BusinessSwitcher() {
                 handleSelectBusinessById(business.id)
               }}
               className={cn(
-                'flex items-center gap-3 w-full px-4 py-3 text-start transition-colors',
+                'flex items-center gap-3 w-full px-4 py-3 text-start transition-colors hover:cursor-pointer rounded-md',
                 'hover:bg-base-200',
                 selectedBusiness?.id === business.id
                   ? 'bg-primary/10 text-primary'
@@ -209,7 +209,7 @@ export function BusinessSwitcher() {
         {/* Add Business Option */}
         <button
           type="button"
-          className="flex items-center gap-3 w-full px-4 py-3 text-primary hover:bg-primary/10 transition-colors text-start"
+          className="flex items-center gap-3 w-full px-4 py-3 text-primary hover:bg-primary/10 transition-colors text-start hover:cursor-pointer"
         >
           <Building2 size={18} className="shrink-0" />
           <span className="text-sm font-semibold">

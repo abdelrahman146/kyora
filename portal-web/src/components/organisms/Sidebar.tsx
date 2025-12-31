@@ -99,7 +99,7 @@ export function Sidebar(_props: SidebarProps) {
         className={cn(
           'h-16 flex items-center border-b border-base-300',
           isDesktop && sidebarCollapsed
-            ? 'justify-center gap-2 px-2'
+            ? 'justify-center'
             : 'justify-between px-4',
         )}
       >
