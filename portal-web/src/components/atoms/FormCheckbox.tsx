@@ -1,12 +1,17 @@
-import { forwardRef, useId, type InputHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { forwardRef, useId } from 'react'
+import { cn } from '../../lib/utils'
+import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
-export interface FormCheckboxProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> {
-  label?: string;
-  description?: string;
-  error?: string;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "primary" | "secondary";
+export interface FormCheckboxProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
+  label?: string
+  description?: string
+  error?: unknown
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'primary' | 'secondary'
 }
 
 /**
@@ -38,37 +43,40 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
       label,
       description,
       error,
-      size = "md",
-      variant = "primary",
+      size = 'md',
+      variant = 'primary',
       className,
       id,
       disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const generatedId = useId();
-    const inputId = id ?? generatedId;
+    const generatedId = useId()
+    const inputId = id ?? generatedId
+
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const sizeClasses = {
-      sm: "checkbox-sm",
-      md: "checkbox-md",
-      lg: "checkbox-lg",
-    };
+      sm: 'checkbox-sm',
+      md: 'checkbox-md',
+      lg: 'checkbox-lg',
+    }
 
     const variantClasses = {
-      default: "",
-      primary: "checkbox-primary",
-      secondary: "checkbox-secondary",
-    };
+      default: '',
+      primary: 'checkbox-primary',
+      secondary: 'checkbox-secondary',
+    }
 
     return (
       <div className="form-control">
         <label
           htmlFor={inputId}
           className={cn(
-            "label cursor-pointer justify-start gap-3",
-            disabled && "opacity-60 cursor-not-allowed"
+            'label cursor-pointer justify-start gap-3',
+            disabled && 'opacity-60 cursor-not-allowed',
           )}
         >
           <input
@@ -77,15 +85,15 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             id={inputId}
             disabled={disabled}
             className={cn(
-              "checkbox",
+              'checkbox',
               sizeClasses[size],
               variantClasses[variant],
-              error && "checkbox-error",
-              className
+              hasError && 'checkbox-error',
+              className,
             )}
-            aria-invalid={error ? "true" : "false"}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error
+              hasError
                 ? `${inputId}-error`
                 : description
                   ? `${inputId}-description`
@@ -93,7 +101,7 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             }
             {...props}
           />
-          
+
           <div className="flex flex-col gap-1">
             {label && (
               <span className="label-text text-base-content font-medium">
@@ -110,21 +118,21 @@ export const FormCheckbox = forwardRef<HTMLInputElement, FormCheckboxProps>(
             )}
           </div>
         </label>
-        
-        {error && (
+
+        {hasError && (
           <label className="label pt-0">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
       </div>
-    );
-  }
-);
+    )
+  },
+)
 
-FormCheckbox.displayName = "FormCheckbox";
+FormCheckbox.displayName = 'FormCheckbox'

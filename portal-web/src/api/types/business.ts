@@ -1,4 +1,4 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 /**
  * Business API types based on backend swagger.json
@@ -10,9 +10,9 @@ export const StorefrontThemeSchema = z.object({
   secondaryColor: z.string().optional(),
   accentColor: z.string().optional(),
   fontFamily: z.string().optional(),
-});
+})
 
-export type StorefrontTheme = z.infer<typeof StorefrontThemeSchema>;
+export type StorefrontTheme = z.infer<typeof StorefrontThemeSchema>
 
 // Business Response Schema
 export const BusinessSchema = z.object({
@@ -43,26 +43,26 @@ export const BusinessSchema = z.object({
   createdAt: z.string(),
   updatedAt: z.string(),
   archivedAt: z.string().optional().nullable(),
-});
+})
 
-export type Business = z.infer<typeof BusinessSchema>;
+export type Business = z.infer<typeof BusinessSchema>
 
 // List Businesses Response Schema
 export const ListBusinessesResponseSchema = z.object({
   businesses: z.array(BusinessSchema),
-});
+})
 
 export type ListBusinessesResponse = z.infer<
   typeof ListBusinessesResponseSchema
->;
+>
 
 // Create Business Input Schema
 export const CreateBusinessInputSchema = z.object({
-  name: z.string().min(1, "Business name is required"),
-  descriptor: z.string().min(1, "Business descriptor is required"),
+  name: z.string().min(1, 'Business name is required'),
+  descriptor: z.string().min(1, 'Business descriptor is required'),
   brand: z.string().optional(),
   countryCode: z.string().optional(),
   currency: z.string().optional(),
-});
+})
 
-export type CreateBusinessInput = z.infer<typeof CreateBusinessInputSchema>;
+export type CreateBusinessInput = z.infer<typeof CreateBusinessInputSchema>

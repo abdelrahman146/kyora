@@ -1,10 +1,10 @@
-import { type HTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
+import type { HTMLAttributes } from 'react'
+import { cn } from '@/lib/utils'
 
 export interface SkeletonProps extends HTMLAttributes<HTMLDivElement> {
-  variant?: 'text' | 'circular' | 'rectangular';
-  width?: string | number;
-  height?: string | number;
+  variant?: 'text' | 'circular' | 'rectangular'
+  width?: string | number
+  height?: string | number
 }
 
 export const Skeleton = ({
@@ -15,19 +15,27 @@ export const Skeleton = ({
   style,
   ...props
 }: SkeletonProps) => {
-  const baseClasses = 'animate-pulse bg-base-300';
+  const baseClasses = 'animate-pulse bg-base-300'
 
   const variantClasses = {
-    text: 'rounded h-4',
+    text: 'h-4 rounded',
     circular: 'rounded-full',
     rectangular: 'rounded-md',
-  };
+  }
 
   const inlineStyles: React.CSSProperties = {
-    width: width ? (typeof width === 'number' ? `${String(width)}px` : width) : undefined,
-    height: height ? (typeof height === 'number' ? `${String(height)}px` : height) : undefined,
+    width: width
+      ? typeof width === 'number'
+        ? `${String(width)}px`
+        : width
+      : undefined,
+    height: height
+      ? typeof height === 'number'
+        ? `${String(height)}px`
+        : height
+      : undefined,
     ...style,
-  };
+  }
 
   return (
     <div
@@ -35,14 +43,14 @@ export const Skeleton = ({
       style={inlineStyles}
       {...props}
     />
-  );
-};
+  )
+}
 
-Skeleton.displayName = 'Skeleton';
+Skeleton.displayName = 'Skeleton'
 
 export interface SkeletonTextProps {
-  lines?: number;
-  className?: string;
+  lines?: number
+  className?: string
 }
 
 export const SkeletonText = ({ lines = 3, className }: SkeletonTextProps) => {
@@ -56,7 +64,7 @@ export const SkeletonText = ({ lines = 3, className }: SkeletonTextProps) => {
         />
       ))}
     </div>
-  );
-};
+  )
+}
 
-SkeletonText.displayName = 'SkeletonText';
+SkeletonText.displayName = 'SkeletonText'

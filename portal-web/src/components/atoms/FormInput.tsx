@@ -1,20 +1,25 @@
-import { forwardRef, useId, type InputHTMLAttributes, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { forwardRef, useId } from 'react'
+import { cn } from '../../lib/utils'
+import type { InputHTMLAttributes, ReactNode } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
-export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "size"> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  startIcon?: ReactNode;
-  endIcon?: ReactNode;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "filled" | "ghost";
-  fullWidth?: boolean;
+export interface FormInputProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'size'
+> {
+  label?: string
+  error?: unknown
+  helperText?: string
+  startIcon?: ReactNode
+  endIcon?: ReactNode
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'filled' | 'ghost'
+  fullWidth?: boolean
 }
 
 /**
  * FormInput - Production-grade text input component
- * 
+ *
  * Features:
  * - RTL-first design with logical properties
  * - Mobile-optimized (min-height 50px per KDS)
@@ -22,7 +27,7 @@ export interface FormInputProps extends Omit<InputHTMLAttributes<HTMLInputElemen
  * - Supports icons, validation states, and helper text
  * - Multiple variants and sizes
  * - Keyboard-specific inputs (email, tel, search)
- * 
+ *
  * @example
  * <FormInput
  *   label="Email"
@@ -39,8 +44,8 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       helperText,
       startIcon,
       endIcon,
-      size = "md",
-      variant = "default",
+      size = 'md',
+      variant = 'default',
       fullWidth = true,
       className,
       id,
@@ -48,25 +53,28 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
       required,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const generatedId = useId();
-    const inputId = id ?? generatedId;
+    const generatedId = useId()
+    const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const sizeClasses = {
-      sm: "h-[44px] text-sm",
-      md: "h-[50px] text-base",
-      lg: "h-[56px] text-lg",
-    };
+      sm: 'h-[44px] text-sm',
+      md: 'h-[50px] text-base',
+      lg: 'h-[56px] text-lg',
+    }
 
     const variantClasses = {
-      default: "input-bordered bg-base-100",
-      filled: "input-bordered bg-base-200/50 border-transparent focus:bg-base-100",
-      ghost: "input-ghost bg-transparent",
-    };
+      default: 'input-bordered bg-base-100',
+      filled:
+        'input-bordered bg-base-200/50 border-transparent focus:bg-base-100',
+      ghost: 'input-ghost bg-transparent',
+    }
 
     return (
-      <div className={cn("form-control", fullWidth && "w-full")}>
+      <div className={cn('form-control', fullWidth && 'w-full')}>
         {label && (
           <label htmlFor={inputId} className="label">
             <span className="label-text text-base-content/70 font-medium">
@@ -75,59 +83,64 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
             </span>
           </label>
         )}
-        
+
         <div className="relative">
           {startIcon && (
             <div className="absolute inset-y-0 start-0 z-10 flex items-center ps-3 pointer-events-none text-base-content/50">
               <span aria-hidden="true">{startIcon}</span>
             </div>
           )}
-          
+
           <input
             ref={ref}
             id={inputId}
             disabled={disabled}
             required={required}
             className={cn(
-              "input relative z-0 w-full transition-all duration-200",
+              'input relative z-0 w-full transition-all duration-200',
               sizeClasses[size],
               variantClasses[variant],
-              "text-base-content text-start placeholder:text-base-content/40",
-              "focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-              error && "input-error border-error focus:border-error focus:ring-error/20",
-              disabled && "opacity-60 cursor-not-allowed",
-              startIcon ? "ps-10" : "",
-              endIcon ? "pe-10" : "",
-              className
+              'text-base-content text-start placeholder:text-base-content/40',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              hasError &&
+                'input-error border-error focus:border-error focus:ring-error/20',
+              disabled && 'opacity-60 cursor-not-allowed',
+              startIcon ? 'ps-10' : '',
+              endIcon ? 'pe-10' : '',
+              className,
             )}
-            aria-invalid={error ? "true" : "false"}
+            aria-invalid={hasError ? 'true' : 'false'}
             aria-describedby={
-              error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+              hasError
+                ? `${inputId}-error`
+                : helperText
+                  ? `${inputId}-helper`
+                  : undefined
             }
             aria-required={required}
             {...props}
           />
-          
+
           {endIcon && (
             <div className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50">
               <span aria-hidden="true">{endIcon}</span>
             </div>
           )}
         </div>
-        
-        {error && (
+
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
-        
-        {!error && helperText && (
+
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}
@@ -138,8 +151,8 @@ export const FormInput = forwardRef<HTMLInputElement, FormInputProps>(
           </label>
         )}
       </div>
-    );
-  }
-);
+    )
+  },
+)
 
-FormInput.displayName = "FormInput";
+FormInput.displayName = 'FormInput'

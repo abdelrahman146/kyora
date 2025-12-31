@@ -1,35 +1,37 @@
 import {
+  clearTokens,
   get,
+  getRefreshToken,
   post,
   postVoid,
   setTokens,
-  clearTokens,
-  getRefreshToken,
-} from "./client";
+} from './client'
 import {
+  ForgotPasswordRequestSchema,
+  GoogleLoginRequestSchema,
   LoginRequestSchema,
   LoginResponseSchema,
+  LogoutAllRequestSchema,
+  LogoutRequestSchema,
   RefreshRequestSchema,
   RefreshResponseSchema,
-  LogoutRequestSchema,
-  LogoutAllRequestSchema,
-  ForgotPasswordRequestSchema,
-  ResetPasswordRequestSchema,
-  GoogleLoginRequestSchema,
   RequestEmailVerificationSchema,
+  ResetPasswordRequestSchema,
   VerifyEmailRequestSchema,
-  type LoginRequest,
-  type LoginResponse,
-  type RefreshRequest,
-  type RefreshResponse,
-  type LogoutRequest,
-  type LogoutAllRequest,
-  type ForgotPasswordRequest,
-  type ResetPasswordRequest,
-  type GoogleLoginRequest,
-  type RequestEmailVerification,
-  type VerifyEmailRequest,
-} from "./types/auth";
+} from './types/auth'
+import type {
+  ForgotPasswordRequest,
+  GoogleLoginRequest,
+  LoginRequest,
+  LoginResponse,
+  LogoutAllRequest,
+  LogoutRequest,
+  RefreshRequest,
+  RefreshResponse,
+  RequestEmailVerification,
+  ResetPasswordRequest,
+  VerifyEmailRequest,
+} from './types/auth'
 
 /**
  * Authentication API Service
@@ -46,20 +48,20 @@ export const authApi = {
    */
   async login(credentials: LoginRequest): Promise<LoginResponse> {
     // Validate request data
-    const validatedRequest = LoginRequestSchema.parse(credentials);
+    const validatedRequest = LoginRequestSchema.parse(credentials)
 
     // Make API call
-    const response = await post<unknown>("v1/auth/login", {
+    const response = await post<unknown>('v1/auth/login', {
       json: validatedRequest,
-    });
+    })
 
     // Validate response data
-    const validatedResponse = LoginResponseSchema.parse(response);
+    const validatedResponse = LoginResponseSchema.parse(response)
 
     // Store tokens in memory
-    setTokens(validatedResponse.token, validatedResponse.refreshToken);
+    setTokens(validatedResponse.token, validatedResponse.refreshToken)
 
-    return validatedResponse;
+    return validatedResponse
   },
 
   /**
@@ -69,23 +71,21 @@ export const authApi = {
    */
   async refreshToken(request: RefreshRequest): Promise<RefreshResponse> {
     // Validate request data
-    const validatedRequest = RefreshRequestSchema.parse(request);
+    const validatedRequest = RefreshRequestSchema.parse(request)
 
     // Make API call
-    const response = await post<unknown>("v1/auth/refresh", {
+    const response = await post<unknown>('v1/auth/refresh', {
       json: validatedRequest,
-    });
+    })
 
     // Validate response data
-    const validatedResponse = RefreshResponseSchema.parse(response);
+    const validatedResponse = RefreshResponseSchema.parse(response)
 
     // Update tokens in memory
-    setTokens(validatedResponse.token, validatedResponse.refreshToken);
+    setTokens(validatedResponse.token, validatedResponse.refreshToken)
 
-    return validatedResponse;
+    return validatedResponse
   },
-
-  // Logout - POST /v1/auth/logout
 
   /**
    * Logs out the current user by revoking the refresh token
@@ -94,16 +94,14 @@ export const authApi = {
    */
   async logout(request: LogoutRequest): Promise<void> {
     // Validate request data
-    const validatedRequest = LogoutRequestSchema.parse(request);
+    const validatedRequest = LogoutRequestSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/logout", { json: validatedRequest });
+    await postVoid('v1/auth/logout', { json: validatedRequest })
 
     // Clear tokens from memory
-    clearTokens();
+    clearTokens()
   },
-
-  // Logout All Devices - POST /v1/auth/logout-all
 
   /**
    * Logs out the user from all devices by revoking all refresh tokens
@@ -112,16 +110,14 @@ export const authApi = {
    */
   async logoutAll(request: LogoutAllRequest): Promise<void> {
     // Validate request data
-    const validatedRequest = LogoutAllRequestSchema.parse(request);
+    const validatedRequest = LogoutAllRequestSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/logout-all", { json: validatedRequest });
+    await postVoid('v1/auth/logout-all', { json: validatedRequest })
 
     // Clear tokens from memory
-    clearTokens();
+    clearTokens()
   },
-
-  // Forgot Password - POST /v1/auth/forgot-password
 
   /**
    * Sends a password reset email to the user
@@ -130,13 +126,11 @@ export const authApi = {
    */
   async forgotPassword(request: ForgotPasswordRequest): Promise<void> {
     // Validate request data
-    const validatedRequest = ForgotPasswordRequestSchema.parse(request);
+    const validatedRequest = ForgotPasswordRequestSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/forgot-password", { json: validatedRequest });
+    await postVoid('v1/auth/forgot-password', { json: validatedRequest })
   },
-
-  // Reset Password - POST /v1/auth/reset-password
 
   /**
    * Resets user password using a valid reset token
@@ -145,13 +139,11 @@ export const authApi = {
    */
   async resetPassword(request: ResetPasswordRequest): Promise<void> {
     // Validate request data
-    const validatedRequest = ResetPasswordRequestSchema.parse(request);
+    const validatedRequest = ResetPasswordRequestSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/reset-password", { json: validatedRequest });
+    await postVoid('v1/auth/reset-password', { json: validatedRequest })
   },
-
-  // Google OAuth Login - POST /v1/auth/google/login
 
   /**
    * Authenticates a user using Google OAuth code
@@ -160,23 +152,21 @@ export const authApi = {
    */
   async loginWithGoogle(request: GoogleLoginRequest): Promise<LoginResponse> {
     // Validate request data
-    const validatedRequest = GoogleLoginRequestSchema.parse(request);
+    const validatedRequest = GoogleLoginRequestSchema.parse(request)
 
     // Make API call
-    const response = await post<unknown>("v1/auth/google/login", {
+    const response = await post<unknown>('v1/auth/google/login', {
       json: validatedRequest,
-    });
+    })
 
     // Validate response data
-    const validatedResponse = LoginResponseSchema.parse(response);
+    const validatedResponse = LoginResponseSchema.parse(response)
 
     // Store tokens in memory
-    setTokens(validatedResponse.token, validatedResponse.refreshToken);
+    setTokens(validatedResponse.token, validatedResponse.refreshToken)
 
-    return validatedResponse;
+    return validatedResponse
   },
-
-  // Get Google OAuth URL - GET /v1/auth/google/url
 
   /**
    * Gets the Google OAuth authorization URL for user authentication
@@ -185,21 +175,19 @@ export const authApi = {
    */
   async getGoogleAuthUrl(): Promise<{ url: string }> {
     // Make API call
-    const response = await get<unknown>("v1/auth/google/url");
+    const response = await get<unknown>('v1/auth/google/url')
 
     // Validate response structure
     if (
-      typeof response !== "object" ||
+      typeof response !== 'object' ||
       response === null ||
-      !("url" in response)
+      !('url' in response)
     ) {
-      throw new Error("Invalid response from Google OAuth URL endpoint");
+      throw new Error('Invalid response from Google OAuth URL endpoint')
     }
 
-    return response as { url: string };
+    return response as { url: string }
   },
-
-  // Request Email Verification - POST /v1/auth/request-email-verification
 
   /**
    * Sends an email verification link to the user
@@ -207,18 +195,16 @@ export const authApi = {
    * @throws HTTPError with parsed ProblemDetails on failure
    */
   async requestEmailVerification(
-    request: RequestEmailVerification
+    request: RequestEmailVerification,
   ): Promise<void> {
     // Validate request data
-    const validatedRequest = RequestEmailVerificationSchema.parse(request);
+    const validatedRequest = RequestEmailVerificationSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/request-email-verification", {
+    await postVoid('v1/auth/request-email-verification', {
       json: validatedRequest,
-    });
+    })
   },
-
-  // Verify Email - POST /v1/auth/verify-email
 
   /**
    * Verifies user email using a verification token
@@ -227,13 +213,11 @@ export const authApi = {
    */
   async verifyEmail(request: VerifyEmailRequest): Promise<void> {
     // Validate request data
-    const validatedRequest = VerifyEmailRequestSchema.parse(request);
+    const validatedRequest = VerifyEmailRequestSchema.parse(request)
 
     // Make API call
-    await postVoid("v1/auth/verify-email", { json: validatedRequest });
+    await postVoid('v1/auth/verify-email', { json: validatedRequest })
   },
-
-  // Helper: Logout with current refresh token
 
   /**
    * Convenience method to logout using the current stored refresh token
@@ -241,11 +225,11 @@ export const authApi = {
    * @throws Error if no refresh token is available
    */
   async logoutCurrent(): Promise<void> {
-    const refreshToken = getRefreshToken();
+    const refreshToken = getRefreshToken()
     if (!refreshToken) {
-      throw new Error("No refresh token available");
+      throw new Error('No refresh token available')
     }
-    return this.logout({ refreshToken });
+    return this.logout({ refreshToken })
   },
 
   /**
@@ -254,10 +238,10 @@ export const authApi = {
    * @throws Error if no refresh token is available
    */
   async logoutAllCurrent(): Promise<void> {
-    const refreshToken = getRefreshToken();
+    const refreshToken = getRefreshToken()
     if (!refreshToken) {
-      throw new Error("No refresh token available");
+      throw new Error('No refresh token available')
     }
-    return this.logoutAll({ refreshToken });
+    return this.logoutAll({ refreshToken })
   },
-};
+}

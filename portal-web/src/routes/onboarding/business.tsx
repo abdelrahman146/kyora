@@ -1,330 +1,321 @@
-import { useMemo, useState, useEffect, type ReactNode } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Building2, Globe, DollarSign } from "lucide-react";
-import { OnboardingLayout } from "@/components/templates";
-import { FormInput, FormSelect } from "@/components";
-import { useOnboarding } from "@/contexts/OnboardingContext";
-import { onboardingApi } from "@/api/onboarding";
-import { translateErrorAsync } from "@/lib/translateError";
-import { useMetadataStore } from "@/stores/metadataStore";
+import { useEffect, useMemo, useRef } from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { Building2 } from 'lucide-react'
+import { z } from 'zod'
+import type { RouterContext } from '@/router'
+import type { CountryMetadata } from '@/api/types/metadata'
+import { useCountriesQuery } from '@/api/metadata'
+import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
+
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
+import { useKyoraForm } from '@/lib/form'
+import { redirectToCorrectStage } from '@/lib/onboarding'
+
+// Search params schema
+const BusinessSearchSchema = z.object({
+  session: z.string().min(1),
+})
+
+export const Route = createFileRoute('/onboarding/business')({
+  validateSearch: (search): z.infer<typeof BusinessSearchSchema> => {
+    return BusinessSearchSchema.parse(search)
+  },
+  loader: async ({ context, location }) => {
+    const parsed = BusinessSearchSchema.parse(location.search)
+    const { queryClient } = context as RouterContext
+    
+    // Redirect if no session token
+    if (!parsed.session) {
+      throw redirect({ to: '/onboarding/plan' })
+    }
+
+    // Prefetch and validate session
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
+
+    // Automatically redirect to correct stage based on session
+    const stageRedirect = redirectToCorrectStage(
+      '/onboarding/business',
+      session.stage,
+      parsed.session
+    )
+    if (stageRedirect) {
+      throw stageRedirect
+    }
+
+    return { session }
+  },
+  component: BusinessSetupPage,
+})
 
 /**
- * Business Setup Step - Step 3 of Onboarding
+ * Business Setup Step - Step 4 of Onboarding
  *
  * Features:
  * - Business name input
- * - Business descriptor (slug) validation
+ * - Business descriptor (slug) with auto-generation
  * - Country selection
- * - Currency selection
- * - Real-time descriptor availability check
- *
- * Flow:
- * 1. User provides business details
- * 2. POST /v1/onboarding/business
- * 3. Navigate to /onboarding/payment (paid) or /onboarding/complete (free)
+ * - Currency selection (auto-selected from country)
  */
+function BusinessSetupPage() {
+  const { t: tOnboarding, i18n } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
+  const { t: tTranslation } = useTranslation('translation')
+  const navigate = useNavigate()
+  const { session } = Route.useLoaderData()
+  const { session: sessionToken } = Route.useSearch()
 
-export default function BusinessSetupPage() {
-  const { t, i18n } = useTranslation(["onboarding", "common"]);
-  const navigate = useNavigate();
+  // Fetch countries and currencies
   const {
-    sessionToken,
-    stage,
-    isPaidPlan,
-    loadSessionFromStorage,
-  } = useOnboarding();
+    data: countries = [],
+    isLoading: isLoadingCountries,
+    isError: isCountriesError,
+  } = useCountriesQuery()
 
-  const [businessName, setBusinessName] = useState("");
-  const [descriptor, setDescriptor] = useState("");
-  const [country, setCountry] = useState("");
-  const [currency, setCurrency] = useState("");
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
-  const [descriptorError, setDescriptorError] = useState("");
-  const [isDescriptorManuallyEdited, setIsDescriptorManuallyEdited] = useState(false);
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const language = isArabic ? 'ar' : 'en'
 
-  const countries = useMetadataStore((s) => s.countries);
-  const countriesStatus = useMetadataStore((s) => s.status);
-  const loadCountries = useMetadataStore((s) => s.loadCountries);
-
-  const isArabic = i18n.language.toLowerCase().startsWith("ar");
-
-  useEffect(() => {
-    void loadCountries();
-  }, [loadCountries]);
+  // Sort countries by name based on language
+  const sortedCountries = useMemo(() => {
+    return [...countries].sort((a, b) => {
+      const nameA = isArabic ? a.nameAr : a.name
+      const nameB = isArabic ? b.nameAr : b.name
+      return nameA.localeCompare(nameB, language)
+    })
+  }, [countries, isArabic, language])
 
   const countryByCode = useMemo(() => {
-    const map = new Map<string, (typeof countries)[number]>();
-    for (const c of countries) {
-      map.set(c.code, c);
+    const map = new Map<string, CountryMetadata>()
+    for (const c of sortedCountries) {
+      map.set(c.code, c)
     }
-    return map;
-  }, [countries]);
+    return map
+  }, [sortedCountries])
 
   const countryOptions = useMemo(() => {
-    return countries.map((c) => {
-      const label = `${c.flag ? `${c.flag} ` : ""}${isArabic ? c.nameAr : c.name}`;
+    return sortedCountries.map((c) => {
+      const label = `${c.flag ? `${c.flag} ` : ''}${isArabic ? c.nameAr : c.name}`
       return {
         value: c.code,
         label,
-        icon: <Globe className="w-4 h-4" />,
-      };
-    });
-  }, [countries, isArabic]);
+      }
+    })
+  }, [sortedCountries, isArabic])
 
   const currencyOptions = useMemo(() => {
-    const seen = new Set<string>();
-    const options: { value: string; label: string; icon: ReactNode }[] = [];
-    for (const c of countries) {
-      if (!c.currencyCode || seen.has(c.currencyCode)) continue;
-      seen.add(c.currencyCode);
+    const seen = new Set<string>()
+    const options: Array<{ value: string; label: string }> = []
+    for (const c of sortedCountries) {
+      if (!c.currencyCode || seen.has(c.currencyCode)) continue
+      seen.add(c.currencyCode)
       options.push({
         value: c.currencyCode,
         label: c.currencyLabel || c.currencyCode,
-        icon: <DollarSign className="w-4 h-4" />,
-      });
+      })
     }
-    return options;
-  }, [countries]);
+    return options
+  }, [sortedCountries])
 
-  // Restore session from localStorage on mount
-  useEffect(() => {
-    const restoreSession = async () => {
-      if (!sessionToken) {
-        const hasSession = await loadSessionFromStorage();
-        if (!hasSession) {
-          await navigate("/onboarding/plan", { replace: true });
+  // Set business mutation
+  const setBusinessMutation = useSetBusinessMutation({
+    onSuccess: async (response) => {
+      // Navigate based on next stage
+      if (response.stage === 'ready_to_commit') {
+        await navigate({
+          to: '/onboarding/complete',
+          search: { session: sessionToken },
+        })
+      } else if (response.stage === 'business_staged') {
+        // Check if plan requires payment
+        await navigate({
+          to: '/onboarding/payment',
+          search: { session: sessionToken },
+        })
+      } else {
+        await navigate({
+          to: '/onboarding/complete',
+          search: { session: sessionToken },
+        })
+      }
+    },
+  })
+
+  // TanStack Form with Zod validation
+  const form = useKyoraForm({
+    defaultValues: {
+      name: session.businessName ?? '',
+      descriptor: session.businessDescriptor ?? '',
+      country: '',
+      currency: '',
+    },
+    listeners: {
+      onChange: ({ formApi, fieldApi }) => {
+        // Auto-generate descriptor when name changes
+        if (fieldApi.name === 'name') {
+          const businessName = fieldApi.state.value as string
+          const currentDescriptor = formApi.getFieldValue('descriptor') as string
+          
+          // Generate what the descriptor should be based on current name
+          const expectedDescriptor = businessName
+            .toLowerCase()
+            .replace(/[^a-z0-9\s-]/g, '')
+            .replace(/\s+/g, '-')
+            .slice(0, 20)
+          
+          // Only auto-update if:
+          // 1. Descriptor is empty, OR
+          // 2. Descriptor matches what we would have generated (user hasn't customized it)
+          if (businessName && (!currentDescriptor || currentDescriptor === expectedDescriptor.slice(0, currentDescriptor.length))) {
+            formApi.setFieldValue('descriptor', expectedDescriptor)
+          }
         }
-      }
-    };
-    void restoreSession();
-  }, [sessionToken, loadSessionFromStorage, navigate]);
-
-  // Redirect if not verified
-  useEffect(() => {
-    if (!sessionToken || stage !== "identity_verified") {
-      void navigate("/onboarding/verify", { replace: true });
-    }
-  }, [sessionToken, stage, navigate]);
-
-  // Auto-generate descriptor from business name (only if not manually edited)
-  useEffect(() => {
-    if (businessName && !isDescriptorManuallyEdited) {
-      const generated = businessName
-        .toLowerCase()
-        .replace(/[^a-z0-9\s-]/g, "")
-        .replace(/\s+/g, "-")
-        .slice(0, 50);
-      setDescriptor(generated);
-    }
-  }, [businessName, isDescriptorManuallyEdited]);
-
-  // Validate descriptor format
-  useEffect(() => {
-    if (descriptor) {
-      if (descriptor.length < 3) {
-        setDescriptorError(t("onboarding:business.descriptorTooShort"));
-      } else if (!/^[a-z0-9-]+$/.test(descriptor)) {
-        setDescriptorError(t("onboarding:business.descriptorInvalidFormat"));
-      } else {
-        setDescriptorError("");
-      }
-    } else {
-      setDescriptorError("");
-    }
-  }, [descriptor, t]);
-
-  const submitBusiness = async () => {
-    setError("");
-
-    if (!businessName.trim()) {
-      setError(t("onboarding:business.nameRequired"));
-      return;
-    }
-
-    if (!descriptor.trim()) {
-      setError(t("onboarding:business.descriptorRequired"));
-      return;
-    }
-
-    if (descriptorError) {
-      setError(descriptorError);
-      return;
-    }
-
-    if (!country) {
-      setError(t("onboarding:business.countryRequired"));
-      return;
-    }
-
-    if (!currency) {
-      setError(t("onboarding:business.currencyRequired"));
-      return;
-    }
-
-    if (!sessionToken) return;
-
-    try {
-      setIsSubmitting(true);
-
-      const response = await onboardingApi.setBusiness({
+        
+        // Auto-select currency when country changes
+        if (fieldApi.name === 'country') {
+          const country = fieldApi.state.value as string
+          const currentCurrency = formApi.getFieldValue('currency')
+          
+          if (country && !currentCurrency) {
+            const selected = countryByCode.get(country)
+            if (selected?.currencyCode) {
+              formApi.setFieldValue('currency', selected.currencyCode)
+            }
+          }
+        }
+      },
+    },
+    onSubmit: async ({ value }: { value: { name: string; descriptor: string; country: string; currency: string } }) => {
+      await setBusinessMutation.mutateAsync({
         sessionToken,
-        name: businessName.trim(),
-        descriptor: descriptor.trim(),
-        country,
-        currency,
-      });
-
-      // Backend updates the session automatically, just navigate based on response
-      // Navigate based on the response stage
-      if (response.stage === "ready_to_commit") {
-        // Free plan - go directly to complete
-        void navigate("/onboarding/complete");
-      } else if (response.stage === "business_staged" || isPaidPlan) {
-        // Paid plan - go to payment
-        void navigate("/onboarding/payment");
-      } else {
-        // Fallback to complete
-        void navigate("/onboarding/complete");
-      }
-    } catch (err) {
-      const message = await translateErrorAsync(err, t);
-      setError(message);
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleSubmit: React.FormEventHandler<HTMLFormElement> = (e) => {
-    e.preventDefault();
-    void submitBusiness();
-  };
+        businessName: value.name,
+        businessDescriptor: value.descriptor,
+        country: value.country,
+        currency: value.currency,
+      })
+    },
+  })
 
   return (
-    <OnboardingLayout currentStep={3} totalSteps={5}>
+    <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
         <div className="card bg-base-100 border border-base-300 shadow-xl">
-          <div className="card-body">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <Building2 className="w-8 h-8 text-primary" />
-                </div>
+        <div className="card-body">
+          {/* Header */}
+          <div className="text-center mb-6">
+            <div className="flex justify-center mb-4">
+              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
+                <Building2 className="w-8 h-8 text-primary" />
               </div>
-              <h2 className="text-2xl font-bold">
-                {t("onboarding:business.title")}
-              </h2>
-              <p className="text-base-content/70 mt-2">
-                {t("onboarding:business.subtitle")}
-              </p>
             </div>
+            <h2 className="text-2xl font-bold">{tOnboarding('business.title')}</h2>
+            <p className="text-base-content/70 mt-2">
+              {tOnboarding('business.subtitle')}
+            </p>
+          </div>
 
-            <form onSubmit={handleSubmit} className="space-y-6">
+          <form.AppForm>
+            <form.FormRoot className="space-y-6">
               {/* Business Name */}
-              <FormInput
-                label={t("onboarding:business.name")}
-                type="text"
-                value={businessName}
-                onChange={(e) => {
-                  setBusinessName(e.target.value);
+              <form.AppField 
+                name="name"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
                 }}
-                placeholder={t("onboarding:business.namePlaceholder")}
-                required
-                disabled={isSubmitting}
-                startIcon={<Building2 className="w-5 h-5" />}
-                helperText={t("onboarding:business.nameHint")}
-              />
+              >
+                {(field) => (
+                  <field.TextField
+                    type="text"
+                    label={tOnboarding('business.name')}
+                    placeholder={tOnboarding('business.namePlaceholder')}
+                    autoFocus
+                    hint={tOnboarding('business.nameHint')}
+                    startIcon={<Building2 className="w-5 h-5" />}
+                  />
+                )}
+              </form.AppField>
 
               {/* Business Descriptor */}
-              <FormInput
-                label={t("onboarding:business.descriptor")}
-                type="text"
-                value={descriptor}
-                onChange={(e) => {
-                  setDescriptor(e.target.value.toLowerCase());
-                  setIsDescriptorManuallyEdited(true);
+              <form.AppField 
+                name="descriptor"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
                 }}
-                onBlur={() => {
-                  // If descriptor is empty after blur, allow auto-sync again
-                  if (!descriptor.trim()) {
-                    setIsDescriptorManuallyEdited(false);
-                  }
+              >
+                {(field) => (
+                  <field.TextField
+                    type="text"
+                    label={tOnboarding('business.descriptor')}
+                    placeholder={tOnboarding('business.descriptorPlaceholder')}
+                    hint={tOnboarding('business.descriptorHint')}
+                  />
+                )}
+              </form.AppField>
+
+              {/* Country */}
+              <form.AppField 
+                name="country"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
                 }}
-                placeholder={t("onboarding:business.descriptorPlaceholder")}
-                pattern="[a-z0-9-]+"
-                minLength={3}
-                maxLength={50}
-                required
-                disabled={isSubmitting}
-                error={descriptorError}
-                helperText={!descriptorError ? t("onboarding:business.descriptorHint") : undefined}
-              />
+              >
+                {(field) => (
+                  <field.SelectField
+                    label={tOnboarding('business.country')}
+                    placeholder={tOnboarding('business.selectCountry')}
+                    options={countryOptions}
+                    disabled={isLoadingCountries || isCountriesError}
+                  />
+                )}
+              </form.AppField>
 
-              {/* Country & Currency Grid */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {/* Country */}
-                <FormSelect<string>
-                  label={t("onboarding:business.country")}
-                  options={countryOptions}
-                  value={country}
-                  onChange={(value) => {
-                    const code = value as string;
-                    setCountry(code);
-                    const selected = countryByCode.get(code);
-                    if (selected?.currencyCode) {
-                      setCurrency(selected.currencyCode);
-                    }
-                  }}
-                  required
-                  disabled={isSubmitting || countriesStatus !== "loaded"}
-                  placeholder={t("onboarding:business.selectCountry")}
-                  searchable
-                />
+              {/* Currency */}
+              <form.AppField 
+                name="currency"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {(field) => (
+                  <field.SelectField
+                    label={tOnboarding('business.currency')}
+                    placeholder={tOnboarding('business.selectCurrency')}
+                    options={currencyOptions}
+                    disabled={isLoadingCountries || isCountriesError}
+                  />
+                )}
+              </form.AppField>
 
-                {/* Currency */}
-                <FormSelect<string>
-                  label={t("onboarding:business.currency")}
-                  options={currencyOptions}
-                  value={currency}
-                  onChange={(value) => {
-                    setCurrency(value as string);
-                  }}
-                  required
-                  disabled={isSubmitting || countriesStatus !== "loaded"}
-                  placeholder={t("onboarding:business.selectCurrency")}
-                  searchable
-                />
-              </div>
-
-              {error && (
+              {isCountriesError && (
                 <div className="alert alert-error">
-                  <span className="text-sm">{error}</span>
+                  <span className="text-sm">
+                    {tTranslation('errors:generic.unexpected')}
+                  </span>
                 </div>
               )}
 
-              {/* Actions */}
-              <div>
-                <button
-                  type="submit"
-                  className="btn btn-primary w-full"
-                  disabled={isSubmitting || !!descriptorError}
-                >
-                  {isSubmitting ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      {t("common:loading")}
-                    </>
-                  ) : (
-                    t("common:continue")
-                  )}
-                </button>
-              </div>
-            </form>
-          </div>
+              {setBusinessMutation.error && (
+                <div className="alert alert-error">
+                  <span className="text-sm">
+                    {setBusinessMutation.error.message}
+                  </span>
+                </div>
+              )}
+
+              <form.SubmitButton
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={setBusinessMutation.isPending}
+              >
+                {tCommon('continue')}
+              </form.SubmitButton>
+            </form.FormRoot>
+          </form.AppForm>
         </div>
       </div>
+      </div>
     </OnboardingLayout>
-  );
+  )
 }

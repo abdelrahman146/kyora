@@ -1,6 +1,6 @@
 ---
 description: TanStack Form - React Form Management Library
-applyTo: "portal-v2/**,storefront-web/**"
+applyTo: "portal-web/**,storefront-web/**"
 ---
 
 # TanStack Form - React Form Management Library

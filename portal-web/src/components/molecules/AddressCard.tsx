@@ -11,32 +11,46 @@
  * - Responsive design
  */
 
-import { Edit, MapPin, Phone, Trash2 } from "lucide-react";
-import { useTranslation } from "react-i18next";
-import type { CustomerAddress } from "../../api/types/customer";
-import { useMetadataStore } from "../../stores/metadataStore";
+import { Edit, MapPin, Phone, Trash2 } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { useStore } from '@tanstack/react-store'
+
+import type { CustomerAddress } from '@/api/customer'
+import { metadataStore } from '@/stores/metadataStore'
 
 interface AddressCardProps {
-  address: CustomerAddress;
-  onEdit?: () => void;
-  onDelete?: () => void;
-  isDeleting?: boolean;
+  address: CustomerAddress
+  onEdit?: () => void
+  onDelete?: () => void
+  isDeleting?: boolean
 }
 
-export function AddressCard({ address, onEdit, onDelete, isDeleting }: AddressCardProps) {
-  const { t, i18n } = useTranslation();
-  const { countries } = useMetadataStore();
-  const isArabic = i18n.language.toLowerCase().startsWith("ar");
+export function AddressCard({
+  address,
+  onEdit,
+  onDelete,
+  isDeleting,
+}: AddressCardProps) {
+  const { t, i18n } = useTranslation()
+  const countries = useStore(metadataStore, (s) => s.countries)
+  const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
   const getCountryInfo = (countryCode: string) => {
-    const country = countries.find((c) => c.code === countryCode);
+    const country = countries.find((c) => c.code === countryCode)
     return {
-      name: isArabic ? (country?.nameAr ?? countryCode) : (country?.name ?? countryCode),
+      name: isArabic
+        ? (country?.nameAr ?? countryCode)
+        : (country?.name ?? countryCode),
       flag: country?.flag,
-    };
-  };
+    }
+  }
 
-  const countryInfo = getCountryInfo(address.countryCode);
+  const countryInfo = getCountryInfo(address.countryCode)
+
+  const phoneDisplay =
+    address.phoneCode && address.phoneNumber
+      ? `${address.phoneCode} ${address.phoneNumber}`
+      : null
 
   return (
     <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
@@ -56,29 +70,33 @@ export function AddressCard({ address, onEdit, onDelete, isDeleting }: AddressCa
 
             {/* Country */}
             <div className="flex items-center gap-2 text-sm text-base-content/70 mb-1">
-              {countryInfo.flag && <span className="text-base">{countryInfo.flag}</span>}
+              {countryInfo.flag && (
+                <span className="text-base">{countryInfo.flag}</span>
+              )}
               <span>{countryInfo.name}</span>
             </div>
 
             {/* Street */}
             {address.street && (
-              <p className="text-sm text-base-content/70 mb-1">{address.street}</p>
+              <p className="text-sm text-base-content/70 mb-1">
+                {address.street}
+              </p>
             )}
 
             {/* Zip Code */}
             {address.zipCode && (
               <p className="text-sm text-base-content/70 mb-2">
-                {t("customers.form.zip_code")}: {address.zipCode}
+                {t('customers.form.zip_code')}: {address.zipCode}
               </p>
             )}
 
             {/* Phone */}
-            <div className="flex items-center gap-2 text-sm text-base-content/70">
-              <Phone size={14} />
-              <span dir="ltr">
-                {address.phoneCode} {address.phoneNumber}
-              </span>
-            </div>
+            {phoneDisplay && (
+              <div className="flex items-center gap-2 text-sm text-base-content/70">
+                <Phone size={14} />
+                <span dir="ltr">{phoneDisplay}</span>
+              </div>
+            )}
           </div>
 
           {/* Actions */}
@@ -90,7 +108,7 @@ export function AddressCard({ address, onEdit, onDelete, isDeleting }: AddressCa
                   className="btn btn-ghost btn-sm btn-square"
                   onClick={onEdit}
                   disabled={isDeleting}
-                  aria-label={t("common.edit")}
+                  aria-label={t('common.edit')}
                 >
                   <Edit size={16} />
                 </button>
@@ -101,7 +119,7 @@ export function AddressCard({ address, onEdit, onDelete, isDeleting }: AddressCa
                   className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
                   onClick={onDelete}
                   disabled={isDeleting}
-                  aria-label={t("common.delete")}
+                  aria-label={t('common.delete')}
                 >
                   {isDeleting ? (
                     <span className="loading loading-spinner loading-sm" />
@@ -115,5 +133,5 @@ export function AddressCard({ address, onEdit, onDelete, isDeleting }: AddressCa
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,77 +1,72 @@
-import { Languages, Globe, Check } from "lucide-react";
-import { useLanguage } from "../../hooks/useLanguage";
-import { useTranslation } from "react-i18next";
+import { Check, Globe, Languages } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { useLanguage } from '@/hooks/useLanguage'
 
 const LANGUAGE_CONFIG = {
   en: {
-    code: "en",
-    name: "English",
-    nativeName: "English",
-    flag: "🇬🇧",
-    direction: "ltr",
+    code: 'en',
+    name: 'English',
+    nativeName: 'English',
+    flag: '🇬🇧',
+    direction: 'ltr',
   },
   ar: {
-    code: "ar",
-    name: "Arabic",
-    nativeName: "العربية",
-    flag: "🇸🇦",
-    direction: "rtl",
+    code: 'ar',
+    name: 'Arabic',
+    nativeName: 'العربية',
+    flag: '🇸🇦',
+    direction: 'rtl',
   },
-} as const;
+} as const
 
-type LanguageSwitcherVariant = 
-  | "dropdown"
-  | "toggle"
-  | "compact"
-  | "iconOnly";
+type LanguageSwitcherVariant = 'dropdown' | 'toggle' | 'compact' | 'iconOnly'
 
-interface LanguageSwitcherProps {
-  variant?: LanguageSwitcherVariant;
-  className?: string;
-  showLabel?: boolean;
-  showFlag?: boolean;
+export interface LanguageSwitcherProps {
+  variant?: LanguageSwitcherVariant
+  className?: string
+  showLabel?: boolean
+  showFlag?: boolean
 }
 
 export function LanguageSwitcher({
-  variant = "dropdown",
-  className = "",
+  variant = 'dropdown',
+  className = '',
   showLabel = true,
   showFlag = true,
 }: LanguageSwitcherProps) {
-  const { language, changeLanguage, toggleLanguage, supportedLanguages } = useLanguage();
-  const { t } = useTranslation();
+  const { language, changeLanguage, toggleLanguage, supportedLanguages } =
+    useLanguage()
+  const { t } = useTranslation()
 
-  const currentLangConfig = LANGUAGE_CONFIG[language];
-  const languages = supportedLanguages.map(code => LANGUAGE_CONFIG[code]);
+  const currentLangConfig = LANGUAGE_CONFIG[language]
+  const languages = supportedLanguages.map((code) => LANGUAGE_CONFIG[code])
 
-  // Toggle variant - simple button to switch between 2 languages
-  if (variant === "toggle") {
-    const otherLanguage = languages.find(lang => lang.code !== language);
-    
+  if (variant === 'toggle') {
+    const otherLanguage = languages.find((lang) => lang.code !== language)
+
     return (
       <button
         onClick={toggleLanguage}
         className={`btn btn-ghost btn-sm gap-2 ${className}`}
-        aria-label={t("common.changeLanguage")}
+        aria-label={t('common.changeLanguage')}
+        type="button"
       >
         <Languages className="size-4" />
         {showLabel && (
-          <span className="hidden sm:inline">
-            {otherLanguage?.nativeName}
-          </span>
+          <span className="hidden sm:inline">{otherLanguage?.nativeName}</span>
         )}
       </button>
-    );
+    )
   }
 
-  // Icon only variant - shows just globe icon
-  if (variant === "iconOnly") {
+  if (variant === 'iconOnly') {
     return (
       <div className={`dropdown dropdown-end ${className}`}>
         <button
           tabIndex={0}
           className="btn btn-ghost btn-sm btn-circle"
-          aria-label={t("common.changeLanguage")}
+          aria-label={t('common.changeLanguage')}
+          type="button"
         >
           <Globe className="size-5" />
         </button>
@@ -83,11 +78,12 @@ export function LanguageSwitcher({
             <li key={lang.code}>
               <button
                 onClick={() => {
-                  changeLanguage(lang.code);
+                  changeLanguage(lang.code)
                 }}
                 className={`flex items-center gap-3 ${
-                  language === lang.code ? "active" : ""
+                  language === lang.code ? 'active' : ''
                 }`}
+                type="button"
               >
                 <span className="text-xl" role="img" aria-label={lang.name}>
                   {lang.flag}
@@ -99,20 +95,24 @@ export function LanguageSwitcher({
           ))}
         </ul>
       </div>
-    );
+    )
   }
 
-  // Compact variant - for navbars and tight spaces
-  if (variant === "compact") {
+  if (variant === 'compact') {
     return (
       <div className={`dropdown dropdown-end ${className}`}>
         <button
           tabIndex={0}
           className="btn btn-ghost btn-sm gap-2"
-          aria-label={t("common.changeLanguage")}
+          aria-label={t('common.changeLanguage')}
+          type="button"
         >
           {showFlag && (
-            <span className="text-base" role="img" aria-label={currentLangConfig.name}>
+            <span
+              className="text-base"
+              role="img"
+              aria-label={currentLangConfig.name}
+            >
               {currentLangConfig.flag}
             </span>
           )}
@@ -128,11 +128,12 @@ export function LanguageSwitcher({
             <li key={lang.code}>
               <button
                 onClick={() => {
-                  changeLanguage(lang.code);
+                  changeLanguage(lang.code)
                 }}
                 className={`flex items-center gap-3 ${
-                  language === lang.code ? "active" : ""
+                  language === lang.code ? 'active' : ''
                 }`}
+                type="button"
               >
                 <span className="text-base" role="img" aria-label={lang.name}>
                   {lang.flag}
@@ -144,20 +145,24 @@ export function LanguageSwitcher({
           ))}
         </ul>
       </div>
-    );
+    )
   }
 
-  // Default dropdown variant - full featured
   return (
     <div className={`dropdown dropdown-end ${className}`}>
       <button
         tabIndex={0}
         className="btn btn-ghost gap-3"
-        aria-label={t("common.changeLanguage")}
+        aria-label={t('common.changeLanguage')}
+        type="button"
       >
         <Languages className="size-5" />
         {showFlag && (
-          <span className="text-xl" role="img" aria-label={currentLangConfig.name}>
+          <span
+            className="text-xl"
+            role="img"
+            aria-label={currentLangConfig.name}
+          >
             {currentLangConfig.flag}
           </span>
         )}
@@ -171,18 +176,19 @@ export function LanguageSwitcher({
       >
         <li className="menu-title px-4 py-2">
           <span className="text-base-content/70 text-sm font-semibold">
-            {t("common.selectLanguage")}
+            {t('common.selectLanguage')}
           </span>
         </li>
         {languages.map((lang) => (
           <li key={lang.code}>
             <button
               onClick={() => {
-                changeLanguage(lang.code);
+                changeLanguage(lang.code)
               }}
               className={`flex items-center gap-3 py-3 ${
-                language === lang.code ? "active bg-primary/10" : ""
+                language === lang.code ? 'active bg-primary/10' : ''
               }`}
+              type="button"
             >
               <span className="text-2xl" role="img" aria-label={lang.name}>
                 {lang.flag}
@@ -199,5 +205,5 @@ export function LanguageSwitcher({
         ))}
       </ul>
     </div>
-  );
+  )
 }

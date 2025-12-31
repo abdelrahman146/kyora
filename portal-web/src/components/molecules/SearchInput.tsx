@@ -24,7 +24,7 @@
  * @example
  * ```tsx
  * const [search, setSearch] = useState("");
- * 
+ *
  * <SearchInput
  *   value={search}
  *   onChange={setSearch}
@@ -34,70 +34,73 @@
  * ```
  */
 
-import { useState, useEffect, useRef } from "react";
-import { Search, X } from "lucide-react";
+import { useEffect, useRef, useState } from 'react'
+import { Search, X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 
 export interface SearchInputProps {
   /** Current search value (controlled) */
-  value: string;
+  value: string
   /** Callback fired after debounce when value changes */
-  onChange: (value: string) => void;
+  onChange: (value: string) => void
   /** Placeholder text */
-  placeholder?: string;
+  placeholder?: string
   /** Debounce delay in milliseconds */
-  debounceMs?: number;
+  debounceMs?: number
   /** Whether the input is disabled */
-  disabled?: boolean;
+  disabled?: boolean
   /** Additional CSS classes */
-  className?: string;
+  className?: string
 }
 
 export function SearchInput({
   value,
   onChange,
-  placeholder = "Search...",
+  placeholder: placeholderProp,
   debounceMs = 300,
   disabled = false,
-  className = "",
+  className = '',
 }: SearchInputProps) {
-  const [localValue, setLocalValue] = useState(value);
-  const [isDebouncePending, setIsDebouncePending] = useState(false);
-  const timeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const { t } = useTranslation()
+  const placeholder = placeholderProp ?? t('common.search_placeholder_generic')
+  const [localValue, setLocalValue] = useState(value)
+  const [isDebouncePending, setIsDebouncePending] = useState(false)
+  const timeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   // Sync external value changes
   useEffect(() => {
-    setLocalValue(value);
-  }, [value]);
+    setLocalValue(value)
+  }, [value])
 
   // Debounced onChange
   useEffect(() => {
     if (localValue === value) {
-      setIsDebouncePending(false);
-      return;
+      setIsDebouncePending(false)
+      return
     }
 
-    setIsDebouncePending(true);
+    setIsDebouncePending(true)
 
     if (timeoutRef.current) {
-      clearTimeout(timeoutRef.current);
+      clearTimeout(timeoutRef.current)
     }
 
     timeoutRef.current = setTimeout(() => {
-      onChange(localValue);
-      setIsDebouncePending(false);
-    }, debounceMs);
+      onChange(localValue)
+      setIsDebouncePending(false)
+    }, debounceMs)
 
     return () => {
       if (timeoutRef.current) {
-        clearTimeout(timeoutRef.current);
+        clearTimeout(timeoutRef.current)
       }
-    };
-  }, [localValue, value, onChange, debounceMs]);
+    }
+  }, [localValue, value, onChange, debounceMs])
 
   const handleClear = () => {
-    setLocalValue("");
-    onChange("");
-  };
+    setLocalValue('')
+    onChange('')
+  }
 
   return (
     <div className={`relative ${className}`}>
@@ -114,7 +117,7 @@ export function SearchInput({
         type="text"
         value={localValue}
         onChange={(e) => {
-          setLocalValue(e.target.value);
+          setLocalValue(e.target.value)
         }}
         placeholder={placeholder}
         disabled={disabled}
@@ -148,19 +151,20 @@ export function SearchInput({
             btn btn-ghost btn-sm btn-circle
             absolute top-1/2 -translate-y-1/2 end-2
             z-10
-            hover:bg-base-200
-            focus:ring-2 focus:ring-primary/20
-            transition-colors duration-200
+            hover:bg-base-300
+            transition-colors
+            disabled:opacity-50
+            disabled:cursor-not-allowed
           "
-          aria-label="Clear search"
+          aria-label={t('common.clear_search')}
         >
           {isDebouncePending ? (
-            <span className="loading loading-spinner loading-sm text-base-content/50"></span>
+            <span className="loading loading-spinner loading-xs"></span>
           ) : (
-            <X size={18} className="text-base-content/50" />
+            <X size={16} />
           )}
         </button>
       )}
     </div>
-  );
+  )
 }

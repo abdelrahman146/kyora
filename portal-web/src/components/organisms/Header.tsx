@@ -1,15 +1,16 @@
-import { useTranslation } from "react-i18next";
-import { Menu } from "lucide-react";
-import { IconButton } from "../atoms/IconButton";
-import { BusinessSwitcher } from "../molecules/BusinessSwitcher";
-import { UserMenu } from "../molecules/UserMenu";
-import { LanguageSwitcher } from "../molecules/LanguageSwitcher";
-import { useBusinessStore } from "../../stores/businessStore";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { cn } from "@/lib/utils";
+import { useTranslation } from 'react-i18next'
+import { Menu } from 'lucide-react'
+import { useStore } from '@tanstack/react-store'
+import { IconButton } from '../atoms/IconButton'
+import { BusinessSwitcher } from '../molecules/BusinessSwitcher'
+import { UserMenu } from '../molecules/UserMenu'
+import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
+import { businessStore, openSidebar } from '@/stores/businessStore'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
 
 interface HeaderProps {
-  title?: string;
+  title?: string
 }
 
 /**
@@ -28,19 +29,19 @@ interface HeaderProps {
  * - Fixed positioning with proper z-index stacking
  */
 export function Header({ title }: HeaderProps) {
-  const { t } = useTranslation();
-  const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { isSidebarCollapsed, openSidebar } = useBusinessStore();
+  const { t } = useTranslation()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
 
   return (
     <header
       className={cn(
-        "fixed top-0 end-0 h-16 bg-base-100 border-b border-base-300 z-30 transition-all duration-300",
+        'fixed top-0 end-0 h-16 bg-base-100 border-b border-base-300 z-30 transition-all duration-300',
         // Desktop: Adjust start position based on sidebar width
-        isDesktop && !isSidebarCollapsed && "md:start-64",
-        isDesktop && isSidebarCollapsed && "md:start-20",
+        isDesktop && !sidebarCollapsed && 'md:start-64',
+        isDesktop && sidebarCollapsed && 'md:start-20',
         // Mobile: Full width
-        "start-0"
+        'start-0',
       )}
     >
       <div className="h-full flex items-center justify-between gap-2 px-4">
@@ -53,7 +54,7 @@ export function Header({ title }: HeaderProps) {
               size="md"
               variant="ghost"
               onClick={openSidebar}
-              aria-label={t("dashboard.open_menu")}
+              aria-label={t('dashboard.open_menu')}
             />
           )}
 
@@ -78,5 +79,5 @@ export function Header({ title }: HeaderProps) {
         </div>
       </div>
     </header>
-  );
+  )
 }

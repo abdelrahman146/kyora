@@ -8,45 +8,46 @@
  * - Mobile-first responsive design
  * - Country and phone code selection from metadata
  * - Bilingual support (Arabic/English)
- * - Form validation with Zod
- * - Optimistic UI updates
+ * - Form validation with Zod via TanStack Form
+ * - Auto-linking country to phone code
  */
 
-import { useEffect, useMemo } from "react";
-import { useForm, Controller } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { useTranslation } from "react-i18next";
-import { BottomSheet } from "../../molecules/BottomSheet";
-import { CountrySelect } from "../../molecules/CountrySelect";
-import { PhoneCodeSelect } from "../../molecules/PhoneCodeSelect";
-import { useMetadataStore } from "../../../stores/metadataStore";
-import type { CustomerAddress } from "../../../api/types/customer";
-import type { CreateAddressRequest, UpdateAddressRequest } from "../../../api/address";
-import { buildE164Phone, parseE164Phone } from "../../../lib/phone";
-import toast from "react-hot-toast";
-import { translateErrorAsync } from "@/lib/translateError";
+import { useEffect, useMemo, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
 
-interface AddressSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (data: CreateAddressRequest | UpdateAddressRequest) => Promise<CustomerAddress>;
-  address?: CustomerAddress; // If provided, we're editing
-  submitLabel?: string;
+import { BottomSheet } from '../../molecules/BottomSheet'
+import { CountrySelect } from '../../molecules/CountrySelect'
+import { PhoneCodeSelect } from '../../molecules/PhoneCodeSelect'
+import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
+import type { CustomerAddress } from '@/api/customer'
+import { useKyoraForm } from '@/lib/form'
+import { useCountriesQuery } from '@/api/metadata'
+import { buildE164Phone, parseE164Phone } from '@/lib/phone'
+import { showErrorToast, showSuccessToast } from '@/lib/toast'
+
+export interface AddressSheetProps {
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (
+    data: CreateAddressRequest | UpdateAddressRequest,
+  ) => Promise<CustomerAddress>
+  address?: CustomerAddress // If provided, we're editing
+  submitLabel?: string
 }
 
 // Zod schema
 const addressSchema = z.object({
-  countryCode: z.string().length(2, "Country is required"),
-  state: z.string().min(1, "State is required"),
-  city: z.string().min(1, "City is required"),
-  phoneCode: z.string().min(1, "Phone code is required"),
-  phoneNumber: z.string().min(1, "Phone number is required"),
+  countryCode: z.string().length(2, 'validation.country_required'),
+  state: z.string().min(1, 'validation.state_required'),
+  city: z.string().min(1, 'validation.city_required'),
+  phoneCode: z.string().min(1, 'validation.phone_code_required'),
+  phoneNumber: z.string().min(1, 'validation.phone_required'),
   street: z.string().optional(),
   zipCode: z.string().optional(),
-});
+})
 
-type FormData = z.infer<typeof addressSchema>;
+type FormData = z.infer<typeof addressSchema>
 
 export function AddressSheet({
   isOpen,
@@ -55,246 +56,236 @@ export function AddressSheet({
   address,
   submitLabel,
 }: AddressSheetProps) {
-  const { t } = useTranslation();
-  const { countries, status, loadCountries } = useMetadataStore();
+  const { t } = useTranslation()
 
-  // Check if countries are ready (loaded and have data)
-  const countriesReady = useMemo(
-    () => countries.length > 0 && status === "loaded",
-    [countries.length, status]
-  );
+  // Fetch countries using TanStack Query
+  const { data: countries = [], isLoading: countriesLoading } =
+    useCountriesQuery()
+  const countriesReady = countries.length > 0 && !countriesLoading
 
-  // Fetch countries if not loaded
-  useEffect(() => {
-    if (status === "idle") {
-      void loadCountries();
-    }
-  }, [status, loadCountries]);
+  // Track selected country code for auto-linking phone code
+  const [selectedCountryCode, setSelectedCountryCode] = useState(
+    address?.countryCode ?? '',
+  )
 
   // Parse address phone if editing
   const initialPhoneData = useMemo(() => {
     if (address) {
-      return parseE164Phone(address.phoneCode, address.phoneNumber);
+      return parseE164Phone(address.phoneCode, address.phoneNumber)
     }
-    return { phoneCode: "", phoneNumber: "" };
-  }, [address]);
+    return { phoneCode: '', phoneNumber: '' }
+  }, [address])
 
-  // Form setup
-  const {
-    register,
-    handleSubmit,
-    formState: { errors, isSubmitting, isDirty },
-    reset,
-    watch,
-    setValue,
-    control,
-  } = useForm<FormData>({
-    resolver: zodResolver(addressSchema),
-    defaultValues: {
-      countryCode: address?.countryCode ?? "",
-      state: address?.state ?? "",
-      city: address?.city ?? "",
-      phoneCode: initialPhoneData.phoneCode,
-      phoneNumber: initialPhoneData.phoneNumber,
-      street: address?.street ?? "",
-      zipCode: address?.zipCode ?? "",
+  // Default values
+  const defaultValues: FormData = {
+    countryCode: address?.countryCode ?? '',
+    state: address?.state ?? '',
+    city: address?.city ?? '',
+    phoneCode: initialPhoneData.phoneCode,
+    phoneNumber: initialPhoneData.phoneNumber,
+    street: address?.street ?? '',
+    zipCode: address?.zipCode ?? '',
+  }
+
+  // TanStack Form setup with useKyoraForm
+  const form = useKyoraForm({
+    defaultValues,
+    onSubmit: async ({ value }) => {
+      try {
+        // Build E.164 phone
+        const phoneData = buildE164Phone(value.phoneCode, value.phoneNumber)
+
+        if (address) {
+          // Update
+          const updateData: UpdateAddressRequest = {
+            countryCode: value.countryCode,
+            state: value.state,
+            city: value.city,
+            phoneCode: value.phoneCode,
+            phoneNumber: value.phoneNumber,
+            street: value.street,
+            zipCode: value.zipCode,
+          }
+          await onSubmit(updateData)
+          showSuccessToast(t('customers.address.update_success'))
+        } else {
+          // Create
+          const createData: CreateAddressRequest = {
+            countryCode: value.countryCode,
+            state: value.state,
+            city: value.city,
+            phoneCode: value.phoneCode,
+            phone: phoneData.e164, // Backend expects 'phone' field with E.164 format
+            street: value.street,
+            zipCode: value.zipCode,
+          }
+          await onSubmit(createData)
+          showSuccessToast(t('customers.address.create_success'))
+        }
+        onClose()
+      } catch (error) {
+        showErrorToast((error as Error).message)
+      }
     },
-  });
+  })
 
-  // Reset form when address changes or sheet opens
+  // Get form state
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [isDirty, setIsDirty] = useState(false)
+
+  useEffect(() => {
+    const unsubscribe = form.store.subscribe(() => {
+      setIsSubmitting(form.store.state.isSubmitting)
+      setIsDirty(form.store.state.isDirty)
+    })
+    return unsubscribe
+  }, [form])
+
+  // Reset form when sheet opens or address changes
   useEffect(() => {
     if (isOpen) {
-      reset({
-        countryCode: address?.countryCode ?? "",
-        state: address?.state ?? "",
-        city: address?.city ?? "",
-        phoneCode: initialPhoneData.phoneCode,
-        phoneNumber: initialPhoneData.phoneNumber,
-        street: address?.street ?? "",
-        zipCode: address?.zipCode ?? "",
-      });
+      form.reset()
+      // Update default values when address changes
+      form.setFieldValue('countryCode', address?.countryCode ?? '')
+      form.setFieldValue('state', address?.state ?? '')
+      form.setFieldValue('city', address?.city ?? '')
+      form.setFieldValue('phoneCode', initialPhoneData.phoneCode)
+      form.setFieldValue('phoneNumber', initialPhoneData.phoneNumber)
+      form.setFieldValue('street', address?.street ?? '')
+      form.setFieldValue('zipCode', address?.zipCode ?? '')
+      setSelectedCountryCode(address?.countryCode ?? '')
     }
-  }, [isOpen, address, initialPhoneData, reset]);
+  }, [isOpen, address, initialPhoneData, form])
 
-  // Watch country code to auto-set phone code (always auto-update phone code)
-  // eslint-disable-next-line react-hooks/incompatible-library
-  const selectedCountryCode = watch("countryCode");
-
+  // Auto-link country to phone code when country changes
   useEffect(() => {
     if (selectedCountryCode && countriesReady) {
-      const country = countries.find((c) => c.code === selectedCountryCode);
+      const country = countries.find((c) => c.code === selectedCountryCode)
       if (country?.phonePrefix) {
-        setValue("phoneCode", country.phonePrefix, { shouldValidate: false });
+        form.setFieldValue('phoneCode', country.phonePrefix)
       }
     }
-  }, [selectedCountryCode, countries, countriesReady, setValue]);
-
-  // Handle form submission
-  const handleFormSubmit = async (data: FormData) => {
-    try {
-      // Build E.164 phone
-      const phoneData = buildE164Phone(data.phoneCode, data.phoneNumber);
-
-      if (address) {
-        // Update
-        const updateData: UpdateAddressRequest = {
-          countryCode: data.countryCode,
-          state: data.state,
-          city: data.city,
-          phoneCode: data.phoneCode,
-          phoneNumber: data.phoneNumber,
-          street: data.street,
-          zipCode: data.zipCode,
-        };
-        await onSubmit(updateData);
-        toast.success(t("customers.address.update_success"));
-      } else {
-        // Create
-        const createData: CreateAddressRequest = {
-          countryCode: data.countryCode,
-          state: data.state,
-          city: data.city,
-          phoneCode: data.phoneCode,
-          phone: phoneData.e164, // Backend expects 'phone' field with E.164 format
-          street: data.street,
-          zipCode: data.zipCode,
-        };
-        await onSubmit(createData);
-        toast.success(t("customers.address.create_success"));
-      }
-      onClose();
-    } catch (error) {
-      const message = await translateErrorAsync(error, t);
-      toast.error(message);
-    }
-  };
+  }, [selectedCountryCode, countries, countriesReady, form])
 
   return (
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={address ? t("customers.address.edit_title") : t("customers.address.add_title")}
+      title={
+        address
+          ? t('customers.address.edit_title')
+          : t('customers.address.add_title')
+      }
     >
-      <form
-        onSubmit={(e) => {
-          void handleSubmit(handleFormSubmit)(e);
-        }}
-        className="space-y-4"
-      >
+      <form.AppForm>
+        <form.FormRoot
+          className="space-y-4"
+          aria-busy={isSubmitting}
+        >
         {/* Country */}
-        <Controller
+        <form.AppField
           name="countryCode"
-          control={control}
-          render={({ field }) => (
+          validators={{
+            onBlur: z.string().length(2, 'validation.country_required'),
+          }}
+        >
+          {(field: any) => (
             <CountrySelect
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.countryCode?.message}
+              value={field.state.value}
+              onChange={(value: string) => {
+                field.handleChange(value)
+                setSelectedCountryCode(value)
+              }}
               required
             />
           )}
-        />
+        </form.AppField>
 
         {/* State */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">
-              {t("customers.form.state")} <span className="text-error">*</span>
-            </span>
-          </label>
-          <input
-            {...register("state")}
-            type="text"
-            placeholder={t("customers.form.state_placeholder")}
-            className={`input input-bordered w-full ${errors.state ? "input-error" : ""}`}
-          />
-          {errors.state && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.state.message}</span>
-            </label>
+        <form.AppField
+          name="state"
+          validators={{
+            onBlur: z.string().min(1, 'validation.state_required'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              label={t('customers.form.state')}
+              placeholder={t('customers.form.state_placeholder')}
+              required
+            />
           )}
-        </div>
+        </form.AppField>
 
         {/* City */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">
-              {t("customers.form.city")} <span className="text-error">*</span>
-            </span>
-          </label>
-          <input
-            {...register("city")}
-            type="text"
-            placeholder={t("customers.form.city_placeholder")}
-            className={`input input-bordered w-full ${errors.city ? "input-error" : ""}`}
-          />
-          {errors.city && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.city.message}</span>
-            </label>
+        <form.AppField
+          name="city"
+          validators={{
+            onBlur: z.string().min(1, 'validation.city_required'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              label={t('customers.form.city')}
+              placeholder={t('customers.form.city_placeholder')}
+              required
+            />
           )}
-        </div>
+        </form.AppField>
 
         {/* Street (Optional) */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">{t("customers.form.street")}</span>
-          </label>
-          <input
-            {...register("street")}
-            type="text"
-            placeholder={t("customers.form.street_placeholder")}
-            className="input input-bordered w-full"
-          />
-        </div>
+        <form.AppField name="street">
+          {(field) => (
+            <field.TextField
+              label={t('customers.form.street')}
+              placeholder={t('customers.form.street_placeholder')}
+            />
+          )}
+        </form.AppField>
 
         {/* Zip Code (Optional) */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">{t("customers.form.zip_code")}</span>
-          </label>
-          <input
-            {...register("zipCode")}
-            type="text"
-            placeholder={t("customers.form.zip_placeholder")}
-            className="input input-bordered w-full"
-          />
-        </div>
+        <form.AppField name="zipCode">
+          {(field) => (
+            <field.TextField
+              label={t('customers.form.zip_code')}
+              placeholder={t('customers.form.zip_placeholder')}
+            />
+          )}
+        </form.AppField>
 
         {/* Phone Code - Auto-updated from country, disabled */}
-        <Controller
+        <form.AppField
           name="phoneCode"
-          control={control}
-          render={({ field }) => (
+          validators={{
+            onBlur: z.string().min(1, 'validation.phone_code_required'),
+          }}
+        >
+          {(field: any) => (
             <PhoneCodeSelect
-              value={field.value}
-              onChange={field.onChange}
-              error={errors.phoneCode?.message}
+              value={field.state.value}
+              onChange={(value: string) => field.handleChange(value)}
               disabled
               required
             />
           )}
-        />
+        </form.AppField>
 
         {/* Phone Number */}
-        <div className="form-control">
-          <label className="label">
-            <span className="label-text">
-              {t("customers.form.phone_number")} <span className="text-error">*</span>
-            </span>
-          </label>
-          <input
-            {...register("phoneNumber")}
-            type="tel"
-            placeholder={t("customers.form.phone_placeholder")}
-            className={`input input-bordered w-full ${errors.phoneNumber ? "input-error" : ""}`}
-          />
-          {errors.phoneNumber && (
-            <label className="label">
-              <span className="label-text-alt text-error">{errors.phoneNumber.message}</span>
-            </label>
+        <form.AppField
+          name="phoneNumber"
+          validators={{
+            onBlur: z.string().min(1, 'validation.phone_required'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              type="tel"
+              label={t('customers.form.phone_number')}
+              placeholder={t('customers.form.phone_placeholder')}
+              required
+            />
           )}
-        </div>
+        </form.AppField>
 
         {/* Footer Actions */}
         <div className="flex gap-2 pt-4">
@@ -304,18 +295,21 @@ export function AddressSheet({
             onClick={onClose}
             disabled={isSubmitting}
           >
-            {t("common.cancel")}
+            {t('common.cancel')}
           </button>
-          <button
-            type="submit"
-            className="btn btn-primary flex-1"
-            disabled={isSubmitting || (address ? !isDirty : false)}
+          <form.SubmitButton
+            variant="primary"
+            className="flex-1"
+            disabled={address ? !isDirty : false}
           >
-            {isSubmitting && <span className="loading loading-spinner loading-sm" />}
-            {submitLabel ?? (address ? t("common.update") : t("common.add"))}
-          </button>
+            {isSubmitting && (
+              <span className="loading loading-spinner loading-sm" />
+            )}
+            {submitLabel ?? (address ? t('common.update') : t('common.add'))}
+          </form.SubmitButton>
         </div>
-      </form>
+      </form.FormRoot>
+      </form.AppForm>
     </BottomSheet>
-  );
+  )
 }

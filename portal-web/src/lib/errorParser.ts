@@ -1,25 +1,26 @@
-import type { HTTPError } from "ky";
+import type { HTTPError } from 'ky'
 
 /**
  * ProblemDetails interface based on RFC 7807
  * Matches the backend problem.Problem type from swagger.json
  */
 export interface ProblemDetails {
-  type?: string;
-  title?: string;
-  status?: number;
-  detail?: string;
-  instance?: string;
-  extensions?: Record<string, unknown>;
+  type?: string
+  title?: string
+  status?: number
+  detail?: string
+  instance?: string
+  extensions?: Record<string, unknown>
 }
 
 /**
  * Result of parsing an error with i18n translation key and optional interpolation params
  */
 export interface ErrorResult {
-  key: string;
-  params?: Record<string, string | number>;
-  fallback?: string;
+  key: string
+  ns?: string
+  params?: Record<string, string | number>
+  fallback?: string
 }
 
 /**
@@ -28,86 +29,91 @@ export interface ErrorResult {
  * Falls back to generic error keys if parsing fails
  */
 export async function parseProblemDetails(
-  error: unknown
+  error: unknown,
 ): Promise<ErrorResult> {
   if (!error) {
-    return { key: "errors:generic.unexpected" };
+    return { ns: 'errors', key: 'generic.unexpected' }
   }
 
   // Handle HTTPError from ky
   if (
-    typeof error === "object" &&
-    "response" in error &&
+    typeof error === 'object' &&
+    'response' in error &&
     error.response instanceof Response
   ) {
-    const httpError = error as HTTPError;
+    const httpError = error as HTTPError
 
     try {
       // Try to parse JSON response body
-      const body: unknown = await httpError.response.clone().json();
+      const body: unknown = await httpError.response.clone().json()
 
       // If backend provides a detail message, use it as fallback.
       const fallback =
         body &&
-        typeof body === "object" &&
-        "detail" in body &&
-        typeof (body as { detail?: unknown }).detail === "string"
+        typeof body === 'object' &&
+        'detail' in body &&
+        typeof (body as { detail?: unknown }).detail === 'string'
           ? (body as { detail: string }).detail
-          : undefined;
+          : undefined
 
       // Special-case: invalid credentials on login should show a friendly auth message.
       // Backend returns 401 for invalid login, which is expected and should not be treated
       // as a generic "unauthorized"/"session expired" error.
       if (
         httpError.response.status === 401 &&
-        typeof httpError.response.url === "string" &&
-        httpError.response.url.endsWith("/v1/auth/login")
+        typeof httpError.response.url === 'string' &&
+        httpError.response.url.endsWith('/v1/auth/login')
       ) {
-        return { key: "errors:auth.invalid_credentials", fallback };
+        return { ns: 'errors', key: 'auth.invalid_credentials', fallback }
       }
 
       // Special-case: onboarding verify email can return 409 when the email is already registered.
       // Show a friendly message that nudges the user to login instead of a generic conflict.
       if (
         httpError.response.status === 409 &&
-        typeof httpError.response.url === "string" &&
-        httpError.response.url.endsWith("/v1/onboarding/email/verify")
+        typeof httpError.response.url === 'string' &&
+        httpError.response.url.endsWith('/v1/onboarding/email/verify')
       ) {
-        return { key: "errors:onboarding.email_already_exists", fallback };
+        return {
+          ns: 'errors',
+          key: 'onboarding.email_already_exists',
+          fallback,
+        }
       }
 
       // Return translation key based on status code
       return {
         ...getStatusErrorKey(httpError.response.status),
         fallback,
-      };
+      }
     } catch {
       // Response body is not JSON or failed to parse
-      return getStatusErrorKey(httpError.response.status);
+      return getStatusErrorKey(httpError.response.status)
     }
   }
 
   // Handle TimeoutError
-  if (error instanceof Error && error.name === "TimeoutError") {
-    return { key: "errors:network.timeout" };
+  if (error instanceof Error && error.name === 'TimeoutError') {
+    return { ns: 'errors', key: 'network.timeout' }
   }
 
   // Handle network errors
-  if (error instanceof Error && error.name === "TypeError") {
-    return { key: "errors:network.connection" };
+  if (error instanceof Error && error.name === 'TypeError') {
+    return { ns: 'errors', key: 'network.connection' }
   }
 
   // Handle generic Error objects
   if (error instanceof Error && error.message) {
     return {
-      key: "errors:generic.message",
+      ns: 'errors',
+      key: 'generic.message',
       params: { message: error.message },
       fallback: error.message,
-    };
+    }
   }
 
   // Fallback for unknown error types
-  return { key: "errors:generic.unexpected" };
+  return { ns: 'errors', key: 'generic.unexpected' }
 }
 
 /**
@@ -116,35 +122,35 @@ export async function parseProblemDetails(
 function getStatusErrorKey(status: number): ErrorResult {
   switch (status) {
     case 400:
-      return { key: "errors:http.400" };
+      return { ns: 'errors', key: 'http.400' }
     case 401:
-      return { key: "errors:http.401" };
+      return { ns: 'errors', key: 'http.401' }
     case 403:
-      return { key: "errors:http.403" };
+      return { ns: 'errors', key: 'http.403' }
     case 404:
-      return { key: "errors:http.404" };
+      return { ns: 'errors', key: 'http.404' }
     case 409:
-      return { key: "errors:http.409" };
+      return { ns: 'errors', key: 'http.409' }
     case 422:
-      return { key: "errors:http.422" };
+      return { ns: 'errors', key: 'http.422' }
     case 429:
-      return { key: "errors:http.429" };
+      return { ns: 'errors', key: 'http.429' }
     case 500:
-      return { key: "errors:http.500" };
+      return { ns: 'errors', key: 'http.500' }
     case 502:
-      return { key: "errors:http.502" };
+      return { ns: 'errors', key: 'http.502' }
     case 503:
-      return { key: "errors:http.503" };
+      return { ns: 'errors', key: 'http.503' }
     case 504:
-      return { key: "errors:http.504" };
+      return { ns: 'errors', key: 'http.504' }
     default:
       if (status >= 400 && status < 500) {
-        return { key: "errors:http.4xx", params: { status } };
+        return { ns: 'errors', key: 'http.4xx', params: { status } }
       }
       if (status >= 500) {
-        return { key: "errors:http.5xx", params: { status } };
+        return { ns: 'errors', key: 'http.5xx', params: { status } }
       }
-      return { key: "errors:http.unknown", params: { status } };
+      return { ns: 'errors', key: 'http.unknown', params: { status } }
   }
 }
 
@@ -153,41 +159,41 @@ function getStatusErrorKey(status: number): ErrorResult {
  * Returns a map of field names to error messages
  */
 export async function parseValidationErrors(
-  error: unknown
+  error: unknown,
 ): Promise<Record<string, string> | null> {
   if (!error) {
-    return null;
+    return null
   }
 
   // Handle HTTPError from ky
   if (
-    typeof error === "object" &&
-    "response" in error &&
+    typeof error === 'object' &&
+    'response' in error &&
     error.response instanceof Response
   ) {
-    const httpError = error as HTTPError;
+    const httpError = error as HTTPError
 
     try {
-      const body: unknown = await httpError.response.clone().json();
+      const body: unknown = await httpError.response.clone().json()
 
       // Check if extensions contains validation errors
       if (
         body &&
-        typeof body === "object" &&
-        "extensions" in body &&
+        typeof body === 'object' &&
+        'extensions' in body &&
         (body as { extensions?: unknown }).extensions &&
-        typeof (body as { extensions: unknown }).extensions === "object"
+        typeof (body as { extensions: unknown }).extensions === 'object'
       ) {
         // Common patterns: errors, validationErrors, fieldErrors
         const extensions = (body as { extensions: Record<string, unknown> })
-          .extensions;
+          .extensions
         const validationData =
           extensions.errors ??
           extensions.validationErrors ??
-          extensions.fieldErrors;
+          extensions.fieldErrors
 
-        if (validationData && typeof validationData === "object") {
-          return validationData as Record<string, string>;
+        if (validationData && typeof validationData === 'object') {
+          return validationData as Record<string, string>
         }
       }
     } catch {
@@ -195,7 +201,7 @@ export async function parseValidationErrors(
     }
   }
 
-  return null;
+  return null
 }
 
 /**
@@ -203,17 +209,17 @@ export async function parseValidationErrors(
  */
 export function isHttpError(error: unknown, status?: number): boolean {
   if (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error !== null &&
-    "response" in error &&
+    'response' in error &&
     error.response instanceof Response
   ) {
     if (status !== undefined) {
-      return error.response.status === status;
+      return error.response.status === status
     }
-    return true;
+    return true
   }
-  return false;
+  return false
 }
 
 /**
@@ -221,9 +227,9 @@ export function isHttpError(error: unknown, status?: number): boolean {
  */
 export function isHTTPError(error: unknown): error is HTTPError {
   return (
-    typeof error === "object" &&
+    typeof error === 'object' &&
     error !== null &&
-    "response" in error &&
+    'response' in error &&
     error.response instanceof Response
-  );
+  )
 }

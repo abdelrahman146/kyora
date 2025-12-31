@@ -11,17 +11,17 @@
  * - End of list detection
  */
 
-import { useEffect, useRef } from "react";
-import type { ReactNode } from "react";
+import { useEffect, useRef } from 'react'
+import type { ReactNode } from 'react'
 
 export interface InfiniteScrollProps {
-  children: ReactNode;
-  hasMore: boolean;
-  isLoading: boolean;
-  onLoadMore: () => void;
-  threshold?: number; // pixels from bottom to trigger load
-  loadingMessage?: string;
-  endMessage?: string;
+  children: ReactNode
+  hasMore: boolean
+  isLoading: boolean
+  onLoadMore: () => void
+  threshold?: number // pixels from bottom to trigger load
+  loadingMessage?: string
+  endMessage?: string
 }
 
 export function InfiniteScroll({
@@ -30,38 +30,38 @@ export function InfiniteScroll({
   isLoading,
   onLoadMore,
   threshold = 200,
-  loadingMessage = "Loading more...",
-  endMessage = "No more items",
+  loadingMessage = 'Loading more...',
+  endMessage = 'No more items',
 }: InfiniteScrollProps) {
-  const observerTarget = useRef<HTMLDivElement>(null);
+  const observerTarget = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
-    if (!hasMore || isLoading) return;
+    if (!hasMore || isLoading) return
 
     const observer = new IntersectionObserver(
       (entries) => {
         if (entries[0].isIntersecting) {
-          onLoadMore();
+          onLoadMore()
         }
       },
       {
         root: null,
         rootMargin: `${String(threshold)}px`,
         threshold: 0,
-      }
-    );
+      },
+    )
 
-    const currentTarget = observerTarget.current;
+    const currentTarget = observerTarget.current
     if (currentTarget) {
-      observer.observe(currentTarget);
+      observer.observe(currentTarget)
     }
 
     return () => {
       if (currentTarget) {
-        observer.unobserve(currentTarget);
+        observer.unobserve(currentTarget)
       }
-    };
-  }, [hasMore, isLoading, onLoadMore, threshold]);
+    }
+  }, [hasMore, isLoading, onLoadMore, threshold])
 
   return (
     <>
@@ -72,7 +72,9 @@ export function InfiniteScroll({
         {isLoading && (
           <div className="flex items-center justify-center gap-2">
             <span className="loading loading-spinner loading-sm"></span>
-            <span className="text-sm text-base-content/60">{loadingMessage}</span>
+            <span className="text-sm text-base-content/60">
+              {loadingMessage}
+            </span>
           </div>
         )}
         {!isLoading && !hasMore && (
@@ -80,5 +82,5 @@ export function InfiniteScroll({
         )}
       </div>
     </>
-  );
+  )
 }

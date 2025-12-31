@@ -1,59 +1,77 @@
-import { type HTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { cn } from '../../lib/utils'
 
-export interface LogoProps extends HTMLAttributes<HTMLDivElement> {
-  size?: "sm" | "md" | "lg";
-  showText?: boolean;
+export interface LogoProps {
+  /**
+   * Whether to show text alongside icon
+   * @default true
+   */
+  showText?: boolean
+
+  /**
+   * Size variant
+   * @default 'md'
+   */
+  size?: 'sm' | 'md' | 'lg'
+
+  /**
+   * Additional CSS classes
+   */
+  className?: string
 }
 
 /**
- * Logo Component
+ * Kyora Logo Component
  *
- * Displays the Kyora brand logo with optional text.
- * RTL-aware and responsive.
+ * Displays the Kyora brand icon (K) with optional text.
+ * Responsive, supports multiple sizes.
  *
  * @example
  * ```tsx
- * <Logo size="md" showText />
- * <Logo size="sm" />
+ * <Logo />
+ * <Logo size="lg" />
+ * <Logo showText={false} />
  * ```
  */
-export function Logo({ size = "md", showText = true, className }: LogoProps) {
+export function Logo({ showText = true, size = 'md', className }: LogoProps) {
   const sizeClasses = {
-    sm: "h-6",
-    md: "h-8",
-    lg: "h-10",
-  };
+    sm: 'h-8',
+    md: 'h-10',
+    lg: 'h-12',
+  }
+
+  const iconSizeClasses = {
+    sm: 'text-base',
+    md: 'text-lg',
+    lg: 'text-xl',
+  }
 
   const textSizeClasses = {
-    sm: "text-lg",
-    md: "text-xl",
-    lg: "text-2xl",
-  };
+    sm: 'text-lg',
+    md: 'text-xl',
+    lg: 'text-2xl',
+  }
 
   return (
-    <div className={cn("flex items-center gap-2", className)}>
-      {/* Logo Icon - Using a simple geometric shape for now */}
+    <div className={cn('flex items-center gap-2', className)}>
+      {/* Icon */}
       <div
         className={cn(
-          "bg-primary-600 rounded-lg flex items-center justify-center aspect-square",
-          sizeClasses[size]
+          'flex aspect-square items-center justify-center rounded-lg bg-primary text-primary-content font-bold',
+          sizeClasses[size],
+          iconSizeClasses[size],
         )}
       >
-        <span className="text-white font-bold text-sm">K</span>
+        K
       </div>
 
-      {/* Logo Text */}
+      {/* Text */}
       {showText && (
         <span
-          className={cn(
-            "font-bold text-primary-900",
-            textSizeClasses[size]
-          )}
+          className={cn('font-bold text-base-content', textSizeClasses[size])}
         >
           Kyora
         </span>
       )}
     </div>
-  );
+  )
 }

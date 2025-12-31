@@ -1,6 +1,5 @@
-/**
- * API Types and Schemas Index
- * Re-exports all authentication types and schemas for convenient imports
- */
-
-export * from "./auth";
+export * from './auth'
+export * from './business'
+export * from './common'
+export * from './metadata'
+export * from './onboarding'

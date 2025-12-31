@@ -1,7 +1,9 @@
-import { z } from "zod";
+import { z } from 'zod'
 
 /**
- * Metadata API types
+ * Metadata API Types
+ *
+ * Schemas for countries, currencies, and other metadata
  */
 
 export const CountryMetadataSchema = z.object({
@@ -14,12 +16,12 @@ export const CountryMetadataSchema = z.object({
   currencyCode: z.string(),
   currencyLabel: z.string(),
   currencySymbol: z.string(),
-});
+})
 
-export type CountryMetadata = z.infer<typeof CountryMetadataSchema>;
+export type CountryMetadata = z.infer<typeof CountryMetadataSchema>
 
 export const ListCountriesResponseSchema = z.object({
   countries: z.array(CountryMetadataSchema),
-});
+})
 
-export type ListCountriesResponse = z.infer<typeof ListCountriesResponseSchema>;
+export type ListCountriesResponse = z.infer<typeof ListCountriesResponseSchema>

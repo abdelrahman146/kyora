@@ -1,80 +1,183 @@
-import { create } from "zustand";
-import { persist } from "zustand/middleware";
-import type { Business } from "../api/types/business";
+import { Store } from '@tanstack/react-store'
+
+import type { Business } from '@/api/business'
+import { createPersistencePlugin } from '@/lib/storePersistence'
+
+/**
+ * Business Store State
+ *
+ * Manages business list, selected business, and UI preferences.
+ * Only selectedBusinessDescriptor and sidebarCollapsed are persisted.
+ */
+interface BusinessState {
+  businesses: Array<Business>
+  selectedBusinessDescriptor: string | null
+  sidebarCollapsed: boolean // Desktop: collapsed (icon-only) state
+  sidebarOpen: boolean // Mobile: drawer open state
+}
+
+const initialState: BusinessState = {
+  businesses: [],
+  selectedBusinessDescriptor: null,
+  sidebarCollapsed: false,
+  sidebarOpen: false,
+}
 
 /**
  * Business Store
  *
- * Manages global business state including:
- * - List of available businesses
- * - Currently selected business and selectedBusinessId
- * - Sidebar UI state (collapsed on desktop, open/closed on mobile)
+ * Manages business state using TanStack Store.
+ * Persists selectedBusinessDescriptor and sidebarCollapsed to localStorage.
+ *
+ * Dev-only devtools integration via conditional import.
  */
+export const businessStore = new Store<BusinessState>(initialState)
 
-interface BusinessState {
-  // Data
-  businesses: Business[];
-  selectedBusiness: Business | null;
-  selectedBusinessId: string | null;
+// Set up persistence plugin for preferences only
+const persistencePlugin = createPersistencePlugin({
+  key: 'kyora_business_prefs',
+  store: businessStore,
+  select: (state: BusinessState) => ({
+    selectedBusinessDescriptor: state.selectedBusinessDescriptor,
+    sidebarCollapsed: state.sidebarCollapsed,
+  }),
+  restore: (persisted, currentState) => ({
+    ...currentState,
+    selectedBusinessDescriptor: persisted.selectedBusinessDescriptor,
+    sidebarCollapsed: persisted.sidebarCollapsed,
+  }),
+  // No TTL - preferences persist until explicitly changed
+})
 
-  // UI State
-  isSidebarCollapsed: boolean; // Desktop: collapsed (icon-only) state
-  isSidebarOpen: boolean; // Mobile: drawer open state
-
-  // Actions
-  setBusinesses: (businesses: Business[]) => void;
-  setSelectedBusiness: (business: Business | null) => void;
-  setSelectedBusinessId: (id: string | null) => void;
-  toggleSidebar: () => void;
-  setSidebarCollapsed: (collapsed: boolean) => void;
-  openSidebar: () => void;
-  closeSidebar: () => void;
+// Initialize store from localStorage on app load
+const persistedPrefs = persistencePlugin.loadState()
+if (persistedPrefs) {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: persistedPrefs.selectedBusinessDescriptor,
+    sidebarCollapsed: persistedPrefs.sidebarCollapsed,
+  }))
 }
 
-export const useBusinessStore = create<BusinessState>()(
-  persist(
-    (set) => ({
-      // Initial State
-      businesses: [],
-      selectedBusiness: null,
-      selectedBusinessId: null,
-      isSidebarCollapsed: false,
-      isSidebarOpen: false,
+/**
+ * Business Store Actions
+ */
 
-      // Actions
-      setBusinesses: (businesses) => set({ businesses }),
+/**
+ * Set businesses list
+ *
+ * Called after fetching businesses from API.
+ * Businesses are not persisted - always fetched fresh.
+ */
+export function setBusinesses(businesses: Array<Business>): void {
+  businessStore.setState((state) => ({
+    ...state,
+    businesses,
+  }))
+}
 
-      setSelectedBusiness: (business) =>
-        set({
-          selectedBusiness: business,
-          selectedBusinessId: business?.id ?? null,
-        }),
+/**
+ * Select a business
+ *
+ * Updates selectedBusinessDescriptor and persists to localStorage.
+ * Note: Query invalidation should be handled by the caller
+ * (typically in the business route loader after this action).
+ *
+ * @param descriptor - Business descriptor to select
+ */
+export function selectBusiness(descriptor: string): void {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: descriptor,
+  }))
+}
 
-      setSelectedBusinessId: (id) => set({ selectedBusinessId: id }),
+/**
+ * Clear selected business
+ *
+ * Called on logout or when business is no longer accessible.
+ */
+export function clearSelectedBusiness(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    selectedBusinessDescriptor: null,
+  }))
+}
 
-      // Desktop: toggle collapsed state (full width ↔ icon-only)
-      toggleSidebar: () =>
-        set((state) => ({ isSidebarCollapsed: !state.isSidebarCollapsed })),
+/**
+ * Toggle sidebar collapsed state
+ *
+ * Persisted to localStorage for consistent UI across sessions.
+ */
+export function toggleSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarCollapsed: !state.sidebarCollapsed,
+  }))
+}
 
-      setSidebarCollapsed: (collapsed) =>
-        set({ isSidebarCollapsed: collapsed }),
+/**
+ * Set sidebar collapsed state explicitly
+ */
+export function setSidebarCollapsed(collapsed: boolean): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarCollapsed: collapsed,
+  }))
+}
 
-      // Mobile: open/close drawer
-      openSidebar: () => {
-        set({ isSidebarOpen: true });
-      },
-      closeSidebar: () => {
-        set({ isSidebarOpen: false });
-      },
-    }),
-    {
-      name: "kyora-business-store",
-      // Only persist selected business ID and desktop sidebar state
-      partialize: (state) => ({
-        selectedBusiness: state.selectedBusiness,
-        selectedBusinessId: state.selectedBusinessId,
-        isSidebarCollapsed: state.isSidebarCollapsed,
-      }),
-    }
+/**
+ * Open mobile sidebar drawer
+ */
+export function openSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarOpen: true,
+  }))
+}
+
+/**
+ * Close mobile sidebar drawer
+ */
+export function closeSidebar(): void {
+  businessStore.setState((state) => ({
+    ...state,
+    sidebarOpen: false,
+  }))
+}
+
+/**
+ * Clear all business data
+ *
+ * Called on logout. Clears both state and persisted preferences.
+ */
+export function clearBusinessData(): void {
+  businessStore.setState(() => initialState)
+  persistencePlugin.clearState()
+}
+
+/**
+ * Get currently selected business from store
+ */
+export function getSelectedBusiness(): Business | null {
+  const { businesses, selectedBusinessDescriptor } = businessStore.state
+  if (!selectedBusinessDescriptor) return null
+  return (
+    businesses.find((b) => b.descriptor === selectedBusinessDescriptor) ?? null
   )
-);
+}
+
+/**
+ * Initialize TanStack Store Devtools (dev-only)
+ *
+ * Conditionally loads devtools in development mode only.
+ * Production builds will exclude this code via tree-shaking.
+ */
+if (import.meta.env.DEV) {
+  console.log(
+    '[businessStore] TanStack Store devtools enabled in development mode',
+  )
+}
+
+// Re-export Business type for convenience
+export type { Business } from '@/api/business'

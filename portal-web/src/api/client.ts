@@ -1,68 +1,68 @@
-import ky from "ky";
-import { parseProblemDetails } from "../lib/errorParser";
-import { getCookie, setCookie, deleteCookie } from "../lib/cookies";
+import ky from 'ky'
+import { parseProblemDetails } from '@/lib/errorParser'
+import { deleteCookie, getCookie, setCookie } from '@/lib/cookies'
 
 const API_BASE_URL: string =
   (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  (import.meta.env.DEV ? window.location.origin : "http://localhost:8080");
+  'http://localhost:8080'
 
-const REFRESH_TOKEN_COOKIE_NAME = "kyora_refresh_token";
+const REFRESH_TOKEN_COOKIE_NAME = 'kyora_refresh_token'
 
-let accessToken: string | null = null;
-let isRefreshing = false;
-let refreshPromise: Promise<string | null> | null = null;
+let accessToken: string | null = null
+let isRefreshing = false
+let refreshPromise: Promise<string | null> | null = null
 
 export function getAccessToken(): string | null {
-  return accessToken;
+  return accessToken
 }
 
 export function getRefreshToken(): string | null {
-  return getCookie(REFRESH_TOKEN_COOKIE_NAME);
+  return getCookie(REFRESH_TOKEN_COOKIE_NAME)
 }
 
 export function setTokens(access: string, refresh: string): void {
-  accessToken = access;
-  setCookie(REFRESH_TOKEN_COOKIE_NAME, refresh, 365);
+  accessToken = access
+  setCookie(REFRESH_TOKEN_COOKIE_NAME, refresh, 365)
 }
 
 export function clearTokens(): void {
-  accessToken = null;
-  deleteCookie(REFRESH_TOKEN_COOKIE_NAME);
-  isRefreshing = false;
-  refreshPromise = null;
+  accessToken = null
+  deleteCookie(REFRESH_TOKEN_COOKIE_NAME)
+  isRefreshing = false
+  refreshPromise = null
 }
 
 export function hasValidToken(): boolean {
-  return accessToken !== null;
+  return accessToken !== null
 }
 
 async function refreshAccessToken(): Promise<string | null> {
-  const refresh = getRefreshToken();
+  const refresh = getRefreshToken()
 
   if (!refresh) {
-    return null;
+    return null
   }
 
   try {
     const refreshClient = ky.create({
       prefixUrl: API_BASE_URL,
       timeout: 10000,
-    });
+    })
 
     const response: { token: string; refreshToken: string } =
       await refreshClient
-        .post("v1/auth/refresh", {
+        .post('v1/auth/refresh', {
           json: { refreshToken: refresh },
         })
-        .json<{ token: string; refreshToken: string }>();
+        .json<{ token: string; refreshToken: string }>()
 
     // Update tokens
-    setTokens(response.token, response.refreshToken);
-    return response.token;
+    setTokens(response.token, response.refreshToken)
+    return response.token
   } catch {
     // Refresh failed - clear tokens and redirect to login
-    clearTokens();
-    return null;
+    clearTokens()
+    return null
   }
 }
 
@@ -75,7 +75,7 @@ export const apiClient = ky.create({
   // Retry configuration with exponential backoff
   retry: {
     limit: 2,
-    methods: ["get", "put", "head", "delete", "options", "trace"],
+    methods: ['get', 'put', 'head', 'delete', 'options', 'trace'],
     statusCodes: [408, 413, 429, 500, 502, 503, 504],
     backoffLimit: 3000, // Max 3 seconds between retries
   },
@@ -85,14 +85,14 @@ export const apiClient = ky.create({
     beforeRequest: [
       (request) => {
         // Add JWT Bearer token if available
-        const token = getAccessToken();
+        const token = getAccessToken()
         if (token) {
-          request.headers.set("Authorization", `Bearer ${token}`);
+          request.headers.set('Authorization', `Bearer ${token}`)
         }
 
         // Add request ID for tracing (optional but useful for debugging)
-        if (!request.headers.has("X-Request-ID")) {
-          request.headers.set("X-Request-ID", crypto.randomUUID());
+        if (!request.headers.has('X-Request-ID')) {
+          request.headers.set('X-Request-ID', crypto.randomUUID())
         }
       },
     ],
@@ -105,59 +105,56 @@ export const apiClient = ky.create({
         // We must not treat those as "session expired" or we'll cause redirects/retries
         // on the login page.
         if (response.status === 401) {
-          let pathname = "";
+          let pathname = ''
           try {
-            pathname = new URL(request.url).pathname;
+            pathname = new URL(request.url).pathname
           } catch {
             // ignore
           }
 
-          if (pathname.startsWith("/v1/auth/")) {
-            return response;
+          if (pathname.startsWith('/v1/auth/')) {
+            return response
           }
 
           // Prevent multiple simultaneous refresh requests
           if (!isRefreshing) {
-            isRefreshing = true;
+            isRefreshing = true
             refreshPromise = refreshAccessToken().finally(() => {
-              isRefreshing = false;
-              refreshPromise = null;
-            });
+              isRefreshing = false
+              refreshPromise = null
+            })
           }
 
           try {
             // Wait for token refresh to complete
-            const refreshPromiseResolved = refreshPromise;
+            const refreshPromiseResolved = refreshPromise
             if (!refreshPromiseResolved) {
-              throw new Error("No refresh promise available");
+              throw new Error('No refresh promise available')
             }
-            const newToken = await refreshPromiseResolved;
+            const newToken = await refreshPromiseResolved
 
             if (newToken) {
               // Retry original request with new token
-              const headers = new Headers(request.headers);
-              headers.set("Authorization", `Bearer ${newToken}`);
+              const headers = new Headers(request.headers)
+              headers.set('Authorization', `Bearer ${newToken}`)
 
-              return await ky(request, { ...options, headers });
+              return await ky(request, { ...options, headers })
             } else {
               // Refresh failed - redirect to login
-              window.location.href = "/login";
-              throw new Error("Authentication required");
+              window.location.href = '/auth/login'
+              throw new Error('Authentication required')
             }
           } catch (err) {
             // Refresh failed - redirect to login
-            clearTokens();
-            window.location.href = "/login";
-            throw err;
+            clearTokens()
+            window.location.href = '/auth/login'
+            throw err
           }
         }
 
-        return response;
+        return response
       },
     ],
-
-    // Before Retry Hook
-    beforeRetry: [],
 
     // Before Error Hook: Parse ProblemDetails and enhance error messages
     // Note: Error messages are now translation keys. Use translateError()
@@ -166,110 +163,110 @@ export const apiClient = ky.create({
       async (error) => {
         // Parse backend ProblemDetails error format
         try {
-          const errorResult = await parseProblemDetails(error);
+          const errorResult = await parseProblemDetails(error)
           // Store translation key in error message for now
           // Components should use translateError(errorResult, t) for proper i18n
-          error.message = errorResult.fallback ?? errorResult.key;
+          error.message = errorResult.fallback ?? errorResult.key
         } catch {
           // If parsing fails, keep original error message
         }
 
-        return error;
+        return error
       },
     ],
   },
-});
+})
 
-// Typed API Client Methods (Optional Convenience Wrappers)
+// Typed API Client Methods with Request Deduplication
 
-type KyOptions = Parameters<typeof apiClient.get>[1];
+type KyOptions = Parameters<typeof apiClient.get>[1]
 
-const inFlight = new Map<string, Promise<unknown>>();
+const inFlight = new Map<string, Promise<unknown>>()
 
 function stableStringify(value: unknown): string {
-  if (value === null) return "null";
-  if (value === undefined) return "undefined";
+  if (value === null) return 'null'
+  if (value === undefined) return 'undefined'
 
-  const t = typeof value;
-  if (t === "string") return JSON.stringify(value);
-  if (t === "number" || t === "boolean") return JSON.stringify(value);
-  if (t === "function") return '"[function]"';
+  const t = typeof value
+  if (t === 'string') return JSON.stringify(value)
+  if (t === 'number' || t === 'boolean') return JSON.stringify(value)
+  if (t === 'function') return '"[function]"'
 
   if (Array.isArray(value)) {
-    return `[${value.map(stableStringify).join(",")}]`;
+    return `[${value.map(stableStringify).join(',')}]`
   }
 
   if (value instanceof URLSearchParams) {
     const entries = Array.from(value.entries()).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
-    return `URLSearchParams(${stableStringify(entries)})`;
+      a.localeCompare(b),
+    )
+    return `URLSearchParams(${stableStringify(entries)})`
   }
 
   if (value instanceof Headers) {
     const entries = Array.from(value.entries()).sort(([a], [b]) =>
-      a.localeCompare(b)
-    );
-    return `Headers(${stableStringify(entries)})`;
+      a.localeCompare(b),
+    )
+    return `Headers(${stableStringify(entries)})`
   }
 
-  if (t === "object") {
-    const obj = value as Record<string, unknown>;
-    const keys = Object.keys(obj).sort();
+  if (t === 'object') {
+    const obj = value as Record<string, unknown>
+    const keys = Object.keys(obj).sort()
     const parts = keys.map(
-      (k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`
-    );
-    return `{${parts.join(",")}}`;
+      (k) => `${JSON.stringify(k)}:${stableStringify(obj[k])}`,
+    )
+    return `{${parts.join(',')}}`
   }
 
   try {
-    return JSON.stringify(value);
+    return JSON.stringify(value)
   } catch {
-    return "[unstringifiable]";
+    return '[unstringifiable]'
   }
 }
 
 function buildDedupeKey(
   method: string,
   url: string,
-  options?: KyOptions
+  options?: KyOptions,
 ): string {
-  const token = getAccessToken() ?? "";
+  const token = getAccessToken() ?? ''
 
   const searchParams = (options as { searchParams?: unknown } | undefined)
-    ?.searchParams;
-  const jsonPayload = (options as { json?: unknown } | undefined)?.json;
-  const body = (options as { body?: unknown } | undefined)?.body;
+    ?.searchParams
+  const jsonPayload = (options as { json?: unknown } | undefined)?.json
+  const body = (options as { body?: unknown } | undefined)?.body
 
   return [
     method.toUpperCase(),
     url,
     `token:${token}`,
-    searchParams !== undefined ? `sp:${stableStringify(searchParams)}` : "",
-    jsonPayload !== undefined ? `json:${stableStringify(jsonPayload)}` : "",
-    body !== undefined ? `body:${stableStringify(body)}` : "",
+    searchParams !== undefined ? `sp:${stableStringify(searchParams)}` : '',
+    jsonPayload !== undefined ? `json:${stableStringify(jsonPayload)}` : '',
+    body !== undefined ? `body:${stableStringify(body)}` : '',
   ]
     .filter(Boolean)
-    .join("|");
+    .join('|')
 }
 
 async function deduped<T>(
   method: string,
   url: string,
   options: KyOptions | undefined,
-  fn: () => Promise<T>
+  fn: () => Promise<T>,
 ): Promise<T> {
-  const key = buildDedupeKey(method, url, options);
-  const existing = inFlight.get(key);
+  const key = buildDedupeKey(method, url, options)
+  const existing = inFlight.get(key)
   if (existing) {
-    return existing as Promise<T>;
+    return existing as Promise<T>
   }
 
   const promise = fn().finally(() => {
-    inFlight.delete(key);
-  });
-  inFlight.set(key, promise as Promise<unknown>);
-  return promise;
+    inFlight.delete(key)
+  })
+  inFlight.set(key, promise as Promise<unknown>)
+  return promise
 }
 
 /**
@@ -277,11 +274,11 @@ async function deduped<T>(
  */
 export async function get<T>(
   url: string,
-  options?: Parameters<typeof apiClient.get>[1]
+  options?: Parameters<typeof apiClient.get>[1],
 ): Promise<T> {
-  return deduped("get", url, options, () =>
-    apiClient.get(url, options).json<T>()
-  );
+  return deduped('get', url, options, () =>
+    apiClient.get(url, options).json<T>(),
+  )
 }
 
 /**
@@ -289,11 +286,11 @@ export async function get<T>(
  */
 export async function post<T>(
   url: string,
-  options?: Parameters<typeof apiClient.post>[1]
+  options?: Parameters<typeof apiClient.post>[1],
 ): Promise<T> {
-  return deduped("post", url, options, () =>
-    apiClient.post(url, options).json<T>()
-  );
+  return deduped('post', url, options, () =>
+    apiClient.post(url, options).json<T>(),
+  )
 }
 
 /**
@@ -301,11 +298,11 @@ export async function post<T>(
  */
 export async function postVoid(
   url: string,
-  options?: Parameters<typeof apiClient.post>[1]
+  options?: Parameters<typeof apiClient.post>[1],
 ): Promise<void> {
-  await deduped("post", url, options, async () => {
-    await apiClient.post(url, options);
-  });
+  await deduped('post', url, options, async () => {
+    await apiClient.post(url, options)
+  })
 }
 
 /**
@@ -313,11 +310,11 @@ export async function postVoid(
  */
 export async function put<T>(
   url: string,
-  options?: Parameters<typeof apiClient.put>[1]
+  options?: Parameters<typeof apiClient.put>[1],
 ): Promise<T> {
-  return deduped("put", url, options, () =>
-    apiClient.put(url, options).json<T>()
-  );
+  return deduped('put', url, options, () =>
+    apiClient.put(url, options).json<T>(),
+  )
 }
 
 /**
@@ -325,11 +322,11 @@ export async function put<T>(
  */
 export async function patch<T>(
   url: string,
-  options?: Parameters<typeof apiClient.patch>[1]
+  options?: Parameters<typeof apiClient.patch>[1],
 ): Promise<T> {
-  return deduped("patch", url, options, () =>
-    apiClient.patch(url, options).json<T>()
-  );
+  return deduped('patch', url, options, () =>
+    apiClient.patch(url, options).json<T>(),
+  )
 }
 
 /**
@@ -337,11 +334,11 @@ export async function patch<T>(
  */
 export async function del<T>(
   url: string,
-  options?: Parameters<typeof apiClient.delete>[1]
+  options?: Parameters<typeof apiClient.delete>[1],
 ): Promise<T> {
-  return deduped("delete", url, options, () =>
-    apiClient.delete(url, options).json<T>()
-  );
+  return deduped('delete', url, options, () =>
+    apiClient.delete(url, options).json<T>(),
+  )
 }
 
 /**
@@ -349,11 +346,11 @@ export async function del<T>(
  */
 export async function delVoid(
   url: string,
-  options?: Parameters<typeof apiClient.delete>[1]
+  options?: Parameters<typeof apiClient.delete>[1],
 ): Promise<void> {
-  await deduped("delete", url, options, async () => {
-    await apiClient.delete(url, options);
-  });
+  await deduped('delete', url, options, async () => {
+    await apiClient.delete(url, options)
+  })
 }
 
-export default apiClient;
+export default apiClient

@@ -22,26 +22,26 @@
  * ```
  */
 
-import { useMemo } from "react";
-import { cn } from "@/lib/utils";
-import { SocialMediaLink } from "../atoms/SocialMediaLink";
-import { type SocialPlatform } from "../icons/social";
+import { useMemo } from 'react'
+import { cn } from '../../lib/utils'
+import { SocialMediaLink } from '../atoms/SocialMediaLink'
+import type { SocialPlatform } from '../icons/social'
 
 export interface SocialMediaHandlesProps {
-  instagramUsername?: string | null;
-  facebookUsername?: string | null;
-  tiktokUsername?: string | null;
-  snapchatUsername?: string | null;
-  xUsername?: string | null;
-  whatsappNumber?: string | null;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "minimal";
-  className?: string;
+  instagramUsername?: string | null
+  facebookUsername?: string | null
+  tiktokUsername?: string | null
+  snapchatUsername?: string | null
+  xUsername?: string | null
+  whatsappNumber?: string | null
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'minimal'
+  className?: string
 }
 
 interface SocialHandle {
-  platform: SocialPlatform;
-  username: string;
+  platform: SocialPlatform
+  username: string
 }
 
 export function SocialMediaHandles({
@@ -51,30 +51,35 @@ export function SocialMediaHandles({
   snapchatUsername,
   xUsername,
   whatsappNumber,
-  size = "md",
-  variant = "default",
+  size = 'md',
+  variant = 'default',
   className,
 }: SocialMediaHandlesProps) {
   // Filter and map social handles - memoized for performance
-  const handles = useMemo<SocialHandle[]>(() => {
-    const allHandles: { platform: SocialPlatform; username: string | null | undefined }[] = [
-      { platform: "instagram", username: instagramUsername },
-      { platform: "facebook", username: facebookUsername },
-      { platform: "tiktok", username: tiktokUsername },
-      { platform: "snapchat", username: snapchatUsername },
-      { platform: "x", username: xUsername },
-      { platform: "whatsapp", username: whatsappNumber },
-    ];
+  const handles = useMemo<Array<SocialHandle>>(() => {
+    const allHandles: Array<{
+      platform: SocialPlatform
+      username: string | null | undefined
+    }> = [
+      { platform: 'instagram', username: instagramUsername },
+      { platform: 'facebook', username: facebookUsername },
+      { platform: 'tiktok', username: tiktokUsername },
+      { platform: 'snapchat', username: snapchatUsername },
+      { platform: 'x', username: xUsername },
+      { platform: 'whatsapp', username: whatsappNumber },
+    ]
 
     return allHandles
-      .filter((handle): handle is { platform: SocialPlatform; username: string } => {
-        // Filter out null, undefined, and empty strings
-        return handle.username != null && handle.username.trim() !== "";
-      })
+      .filter(
+        (handle): handle is { platform: SocialPlatform; username: string } => {
+          // Filter out null, undefined, and empty strings
+          return handle.username != null && handle.username.trim() !== ''
+        },
+      )
       .map(({ platform, username }) => ({
         platform,
         username: username.trim(),
-      }));
+      }))
   }, [
     instagramUsername,
     facebookUsername,
@@ -82,23 +87,23 @@ export function SocialMediaHandles({
     snapchatUsername,
     xUsername,
     whatsappNumber,
-  ]);
+  ])
 
   // If no handles, don't render anything
   if (handles.length === 0) {
-    return null;
+    return null
   }
 
   return (
-    <div className={cn("w-full", className)}>
+    <div className={cn('w-full', className)}>
       {/* Grid layout - responsive and RTL-aware */}
       <div
         className={cn(
-          "grid gap-3",
+          'grid gap-3',
           // Mobile: 1 column, Tablet+: 2 columns
-          "grid-cols-1 sm:grid-cols-2",
+          'grid-cols-1 sm:grid-cols-2',
           // Ensure proper alignment in RTL
-          "items-start"
+          'items-start',
         )}
       >
         {handles.map(({ platform, username }) => (
@@ -112,5 +117,5 @@ export function SocialMediaHandles({
         ))}
       </div>
     </div>
-  );
+  )
 }

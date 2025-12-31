@@ -1,54 +1,66 @@
-import { useEffect, useId } from "react";
-import { useTranslation } from "react-i18next";
-import toast from "react-hot-toast";
-import { Controller, useForm, useWatch } from "react-hook-form";
-import { z } from "zod";
-import { zodResolver } from "@hookform/resolvers/zod";
+/**
+ * AddCustomerSheet Component
+ *
+ * Bottom sheet form for creating new customers.
+ * Features auto-linking of country to phone code on selection.
+ *
+ * Uses TanStack Form for form state management with Zod validation.
+ */
 
-import { BottomSheet } from "../../molecules/BottomSheet";
-import { CountrySelect } from "../../molecules/CountrySelect";
-import { PhoneCodeSelect } from "../../molecules/PhoneCodeSelect";
-import { SocialMediaInputs } from "../../molecules/SocialMediaInputs";
-import { FormInput, FormSelect } from "@/components";
-import { createCustomer } from "@/api/customer";
-import type {
-  CustomerGender,
-  Customer,
-} from "@/api/types/customer";
-import { translateErrorAsync } from "@/lib/translateError";
-import { buildE164Phone } from "@/lib/phone";
-import { useMetadataStore } from "@/stores/metadataStore";
+import { useEffect, useId, useState } from 'react'
+import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
+
+import { BottomSheet } from '../../molecules/BottomSheet'
+import { CountrySelect } from '../../molecules/CountrySelect'
+import { PhoneCodeSelect } from '../../molecules/PhoneCodeSelect'
+import { SocialMediaInputs } from '../../molecules/SocialMediaInputs'
+import type { Customer, CustomerGender } from '@/api/customer'
+import { FormSelect } from '@/components'
+import { useCreateCustomerMutation } from '@/api/customer'
+import { useCountriesQuery } from '@/api/metadata'
+import { useKyoraForm } from '@/lib/form'
+import { buildE164Phone } from '@/lib/phone'
+import { showErrorToast, showSuccessToast } from '@/lib/toast'
 
 export interface AddCustomerSheetProps {
-  isOpen: boolean;
-  onClose: () => void;
-  businessDescriptor: string;
-  businessCountryCode: string;
-  onCreated?: (customer: Customer) => void | Promise<void>;
+  isOpen: boolean
+  onClose: () => void
+  businessDescriptor: string
+  businessCountryCode: string
+  onCreated?: (customer: Customer) => void | Promise<void>
 }
 
 const addCustomerSchema = z
   .object({
-    name: z.string().trim().min(1, "validation.required"),
+    name: z.string().trim().min(1, 'validation.required'),
     email: z
       .string()
       .trim()
-      .min(1, "validation.required")
-      .pipe(z.email("validation.invalid_email")),
-    gender: z.enum(["male", "female", "other"], { message: "validation.required" }),
+      .min(1, 'validation.required')
+      .email('validation.invalid_email'),
+    gender: z.enum(['male', 'female', 'other'], {
+      message: 'validation.required',
+    }),
     countryCode: z
       .string()
       .trim()
-      .min(1, "validation.required")
-      .refine((v) => /^[A-Za-z]{2}$/.test(v), "validation.invalid_country"),
+      .min(1, 'validation.required')
+      .refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
     phoneCode: z
       .string()
       .trim()
-      .refine((v) => v === "" || /^\+?\d{1,4}$/.test(v), "validation.invalid_phone_code"),
+      .refine(
+        (v) => v === '' || /^\+?\d{1,4}$/.test(v),
+        'validation.invalid_phone_code',
+      ),
     phoneNumber: z
       .string()
       .trim()
-      .refine((v) => v === "" || /^[0-9\-\s()]{6,20}$/.test(v), "validation.invalid_phone"),
+      .refine(
+        (v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v),
+        'validation.invalid_phone',
+      ),
     instagramUsername: z.string().trim().optional(),
     facebookUsername: z.string().trim().optional(),
     tiktokUsername: z.string().trim().optional(),
@@ -58,29 +70,29 @@ const addCustomerSchema = z
   })
   .refine(
     (values) => {
-      const hasPhoneNumber = values.phoneNumber.trim() !== "";
-      return !hasPhoneNumber || values.phoneCode.trim() !== "";
+      const hasPhoneNumber = values.phoneNumber.trim() !== ''
+      return !hasPhoneNumber || values.phoneCode.trim() !== ''
     },
-    { message: "validation.required", path: ["phoneCode"] }
-  );
+    { message: 'validation.required', path: ['phoneCode'] },
+  )
 
-export type AddCustomerFormValues = z.infer<typeof addCustomerSchema>;
+export type AddCustomerFormValues = z.infer<typeof addCustomerSchema>
 
 function getDefaultValues(businessCountryCode: string): AddCustomerFormValues {
   return {
-    name: "",
-    email: "",
-    gender: "other",
+    name: '',
+    email: '',
+    gender: 'other',
     countryCode: businessCountryCode,
-    phoneCode: "",
-    phoneNumber: "",
-    instagramUsername: "",
-    facebookUsername: "",
-    tiktokUsername: "",
-    snapchatUsername: "",
-    xUsername: "",
-    whatsappNumber: "",
-  };
+    phoneCode: '',
+    phoneNumber: '',
+    instagramUsername: '',
+    facebookUsername: '',
+    tiktokUsername: '',
+    snapchatUsername: '',
+    xUsername: '',
+    whatsappNumber: '',
+  }
 }
 
 export function AddCustomerSheet({
@@ -90,269 +102,273 @@ export function AddCustomerSheet({
   businessCountryCode,
   onCreated,
 }: AddCustomerSheetProps) {
-  const { t } = useTranslation();
-  const { t: tErrors } = useTranslation("errors");
-  const formId = useId();
+  const { t } = useTranslation()
+  const formId = useId()
 
-  const countries = useMetadataStore((s) => s.countries);
-  const countriesStatus = useMetadataStore((s) => s.status);
-  const loadCountries = useMetadataStore((s) => s.loadCountries);
+  // Track selected country code for auto-linking phone code
+  const [selectedCountryCode, setSelectedCountryCode] =
+    useState(businessCountryCode)
 
-  const countriesReady = countries.length > 0 || countriesStatus === "loaded";
+  // Fetch countries using TanStack Query
+  const { data: countries = [], isLoading: countriesLoading } =
+    useCountriesQuery()
+  const countriesReady = countries.length > 0 && !countriesLoading
 
-  useEffect(() => {
-    if (!isOpen) return;
-    void loadCountries();
-  }, [isOpen, loadCountries]);
+  // Create customer mutation
+  const createMutation = useCreateCustomerMutation(businessDescriptor, {
+    onSuccess: async (created) => {
+      showSuccessToast(t('customers.create_success'))
+      if (onCreated) {
+        await onCreated(created)
+      }
+      onClose()
+    },
+    onError: (error) => {
+      showErrorToast(error.message)
+    },
+  })
 
-  const {
-    register,
-    control,
-    handleSubmit,
-    reset,
-    setValue,
-    formState: { errors, isSubmitting },
-  } = useForm<AddCustomerFormValues>({
-    resolver: zodResolver(addCustomerSchema),
+  // TanStack Form setup with useKyoraForm
+  const form = useKyoraForm({
     defaultValues: getDefaultValues(businessCountryCode),
-    shouldFocusError: true,
-    mode: "onBlur",
-  });
-
-  const selectedCountryCode = useWatch({ control, name: "countryCode" });
-  
-  // Watch social media fields for the inputs component
-  const socialMediaValues = {
-    instagramUsername: useWatch({ control, name: "instagramUsername" }) ?? "",
-    facebookUsername: useWatch({ control, name: "facebookUsername" }) ?? "",
-    tiktokUsername: useWatch({ control, name: "tiktokUsername" }) ?? "",
-    snapchatUsername: useWatch({ control, name: "snapchatUsername" }) ?? "",
-    xUsername: useWatch({ control, name: "xUsername" }) ?? "",
-    whatsappNumber: useWatch({ control, name: "whatsappNumber" }) ?? "",
-  };
-
-  useEffect(() => {
-    if (!isOpen) return;
-    if (!countriesReady) return;
-    const selected = countries.find((c) => c.code === selectedCountryCode);
-    if (!selected?.phonePrefix) return;
-    setValue("phoneCode", selected.phonePrefix, { shouldValidate: true });
-  }, [isOpen, countriesReady, countries, selectedCountryCode, setValue]);
-
-  useEffect(() => {
-    if (!isOpen) {
-      reset(getDefaultValues(businessCountryCode));
-    }
-  }, [isOpen, reset, businessCountryCode]);
-
-  const safeClose = () => {
-    if (isSubmitting) return;
-    onClose();
-  };
-
-  const onSubmit = handleSubmit(async (values) => {
-    try {
-      const phoneCode = values.phoneCode.trim();
-      const phoneNumber = values.phoneNumber.trim();
+    onSubmit: async ({ value }) => {
+      const phoneCode = value.phoneCode.trim()
+      const phoneNumber = value.phoneNumber.trim()
 
       const normalizedPhone =
-        phoneNumber !== "" && phoneCode !== ""
+        phoneNumber !== '' && phoneCode !== ''
           ? buildE164Phone(phoneCode, phoneNumber)
-          : undefined;
+          : undefined
 
-      const created = await createCustomer(businessDescriptor, {
-        name: values.name.trim(),
-        email: values.email.trim(),
-        gender: values.gender as CustomerGender,
-        countryCode: values.countryCode.trim().toUpperCase(),
-        phoneCode: normalizedPhone ? normalizedPhone.phoneCode : undefined,
-        phoneNumber: normalizedPhone ? normalizedPhone.phoneNumber : undefined,
-        instagramUsername: values.instagramUsername?.trim() !== "" ? values.instagramUsername?.trim() : undefined,
-        facebookUsername: values.facebookUsername?.trim() !== "" ? values.facebookUsername?.trim() : undefined,
-        tiktokUsername: values.tiktokUsername?.trim() !== "" ? values.tiktokUsername?.trim() : undefined,
-        snapchatUsername: values.snapchatUsername?.trim() !== "" ? values.snapchatUsername?.trim() : undefined,
-        xUsername: values.xUsername?.trim() !== "" ? values.xUsername?.trim() : undefined,
-        whatsappNumber: values.whatsappNumber?.trim() !== "" ? values.whatsappNumber?.trim() : undefined,
-      });
+      await createMutation.mutateAsync({
+        name: value.name.trim(),
+        email: value.email.trim(),
+        gender: value.gender as CustomerGender,
+        countryCode: value.countryCode.trim().toUpperCase(),
+        phoneCode: normalizedPhone?.phoneCode,
+        phoneNumber: normalizedPhone?.phoneNumber,
+        instagramUsername: value.instagramUsername?.trim() || undefined,
+        facebookUsername: value.facebookUsername?.trim() || undefined,
+        tiktokUsername: value.tiktokUsername?.trim() || undefined,
+        snapchatUsername: value.snapchatUsername?.trim() || undefined,
+        xUsername: value.xUsername?.trim() || undefined,
+        whatsappNumber: value.whatsappNumber?.trim() || undefined,
+      })
+    },
+  })
 
-      toast.success(t("customers.create_success"));
+  // Auto-link country to phone code when country changes
+  useEffect(() => {
+    if (!isOpen) return
+    if (!countriesReady) return
+    const selected = countries.find((c) => c.code === selectedCountryCode)
+    if (!selected?.phonePrefix) return
+    form.setFieldValue('phoneCode', selected.phonePrefix)
+  }, [isOpen, countriesReady, countries, selectedCountryCode, form])
 
-      if (onCreated) {
-        await onCreated(created);
-      }
-
-      onClose();
-    } catch (error) {
-      const message = await translateErrorAsync(error, t);
-      toast.error(message);
+  // Reset form when sheet closes
+  useEffect(() => {
+    if (!isOpen) {
+      form.reset()
+      setSelectedCountryCode(businessCountryCode)
     }
-  });
+  }, [isOpen, form, businessCountryCode])
 
-  const footer = (
-    <div className="flex gap-2">
-      <button
-        type="button"
-        className="btn btn-ghost flex-1"
-        onClick={safeClose}
-        disabled={isSubmitting}
-        aria-disabled={isSubmitting}
-      >
-        {t("common.cancel")}
-      </button>
-      <button
-        type="submit"
-        form={`add-customer-form-${formId}`}
-        className="btn btn-primary flex-1"
-        disabled={isSubmitting}
-        aria-disabled={isSubmitting}
-      >
-        {isSubmitting ? t("customers.create_submitting") : t("customers.create_submit")}
-      </button>
-    </div>
-  );
+  const safeClose = () => {
+    if (createMutation.isPending) return
+    onClose()
+  }
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={safeClose}
-      title={t("customers.create_title")}
-      footer={footer}
-      side="end"
-      size="md"
-      closeOnOverlayClick={!isSubmitting}
-      closeOnEscape={!isSubmitting}
-      contentClassName="space-y-4"
-      ariaLabel={t("customers.create_title")}
-    >
-      <form
-        id={`add-customer-form-${formId}`}
-        onSubmit={(e) => {
-          void onSubmit(e);
-        }}
-        className="space-y-4"
-        aria-busy={isSubmitting}
+    <form.AppForm>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={safeClose}
+        title={t('customers.create_title')}
+        footer={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-ghost flex-1"
+              onClick={safeClose}
+              disabled={createMutation.isPending}
+              aria-disabled={createMutation.isPending}
+            >
+              {t('common.cancel')}
+            </button>
+            <form.SubmitButton
+              form={`add-customer-form-${formId}`}
+              variant="primary"
+              className="flex-1"
+            >
+              {createMutation.isPending
+                ? t('customers.create_submitting')
+                : t('customers.create_submit')}
+            </form.SubmitButton>
+          </div>
+        }
+        side="end"
+        size="md"
+        closeOnOverlayClick={!createMutation.isPending}
+        closeOnEscape={!createMutation.isPending}
+        contentClassName="space-y-4"
+        ariaLabel={t('customers.create_title')}
       >
-        <FormInput
-          label={t("customers.form.name")}
-          placeholder={t("customers.form.name_placeholder")}
-          autoComplete="name"
-          required
-          error={errors.name?.message ? tErrors(errors.name.message) : undefined}
-          {...register("name")}
-        />
+        <form.FormRoot
+          id={`add-customer-form-${formId}`}
+          className="space-y-4"
+          aria-busy={createMutation.isPending}
+        >
+        <form.AppField
+          name="name"
+          validators={{
+            onBlur: z.string().trim().min(1, 'validation.required'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              label={t('customers.form.name')}
+              placeholder={t('customers.form.name_placeholder')}
+              autoComplete="name"
+              required
+            />
+          )}
+        </form.AppField>
 
-        <FormInput
-          label={t("customers.form.email")}
-          type="email"
-          placeholder={t("customers.form.email_placeholder")}
-          autoComplete="email"
-          inputMode="email"
-          required
-          error={errors.email?.message ? tErrors(errors.email.message) : undefined}
-          {...register("email")}
-        />
+        <form.AppField
+          name="email"
+          validators={{
+            onBlur: z.string().trim().min(1, 'validation.required').email('validation.invalid_email'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              type="email"
+              label={t('customers.form.email')}
+              placeholder={t('customers.form.email_placeholder')}
+              autoComplete="email"
+              required
+            />
+          )}
+        </form.AppField>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <Controller
-            control={control}
+          <form.AppField
             name="countryCode"
-            render={({ field }) => (
+            validators={{
+              onBlur: z.string().trim().min(1, 'validation.required').refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
+            }}
+          >
+            {(field: any) => (
               <CountrySelect
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.countryCode?.message ? tErrors(errors.countryCode.message) : undefined}
-                disabled={isSubmitting}
+                value={field.state.value}
+                onChange={(value: string) => {
+                  field.handleChange(value)
+                  setSelectedCountryCode(value)
+                }}
+                disabled={createMutation.isPending}
                 required
               />
             )}
-          />
+          </form.AppField>
 
-          <Controller
-            control={control}
+          <form.AppField
             name="gender"
-            render={({ field }) => (
-              <FormSelect<string>
-                label={t("customers.form.gender")}
+            validators={{
+              onBlur: z.enum(['male', 'female', 'other'], { message: 'validation.required' }),
+            }}
+          >
+            {(field: any) => (
+              <FormSelect<CustomerGender>
+                label={t('customers.form.gender')}
                 options={[
-                  { value: "male", label: t("customers.form.gender_male") },
-                  { value: "female", label: t("customers.form.gender_female") },
-                  { value: "other", label: t("customers.form.gender_other") },
+                  { value: 'male', label: t('customers.form.gender_male') },
+                  { value: 'female', label: t('customers.form.gender_female') },
+                  { value: 'other', label: t('customers.form.gender_other') },
                 ]}
-                value={field.value}
-                onChange={(value) => {
-                  field.onChange(value as string);
+                value={field.state.value}
+                onChange={(value: CustomerGender | Array<CustomerGender>) => {
+                  // FormSelect can return array for multiSelect, but we use single select
+                  const singleValue = Array.isArray(value) ? value[0] : value
+                  field.handleChange(singleValue)
                 }}
                 required
-                disabled={isSubmitting}
-                placeholder={t("customers.form.select_gender")}
-                error={errors.gender?.message ? tErrors(errors.gender.message) : undefined}
+                disabled={createMutation.isPending}
+                placeholder={t('customers.form.select_gender')}
               />
             )}
-          />
+          </form.AppField>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <Controller
-            control={control}
+          <form.AppField
             name="phoneCode"
-            render={({ field }) => (
+            validators={{
+              onBlur: z.string().trim().refine((v) => v === '' || /^\+?\d{1,4}$/.test(v), 'validation.invalid_phone_code'),
+            }}
+          >
+            {(field: any) => (
               <PhoneCodeSelect
-                value={field.value}
-                onChange={field.onChange}
-                error={errors.phoneCode?.message ? tErrors(errors.phoneCode.message) : undefined}
-                disabled={isSubmitting}
+                value={field.state.value}
+                onChange={(value: string) => field.handleChange(value)}
+                disabled={createMutation.isPending}
               />
             )}
-          />
+          </form.AppField>
 
           <div className="sm:col-span-2">
-            <FormInput
-              label={t("customers.form.phone_number")}
-              placeholder={t("customers.form.phone_placeholder")}
-              autoComplete="tel"
-              inputMode="tel"
-              dir="ltr"
-              error={errors.phoneNumber?.message ? tErrors(errors.phoneNumber.message) : undefined}
-              {...register("phoneNumber")}
-            />
+            <form.AppField
+              name="phoneNumber"
+              validators={{
+                onBlur: z.string().trim().refine((v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v), 'validation.invalid_phone'),
+              }}
+            >
+              {(field) => (
+                <field.TextField
+                  type="tel"
+                  label={t('customers.form.phone_number')}
+                  placeholder={t('customers.form.phone_placeholder')}
+                  autoComplete="tel"
+                />
+              )}
+            </form.AppField>
           </div>
         </div>
 
-        <SocialMediaInputs
-          instagramUsername={socialMediaValues.instagramUsername}
-          onInstagramChange={(value) => {
-            setValue("instagramUsername", value);
-          }}
-          instagramError={errors.instagramUsername?.message ? tErrors(errors.instagramUsername.message) : undefined}
-          facebookUsername={socialMediaValues.facebookUsername}
-          onFacebookChange={(value) => {
-            setValue("facebookUsername", value);
-          }}
-          facebookError={errors.facebookUsername?.message ? tErrors(errors.facebookUsername.message) : undefined}
-          tiktokUsername={socialMediaValues.tiktokUsername}
-          onTiktokChange={(value) => {
-            setValue("tiktokUsername", value);
-          }}
-          tiktokError={errors.tiktokUsername?.message ? tErrors(errors.tiktokUsername.message) : undefined}
-          snapchatUsername={socialMediaValues.snapchatUsername}
-          onSnapchatChange={(value) => {
-            setValue("snapchatUsername", value);
-          }}
-          snapchatError={errors.snapchatUsername?.message ? tErrors(errors.snapchatUsername.message) : undefined}
-          xUsername={socialMediaValues.xUsername}
-          onXChange={(value) => {
-            setValue("xUsername", value);
-          }}
-          xError={errors.xUsername?.message ? tErrors(errors.xUsername.message) : undefined}
-          whatsappNumber={socialMediaValues.whatsappNumber}
-          onWhatsappChange={(value) => {
-            setValue("whatsappNumber", value);
-          }}
-          whatsappError={errors.whatsappNumber?.message ? tErrors(errors.whatsappNumber.message) : undefined}
-          disabled={isSubmitting}
-          defaultExpanded={false}
-        />
-      </form>
-    </BottomSheet>
-  );
+        <form.Subscribe selector={(state: any) => state.values}>
+          {(values: any) => (
+            <SocialMediaInputs
+              instagramUsername={values.instagramUsername}
+              onInstagramChange={(value: string) =>
+                form.setFieldValue('instagramUsername', value)
+              }
+              facebookUsername={values.facebookUsername}
+              onFacebookChange={(value: string) =>
+                form.setFieldValue('facebookUsername', value)
+              }
+              tiktokUsername={values.tiktokUsername}
+              onTiktokChange={(value: string) =>
+                form.setFieldValue('tiktokUsername', value)
+              }
+              snapchatUsername={values.snapchatUsername}
+              onSnapchatChange={(value: string) =>
+                form.setFieldValue('snapchatUsername', value)
+              }
+              xUsername={values.xUsername}
+              onXChange={(value: string) =>
+                form.setFieldValue('xUsername', value)
+              }
+              whatsappNumber={values.whatsappNumber}
+              onWhatsappChange={(value: string) =>
+                form.setFieldValue('whatsappNumber', value)
+              }
+              disabled={createMutation.isPending}
+              defaultExpanded={false}
+            />
+          )}
+        </form.Subscribe>
+      </form.FormRoot>
+      </BottomSheet>
+    </form.AppForm>
+  )
 }

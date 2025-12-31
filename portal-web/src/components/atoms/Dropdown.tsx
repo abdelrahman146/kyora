@@ -1,44 +1,57 @@
-import { useState, useEffect, useRef, type ReactNode } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef, useState } from 'react'
+import { cn } from '../../lib/utils'
+import type { ReactNode } from 'react'
 
 export interface DropdownProps {
-  /** The trigger button element */
-  trigger: ReactNode;
-  /** The dropdown content */
-  children: ReactNode;
-  /** Additional classes for the dropdown container */
-  className?: string;
-  /** Additional classes for the content */
-  contentClassName?: string;
-  /** Alignment of dropdown */
-  align?: "start" | "end";
-  /** Width of dropdown content */
-  width?: string;
+  /**
+   * Trigger element (button, icon, etc.)
+   */
+  trigger: ReactNode
+
+  /**
+   * Dropdown content
+   */
+  children: ReactNode
+
+  /**
+   * Alignment of dropdown relative to trigger
+   * @default 'start'
+   */
+  align?: 'start' | 'end'
+
+  /**
+   * Width of dropdown
+   * @default '200px'
+   */
+  width?: string
+
+  /**
+   * Additional CSS classes for dropdown container
+   */
+  className?: string
+
+  /**
+   * Additional CSS classes for content
+   */
+  contentClassName?: string
 }
 
 /**
- * Dropdown Component
+ * Generic Dropdown Component
  *
- * A reusable dropdown component with proper click-outside detection and state management.
- *
- * Features:
- * - Click outside to close
- * - Keyboard support (Escape to close)
- * - Proper z-index stacking
- * - Customizable alignment
- * - RTL support
- * - Accessible
+ * Handles click-outside detection, keyboard navigation (Escape to close),
+ * RTL-aware alignment, and accessible interactions.
  *
  * @example
  * ```tsx
  * <Dropdown
- *   trigger={
- *     <button className="btn">Open Menu</button>
- *   }
+ *   trigger={<button className="btn">Menu</button>}
+ *   align="end"
  * >
- *   <ul className="menu">
- *     <li><a>Item 1</a></li>
- *     <li><a>Item 2</a></li>
+ *   <ul className="menu p-2">
+ *     <li><a>Profile</a></li>
+ *     <li><a>Settings</a></li>
+ *     <li><a>Logout</a></li>
  *   </ul>
  * </Dropdown>
  * ```
@@ -46,61 +59,61 @@ export interface DropdownProps {
 export function Dropdown({
   trigger,
   children,
+  align = 'start',
+  width = '200px',
   className,
   contentClassName,
-  align = "end",
-  width = "auto",
 }: DropdownProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
-  // Close dropdown when clicking outside
+  // Click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (
         dropdownRef.current &&
         !dropdownRef.current.contains(event.target as Node)
       ) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
+    }
 
     if (isOpen) {
-      document.addEventListener("mousedown", handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside)
     }
 
     return () => {
-      document.removeEventListener("mousedown", handleClickOutside);
-    };
-  }, [isOpen]);
+      document.removeEventListener('mousedown', handleClickOutside)
+    }
+  }, [isOpen])
 
-  // Close dropdown on Escape key
+  // Escape key to close
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
-      if (event.key === "Escape" && isOpen) {
-        setIsOpen(false);
+      if (event.key === 'Escape') {
+        setIsOpen(false)
       }
-    };
+    }
 
     if (isOpen) {
-      document.addEventListener("keydown", handleEscape);
+      document.addEventListener('keydown', handleEscape)
     }
 
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen]);
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen])
 
   const handleToggle = () => {
-    setIsOpen(!isOpen);
-  };
+    setIsOpen(!isOpen)
+  }
 
   const handleClose = () => {
-    setIsOpen(false);
-  };
+    setIsOpen(false)
+  }
 
   return (
-    <div ref={dropdownRef} className={cn("relative", className)}>
+    <div ref={dropdownRef} className={cn('relative', className)}>
       {/* Trigger */}
       <div onClick={handleToggle} role="button" tabIndex={0}>
         {trigger}
@@ -110,12 +123,12 @@ export function Dropdown({
       {isOpen && (
         <div
           className={cn(
-            "absolute top-full mt-2 z-50",
-            "bg-base-100 rounded-lg shadow-lg border border-base-300",
-            "animate-in fade-in slide-in-from-top-2 duration-200",
-            align === "end" && "end-0",
-            align === "start" && "start-0",
-            contentClassName
+            'absolute top-full mt-2 z-50',
+            'bg-base-100 rounded-lg shadow-lg border border-base-300',
+            'animate-in fade-in slide-in-from-top-2 duration-200',
+            align === 'end' && 'end-0',
+            align === 'start' && 'start-0',
+            contentClassName,
           )}
           style={{ width }}
           onClick={handleClose}
@@ -124,5 +137,5 @@ export function Dropdown({
         </div>
       )}
     </div>
-  );
+  )
 }

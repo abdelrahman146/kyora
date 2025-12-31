@@ -1,79 +1,96 @@
-import { forwardRef, type ButtonHTMLAttributes } from "react";
-import { Loader2, type LucideIcon } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { forwardRef } from 'react'
+import { Loader2 } from 'lucide-react'
+import { cn } from '../../lib/utils'
+import type { LucideIcon } from 'lucide-react'
+import type { ButtonHTMLAttributes } from 'react'
 
-export interface IconButtonProps
-  extends ButtonHTMLAttributes<HTMLButtonElement> {
-  icon: LucideIcon;
-  size?: "sm" | "md" | "lg";
-  variant?: "ghost" | "outline" | "primary";
-  loading?: boolean;
+export interface IconButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
+  /**
+   * Icon component from lucide-react
+   */
+  icon: LucideIcon
+
+  /**
+   * Size variant
+   * @default 'md'
+   */
+  size?: 'sm' | 'md' | 'lg'
+
+  /**
+   * Style variant
+   * @default 'ghost'
+   */
+  variant?: 'ghost' | 'outline' | 'primary'
+
+  /**
+   * Loading state
+   */
+  loading?: boolean
+
+  /**
+   * Additional CSS classes
+   */
+  className?: string
 }
 
 /**
- * IconButton Component
+ * Icon-Only Button Component
  *
- * Button with only an icon, commonly used in headers and toolbars.
- * Provides consistent touch target size (44x44px minimum).
+ * Optimized for icon-only actions (close, settings, etc.).
+ * Built with daisyUI 5 btn and btn-square utilities.
  *
  * @example
  * ```tsx
- * <IconButton icon={Menu} onClick={toggleSidebar} aria-label="Toggle menu" />
- * <IconButton icon={Bell} variant="outline" aria-label="Notifications" />
+ * <IconButton icon={Settings} variant="ghost" size="md" />
+ * <IconButton icon={X} variant="outline" onClick={onClose} />
+ * <IconButton icon={Save} variant="primary" loading={isSaving} />
  * ```
  */
 export const IconButton = forwardRef<HTMLButtonElement, IconButtonProps>(
   (
     {
       icon: Icon,
-      size = "md",
-      variant = "ghost",
+      size = 'md',
+      variant = 'ghost',
       loading = false,
-      disabled,
       className,
+      disabled,
       ...props
     },
-    ref
+    ref,
   ) => {
     const sizeClasses = {
-      sm: "h-8 w-8",
-      md: "h-10 w-10",
-      lg: "h-12 w-12",
-    };
-
-    const iconSizeMap = {
-      sm: 16,
-      md: 20,
-      lg: 24,
-    };
+      sm: 'h-8 w-8 btn-sm',
+      md: 'h-10 w-10',
+      lg: 'h-12 w-12 btn-lg',
+    }
 
     const variantClasses = {
-      ghost: "btn-ghost",
-      outline: "btn-outline",
-      primary: "btn-primary",
-    };
+      ghost: 'btn-ghost',
+      outline: 'btn-outline',
+      primary: 'btn-primary',
+    }
 
     return (
       <button
         ref={ref}
-        disabled={disabled ?? loading}
+        disabled={disabled || loading}
         className={cn(
-          "btn btn-square",
+          'btn btn-square',
           sizeClasses[size],
           variantClasses[variant],
-          "active:scale-95 transition-transform",
-          className
+          className,
         )}
         {...props}
       >
         {loading ? (
-          <Loader2 size={iconSizeMap[size]} className="animate-spin" />
+          <Loader2 className="h-5 w-5 animate-spin" />
         ) : (
-          <Icon size={iconSizeMap[size]} />
+          <Icon className="h-5 w-5" />
         )}
       </button>
-    );
-  }
-);
+    )
+  },
+)
 
-IconButton.displayName = "IconButton";
+IconButton.displayName = 'IconButton'

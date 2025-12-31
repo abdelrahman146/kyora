@@ -1,8 +1,8 @@
-# Portal-v2 Form System Documentation
+# Portal Web Form System Documentation
 
 ## Overview
 
-The portal-v2 uses a sophisticated form management system built on **TanStack Form v1** with a custom `useKyoraForm` composition layer that eliminates boilerplate while providing production-grade form handling.
+The portal-web uses a sophisticated form management system built on **TanStack Form v1** with a custom `useKyoraForm` composition layer that eliminates boilerplate while providing production-grade form handling.
 
 ### Key Architecture
 

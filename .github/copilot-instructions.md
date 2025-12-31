@@ -177,9 +177,9 @@ Before working on any task, always refer to the relevant instruction files based
 
 - **When working on `portal-web/` (React business dashboard)**:
 
-  - Always refer to `.github/instructions/portal_web.instructions.md` for architecture, patterns, and conventions
+  - Always refer to `.github/instructions/portal-web.instructions.md` for architecture, patterns, and conventions
   - Refer to `.github/instructions/ky.instructions.md` when making HTTP requests
-  - Refer to `.github/instructions/react-router.instructions.md` when working with routing
+  - Refer to `.github/instructions/tanstack-form.instructions.md` when working with forms
   - Refer to `.github/instructions/branding.instructions.md` for design system and styling guidelines
   - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
 
@@ -221,6 +221,14 @@ Before working on any task, always refer to the relevant instruction files based
 
 - Follow the rules in `.github/instructions/backend.instructions.md` for architecture, patterns, and multi-tenancy scoping.
 - Prefer domain services for business logic and keep HTTP handlers thin.
+
+### Portal Web (React)
+
+- Tech stack: React 19, TanStack Router v1, TanStack Query v5, TanStack Form v1, Tailwind CSS v4 (CSS-first), daisyUI v5, Ky, i18next.
+- Follow the rules in `.github/instructions/portal-web.instructions.md` for architecture, routing, forms, and state management.
+- Forms: Always use `useKyoraForm` composition layer - wrap in `<form.AppForm>`, use `<form.AppField>` with `{(field) => <field.ComponentName />}` pattern.
+- Styling rules: follow `.github/instructions/branding.instructions.md` for design tokens and brand guidelines.
+- RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
 
 ### Storefront Web (React)
 

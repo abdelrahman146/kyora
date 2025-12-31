@@ -53,17 +53,17 @@
  * ```tsx
  * // In your page component
  * const [activeFilterCount, setActiveFilterCount] = useState(0);
- * 
+ *
  * const handleApplyFilters = () => {
  *   // Apply filter logic
  *   setActiveFilterCount(3); // Update active count
  * };
- * 
+ *
  * const handleResetFilters = () => {
  *   // Reset filter logic
  *   setActiveFilterCount(0); // Clear count
  * };
- * 
+ *
  * <FilterButton
  *   title="Filter Customers"
  *   activeCount={activeFilterCount}
@@ -78,31 +78,32 @@
  * ```
  */
 
-import { useState, type ReactNode } from "react";
-import { Filter } from "lucide-react";
-import { BottomSheet } from "../molecules/BottomSheet";
+import { useState } from 'react'
+import { Filter } from 'lucide-react'
+import { BottomSheet } from '../molecules/BottomSheet'
+import type { ReactNode } from 'react'
 
 export interface FilterButtonProps {
   /** Content to display in the filter drawer */
-  children: ReactNode;
+  children: ReactNode
   /** Title displayed in the drawer header */
-  title: string;
+  title: string
   /** Text displayed on the trigger button */
-  buttonText?: string;
+  buttonText?: string
   /** Number of active filters (displays badge indicator) */
-  activeCount?: number;
+  activeCount?: number
   /** Callback when Apply button is clicked */
-  onApply?: () => void;
+  onApply?: () => void
   /** Callback when Reset button is clicked */
-  onReset?: () => void;
+  onReset?: () => void
   /** Label for Apply button */
-  applyLabel?: string;
+  applyLabel?: string
   /** Label for Reset button */
-  resetLabel?: string;
+  resetLabel?: string
   /** Whether the button is disabled */
-  disabled?: boolean;
+  disabled?: boolean
   /** Additional CSS classes for the trigger button */
-  className?: string;
+  className?: string
 }
 
 /**
@@ -114,25 +115,25 @@ export interface FilterButtonProps {
 export function FilterButton({
   children,
   title,
-  buttonText = "Filter",
+  buttonText = 'Filter',
   activeCount = 0,
   onApply,
   onReset,
-  applyLabel = "Apply Filters",
-  resetLabel = "Reset",
+  applyLabel = 'Apply Filters',
+  resetLabel = 'Reset',
   disabled = false,
-  className = "",
+  className = '',
 }: FilterButtonProps) {
-  const [isOpen, setIsOpen] = useState(false);
+  const [isOpen, setIsOpen] = useState(false)
 
   const handleApply = () => {
-    onApply?.();
-    setIsOpen(false);
-  };
+    onApply?.()
+    setIsOpen(false)
+  }
 
   const handleReset = () => {
-    onReset?.();
-  };
+    onReset?.()
+  }
 
   // Build footer with action buttons
   const footer =
@@ -148,12 +149,16 @@ export function FilterButton({
           </button>
         )}
         {onApply && (
-          <button type="button" onClick={handleApply} className="btn btn-primary flex-1">
+          <button
+            type="button"
+            onClick={handleApply}
+            className="btn btn-primary flex-1"
+          >
             {applyLabel}
           </button>
         )}
       </div>
-    ) : undefined;
+    ) : undefined
 
   return (
     <>
@@ -161,7 +166,7 @@ export function FilterButton({
       <button
         type="button"
         onClick={() => {
-          setIsOpen(true);
+          setIsOpen(true)
         }}
         disabled={disabled}
         className={`
@@ -181,7 +186,7 @@ export function FilterButton({
           disabled:cursor-not-allowed
           ${className}
         `}
-        aria-label={`${buttonText}${activeCount > 0 ? ` (${String(activeCount)} active)` : ""}`}
+        aria-label={`${buttonText}${activeCount > 0 ? ` (${String(activeCount)} active)` : ''}`}
       >
         {/* Filter Icon */}
         <span className="text-base-content/50" aria-hidden="true">
@@ -206,7 +211,7 @@ export function FilterButton({
       <BottomSheet
         isOpen={isOpen}
         onClose={() => {
-          setIsOpen(false);
+          setIsOpen(false)
         }}
         title={title}
         footer={footer}
@@ -218,5 +223,5 @@ export function FilterButton({
         {children}
       </BottomSheet>
     </>
-  );
+  )
 }

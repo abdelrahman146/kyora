@@ -1,104 +1,106 @@
-import React from 'react';
-import { AlertCircle } from 'lucide-react';
-import { useTranslation } from 'react-i18next';
+import { Component } from 'react'
+import { AlertTriangle } from 'lucide-react'
+import { Button } from './Button'
+import type { ErrorInfo, ReactNode } from 'react'
 
-interface Props {
-  children: React.ReactNode;
+export interface ErrorBoundaryProps {
+  children: ReactNode
+  fallback?: (error: Error, reset: () => void) => ReactNode
+  onError?: (error: Error, errorInfo: ErrorInfo) => void
+  compact?: boolean
 }
 
-interface State {
-  hasError: boolean;
-  error: Error | null;
+interface ErrorBoundaryState {
+  hasError: boolean
+  error: Error | null
 }
 
 /**
  * ErrorBoundary Component
  *
- * Catches render-time errors in child components and displays a friendly fallback UI.
- * Prevents the entire app from crashing due to component errors.
- *
+ * Component-level error boundary with inline fallback UI.
  * Features:
- * - Friendly error message with consistent styling
- * - Retry button to attempt re-rendering
- * - Follows design system (DaisyUI + branding)
- * - Mobile-first and RTL-aware
- * - Accessible with ARIA labels
- *
- * Usage:
- * ```tsx
- * <ErrorBoundary>
- *   <YourComponent />
- * </ErrorBoundary>
- * ```
+ * - Smart retry that resets state
+ * - Maintains component layout space
+ * - Optional compact mode for smaller organisms
+ * - Logs errors in development
  */
-export class ErrorBoundary extends React.Component<Props, State> {
-  public override state: State = { hasError: false, error: null };
-
-  public static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+export class ErrorBoundary extends Component<
+  ErrorBoundaryProps,
+  ErrorBoundaryState
+> {
+  constructor(props: ErrorBoundaryProps) {
+    super(props)
+    this.state = { hasError: false, error: null }
   }
 
-  public override componentDidCatch(error: Error, errorInfo: React.ErrorInfo) {
-    // In production, you could log this to an error reporting service
+  static getDerivedStateFromError(error: Error): ErrorBoundaryState {
+    return { hasError: true, error }
+  }
+
+  componentDidCatch(error: Error, errorInfo: ErrorInfo) {
+    // Log error in development
     if (import.meta.env.DEV) {
-      console.error('Error caught by ErrorBoundary:', error, errorInfo);
+      console.error('ErrorBoundary caught an error:', error, errorInfo)
     }
+
+    // Call optional error handler
+    this.props.onError?.(error, errorInfo)
   }
 
-  private handleRetry = () => {
-    this.setState({ hasError: false, error: null });
-  };
+  reset = () => {
+    this.setState({ hasError: false, error: null })
+  }
 
-  public override render() {
-    if (!this.state.hasError) return this.props.children;
+  render() {
+    if (this.state.hasError && this.state.error) {
+      // Custom fallback
+      if (this.props.fallback) {
+        return this.props.fallback(this.state.error, this.reset)
+      }
 
-    return <ErrorBoundaryFallback onRetry={this.handleRetry} />;
+      // Default inline fallback
+      const { compact } = this.props
+
+      return (
+        <div
+          className={cn(
+            'flex flex-col items-center justify-center rounded-lg border border-error/20 bg-error/5 p-6',
+            compact ? 'gap-2' : 'gap-4',
+          )}
+        >
+          <AlertTriangle className="text-error" size={compact ? 24 : 32} />
+          <div className="text-center">
+            <p
+              className={cn(
+                'font-semibold text-error',
+                compact ? 'text-sm' : 'text-base',
+              )}
+            >
+              حدث خطأ
+            </p>
+            {!compact && (
+              <p className="mt-1 text-sm text-base-content/60">
+                {this.state.error.message || 'حدث خطأ غير متوقع'}
+              </p>
+            )}
+          </div>
+          <Button
+            variant="outline"
+            size={compact ? 'xs' : 'sm'}
+            onClick={this.reset}
+          >
+            إعادة المحاولة
+          </Button>
+        </div>
+      )
+    }
+
+    return this.props.children
   }
 }
 
-/**
- * ErrorBoundaryFallback Component
- *
- * Displays the fallback UI when an error is caught by ErrorBoundary.
- * Separated as a functional component to support hooks (useTranslation).
- */
-function ErrorBoundaryFallback({ onRetry }: { onRetry: () => void }) {
-  const { t } = useTranslation();
-
-  return (
-    <div className="flex min-h-[400px] items-center justify-center p-4">
-      <div className="card bg-base-100 border border-base-300 shadow-sm w-full max-w-md">
-        <div className="card-body text-center">
-          {/* Error Icon */}
-          <div className="flex justify-center mb-4">
-            <div className="w-16 h-16 bg-error/10 rounded-full flex items-center justify-center">
-              <AlertCircle className="text-error" size={32} />
-            </div>
-          </div>
-
-          {/* Error Message */}
-          <h2 className="card-title text-xl justify-center mb-2">
-            {t('errors:generic.unexpected_title', { defaultValue: 'Something went wrong' })}
-          </h2>
-          <p className="text-base-content/70 mb-6">
-            {t('errors:generic.unexpected_description', {
-              defaultValue: 'An unexpected error occurred. Please try again.',
-            })}
-          </p>
-
-          {/* Retry Button */}
-          <div className="card-actions justify-center">
-            <button
-              type="button"
-              onClick={onRetry}
-              className="btn btn-primary"
-              aria-label={t('common.retry', { defaultValue: 'Retry' })}
-            >
-              {t('common.retry', { defaultValue: 'Retry' })}
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
+// Helper to fix import
+function cn(...inputs: Array<string | boolean | undefined | null>) {
+  return inputs.filter(Boolean).join(' ')
 }

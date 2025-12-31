@@ -1,10 +1,10 @@
-import { useCallback, useEffect } from "react";
-import { useTranslation } from "react-i18next";
-import { setCookie, getCookie } from "@/lib/cookies";
+import { useCallback, useEffect } from 'react'
+import { useTranslation } from 'react-i18next'
+import { getCookie, setCookie } from '@/lib/cookies'
 
-const LANGUAGE_COOKIE = "kyora_language";
-const SUPPORTED_LANGUAGES = ["en", "ar"] as const;
-type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
+const LANGUAGE_COOKIE = 'kyora_language'
+const SUPPORTED_LANGUAGES = ['en', 'ar'] as const
+type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number]
 
 /**
  * Get browser language preference
@@ -12,23 +12,23 @@ type SupportedLanguage = (typeof SUPPORTED_LANGUAGES)[number];
  */
 function getBrowserLanguage(): SupportedLanguage {
   // Check primary language
-  const primaryLang = navigator.language.split("-")[0];
-  if (primaryLang === "ar") {
-    return "ar";
+  const primaryLang = navigator.language.split('-')[0]
+  if (primaryLang === 'ar') {
+    return 'ar'
   }
 
   // Check all preferred languages
   const languages =
-    navigator.languages.length > 0 ? navigator.languages : [navigator.language];
+    navigator.languages.length > 0 ? navigator.languages : [navigator.language]
   for (const lang of languages) {
-    const code = lang.split("-")[0];
-    if (code === "ar") {
-      return "ar";
+    const code = lang.split('-')[0]
+    if (code === 'ar') {
+      return 'ar'
     }
   }
 
   // Fallback to English
-  return "en";
+  return 'en'
 }
 
 /**
@@ -37,22 +37,22 @@ function getBrowserLanguage(): SupportedLanguage {
  */
 function getInitialLanguage(): SupportedLanguage {
   // Check cookie first
-  const savedLanguage = getCookie(LANGUAGE_COOKIE);
+  const savedLanguage = getCookie(LANGUAGE_COOKIE)
   if (
     savedLanguage &&
     SUPPORTED_LANGUAGES.includes(savedLanguage as SupportedLanguage)
   ) {
-    return savedLanguage as SupportedLanguage;
+    return savedLanguage as SupportedLanguage
   }
 
   // Check browser language
-  return getBrowserLanguage();
+  return getBrowserLanguage()
 }
 
 function updateDocumentDirection(language: SupportedLanguage): void {
-  const isRTL = language === "ar";
-  document.documentElement.dir = isRTL ? "rtl" : "ltr";
-  document.documentElement.lang = language;
+  const isRTL = language === 'ar'
+  document.documentElement.dir = isRTL ? 'rtl' : 'ltr'
+  document.documentElement.lang = language
 }
 
 /**
@@ -84,34 +84,34 @@ function updateDocumentDirection(language: SupportedLanguage): void {
  * ```
  */
 export function useLanguage() {
-  const { i18n } = useTranslation();
+  const { i18n } = useTranslation()
 
   useEffect(() => {
-    const initialLanguage = getInitialLanguage();
+    const initialLanguage = getInitialLanguage()
 
     if (i18n.language !== initialLanguage) {
-      void i18n.changeLanguage(initialLanguage);
+      void i18n.changeLanguage(initialLanguage)
     }
 
-    updateDocumentDirection(initialLanguage);
-  }, [i18n]);
+    updateDocumentDirection(initialLanguage)
+  }, [i18n])
 
   const changeLanguage = useCallback(
     (language: SupportedLanguage) => {
-      void i18n.changeLanguage(language);
-      setCookie(LANGUAGE_COOKIE, language, 365);
-      updateDocumentDirection(language);
+      void i18n.changeLanguage(language)
+      setCookie(LANGUAGE_COOKIE, language, 365)
+      updateDocumentDirection(language)
     },
-    [i18n]
-  );
+    [i18n],
+  )
 
   const toggleLanguage = useCallback(() => {
-    const newLang = i18n.language === "ar" ? "en" : "ar";
-    changeLanguage(newLang);
-  }, [i18n.language, changeLanguage]);
+    const newLang = i18n.language === 'ar' ? 'en' : 'ar'
+    changeLanguage(newLang)
+  }, [i18n.language, changeLanguage])
 
-  const currentLanguage = i18n.language as SupportedLanguage;
-  const isRTL = currentLanguage === "ar";
+  const currentLanguage = i18n.language as SupportedLanguage
+  const isRTL = currentLanguage === 'ar'
 
   return {
     /** Current language code */
@@ -121,14 +121,14 @@ export function useLanguage() {
     /** Whether current language is RTL */
     isRTL,
     /** Whether current language is Arabic */
-    isArabic: currentLanguage === "ar",
+    isArabic: currentLanguage === 'ar',
     /** Whether current language is English */
-    isEnglish: currentLanguage === "en",
+    isEnglish: currentLanguage === 'en',
     /** Change language to specified locale */
     changeLanguage,
     /** Toggle between Arabic and English */
     toggleLanguage,
     /** Array of supported language codes */
     supportedLanguages: SUPPORTED_LANGUAGES,
-  };
+  }
 }

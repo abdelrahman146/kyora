@@ -1,14 +1,20 @@
-import { forwardRef, type ButtonHTMLAttributes } from 'react';
-import { Loader2 } from 'lucide-react';
-import { cn } from '@/lib/utils';
+import { forwardRef } from 'react'
+import { Loader2 } from 'lucide-react'
+import type { ButtonHTMLAttributes } from 'react'
+import { cn } from '@/lib/utils'
 
 export interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'ghost' | 'outline';
-  size?: 'sm' | 'md' | 'lg';
-  loading?: boolean;
-  fullWidth?: boolean;
+  variant?: 'primary' | 'secondary' | 'ghost' | 'outline' | 'error'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  loading?: boolean
+  fullWidth?: boolean
 }
 
+/**
+ * Button Component
+ *
+ * DaisyUI-based button with variants, sizes, and loading state.
+ */
 export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
   (
     {
@@ -19,45 +25,48 @@ export const Button = forwardRef<HTMLButtonElement, ButtonProps>(
       disabled,
       children,
       className,
+      type = 'button',
       ...props
     },
-    ref
+    ref,
   ) => {
     const baseClasses =
-      'btn inline-flex items-center justify-center gap-2 font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed';
+      'btn inline-flex items-center justify-center gap-2 font-semibold transition-all active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed'
 
     const variantClasses = {
       primary: 'btn-primary',
-      secondary: 'bg-primary-50 text-primary-700 hover:bg-primary-100',
+      secondary: 'btn-secondary',
       ghost: 'btn-ghost',
       outline: 'btn-outline',
-    };
+      error: 'btn-error',
+    }
 
     const sizeClasses = {
-      sm: 'btn-sm h-10 px-4 text-sm',
-      md: 'btn-md h-13 px-6 text-base',
-      lg: 'btn-lg h-14 px-8 text-lg',
-    };
+      xs: 'btn-xs',
+      sm: 'btn-sm',
+      md: 'btn-md',
+      lg: 'btn-lg',
+    }
 
     return (
       <button
         ref={ref}
+        type={type}
         disabled={disabled ?? loading}
         className={cn(
           baseClasses,
           variantClasses[variant],
           sizeClasses[size],
           fullWidth && 'btn-block w-full',
-          'rounded-xl',
-          className
+          className,
         )}
         {...props}
       >
         {loading && <Loader2 className="animate-spin" size={18} />}
         {children}
       </button>
-    );
-  }
-);
+    )
+  },
+)
 
-Button.displayName = 'Button';
+Button.displayName = 'Button'

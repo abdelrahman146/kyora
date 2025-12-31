@@ -1,27 +1,30 @@
-import { useTranslation } from "react-i18next";
-import { Link, useLocation } from "react-router-dom";
+import { useTranslation } from 'react-i18next'
+import { Link, useLocation } from '@tanstack/react-router'
+import { useStore } from '@tanstack/react-store'
 import {
   LayoutDashboard,
+  Menu,
   Package,
   ShoppingCart,
   Users,
-  Menu,
-} from "lucide-react";
-import { useBusinessStore } from "../../stores/businessStore";
-import { cn } from "@/lib/utils";
+} from 'lucide-react'
+import { businessStore, openSidebar } from '@/stores/businessStore'
+import { cn } from '@/lib/utils'
 
 interface NavItem {
-  key: string;
-  icon: typeof LayoutDashboard;
-  path: string;
+  key: string
+  icon: typeof LayoutDashboard
+  path: string
 }
 
-const navItems: NavItem[] = [
-  { key: "dashboard", icon: LayoutDashboard, path: "/dashboard" },
-  { key: "inventory", icon: Package, path: "/inventory" },
-  { key: "orders", icon: ShoppingCart, path: "/orders" },
-  { key: "customers", icon: Users, path: "/customers" },
-];
+export type BottomNavProps = Record<string, never>
+
+const navItems: Array<NavItem> = [
+  { key: 'dashboard', icon: LayoutDashboard, path: '' },
+  { key: 'inventory', icon: Package, path: '/inventory' },
+  { key: 'orders', icon: ShoppingCart, path: '/orders' },
+  { key: 'customers', icon: Users, path: '/customers' },
+]
 
 /**
  * BottomNav Component
@@ -40,31 +43,46 @@ const navItems: NavItem[] = [
  * - Primary actions (Dashboard, Inventory, Orders, Customers)
  * - "More" button opens the full sidebar drawer
  */
-export function BottomNav() {
-  const { t } = useTranslation();
-  const location = useLocation();
-  const { openSidebar } = useBusinessStore();
+export function BottomNav(_props: BottomNavProps) {
+  const { t } = useTranslation()
+  const location = useLocation()
+  const selectedBusinessDescriptor = useStore(
+    businessStore,
+    (s) => s.selectedBusinessDescriptor,
+  )
 
   return (
     <nav className="fixed bottom-0 start-0 end-0 h-16 bg-base-100 border-t border-base-300 z-40 md:hidden safe-area-pb">
       <div className="h-full flex items-center justify-around px-2">
         {/* Core Navigation Items */}
         {navItems.map((item) => {
-          const isActive = location.pathname.startsWith(item.path);
-          const Icon = item.icon;
+          const basePath = selectedBusinessDescriptor
+            ? `/business/${selectedBusinessDescriptor}`
+            : ''
+          const itemPath = `${basePath}${item.path}`
+          const isActive =
+            item.path === ''
+              ? !!selectedBusinessDescriptor &&
+                (location.pathname === `/business/${selectedBusinessDescriptor}` ||
+                  location.pathname === `/business/${selectedBusinessDescriptor}/`)
+              : location.pathname.startsWith(itemPath)
+          const Icon = item.icon
 
           return (
             <Link
               key={item.key}
-              to={item.path}
+              to={itemPath}
+              disabled={!selectedBusinessDescriptor}
+              aria-disabled={!selectedBusinessDescriptor}
               className={cn(
-                "flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0",
-                "transition-all active:scale-95 rounded-lg",
+                'flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0',
+                'transition-all active:scale-95 rounded-lg',
                 // Min touch target
-                "min-h-11",
+                'min-h-11',
                 // Active state
-                isActive && "text-primary",
-                !isActive && "text-base-content/70"
+                isActive && 'text-primary',
+                !isActive && 'text-base-content/70',
+                !selectedBusinessDescriptor && 'pointer-events-none opacity-60',
               )}
             >
               <Icon size={22} className="shrink-0" />
@@ -72,7 +90,7 @@ export function BottomNav() {
                 {t(`dashboard.${item.key}`)}
               </span>
             </Link>
-          );
+          )
         })}
 
         {/* More Button - Opens Sidebar Drawer */}
@@ -80,18 +98,18 @@ export function BottomNav() {
           type="button"
           onClick={openSidebar}
           className={cn(
-            "flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0",
-            "transition-all active:scale-95 rounded-lg",
-            "min-h-11",
-            "text-base-content/70"
+            'flex flex-col items-center justify-center gap-1 flex-1 h-full min-w-0',
+            'transition-all active:scale-95 rounded-lg',
+            'min-h-11',
+            'text-base-content/70',
           )}
         >
           <Menu size={22} className="shrink-0" />
           <span className="text-xs font-medium truncate">
-            {t("dashboard.more")}
+            {t('dashboard.more')}
           </span>
         </button>
       </div>
     </nav>
-  );
+  )
 }

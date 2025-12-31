@@ -1,15 +1,9 @@
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import {
-  User,
-  Settings,
-  LogOut,
-  ChevronDown,
-  HelpCircle,
-} from "lucide-react";
-import { Avatar } from "../atoms/Avatar";
-import { Dropdown } from "../atoms/Dropdown";
-import { useAuth } from "../../hooks/useAuth";
+import { useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { ChevronDown, LogOut } from 'lucide-react'
+import { Avatar } from '../atoms/Avatar'
+import { Dropdown } from '../atoms/Dropdown'
+import { useAuth } from '../../hooks/useAuth'
 
 /**
  * UserMenu Component
@@ -28,25 +22,33 @@ import { useAuth } from "../../hooks/useAuth";
  * ```
  */
 export function UserMenu() {
-  const { t } = useTranslation();
-  const navigate = useNavigate();
-  const { user, logout } = useAuth();
+  const { t } = useTranslation()
+  const navigate = useNavigate()
+  const { user, logout } = useAuth()
 
   const handleLogout = () => {
     void logout()
       .then(() => {
-        void navigate("/auth/login", { replace: true });
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
       })
       .catch(() => {
         // Silent fail - logout will clear local state anyway
-        void navigate("/auth/login", { replace: true });
-      });
-  };
+        void navigate({
+          to: '/auth/login',
+          search: { redirect: '/' },
+          replace: true,
+        })
+      })
+  }
 
-  if (!user) return null;
+  if (!user) return null
 
-  const userFullName = `${user.firstName} ${user.lastName}`;
-  const userInitials = `${user.firstName[0]}${user.lastName[0]}`;
+  const userFullName = `${user.firstName} ${user.lastName}`
+  const userInitials = `${user.firstName[0]}${user.lastName[0]}`
 
   return (
     <Dropdown
@@ -77,42 +79,11 @@ export function UserMenu() {
             <span className="font-semibold text-sm text-base-content">
               {userFullName}
             </span>
-            <span className="text-xs text-base-content/60">
-              {user.email}
-            </span>
+            <span className="text-xs text-base-content/60">{user.email}</span>
           </div>
         </div>
 
         {/* Menu Items */}
-        <div className="py-1">
-          <button
-            type="button"
-            onClick={() => { void navigate("/profile"); }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <User size={16} className="shrink-0" />
-            <span className="text-sm">{t("dashboard.profile")}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { void navigate("/settings"); }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <Settings size={16} className="shrink-0" />
-            <span className="text-sm">{t("dashboard.settings")}</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { void navigate("/help"); }}
-            className="flex items-center gap-3 w-full px-4 py-2.5 hover:bg-base-200 transition-colors text-start"
-          >
-            <HelpCircle size={16} className="shrink-0" />
-            <span className="text-sm">{t("dashboard.help")}</span>
-          </button>
-        </div>
-
         <div className="divider my-1"></div>
 
         {/* Logout */}
@@ -123,10 +94,10 @@ export function UserMenu() {
             className="flex items-center gap-3 w-full px-4 py-2.5 text-error hover:bg-error/10 transition-colors text-start"
           >
             <LogOut size={16} className="shrink-0" />
-            <span className="text-sm">{t("auth.logout")}</span>
+            <span className="text-sm">{t('auth.logout')}</span>
           </button>
         </div>
       </div>
     </Dropdown>
-  );
+  )
 }

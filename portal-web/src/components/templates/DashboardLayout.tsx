@@ -1,14 +1,18 @@
-import { type ReactNode, useEffect } from "react";
-import { Header } from "../organisms/Header";
-import { Sidebar } from "../organisms/Sidebar";
-import { BottomNav } from "../organisms/BottomNav";
-import { useBusinessStore } from "../../stores/businessStore";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { cn } from "@/lib/utils";
+import { useEffect } from 'react'
+import { useStore } from '@tanstack/react-store'
+import { useMatches } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import type { ReactNode } from 'react'
+import { Header } from '@/components/organisms/Header'
+import { Sidebar } from '@/components/organisms/Sidebar'
+import { BottomNav } from '@/components/organisms/BottomNav'
+import { businessStore, closeSidebar } from '@/stores/businessStore'
+import { useMediaQuery } from '@/hooks/useMediaQuery'
+import { cn } from '@/lib/utils'
 
-interface DashboardLayoutProps {
-  children: ReactNode;
-  title?: string;
+export interface DashboardLayoutProps {
+  title?: string
+  children: ReactNode
 }
 
 /**
@@ -66,29 +70,48 @@ interface DashboardLayoutProps {
  * </DashboardLayout>
  * ```
  */
-export function DashboardLayout({ children, title }: DashboardLayoutProps) {
-  const isDesktop = useMediaQuery("(min-width: 768px)");
-  const { isSidebarCollapsed, isSidebarOpen, closeSidebar } = useBusinessStore();
+export function DashboardLayout({
+  title,
+  children,
+}: DashboardLayoutProps) {
+  const { t } = useTranslation()
+  const matches = useMatches()
+  const isDesktop = useMediaQuery('(min-width: 768px)')
+  const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
+  const sidebarOpen = useStore(businessStore, (s) => s.sidebarOpen)
+
+  const derivedTitleKey =
+    matches.length > 0
+      ? (matches[matches.length - 1] as unknown as { staticData?: unknown })
+          .staticData &&
+        typeof (matches[matches.length - 1] as unknown as { staticData?: any })
+          .staticData?.titleKey === 'string'
+        ? (matches[matches.length - 1] as unknown as { staticData?: any })
+            .staticData.titleKey
+        : undefined
+      : undefined
+
+  const resolvedTitle = title ?? (derivedTitleKey ? t(derivedTitleKey) : undefined)
 
   // Close sidebar when switching to desktop
   useEffect(() => {
-    if (isDesktop && isSidebarOpen) {
-      closeSidebar();
+    if (isDesktop && sidebarOpen) {
+      closeSidebar()
     }
-  }, [isDesktop, isSidebarOpen, closeSidebar]);
+  }, [isDesktop, sidebarOpen])
 
   // Prevent body scroll when mobile sidebar is open
   useEffect(() => {
-    if (!isDesktop && isSidebarOpen) {
-      document.body.style.overflow = "hidden";
+    if (!isDesktop && sidebarOpen) {
+      document.body.style.overflow = 'hidden'
     } else {
-      document.body.style.overflow = "";
+      document.body.style.overflow = ''
     }
 
     return () => {
-      document.body.style.overflow = "";
-    };
-  }, [isDesktop, isSidebarOpen]);
+      document.body.style.overflow = ''
+    }
+  }, [isDesktop, sidebarOpen])
 
   return (
     <div className="min-h-screen bg-base-100">
@@ -96,42 +119,40 @@ export function DashboardLayout({ children, title }: DashboardLayoutProps) {
       <Sidebar />
 
       {/* Mobile Sidebar Backdrop */}
-      {!isDesktop && isSidebarOpen && (
+      {!isDesktop && sidebarOpen && (
         <div
           className="fixed inset-0 bg-base-content/40 backdrop-blur-sm z-40 md:hidden transition-opacity duration-300"
           onClick={closeSidebar}
           onKeyDown={(e) => {
-            if (e.key === "Escape") closeSidebar();
+            if (e.key === 'Escape') closeSidebar()
           }}
           role="button"
           tabIndex={0}
-          aria-label="Close sidebar"
+          aria-label={t('dashboard.close_menu')}
         />
       )}
 
       {/* Header - Fixed at top, adjusts based on sidebar state */}
-      <Header title={title} />
+      <Header title={resolvedTitle} />
 
       {/* Main Content Area */}
       <main
         className={cn(
           // Base: Content below header
-          "min-h-screen pt-16 transition-all duration-300",
+          'min-h-screen pt-16 transition-all duration-300',
           // Desktop: Adjust for sidebar width
-          isDesktop && !isSidebarCollapsed && "md:ms-64",
-          isDesktop && isSidebarCollapsed && "md:ms-20",
+          isDesktop && !sidebarCollapsed && 'md:ms-64',
+          isDesktop && sidebarCollapsed && 'md:ms-20',
           // Mobile: Add bottom nav padding
-          !isDesktop && "pb-20"
+          !isDesktop && 'pb-20',
         )}
       >
         {/* Content Container with max-width and padding */}
-        <div className="container mx-auto px-4 py-6 max-w-7xl">
-          {children}
-        </div>
+        <div className="container mx-auto px-4 py-6 max-w-7xl">{children}</div>
       </main>
 
       {/* Mobile Bottom Navigation - Only visible on mobile */}
       {!isDesktop && <BottomNav />}
     </div>
-  );
+  )
 }

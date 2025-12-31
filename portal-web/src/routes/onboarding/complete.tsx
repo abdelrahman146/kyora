@@ -1,284 +1,130 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { Sparkles, ArrowRight } from "lucide-react";
-import { OnboardingLayout } from "@/components/templates";
-import { useOnboarding } from "@/contexts/OnboardingContext";
-import { useAuth } from "@/hooks/useAuth";
-import { onboardingApi } from "@/api/onboarding";
-import { translateErrorAsync } from "@/lib/translateError";
+import { useEffect } from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { CheckCircle2, Loader2 } from 'lucide-react'
+import { z } from 'zod'
+import type { RouterContext } from '@/router'
+import { onboardingQueries, useCompleteOnboardingMutation, useDeleteSessionMutation } from '@/api/onboarding'
+import { setTokens } from '@/api/client'
+import { setUser } from '@/stores/authStore'
 
-/**
- * Complete Onboarding Step - Final Step
- *
- * Features:
- * - Finalizes onboarding session
- * - Creates workspace, user, business, subscription
- * - Issues JWT tokens and logs user in
- * - Success animation and welcome message
- * - Auto-redirects to dashboard
- *
- * Flow:
- * 1. POST /v1/onboarding/complete
- * 2. Receive user data and tokens
- * 3. Set tokens in auth context
- * 4. Clear onboarding state
- * 5. Navigate to /dashboard
- */
-export default function CompletePage() {
-  const { t } = useTranslation(["onboarding", "common"]);
-  const navigate = useNavigate();
-  const { isAuthenticated, setSession } = useAuth();
-  const {
-    sessionToken,
-    stage,
-    isPaidPlan,
-    isPaymentComplete,
-    businessName,
-    resetOnboarding,
-    loadSessionFromStorage,
-  } = useOnboarding();
+const CompleteSearchSchema = z.object({
+  session: z.string().min(1),
+})
 
-  const [isCompleting, setIsCompleting] = useState(false);
-  const [isComplete, setIsComplete] = useState(false);
-  const [error, setError] = useState("");
-  const [hasValidatedSession, setHasValidatedSession] = useState(false);
+export const Route = createFileRoute('/onboarding/complete')({
+  validateSearch: (search): z.infer<typeof CompleteSearchSchema> => {
+    return CompleteSearchSchema.parse(search)
+  },
 
-  // Restore onboarding session from storage on mount (if needed)
-  useEffect(() => {
-    let isCancelled = false;
+  beforeLoad: async ({ location, context }) => {
+    const { queryClient } = context as RouterContext
+    const parsed = CompleteSearchSchema.parse(location.search)
+    
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
 
-    const restoreSession = async () => {
-      if (sessionToken) {
-        setHasValidatedSession(true);
-        return;
-      }
-
-      const hasSession = await loadSessionFromStorage();
-      if (isCancelled) return;
-
-      setHasValidatedSession(true);
-
-      if (!hasSession) {
-        // If the user is already authenticated (e.g. refreshed after completion),
-        // prefer taking them to the dashboard instead of restarting onboarding.
-        if (isAuthenticated) {
-          void navigate("/", { replace: true });
-          return;
-        }
-
-        void navigate("/onboarding/plan", { replace: true });
-      }
-    };
-
-      void restoreSession();
-      return () => {
-        isCancelled = true;
-      };
-    }, [sessionToken, loadSessionFromStorage, navigate, isAuthenticated]);
-
-  // Redirect if prerequisites not met
-  useEffect(() => {
-    if (!hasValidatedSession) return;
-    if (isCompleting || isComplete) return;
-
-    if (!sessionToken) {
-      void navigate("/onboarding/plan", { replace: true });
-      return;
+    if (session.stage !== 'ready_to_commit' && session.stage !== 'payment_confirmed') {
+      throw redirect({
+        to: '/onboarding/plan',
+        replace: true,
+      })
     }
+  },
 
-    // For paid plans, ensure payment is complete
-    if (isPaidPlan && !isPaymentComplete && stage !== "ready_to_commit") {
-      void navigate("/onboarding/payment", { replace: true });
-      return;
-    }
+  loader: async ({ location, context }) => {
+    const { queryClient } = context as unknown as RouterContext
+    const parsed = CompleteSearchSchema.parse(location.search)
+    
+    await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
+  },
 
-    // For free plans, ensure business is set up
-    if (!isPaidPlan && stage !== "business_staged" && stage !== "ready_to_commit") {
-      void navigate("/onboarding/business", { replace: true });
-    }
-  }, [hasValidatedSession, isCompleting, isComplete, sessionToken, isPaidPlan, isPaymentComplete, stage, navigate]);
-
-    const completeOnboarding = useCallback(async () => {
-    if (!sessionToken) return;
-
-    try {
-      setIsCompleting(true);
-      setError("");
-
-      const response = await onboardingApi.complete({
-        sessionToken,
-      });
-
-      // Hydrate auth immediately to avoid protected-route redirect flicker
-      setSession({ user: response.user, token: response.token, refreshToken: response.refreshToken });
-
-      // Mark as complete
-      setIsComplete(true);
-
-      // Clear onboarding state
-      resetOnboarding();
-
-      // Redirect to dashboard after animation
-      setTimeout(() => {
-        void navigate("/dashboard", { replace: true });
-      }, 3000);
-    } catch (err) {
-      const message = await translateErrorAsync(err, t);
-      setError(message);
-    } finally {
-      setIsCompleting(false);
-    }
-    }, [navigate, resetOnboarding, sessionToken, setSession, t]);
-
-  // Auto-complete on mount if ready
-  useEffect(() => {
-    if (!hasValidatedSession) return;
-    if (!sessionToken) return;
-    if (isComplete || isCompleting || error) return;
-
-    const isReady = (isPaidPlan && isPaymentComplete) || !isPaidPlan;
-    if (!isReady) return;
-
-    void completeOnboarding();
-  }, [hasValidatedSession, sessionToken, isComplete, isCompleting, error, isPaidPlan, isPaymentComplete, completeOnboarding]);
-
-  if (error) {
+  component: CompleteOnboardingPage,
+  
+  errorComponent: ({ error }) => {
+    const { t } = useTranslation('translation')
     return (
-      <OnboardingLayout currentStep={5} totalSteps={5}>
-        <div className="max-w-lg mx-auto">
-          <div className="card bg-base-100 border border-error shadow-xl">
-            <div className="card-body">
-              <div className="text-center">
-                <h2 className="text-2xl font-bold text-error mb-3">
-                  {t("onboarding:complete.errorTitle")}
-                </h2>
-                <p className="text-base-content/70 mb-6">{error}</p>
-                <button
-                  onClick={() => void completeOnboarding()}
-                  className="btn btn-primary"
-                  disabled={isCompleting}
-                >
-                  {isCompleting ? (
-                    <>
-                      <span className="loading loading-spinner loading-sm"></span>
-                      {t("common:loading")}
-                    </>
-                  ) : (
-                    t("common:retry")
-                  )}
-                </button>
-              </div>
-            </div>
-          </div>
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
-  if (isComplete) {
-    return (
-      <OnboardingLayout currentStep={5} totalSteps={5} showProgress={false}>
-        <div className="max-w-2xl mx-auto">
-          <div className="card bg-linear-to-br from-primary/10 to-secondary/10 border-2 border-primary shadow-2xl">
-            <div className="card-body">
-              <div className="text-center">
-                {/* Success Animation */}
-                <div className="flex justify-center mb-6">
-                  <div className="relative">
-                    <div className="w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-full flex items-center justify-center animate-bounce">
-                      <Sparkles className="w-12 h-12 text-primary-content" />
-                    </div>
-                    <div className="absolute inset-0 w-24 h-24 bg-linear-to-br from-primary to-secondary rounded-full animate-ping opacity-20"></div>
-                  </div>
-                </div>
-
-                {/* Welcome Message */}
-                <h1 className="text-4xl font-bold mb-3">
-                  {t("onboarding:complete.welcomeTitle")}
-                </h1>
-                <p className="text-xl text-base-content/80 mb-6">
-                  {t("onboarding:complete.welcomeMessage", { businessName })}
-                </p>
-
-                {/* Features Highlight */}
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4 my-8">
-                  <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
-                    <div className="text-2xl mb-2">📦</div>
-                    <h3 className="font-semibold mb-1">
-                      {t("onboarding:complete.feature1Title")}
-                    </h3>
-                    <p className="text-sm text-base-content/70">
-                      {t("onboarding:complete.feature1Desc")}
-                    </p>
-                  </div>
-                  <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
-                    <div className="text-2xl mb-2">📊</div>
-                    <h3 className="font-semibold mb-1">
-                      {t("onboarding:complete.feature2Title")}
-                    </h3>
-                    <p className="text-sm text-base-content/70">
-                      {t("onboarding:complete.feature2Desc")}
-                    </p>
-                  </div>
-                  <div className="bg-base-100/50 backdrop-blur rounded-lg p-4">
-                    <div className="text-2xl mb-2">🚀</div>
-                    <h3 className="font-semibold mb-1">
-                      {t("onboarding:complete.feature3Title")}
-                    </h3>
-                    <p className="text-sm text-base-content/70">
-                      {t("onboarding:complete.feature3Desc")}
-                    </p>
-                  </div>
-                </div>
-
-                {/* Redirect Notice */}
-                <div className="flex items-center justify-center gap-2 text-base-content/60">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span>{t("onboarding:complete.redirecting")}</span>
-                  <ArrowRight className="w-4 h-4 animate-pulse" />
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
-  return (
-    <OnboardingLayout currentStep={5} totalSteps={5}>
-      <div className="max-w-lg mx-auto">
-        <div className="card bg-base-100 border border-base-300 shadow-xl">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
           <div className="card-body">
-            <div className="text-center">
-              <div className="flex justify-center mb-6">
-                <span className="loading loading-spinner loading-lg text-primary"></span>
-              </div>
-              <h2 className="text-2xl font-bold mb-3">
-                {t("onboarding:complete.processingTitle")}
-              </h2>
-              <p className="text-base-content/70">
-                {t("onboarding:complete.processingMessage")}
-              </p>
-              <div className="mt-6 space-y-2">
-                <div className="flex items-center gap-3 justify-center text-sm">
-                  <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding:complete.creatingWorkspace")}</span>
-                </div>
-                <div className="flex items-center gap-3 justify-center text-sm">
-                  <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding:complete.settingUpBusiness")}</span>
-                </div>
-                <div className="flex items-center gap-3 justify-center text-sm">
-                  <span className="loading loading-ring loading-sm text-success"></span>
-                  <span>{t("onboarding:complete.preparingDashboard")}</span>
-                </div>
-              </div>
-            </div>
+            <h2 className="card-title text-error">{t('error.title')}</h2>
+            <p className="text-base-content/70">{error.message || t('error.generic')}</p>
           </div>
         </div>
       </div>
-    </OnboardingLayout>
-  );
+    )
+  },
+})
+
+function CompleteOnboardingPage() {
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const navigate = useNavigate()
+  const { session: sessionToken } = Route.useSearch()
+  
+  const completeMutation = useCompleteOnboardingMutation()
+  const deleteSessionMutation = useDeleteSessionMutation()
+
+  useEffect(() => {
+    const complete = async () => {
+      try {
+        const result = await completeMutation.mutateAsync({ sessionToken })
+        setTokens(result.token, result.refreshToken)
+        setUser(result.user)
+        deleteSessionMutation.mutate(sessionToken)
+        // Success - navigate to home page
+        window.location.href = '/'
+      } catch (error) {
+        console.error('[Complete] Failed to complete onboarding:', error)
+      }
+    }
+
+    void complete()
+  }, [sessionToken, completeMutation, deleteSessionMutation, navigate])
+
+  return (
+    <div className="flex min-h-[60vh] items-center justify-center">
+      <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+        <div className="card-body">
+          <div className="text-center">
+            {completeMutation.isPending ? (
+              <>
+                <Loader2 className="w-16 h-16 text-primary animate-spin mx-auto mb-4" />
+                <h2 className="text-2xl font-bold mb-3">
+                  {tOnboarding('complete.settingUp')}
+                </h2>
+                <p className="text-base-content/70">
+                  {tOnboarding('complete.pleaseWait')}
+                </p>
+              </>
+            ) : completeMutation.isSuccess ? (
+              <>
+                <CheckCircle2 className="w-16 h-16 text-success mx-auto mb-4" />
+                <h2 className="text-2xl font-bold text-success mb-3">
+                  {tOnboarding('complete.success')}
+                </h2>
+                <p className="text-base-content/70">
+                  {tOnboarding('complete.redirecting')}
+                </p>
+              </>
+            ) : completeMutation.isError ? (
+              <>
+                <div className="alert alert-error mb-4">
+                  <span>{completeMutation.error.message}</span>
+                </div>
+                <button
+                  onClick={() => completeMutation.reset()}
+                  className="btn btn-primary"
+                >
+                  {tOnboarding('complete.retry')}
+                </button>
+              </>
+            ) : null}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
 }

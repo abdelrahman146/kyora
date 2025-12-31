@@ -11,16 +11,18 @@
  * - Mobile-optimized (min 44px touch target)
  */
 
-import { Phone, ShoppingBag, DollarSign } from "lucide-react";
-import { Avatar } from "../atoms/Avatar";
-import type { Customer } from "../../api/types/customer";
+import { useTranslation } from 'react-i18next'
+import { DollarSign, Phone, ShoppingBag } from 'lucide-react'
+
+import { Avatar } from '../atoms/Avatar'
+import type { Customer } from '@/api/customer'
 
 export interface CustomerCardProps {
-  customer: Customer;
-  onClick?: (customer: Customer) => void;
-  ordersCount?: number;
-  totalSpent?: number;
-  currency?: string;
+  customer: Customer
+  onClick?: (customer: Customer) => void
+  ordersCount?: number
+  totalSpent?: number
+  currency?: string
 }
 
 export function CustomerCard({
@@ -28,44 +30,46 @@ export function CustomerCard({
   onClick,
   ordersCount = 0,
   totalSpent = 0,
-  currency = "AED",
+  currency = 'AED',
 }: CustomerCardProps) {
+  const { t } = useTranslation()
+
   const getInitials = (name: string): string => {
     return name
-      .split(" ")
+      .split(' ')
       .map((word) => word[0])
-      .join("")
+      .join('')
       .toUpperCase()
-      .slice(0, 2);
-  };
+      .slice(0, 2)
+  }
 
   const formatPhone = (): string | null => {
     if (customer.phoneCode && customer.phoneNumber) {
-      return `${customer.phoneCode} ${customer.phoneNumber}`;
+      return `${customer.phoneCode} ${customer.phoneNumber}`
     }
-    return null;
-  };
+    return null
+  }
 
   const formatCurrency = (amount: number): string => {
-    return new Intl.NumberFormat("en-US", {
-      style: "decimal",
+    return new Intl.NumberFormat('en-US', {
+      style: 'decimal',
       minimumFractionDigits: 2,
       maximumFractionDigits: 2,
-    }).format(amount);
-  };
+    }).format(amount)
+  }
 
   return (
     <div
       className={`card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow ${
-        onClick ? "cursor-pointer" : ""
+        onClick ? 'cursor-pointer' : ''
       }`}
       onClick={() => onClick?.(customer)}
-      role={onClick ? "button" : undefined}
+      role={onClick ? 'button' : undefined}
       tabIndex={onClick ? 0 : undefined}
       onKeyDown={(e) => {
-        if (onClick && (e.key === "Enter" || e.key === " ")) {
-          e.preventDefault();
-          onClick(customer);
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+          e.preventDefault()
+          onClick(customer)
         }
       }}
     >
@@ -79,7 +83,9 @@ export function CustomerCard({
             size="lg"
           />
           <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base truncate">{customer.name}</h3>
+            <h3 className="font-semibold text-base truncate">
+              {customer.name}
+            </h3>
             {formatPhone() && (
               <div className="flex items-center gap-1 text-sm text-base-content/70">
                 <Phone size={14} />
@@ -97,7 +103,9 @@ export function CustomerCard({
               <ShoppingBag size={16} className="text-success" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-base-content/60 truncate">Orders</div>
+              <div className="text-xs text-base-content/60 truncate">
+                {t('customers.orders_count')}
+              </div>
               <div className="font-semibold">{ordersCount}</div>
             </div>
           </div>
@@ -108,7 +116,9 @@ export function CustomerCard({
               <DollarSign size={16} className="text-primary" />
             </div>
             <div className="flex-1 min-w-0">
-              <div className="text-xs text-base-content/60 truncate">Total</div>
+              <div className="text-xs text-base-content/60 truncate">
+                {t('customers.total_spent')}
+              </div>
               <div className="font-semibold truncate">
                 {currency} {formatCurrency(totalSpent)}
               </div>
@@ -117,5 +127,5 @@ export function CustomerCard({
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,89 +1,67 @@
-import { forwardRef, type ImgHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
-import { Building2 } from "lucide-react";
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
-export interface AvatarProps extends ImgHTMLAttributes<HTMLImageElement> {
-  size?: "xs" | "sm" | "md" | "lg" | "xl";
-  fallback?: string;
-  shape?: "circle" | "square";
+export interface AvatarProps {
+  src?: string
+  alt?: string
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl'
+  placeholder?: ReactNode
+  fallback?: string
+  shape?: 'circle' | 'square'
+  online?: boolean
+  offline?: boolean
+  className?: string
 }
 
 /**
  * Avatar Component
  *
- * Displays user or business avatar with automatic fallback.
- *
- * @example
- * ```tsx
- * <Avatar src={user.avatarUrl} alt={user.name} fallback="AB" />
- * <Avatar src={business.logoUrl} fallback={business.name[0]} shape="square" />
- * ```
+ * User avatar with placeholder support and online/offline indicators.
  */
-export const Avatar = forwardRef<HTMLImageElement, AvatarProps>(
-  (
-    {
-      size = "md",
-      fallback,
-      shape = "circle",
-      src,
-      alt,
-      className,
-      ...props
-    },
-    ref
-  ) => {
-    const sizeClasses = {
-      xs: "w-6 h-6 text-xs",
-      sm: "w-8 h-8 text-sm",
-      md: "w-10 h-10 text-base",
-      lg: "w-12 h-12 text-lg",
-      xl: "w-16 h-16 text-xl",
-    };
-
-    const shapeClasses = {
-      circle: "rounded-full",
-      square: "rounded-lg",
-    };
-
-    // If no src or src fails to load, show fallback
-    if (!src) {
-      return (
-        <div
-          className={cn(
-            "flex items-center justify-center bg-primary-100 text-primary-700 font-semibold",
-            sizeClasses[size],
-            shapeClasses[shape],
-            className
-          )}
-        >
-          {fallback ? (
-            <span>{fallback.charAt(0).toUpperCase()}</span>
-          ) : (
-            <Building2 size={16} />
-          )}
-        </div>
-      );
-    }
-
-    return (
-      <img
-        ref={ref}
-        src={src}
-        alt={alt}
-        className={cn(
-          "object-cover",
-          sizeClasses[size],
-          shapeClasses[shape],
-          className
-        )}
-        onError={(e) => {
-          // Hide image and show fallback on error
-          e.currentTarget.style.display = "none";
-        }}
-        {...props}
-      />
-    );
+export function Avatar({
+  src,
+  alt,
+  size = 'md',
+  placeholder,
+  fallback,
+  shape = 'circle',
+  online,
+  offline,
+  className,
+}: AvatarProps) {
+  const sizeClasses = {
+    xs: 'w-6',
+    sm: 'w-8',
+    md: 'w-12',
+    lg: 'w-16',
+    xl: 'w-24',
   }
-);
 
-Avatar.displayName = "Avatar";
+  const shapeClass = shape === 'circle' ? 'rounded-full' : 'rounded-lg'
+
+  const onlineIndicator = online ?? offline
+
+  return (
+    <div className={cn('avatar', onlineIndicator && 'online', className)}>
+      {online && (
+        <div className="indicator-item badge badge-success badge-xs"></div>
+      )}
+      {offline && (
+        <div className="indicator-item badge badge-error badge-xs"></div>
+      )}
+      <div className={cn(sizeClasses[size], shapeClass)}>
+        {src ? (
+          <img src={src} alt={alt ?? 'Avatar'} />
+        ) : (
+          <div className="flex h-full w-full items-center justify-center bg-neutral text-neutral-content">
+            {fallback ? (
+              <span>{fallback.slice(0, 2).toUpperCase()}</span>
+            ) : (
+              (placeholder ?? <span>?</span>)
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}

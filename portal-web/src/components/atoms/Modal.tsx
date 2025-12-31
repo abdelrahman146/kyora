@@ -1,43 +1,46 @@
-import { type ReactNode, useEffect, useRef } from "react";
-import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
+import { useEffect, useRef } from 'react'
+import { createPortal } from 'react-dom'
+import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
 export interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title?: ReactNode;
-  children: ReactNode;
-  footer?: ReactNode;
-  size?: "sm" | "md" | "lg" | "xl" | "full";
-  closeOnBackdropClick?: boolean;
-  closeOnEscape?: boolean;
+  isOpen: boolean
+  onClose: () => void
+  title?: ReactNode
+  children: ReactNode
+  footer?: ReactNode
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
+  closeOnBackdropClick?: boolean
+  closeOnEscape?: boolean
   /**
    * Whether to show the close button (X) in the header
    * @default true
    */
-  showCloseButton?: boolean;
+  showCloseButton?: boolean
 
   /**
    * Additional CSS classes for the modal container
    */
-  className?: string;
+  className?: string
 
   /**
    * Additional CSS classes for the modal content box
    */
-  contentClassName?: string;
+  contentClassName?: string
 
   /**
    * Whether the modal content should be scrollable
    * @default true
    */
-  scrollable?: boolean;
+  scrollable?: boolean
 
   /**
    * Custom z-index for the modal
    * @default 50
    */
-  zIndex?: number;
+  zIndex?: number
 }
 
 /**
@@ -82,7 +85,7 @@ export function Modal({
   title,
   children,
   footer,
-  size = "md",
+  size = 'md',
   closeOnBackdropClick = true,
   closeOnEscape = true,
   showCloseButton = true,
@@ -91,83 +94,85 @@ export function Modal({
   scrollable = true,
   zIndex = 50,
 }: ModalProps) {
-  const modalRef = useRef<HTMLDivElement>(null);
+  const { t } = useTranslation()
+  const modalRef = useRef<HTMLDivElement>(null)
 
   // Size mapping for responsive modal widths
   const sizeClasses = {
-    sm: "max-w-sm",
-    md: "max-w-md",
-    lg: "max-w-2xl",
-    xl: "max-w-4xl",
-    full: "max-w-full mx-4",
-  };
+    sm: 'max-w-sm',
+    md: 'max-w-md',
+    lg: 'max-w-2xl',
+    xl: 'max-w-4xl',
+    full: 'max-w-full mx-4',
+  }
 
   // Handle Escape key press
   useEffect(() => {
-    if (!isOpen || !closeOnEscape) return;
+    if (!isOpen || !closeOnEscape) return
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        onClose();
+      if (e.key === 'Escape') {
+        onClose()
       }
-    };
+    }
 
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener('keydown', handleEscape)
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, closeOnEscape, onClose]);
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, closeOnEscape, onClose])
 
   // Lock body scroll when modal is open
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
-    const originalOverflow = document.body.style.overflow;
-    const originalPaddingRight = document.body.style.paddingRight;
+    const originalOverflow = document.body.style.overflow
+    const originalPaddingRight = document.body.style.paddingRight
 
     // Prevent body scroll
-    const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
-    document.body.style.overflow = "hidden";
-    document.body.style.paddingRight = `${scrollbarWidth.toString()}px`;
+    const scrollbarWidth =
+      window.innerWidth - document.documentElement.clientWidth
+    document.body.style.overflow = 'hidden'
+    document.body.style.paddingRight = `${scrollbarWidth.toString()}px`
 
     return () => {
-      document.body.style.overflow = originalOverflow;
-      document.body.style.paddingRight = originalPaddingRight;
-    };
-  }, [isOpen]);
+      document.body.style.overflow = originalOverflow
+      document.body.style.paddingRight = originalPaddingRight
+    }
+  }, [isOpen])
 
   // Focus trap - focus first focusable element when modal opens
   useEffect(() => {
-    if (!isOpen) return;
+    if (!isOpen) return
 
     const focusableElements = modalRef.current?.querySelectorAll<HTMLElement>(
-      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])'
-    );
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    )
 
     if (focusableElements && focusableElements.length > 0) {
-      focusableElements[0].focus();
+      focusableElements[0].focus()
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Handle backdrop click
   const handleBackdropClick = (e: React.MouseEvent<HTMLDivElement>) => {
     if (closeOnBackdropClick && e.target === e.currentTarget) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const modalContent = (
     <div
       className={cn(
-        "fixed inset-0 flex items-end md:items-center justify-center",
-        className
+        'fixed inset-0 flex items-end md:items-center justify-center',
+        className,
       )}
       style={{ zIndex }}
       role="dialog"
       aria-modal="true"
-      aria-labelledby={title ? "modal-title" : undefined}
+      aria-labelledby={title ? 'modal-title' : undefined}
     >
       {/* Backdrop */}
       <div
@@ -180,12 +185,12 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          "relative w-full bg-base-100 rounded-t-2xl md:rounded-2xl shadow-2xl",
-          "transform transition-transform duration-300 ease-out",
-          "max-h-[90vh] md:max-h-[85vh]",
-          "animate-in slide-in-from-bottom md:slide-in-from-bottom-0 md:fade-in",
+          'relative w-full bg-base-100 rounded-t-2xl md:rounded-2xl shadow-2xl',
+          'transform transition-transform duration-300 ease-out',
+          'max-h-[90vh] md:max-h-[85vh]',
+          'animate-in slide-in-from-bottom md:slide-in-from-bottom-0 md:fade-in',
           sizeClasses[size],
-          contentClassName
+          contentClassName,
         )}
       >
         {/* Header */}
@@ -203,22 +208,9 @@ export function Modal({
               <button
                 onClick={onClose}
                 className="btn btn-sm btn-circle btn-ghost shrink-0"
-                aria-label="Close modal"
+                aria-label={t('common.close_modal')}
               >
-                <svg
-                  xmlns="http://www.w3.org/2000/svg"
-                  className="h-5 w-5"
-                  fill="none"
-                  viewBox="0 0 24 24"
-                  stroke="currentColor"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M6 18L18 6M6 6l12 12"
-                  />
-                </svg>
+                <X size={20} />
               </button>
             )}
           </div>
@@ -227,16 +219,16 @@ export function Modal({
         {/* Content */}
         <div
           className={cn(
-            "px-6 py-4",
-            scrollable && "overflow-y-auto",
-            !footer && "pb-6"
+            'px-6 py-4',
+            scrollable && 'overflow-y-auto',
+            !footer && 'pb-6',
           )}
           style={{
             maxHeight: footer
-              ? "calc(90vh - 140px)"
+              ? 'calc(90vh - 140px)'
               : title || showCloseButton
-              ? "calc(90vh - 80px)"
-              : "calc(90vh - 40px)",
+                ? 'calc(90vh - 80px)'
+                : 'calc(90vh - 40px)',
           }}
         >
           {children}
@@ -250,8 +242,8 @@ export function Modal({
         )}
       </div>
     </div>
-  );
+  )
 
   // Render modal in a portal at the end of body
-  return createPortal(modalContent, document.body);
+  return createPortal(modalContent, document.body)
 }

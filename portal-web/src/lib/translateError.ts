@@ -1,5 +1,5 @@
-import type { TFunction } from "i18next";
-import type { ErrorResult } from "./errorParser";
+import type { TFunction } from 'i18next'
+import type { ErrorResult } from './errorParser'
 
 /**
  * Translates an ErrorResult using the i18next translation function
@@ -18,13 +18,16 @@ import type { ErrorResult } from "./errorParser";
  * ```
  */
 export function translateError(errorResult: ErrorResult, t: TFunction): string {
+  const namespace = errorResult.ns ?? 'errors'
   // Try to get translation with interpolation params
   const translated = t(errorResult.key, {
-    defaultValue: errorResult.fallback ?? t("errors:generic.unexpected"),
+    ns: namespace,
+    defaultValue:
+      errorResult.fallback ?? t('generic.unexpected', { ns: namespace }),
     ...errorResult.params,
-  });
+  })
 
-  return translated;
+  return translated
 }
 
 /**
@@ -43,9 +46,9 @@ export function translateError(errorResult: ErrorResult, t: TFunction): string {
  */
 export async function translateErrorAsync(
   error: unknown,
-  t: TFunction
+  t: TFunction,
 ): Promise<string> {
-  const { parseProblemDetails } = await import("./errorParser");
-  const errorResult = await parseProblemDetails(error);
-  return translateError(errorResult, t);
+  const { parseProblemDetails } = await import('./errorParser')
+  const errorResult = await parseProblemDetails(error)
+  return translateError(errorResult, t)
 }

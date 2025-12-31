@@ -1,309 +1,291 @@
-import { useState, useEffect, useCallback } from "react";
-import { useNavigate } from "react-router-dom";
-import { useTranslation } from "react-i18next";
-import { CreditCard, AlertCircle, CheckCircle2 } from "lucide-react";
-import { OnboardingLayout } from "@/components/templates";
-import { useOnboarding } from "@/contexts/OnboardingContext";
-import { onboardingApi } from "@/api/onboarding";
-import { translateErrorAsync } from "@/lib/translateError";
+import { useEffect } from 'react'
+import { createFileRoute, redirect, useNavigate } from '@tanstack/react-router'
+import { useSuspenseQuery } from '@tanstack/react-query'
+import { useTranslation } from 'react-i18next'
+import { z } from 'zod'
+import { AlertCircle, CreditCard, Loader2 } from 'lucide-react'
+import type { RouterContext } from '@/router'
+import { onboardingQueries, useStartPaymentMutation } from '@/api/onboarding'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
+import { redirectToCorrectStage } from '@/lib/onboarding'
 
-/**
- * Payment Step - Step 4 of Onboarding (for paid plans only)
- *
- * Features:
- * - Creates Stripe checkout session
- * - Redirects to Stripe for payment
- * - Handles success/cancel callbacks
- * - Polls payment status after return
- *
- * Flow:
- * 1. POST /v1/onboarding/payment/start
- * 2. Redirect to Stripe Checkout
- * 3. User completes payment
- * 4. Stripe redirects to /onboarding/payment?status=success
- * 5. Navigate to /onboarding/complete
- *
- * Note: For free plans, this step is skipped
- */
-export default function PaymentPage() {
-  const { t } = useTranslation(["onboarding", "common"]);
-  const navigate = useNavigate();
-  const {
-    sessionToken,
-    stage,
-    isPaidPlan,
-    selectedPlan,
-    checkoutUrl,
-    setCheckoutUrl,
-    loadSessionFromStorage,
-  } = useOnboarding();
+const PaymentSearchSchema = z.object({
+  session: z.string().min(1),
+  status: z.enum(['success', 'cancelled']).optional(),
+})
 
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const [paymentStatus, setPaymentStatus] = useState<"pending" | "success" | "cancelled" | null>(null);
+export const Route = createFileRoute('/onboarding/payment')({
+  validateSearch: (search): z.infer<typeof PaymentSearchSchema> => {
+    return PaymentSearchSchema.parse(search)
+  },
 
-  // Restore session from localStorage on mount
-  useEffect(() => {
-    const restoreSession = async () => {
-      if (!sessionToken) {
-        const hasSession = await loadSessionFromStorage();
-        if (!hasSession) {
-          await navigate("/onboarding/plan", { replace: true });
-        }
-      }
-    };
-    void restoreSession();
-  }, [sessionToken, loadSessionFromStorage, navigate]);
-
-  // Check URL params for payment status
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    const status = params.get("status");
+  beforeLoad: async ({ location, context }) => {
+    const { queryClient } = context as unknown as RouterContext
+    const parsed = PaymentSearchSchema.parse(location.search)
     
-    if (status === "success") {
-      setPaymentStatus("success");
-      // Backend automatically updates payment status
-      
-      // Auto-redirect after 2 seconds
-      setTimeout(() => {
-        void navigate("/onboarding/complete");
-      }, 2000);
-    } else if (status === "cancelled") {
-      setPaymentStatus("cancelled");
-    }
-  }, [navigate]);
+    // Ensure session data is loaded
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
 
-  // Redirect if not at business_staged or payment_pending stage
-  useEffect(() => {
-    if (!sessionToken) {
-      void navigate("/onboarding/plan", { replace: true });
-      return;
+    // Validate stage and plan requirements
+    if (!session.isPaidPlan) {
+      throw redirect({
+        to: '/onboarding/complete',
+        search: { session: parsed.session },
+        replace: true,
+      })
     }
 
-    if (!isPaidPlan) {
-      void navigate("/onboarding/complete", { replace: true });
-      return;
+    if (session.stage !== 'business_staged' && session.stage !== 'payment_pending' && session.stage !== 'payment_confirmed') {
+      throw redirect({
+        to: '/onboarding/plan',
+        replace: true,
+      })
     }
 
-    if (stage !== "business_staged" && stage !== "payment_pending" && stage !== "ready_to_commit") {
-      void navigate("/onboarding/business", { replace: true });
+    // If payment already confirmed, go to complete
+    if (session.stage === 'payment_confirmed' || session.paymentStatus === 'succeeded') {
+      throw redirect({
+        to: '/onboarding/complete',
+        search: { session: parsed.session },
+        replace: true,
+      })
     }
-  }, [sessionToken, isPaidPlan, stage, navigate]);
+  },
 
-  const initiatePayment = useCallback(async () => {
-    if (!sessionToken) return;
+  loader: async ({ location, context }) => {
+    const { queryClient } = context as unknown as RouterContext
+    const parsed = PaymentSearchSchema.parse(location.search)
+    
+    // Load session data
+    const session = await queryClient.ensureQueryData(
+      onboardingQueries.session(parsed.session)
+    )
 
-    try {
-      setIsLoading(true);
-      setError("");
-
-      const successUrl = `${window.location.origin}/onboarding/payment?status=success`;
-      const cancelUrl = `${window.location.origin}/onboarding/payment?status=cancelled`;
-
-      const response = await onboardingApi.startPayment({
-        sessionToken,
-        successUrl,
-        cancelUrl,
-      });
-
-      if (response.checkoutUrl) {
-        setCheckoutUrl(response.checkoutUrl);
-        
-        // Redirect to Stripe Checkout
-        window.location.href = response.checkoutUrl;
-      } else {
-        setError(t("onboarding:payment.noCheckoutUrl"));
-      }
-    } catch (err) {
-      const message = await translateErrorAsync(err, t);
-      setError(message);
-    } finally {
-      setIsLoading(false);
+    // Automatically redirect to correct stage based on session
+    const stageRedirect = redirectToCorrectStage(
+      '/onboarding/payment',
+      session.stage,
+      parsed.session
+    )
+    if (stageRedirect) {
+      throw stageRedirect
     }
-  }, [sessionToken, t, setCheckoutUrl]);
+    
+    // Load plan details
+    await queryClient.ensureQueryData(onboardingQueries.plans())
+  },
 
-  // Auto-initiate payment if no checkout URL exists
-  useEffect(() => {
-    if (!checkoutUrl && !paymentStatus && !error && sessionToken && isPaidPlan) {
-      void initiatePayment();
-    }
-  }, [checkoutUrl, paymentStatus, error, sessionToken, isPaidPlan, initiatePayment]);
-
-  if (paymentStatus === "success") {
+  component: PaymentPage,
+  
+  errorComponent: ({ error }) => {
+    const { t } = useTranslation('translation')
     return (
-      <OnboardingLayout currentStep={4} totalSteps={5}>
-        <div className="max-w-lg mx-auto">
-          <div className="card bg-base-100 border border-success shadow-xl">
-            <div className="card-body">
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-success/10 rounded-full flex items-center justify-center">
-                    <CheckCircle2 className="w-8 h-8 text-success" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-bold text-success mb-3">
-                  {t("onboarding:payment.successTitle")}
-                </h2>
-                <p className="text-base-content/70">
-                  {t("onboarding:payment.successMessage")}
-                </p>
-                <div className="mt-6">
-                  <span className="loading loading-spinner loading-sm"></span>
-                  <span className="ms-2 text-sm text-base-content/60">
-                    {t("onboarding:payment.redirecting")}
-                  </span>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
-  if (paymentStatus === "cancelled") {
-    return (
-      <OnboardingLayout currentStep={4} totalSteps={5}>
-        <div className="max-w-lg mx-auto">
-          <div className="card bg-base-100 border border-warning shadow-xl">
-            <div className="card-body">
-              <div className="text-center">
-                <div className="flex justify-center mb-4">
-                  <div className="w-16 h-16 bg-warning/10 rounded-full flex items-center justify-center">
-                    <AlertCircle className="w-8 h-8 text-warning" />
-                  </div>
-                </div>
-                <h2 className="text-2xl font-bold text-warning mb-3">
-                  {t("onboarding:payment.cancelledTitle")}
-                </h2>
-                <p className="text-base-content/70 mb-6">
-                  {t("onboarding:payment.cancelledMessage")}
-                </p>
-                <div className="flex gap-3 justify-center">
-                  <button
-                    onClick={() => {
-                      void navigate("/onboarding/plan");
-                    }}
-                    className="btn btn-ghost"
-                  >
-                    {t("onboarding:payment.changePlan")}
-                  </button>
-                  <button
-                    onClick={() => {
-                      void initiatePayment();
-                    }}
-                    className="btn btn-primary"
-                    disabled={isLoading}
-                  >
-                    {isLoading ? (
-                      <>
-                        <span className="loading loading-spinner loading-sm"></span>
-                        {t("common:loading")}
-                      </>
-                    ) : (
-                      t("onboarding:payment.tryAgain")
-                    )}
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      </OnboardingLayout>
-    );
-  }
-
-  return (
-    <OnboardingLayout currentStep={4} totalSteps={5}>
-      <div className="max-w-lg mx-auto">
-        <div className="card bg-base-100 border border-base-300 shadow-xl">
+      <div className="flex min-h-[60vh] items-center justify-center">
+        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
           <div className="card-body">
-            {/* Header */}
-            <div className="text-center mb-6">
-              <div className="flex justify-center mb-4">
-                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                  <CreditCard className="w-8 h-8 text-primary" />
-                </div>
-              </div>
-              <h2 className="text-2xl font-bold">
-                {t("onboarding:payment.title")}
-              </h2>
-              <p className="text-base-content/70 mt-2">
-                {t("onboarding:payment.subtitle")}
-              </p>
-            </div>
-
-            {/* Plan Summary */}
-            {selectedPlan && (
-              <div className="bg-base-200 rounded-lg p-4 mb-6">
-                <h3 className="font-semibold text-lg mb-2">{selectedPlan.name}</h3>
-                <div className="flex items-baseline gap-1">
-                  <span className="text-3xl font-bold text-primary">
-                    {selectedPlan.price}
-                  </span>
-                  <span className="text-base-content/60">
-                    {selectedPlan.currency.toUpperCase()}
-                  </span>
-                  <span className="text-base-content/60">
-                    / {selectedPlan.billingCycle}
-                  </span>
-                </div>
-                {selectedPlan.description && (
-                  <p className="text-sm text-base-content/70 mt-2">
-                    {selectedPlan.description}
-                  </p>
-                )}
-              </div>
-            )}
-
-            {error && (
-              <div className="alert alert-error mb-4">
-                <span className="text-sm">{error}</span>
-              </div>
-            )}
-
-            {/* Payment Info */}
-            <div className="space-y-3 mb-6">
-              <div className="flex items-center gap-3 text-sm">
-                <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding:payment.securePayment")}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding:payment.cancelAnytime")}</span>
-              </div>
-              <div className="flex items-center gap-3 text-sm">
-                <CheckCircle2 className="w-5 h-5 text-success shrink-0" />
-                <span>{t("onboarding:payment.instantAccess")}</span>
-              </div>
-            </div>
-
-            {/* Actions */}
-            <div>
-              <button
-                onClick={() => {
-                  void initiatePayment();
-                }}
-                className="btn btn-primary w-full"
-                disabled={isLoading}
-              >
-                {isLoading ? (
-                  <>
-                    <span className="loading loading-spinner loading-sm"></span>
-                    {t("common:loading")}
-                  </>
-                ) : (
-                  t("onboarding:payment.proceedToPayment")
-                )}
-              </button>
-            </div>
-
-            <p className="text-xs text-center text-base-content/50 mt-4">
-              {t("onboarding:payment.poweredByStripe")}
-            </p>
+            <h2 className="card-title text-error">{t('error.title')}</h2>
+            <p className="text-base-content/70">{error.message || t('error.generic')}</p>
           </div>
         </div>
       </div>
+    )
+  },
+})
+
+/**
+ * Payment Step - Step 5 of Onboarding (paid plans only)
+ *
+ * Features:
+ * - Stripe Checkout integration
+ * - Payment status handling
+ * - Automatic navigation after successful payment
+ */
+function PaymentPage() {
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
+  const navigate = useNavigate()
+  const { session: sessionToken, status } = Route.useSearch()
+  
+  const { data: session } = useSuspenseQuery(onboardingQueries.session(sessionToken))
+  const { data: plans } = useSuspenseQuery(onboardingQueries.plans())
+  
+  const startPaymentMutation = useStartPaymentMutation()
+
+  // Find the selected plan
+  const selectedPlan = plans.find(p => p.descriptor === session.planDescriptor)
+  const isFree = selectedPlan ? parseFloat(selectedPlan.price) === 0 : false
+
+  // Handle payment status from URL
+  useEffect(() => {
+    if (status === 'success') {
+      // Navigate to complete step
+      void navigate({
+        to: '/onboarding/complete',
+        search: { session: sessionToken },
+        replace: true,
+      })
+    } else if (status === 'cancelled') {
+      // User cancelled payment, stay on this page
+      // Remove status from URL
+      void navigate({
+        to: '/onboarding/payment',
+        search: { session: sessionToken },
+        replace: true,
+      })
+    }
+  }, [status, sessionToken, navigate])
+
+  const handleStartPayment = async () => {
+    try {
+      const result = await startPaymentMutation.mutateAsync({
+        sessionToken,
+        successUrl: `${window.location.origin}/onboarding/payment?session=${sessionToken}&status=success`,
+        cancelUrl: `${window.location.origin}/onboarding/payment?session=${sessionToken}&status=cancelled`,
+      })
+      // Redirect to Stripe Checkout
+      window.location.href = result.checkoutUrl
+    } catch (error) {
+      // Error handling is done by the mutation
+      console.error('[Payment] Failed to start payment:', error)
+    }
+  }
+
+  // If payment was cancelled
+  if (status === 'cancelled') {
+    return (
+      <OnboardingLayout>
+        <div className="max-w-2xl mx-auto">
+          <div className="alert alert-warning mb-6">
+            <AlertCircle className="w-5 h-5" />
+            <div>
+              <h3 className="font-semibold">{tOnboarding('payment.cancelled')}</h3>
+              <p className="text-sm">{tOnboarding('payment.cancelledDesc')}</p>
+          </div>
+        </div>
+
+        {selectedPlan && (
+          <div className="card bg-base-100 border border-base-300 shadow-xl">
+            <div className="card-body">
+              <h2 className="card-title text-2xl mb-4">
+                {tOnboarding('payment.title')}
+              </h2>
+
+              <div className="bg-base-200 rounded-lg p-6 mb-6">
+                <div className="flex items-center justify-between mb-4">
+                  <div>
+                    <h3 className="text-xl font-semibold">{selectedPlan.name}</h3>
+                    {selectedPlan.description && (
+                      <p className="text-sm text-base-content/70 mt-1">
+                        {selectedPlan.description}
+                      </p>
+                    )}
+                  </div>
+                  <div className="text-end">
+                    <div className="text-3xl font-bold">
+                      {formatCurrency(parseFloat(selectedPlan.price), selectedPlan.currency)}
+                    </div>
+                    <div className="text-sm text-base-content/60">
+                      / {selectedPlan.billingCycle}
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <button
+                onClick={handleStartPayment}
+                disabled={startPaymentMutation.isPending || isFree}
+                className="btn btn-primary btn-lg btn-block"
+              >
+                {startPaymentMutation.isPending ? (
+                  <>
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    {tCommon('loading')}
+                  </>
+                ) : (
+                  <>
+                    <CreditCard className="w-5 h-5" />
+                    {tOnboarding('payment.payNow')}
+                  </>
+                )}
+              </button>
+
+              {startPaymentMutation.isError && (
+                <div className="alert alert-error mt-4">
+                  <AlertCircle className="w-5 h-5" />
+                  <span>{startPaymentMutation.error.message}</span>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+      </div>
+      </OnboardingLayout>
+    )
+  }
+
+  // Regular payment page
+  return (
+    <OnboardingLayout>
+      <div className="max-w-2xl mx-auto">
+        {selectedPlan && (
+        <div className="card bg-base-100 border border-base-300 shadow-xl">
+          <div className="card-body">
+            <h2 className="card-title text-2xl mb-4">
+              {tOnboarding('payment.title')}
+            </h2>
+
+            <div className="bg-base-200 rounded-lg p-6 mb-6">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h3 className="text-xl font-semibold">{selectedPlan.name}</h3>
+                  {selectedPlan.description && (
+                    <p className="text-sm text-base-content/70 mt-1">
+                      {selectedPlan.description}
+                    </p>
+                  )}
+                </div>
+                <div className="text-end">
+                  <div className="text-3xl font-bold">
+                    {formatCurrency(parseFloat(selectedPlan.price), selectedPlan.currency)}
+                  </div>
+                  <div className="text-sm text-base-content/60">
+                    / {selectedPlan.billingCycle}
+                  </div>
+                </div>
+              </div>
+            </div>
+
+            <button
+              onClick={handleStartPayment}
+              disabled={startPaymentMutation.isPending || isFree}
+              className="btn btn-primary btn-lg btn-block"
+            >
+              {startPaymentMutation.isPending ? (
+                <>
+                  <Loader2 className="w-5 h-5 animate-spin" />
+                  {tCommon('loading')}
+                </>
+              ) : (
+                <>
+                  <CreditCard className="w-5 h-5" />
+                  {tOnboarding('payment.payNow')}
+                </>
+              )}
+            </button>
+
+            {startPaymentMutation.isError && (
+              <div className="alert alert-error mt-4">
+                <AlertCircle className="w-5 h-5" />
+                <span>{startPaymentMutation.error.message}</span>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+      </div>
     </OnboardingLayout>
-  );
+  )
 }

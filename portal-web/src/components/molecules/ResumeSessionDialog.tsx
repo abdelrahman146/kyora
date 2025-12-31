@@ -1,13 +1,13 @@
-import { useTranslation } from 'react-i18next';
-import { Dialog } from '@/components/atoms/Dialog';
+import { useTranslation } from 'react-i18next'
+import { Dialog } from '../atoms/Dialog'
 
 interface ResumeSessionDialogProps {
-  open: boolean;
-  onResume: () => void | Promise<void>;
-  onStartFresh: () => void | Promise<void>;
-  email?: string;
-  stage?: string;
-  isLoading?: boolean;
+  open: boolean
+  onResume: () => void | Promise<void>
+  onStartFresh: () => void | Promise<void>
+  email?: string
+  stage?: string
+  isLoading?: boolean
 }
 
 /**
@@ -22,17 +22,18 @@ export function ResumeSessionDialog({
   stage,
   isLoading = false,
 }: ResumeSessionDialogProps) {
-  const { t } = useTranslation(['onboarding', 'common']);
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
 
   // Format stage for display
   const stageLabel = stage
-    ? t(`onboarding:stages.${stage}`, { defaultValue: stage })
-    : t('common:unknown');
+    ? tOnboarding(`stages.${stage}`, { defaultValue: stage })
+    : tCommon('unknown')
 
   return (
     <Dialog
       open={open}
-      title={t('onboarding:resumeSession.title')}
+      title={tOnboarding('resumeSession.title')}
       size="md"
       showCloseButton={false}
       closeOnBackdrop={false}
@@ -43,45 +44,41 @@ export function ResumeSessionDialog({
             className="btn btn-ghost"
             disabled={isLoading}
           >
-            {t('common:startFresh')}
+            {tCommon('startFresh')}
           </button>
           <button
             onClick={() => void onResume()}
             className="btn btn-primary"
             disabled={isLoading}
           >
-            {isLoading && <span className="loading loading-spinner loading-sm"></span>}
-            {t('common:continue')}
+            {isLoading && (
+              <span className="loading loading-spinner loading-sm"></span>
+            )}
+            {tCommon('continue')}
           </button>
         </>
       }
     >
       <div>
-        <p className="mb-4">
-          {t('onboarding:resumeSession.message')}
-        </p>
-        
+        <p className="mb-4">{tOnboarding('resumeSession.message')}</p>
+
         {email && (
           <div className="rounded-lg bg-base-200 p-4 space-y-2">
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-base-content/70">
-                {t('common:email')}
+                {tCommon('email')}
               </span>
-              <span className="text-sm text-base-content">
-                {email}
-              </span>
+              <span className="text-sm text-base-content">{email}</span>
             </div>
             <div className="flex items-center justify-between">
               <span className="text-sm font-semibold text-base-content/70">
-                {t('onboarding:stage')}
+                {tOnboarding('stage')}
               </span>
-              <span className="text-sm text-base-content">
-                {stageLabel}
-              </span>
+              <span className="text-sm text-base-content">{stageLabel}</span>
             </div>
           </div>
         )}
       </div>
     </Dialog>
-  );
+  )
 }

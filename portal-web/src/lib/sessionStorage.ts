@@ -8,7 +8,7 @@
  * - Should only be used over HTTPS in production
  */
 
-const SESSION_TOKEN_KEY = "kyora_onboarding_session";
+const SESSION_TOKEN_KEY = 'kyora_onboarding_session'
 
 export const sessionStorage = {
   /**
@@ -17,9 +17,9 @@ export const sessionStorage = {
    */
   getToken(): string | null {
     try {
-      return localStorage.getItem(SESSION_TOKEN_KEY);
+      return localStorage.getItem(SESSION_TOKEN_KEY)
     } catch {
-      return null;
+      return null
     }
   },
 
@@ -29,7 +29,7 @@ export const sessionStorage = {
    */
   setToken(token: string): void {
     try {
-      localStorage.setItem(SESSION_TOKEN_KEY, token);
+      localStorage.setItem(SESSION_TOKEN_KEY, token)
     } catch {
       // Silent fail - storage might not be available
     }
@@ -40,7 +40,7 @@ export const sessionStorage = {
    */
   clearToken(): void {
     try {
-      localStorage.removeItem(SESSION_TOKEN_KEY);
+      localStorage.removeItem(SESSION_TOKEN_KEY)
     } catch {
       // Silent fail
     }
@@ -51,6 +51,6 @@ export const sessionStorage = {
    * @returns true if a token is stored
    */
   hasToken(): boolean {
-    return this.getToken() !== null;
+    return this.getToken() !== null
   },
-};
+}

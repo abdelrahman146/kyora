@@ -1,100 +1,101 @@
-import { useEffect, useState, useRef, useId, type ReactNode } from "react";
-import { X } from "lucide-react";
-import { useMediaQuery } from "../../hooks/useMediaQuery";
-import { useTranslation } from "react-i18next";
+import { useEffect, useId, useRef, useState } from 'react'
+import { X } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
+import type { ReactNode } from 'react'
 
 export interface BottomSheetProps {
   /** Controls the open/closed state of the drawer */
-  isOpen: boolean;
+  isOpen: boolean
 
   /** Callback fired when the drawer should close */
-  onClose: () => void;
+  onClose: () => void
 
   /** Title displayed in the header */
-  title?: string;
+  title?: string
 
   /** Main content of the drawer */
-  children: ReactNode;
+  children: ReactNode
 
   /** Optional footer content (buttons, actions, etc.) */
-  footer?: ReactNode;
+  footer?: ReactNode
 
-  /** 
+  /**
    * Side where the drawer appears on desktop
    * - 'start': Left in LTR, Right in RTL
    * - 'end': Right in LTR, Left in RTL
    * @default 'end'
    */
-  side?: "start" | "end";
+  side?: 'start' | 'end'
 
   /**
    * Maximum width of the drawer on desktop
    * @default 'md' (28rem / 448px)
    */
-  size?: "sm" | "md" | "lg" | "xl" | "full";
+  size?: 'sm' | 'md' | 'lg' | 'xl' | 'full'
 
   /**
    * Whether clicking the overlay closes the drawer
    * @default true
    */
-  closeOnOverlayClick?: boolean;
+  closeOnOverlayClick?: boolean
 
   /**
    * Whether pressing Escape closes the drawer
    * @default true
    */
-  closeOnEscape?: boolean;
+  closeOnEscape?: boolean
 
   /**
    * Whether to show the header
    * @default true
    */
-  showHeader?: boolean;
+  showHeader?: boolean
 
   /**
    * Whether to show the close button in header
    * @default true
    */
-  showCloseButton?: boolean;
+  showCloseButton?: boolean
 
   /**
    * Custom header content (overrides title)
    */
-  header?: ReactNode;
+  header?: ReactNode
 
   /**
    * Additional CSS classes for the drawer container
    */
-  className?: string;
+  className?: string
 
   /**
    * Additional CSS classes for the content area
    */
-  contentClassName?: string;
+  contentClassName?: string
 
   /**
    * Additional CSS classes for the footer area
    */
-  footerClassName?: string;
+  footerClassName?: string
 
   /**
    * ARIA label for accessibility
    */
-  ariaLabel?: string;
+  ariaLabel?: string
 
   /**
    * ID for aria-labelledby (references the title element)
    */
-  ariaLabelledBy?: string;
+  ariaLabelledBy?: string
 }
 
 const sizeClasses = {
-  sm: "max-w-sm",
-  md: "max-w-md",
-  lg: "max-w-lg",
-  xl: "max-w-xl",
-  full: "max-w-full",
-};
+  sm: 'max-w-sm',
+  md: 'max-w-md',
+  lg: 'max-w-lg',
+  xl: 'max-w-xl',
+  full: 'max-w-full',
+}
 
 export function BottomSheet({
   isOpen,
@@ -102,125 +103,127 @@ export function BottomSheet({
   title,
   children,
   footer,
-  side = "end",
-  size = "md",
+  side = 'end',
+  size = 'md',
   closeOnOverlayClick = true,
   closeOnEscape = true,
   showHeader = true,
   showCloseButton = true,
   header,
-  className = "",
-  contentClassName = "",
-  footerClassName = "",
+  className = '',
+  contentClassName = '',
+  footerClassName = '',
   ariaLabel,
   ariaLabelledBy,
 }: BottomSheetProps) {
-  const { t } = useTranslation();
-  const isMobile = useMediaQuery("(max-width: 768px)");
-  const [isAnimating, setIsAnimating] = useState(false);
-  const drawerRef = useRef<HTMLDivElement>(null);
-  const previousActiveElement = useRef<HTMLElement | null>(null);
-  const generatedId = useId();
+  const { t } = useTranslation()
+  const isMobile = useMediaQuery('(max-width: 768px)')
+  const [isAnimating, setIsAnimating] = useState(false)
+  const drawerRef = useRef<HTMLDivElement>(null)
+  const previousActiveElement = useRef<HTMLElement | null>(null)
+  const generatedId = useId()
 
   // Generate unique ID for aria-labelledby if title is provided
-  const titleId = ariaLabelledBy ?? (title ? `drawer-title-${generatedId}` : undefined);
+  const titleId =
+    ariaLabelledBy ?? (title ? `drawer-title-${generatedId}` : undefined)
 
   // Handle open/close animation with requestAnimationFrame to avoid cascading renders
   useEffect(() => {
     if (isOpen) {
       // Store the currently focused element to restore focus later
-      previousActiveElement.current = document.activeElement as HTMLElement;
+      previousActiveElement.current = document.activeElement as HTMLElement
 
       requestAnimationFrame(() => {
-        setIsAnimating(true);
+        setIsAnimating(true)
         // Focus the drawer after animation starts
         requestAnimationFrame(() => {
-          drawerRef.current?.focus();
-        });
-      });
+          drawerRef.current?.focus()
+        })
+      })
     } else {
       requestAnimationFrame(() => {
-        setIsAnimating(false);
-      });
+        setIsAnimating(false)
+      })
 
       // Restore focus to the previously focused element
       if (previousActiveElement.current) {
-        previousActiveElement.current.focus();
-        previousActiveElement.current = null;
+        previousActiveElement.current.focus()
+        previousActiveElement.current = null
       }
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Prevent body scroll when drawer is open
   useEffect(() => {
     if (isOpen) {
-      const scrollBarWidth = window.innerWidth - document.documentElement.clientWidth;
-      document.body.style.overflow = "hidden";
-      document.body.style.paddingRight = `${String(scrollBarWidth)}px`;
+      const scrollBarWidth =
+        window.innerWidth - document.documentElement.clientWidth
+      document.body.style.overflow = 'hidden'
+      document.body.style.paddingRight = `${String(scrollBarWidth)}px`
     } else {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
     }
 
     return () => {
-      document.body.style.overflow = "";
-      document.body.style.paddingRight = "";
-    };
-  }, [isOpen]);
+      document.body.style.overflow = ''
+      document.body.style.paddingRight = ''
+    }
+  }, [isOpen])
 
   // Handle Escape key
   useEffect(() => {
-    if (!closeOnEscape || !isOpen) return;
+    if (!closeOnEscape || !isOpen) return
 
     const handleEscape = (e: KeyboardEvent) => {
-      if (e.key === "Escape") {
-        e.preventDefault();
-        onClose();
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        onClose()
       }
-    };
+    }
 
-    document.addEventListener("keydown", handleEscape);
+    document.addEventListener('keydown', handleEscape)
     return () => {
-      document.removeEventListener("keydown", handleEscape);
-    };
-  }, [isOpen, onClose, closeOnEscape]);
+      document.removeEventListener('keydown', handleEscape)
+    }
+  }, [isOpen, onClose, closeOnEscape])
 
   // Handle overlay click
   const handleOverlayClick = () => {
     if (closeOnOverlayClick) {
-      onClose();
+      onClose()
     }
-  };
+  }
 
   // Don't render anything if not open
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   // Determine drawer positioning classes
   const getDrawerClasses = () => {
     if (isMobile) {
       // Mobile: Bottom sheet
       return `bottom-0 start-0 end-0 rounded-t-2xl max-h-[85vh] ${
-        isAnimating ? "translate-y-0" : "translate-y-full"
-      }`;
+        isAnimating ? 'translate-y-0' : 'translate-y-full'
+      }`
     }
 
     // Desktop: Side drawer
-    const sideClass = side === "start" ? "start-0" : "end-0";
+    const sideClass = side === 'start' ? 'start-0' : 'end-0'
     const translateClass = isAnimating
-      ? "translate-x-0"
-      : side === "start"
-      ? "ltr:-translate-x-full rtl:translate-x-full"
-      : "ltr:translate-x-full rtl:-translate-x-full";
+      ? 'translate-x-0'
+      : side === 'start'
+        ? 'ltr:-translate-x-full rtl:translate-x-full'
+        : 'ltr:translate-x-full rtl:-translate-x-full'
 
-    return `top-0 ${sideClass} h-full w-full ${sizeClasses[size]} ${translateClass}`;
-  };
+    return `top-0 ${sideClass} h-full w-full ${sizeClasses[size]} ${translateClass}`
+  }
 
   return (
     <>
       {/* Backdrop Overlay */}
       <div
         className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
-          isAnimating ? "opacity-100" : "opacity-0"
+          isAnimating ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={handleOverlayClick}
         aria-hidden="true"
@@ -240,7 +243,10 @@ export function BottomSheet({
         {showHeader && (header ?? title) && (
           <div className="sticky top-0 bg-base-100 border-b border-base-300 px-4 py-4 flex items-center justify-between z-10">
             {header ?? (
-              <h2 id={titleId} className="text-lg font-semibold text-base-content">
+              <h2
+                id={titleId}
+                className="text-lg font-semibold text-base-content"
+              >
                 {title}
               </h2>
             )}
@@ -249,7 +255,7 @@ export function BottomSheet({
                 type="button"
                 onClick={onClose}
                 className="btn btn-ghost btn-sm btn-circle"
-                aria-label={t("common.close")}
+                aria-label={t('common.close')}
               >
                 <X size={20} />
               </button>
@@ -262,11 +268,13 @@ export function BottomSheet({
 
         {/* Footer */}
         {footer && (
-          <div className={`sticky bottom-0 bg-base-100 border-t border-base-300 px-4 py-4 ${footerClassName}`}>
+          <div
+            className={`sticky bottom-0 bg-base-100 border-t border-base-300 px-4 py-4 ${footerClassName}`}
+          >
             {footer}
           </div>
         )}
       </div>
     </>
-  );
+  )
 }

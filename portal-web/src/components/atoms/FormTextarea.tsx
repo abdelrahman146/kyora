@@ -1,15 +1,20 @@
-import { forwardRef, useId, type TextareaHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { forwardRef, useId } from 'react'
+import { cn } from '../../lib/utils'
+import type { TextareaHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
-export interface FormTextareaProps extends Omit<TextareaHTMLAttributes<HTMLTextAreaElement>, "size"> {
-  label?: string;
-  error?: string;
-  helperText?: string;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "filled" | "ghost";
-  fullWidth?: boolean;
-  maxLength?: number;
-  showCount?: boolean;
+export interface FormTextareaProps extends Omit<
+  TextareaHTMLAttributes<HTMLTextAreaElement>,
+  'size'
+> {
+  label?: string
+  error?: unknown
+  helperText?: string
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'filled' | 'ghost'
+  fullWidth?: boolean
+  maxLength?: number
+  showCount?: boolean
 }
 
 /**
@@ -42,8 +47,8 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
       label,
       error,
       helperText,
-      size = "md",
-      variant = "default",
+      size = 'md',
+      variant = 'default',
       fullWidth = true,
       className,
       id,
@@ -54,27 +59,30 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
       value,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const generatedId = useId();
-    const inputId = id ?? generatedId;
+    const generatedId = useId()
+    const inputId = id ?? generatedId
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
-    const currentLength = typeof value === "string" ? value.length : 0;
+    const currentLength = typeof value === 'string' ? value.length : 0
 
     const sizeClasses = {
-      sm: "min-h-[88px] text-sm",
-      md: "min-h-[120px] text-base",
-      lg: "min-h-[160px] text-lg",
-    };
+      sm: 'min-h-[88px] text-sm',
+      md: 'min-h-[120px] text-base',
+      lg: 'min-h-[160px] text-lg',
+    }
 
     const variantClasses = {
-      default: "textarea-bordered bg-base-100",
-      filled: "textarea-bordered bg-base-200/50 border-transparent focus:bg-base-100",
-      ghost: "textarea-ghost bg-transparent",
-    };
+      default: 'textarea-bordered bg-base-100',
+      filled:
+        'textarea-bordered bg-base-200/50 border-transparent focus:bg-base-100',
+      ghost: 'textarea-ghost bg-transparent',
+    }
 
     return (
-      <div className={cn("form-control", fullWidth && "w-full")}>
+      <div className={cn('form-control', fullWidth && 'w-full')}>
         {label && (
           <label htmlFor={inputId} className="label">
             <span className="label-text text-base-content/70 font-medium">
@@ -88,7 +96,7 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
             )}
           </label>
         )}
-        
+
         <textarea
           ref={ref}
           id={inputId}
@@ -97,37 +105,42 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
           maxLength={maxLength}
           value={value}
           className={cn(
-            "textarea w-full transition-all duration-200",
+            'textarea w-full transition-all duration-200',
             sizeClasses[size],
             variantClasses[variant],
-            "text-base-content text-start placeholder:text-base-content/40",
-            "focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20",
-            "resize-y",
-            error && "textarea-error border-error focus:border-error focus:ring-error/20",
-            disabled && "opacity-60 cursor-not-allowed",
-            className
+            'text-base-content text-start placeholder:text-base-content/40',
+            'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+            'resize-y',
+            hasError &&
+              'textarea-error border-error focus:border-error focus:ring-error/20',
+            disabled && 'opacity-60 cursor-not-allowed',
+            className,
           )}
-          aria-invalid={error ? "true" : "false"}
+          aria-invalid={hasError ? 'true' : 'false'}
           aria-describedby={
-            error ? `${inputId}-error` : helperText ? `${inputId}-helper` : undefined
+            hasError
+              ? `${inputId}-error`
+              : helperText
+                ? `${inputId}-helper`
+                : undefined
           }
           aria-required={required}
           {...props}
         />
-        
-        {error && (
+
+        {hasError && (
           <label className="label">
             <span
               id={`${inputId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
-        
-        {!error && helperText && (
+
+        {!hasError && helperText && (
           <label className="label">
             <span
               id={`${inputId}-helper`}
@@ -138,8 +151,8 @@ export const FormTextarea = forwardRef<HTMLTextAreaElement, FormTextareaProps>(
           </label>
         )}
       </div>
-    );
-  }
-);
+    )
+  },
+)
 
-FormTextarea.displayName = "FormTextarea";
+FormTextarea.displayName = 'FormTextarea'

@@ -1,21 +1,26 @@
-import { forwardRef, useId, type InputHTMLAttributes } from "react";
-import { cn } from "@/lib/utils";
+import { forwardRef, useId } from 'react'
+import { cn } from '../../lib/utils'
+import type { InputHTMLAttributes } from 'react'
+import { getErrorText } from '@/lib/formErrors'
 
 export interface FormRadioOption {
-  value: string;
-  label: string;
-  description?: string;
-  disabled?: boolean;
+  value: string
+  label: string
+  description?: string
+  disabled?: boolean
 }
 
-export interface FormRadioProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "type" | "size"> {
-  label?: string;
-  options: FormRadioOption[];
-  error?: string;
-  size?: "sm" | "md" | "lg";
-  variant?: "default" | "primary" | "secondary";
-  orientation?: "vertical" | "horizontal";
-  name: string;
+export interface FormRadioProps extends Omit<
+  InputHTMLAttributes<HTMLInputElement>,
+  'type' | 'size'
+> {
+  label?: string
+  options: Array<FormRadioOption>
+  error?: unknown
+  size?: 'sm' | 'md' | 'lg'
+  variant?: 'default' | 'primary' | 'secondary'
+  orientation?: 'vertical' | 'horizontal'
+  name: string
 }
 
 /**
@@ -52,31 +57,34 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
       label,
       options,
       error,
-      size = "md",
-      variant = "primary",
-      orientation = "vertical",
+      size = 'md',
+      variant = 'primary',
+      orientation = 'vertical',
       name,
       className,
       value: selectedValue,
       onChange,
       ...props
     },
-    ref
+    ref,
   ) => {
-    const generatedId = useId();
-    const groupId = `${generatedId}-group`;
+    const generatedId = useId()
+    const groupId = `${generatedId}-group`
+
+    const errorText = getErrorText(error)
+    const hasError = Boolean(errorText)
 
     const sizeClasses = {
-      sm: "radio-sm",
-      md: "radio-md",
-      lg: "radio-lg",
-    };
+      sm: 'radio-sm',
+      md: 'radio-md',
+      lg: 'radio-lg',
+    }
 
     const variantClasses = {
-      default: "",
-      primary: "radio-primary",
-      secondary: "radio-secondary",
-    };
+      default: '',
+      primary: 'radio-primary',
+      secondary: 'radio-secondary',
+    }
 
     return (
       <div className="form-control">
@@ -87,28 +95,29 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
             </span>
           </label>
         )}
-        
+
         <div
           role="radiogroup"
           aria-labelledby={label ? groupId : undefined}
-          aria-invalid={error ? "true" : "false"}
-          aria-describedby={error ? `${groupId}-error` : undefined}
+          aria-invalid={hasError ? 'true' : 'false'}
+          aria-describedby={hasError ? `${groupId}-error` : undefined}
           className={cn(
-            "flex gap-4",
-            orientation === "vertical" ? "flex-col" : "flex-row flex-wrap"
+            'flex gap-4',
+            orientation === 'vertical' ? 'flex-col' : 'flex-row flex-wrap',
           )}
         >
           {options.map((option) => {
-            const optionId = `${groupId}-${option.value}`;
-            const isChecked = selectedValue === option.value;
-            
+            const optionId = `${groupId}-${option.value}`
+            const isChecked = selectedValue === option.value
+
             return (
               <label
                 key={option.value}
                 htmlFor={optionId}
                 className={cn(
-                  "label cursor-pointer justify-start gap-3",
-                  (option.disabled ?? props.disabled) && "opacity-60 cursor-not-allowed"
+                  'label cursor-pointer justify-start gap-3',
+                  (option.disabled ?? props.disabled) &&
+                    'opacity-60 cursor-not-allowed',
                 )}
               >
                 <input
@@ -121,15 +130,15 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                   onChange={onChange}
                   disabled={option.disabled ?? props.disabled}
                   className={cn(
-                    "radio",
+                    'radio',
                     sizeClasses[size],
                     variantClasses[variant],
-                    error && "radio-error",
-                    className
+                    hasError && 'radio-error',
+                    className,
                   )}
                   {...props}
                 />
-                
+
                 <div className="flex flex-col gap-1">
                   <span className="label-text text-base-content font-medium">
                     {option.label}
@@ -141,24 +150,24 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                   )}
                 </div>
               </label>
-            );
+            )
           })}
         </div>
-        
-        {error && (
+
+        {hasError && (
           <label className="label">
             <span
               id={`${groupId}-error`}
               className="label-text-alt text-error"
               role="alert"
             >
-              {error}
+              {errorText}
             </span>
           </label>
         )}
       </div>
-    );
-  }
-);
+    )
+  },
+)
 
-FormRadio.displayName = "FormRadio";
+FormRadio.displayName = 'FormRadio'

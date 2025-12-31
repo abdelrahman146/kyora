@@ -1,5 +1,5 @@
 {
-  "projectName": "portal-v2",
+  "projectName": "portal-web",
   "mode": "file-router",
   "typescript": true,
   "tailwind": true,

@@ -1,35 +1,53 @@
-import { type HTMLAttributes } from 'react';
-import { cn } from '@/lib/utils';
+import type { ReactNode } from 'react'
+import { cn } from '@/lib/utils'
 
-export interface BadgeProps extends HTMLAttributes<HTMLSpanElement> {
-  variant?: 'default' | 'primary' | 'secondary' | 'success' | 'warning' | 'error' | 'info';
-  size?: 'sm' | 'md' | 'lg';
+export interface BadgeProps {
+  children: ReactNode
+  variant?:
+    | 'primary'
+    | 'secondary'
+    | 'success'
+    | 'error'
+    | 'warning'
+    | 'info'
+    | 'neutral'
+    | 'ghost'
+  size?: 'xs' | 'sm' | 'md' | 'lg'
+  outline?: boolean
+  className?: string
 }
 
-export const Badge = ({
-  variant = 'default',
-  size = 'md',
-  className,
+/**
+ * Badge Component
+ *
+ * Small status/label indicator using daisyUI badge classes.
+ */
+export function Badge({
   children,
-  ...props
-}: BadgeProps) => {
-  const baseClasses = 'badge inline-flex items-center justify-center font-medium';
+  variant = 'neutral',
+  size = 'md',
+  outline = false,
+  className,
+}: BadgeProps) {
+  const baseClasses = 'badge'
 
   const variantClasses = {
-    default: 'badge-neutral',
     primary: 'badge-primary',
     secondary: 'badge-secondary',
     success: 'badge-success',
-    warning: 'badge-warning',
     error: 'badge-error',
+    warning: 'badge-warning',
     info: 'badge-info',
-  };
+    neutral: 'badge-neutral',
+    ghost: 'badge-ghost',
+  }
 
   const sizeClasses = {
-    sm: 'badge-sm text-xs px-2 py-0.5',
-    md: 'badge-md text-sm px-3 py-1',
-    lg: 'badge-lg text-base px-4 py-1.5',
-  };
+    xs: 'badge-xs',
+    sm: 'badge-sm',
+    md: 'badge-md',
+    lg: 'badge-lg',
+  }
 
   return (
     <span
@@ -37,14 +55,11 @@ export const Badge = ({
         baseClasses,
         variantClasses[variant],
         sizeClasses[size],
-        'rounded-sm',
-        className
+        outline && 'badge-outline',
+        className,
       )}
-      {...props}
     >
       {children}
     </span>
-  );
-};
-
-Badge.displayName = 'Badge';
+  )
+}

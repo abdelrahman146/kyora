@@ -1,82 +1,82 @@
-import i18n from "i18next";
-import { initReactI18next } from "react-i18next";
-import ar from "./locales/ar/translation.json";
-import en from "./locales/en/translation.json";
-import arErrors from "./locales/ar/errors.json";
-import enErrors from "./locales/en/errors.json";
-import arCommon from "./locales/ar/common.json";
-import enCommon from "./locales/en/common.json";
-import arOnboarding from "./locales/ar/onboarding.json";
-import enOnboarding from "./locales/en/onboarding.json";
-import { getCookie } from "../lib/cookies";
+import i18n from 'i18next'
+import { initReactI18next } from 'react-i18next'
+import arCommon from './ar/common.json'
+import arErrors from './ar/errors.json'
+import arOnboarding from './ar/onboarding.json'
+import arTranslation from './ar/translation.json'
+import enCommon from './en/common.json'
+import enErrors from './en/errors.json'
+import enOnboarding from './en/onboarding.json'
+import enTranslation from './en/translation.json'
+import { getCookie } from '@/lib/cookies'
 
 /**
  * Detect initial language from cookie or browser
  * Priority: 1. Cookie, 2. Browser (if Arabic), 3. English fallback
  */
-function detectLanguage(): "ar" | "en" {
+function detectLanguage(): 'ar' | 'en' {
   // 1. Check cookie for saved preference
-  const savedLanguage = getCookie("kyora_language");
-  if (savedLanguage === "ar" || savedLanguage === "en") {
-    return savedLanguage;
+  const savedLanguage = getCookie('kyora_language')
+  if (savedLanguage === 'ar' || savedLanguage === 'en') {
+    return savedLanguage
   }
 
   // 2. Check browser language
-  const primaryLang = navigator.language.split("-")[0];
-  if (primaryLang === "ar") {
-    return "ar";
+  const primaryLang = navigator.language.split('-')[0]
+  if (primaryLang === 'ar') {
+    return 'ar'
   }
 
   // Check all preferred languages
   const languages =
-    navigator.languages.length > 0 ? navigator.languages : [navigator.language];
+    navigator.languages.length > 0 ? navigator.languages : [navigator.language]
   for (const lang of languages) {
-    const code = lang.split("-")[0];
-    if (code === "ar") {
-      return "ar";
+    const code = lang.split('-')[0]
+    if (code === 'ar') {
+      return 'ar'
     }
   }
 
   // 3. Default to English
-  return "en";
+  return 'en'
 }
 
 // Detect language from cookie or browser
-const detectedLanguage = detectLanguage();
+const detectedLanguage = detectLanguage()
 
 // Initialize document attributes before i18n loads
-document.documentElement.lang = detectedLanguage;
-document.documentElement.dir = detectedLanguage === "ar" ? "rtl" : "ltr";
+document.documentElement.lang = detectedLanguage
+document.documentElement.dir = detectedLanguage === 'ar' ? 'rtl' : 'ltr'
 
 // Initialize i18next with detected language
 void i18n.use(initReactI18next).init({
   resources: {
     ar: {
-      translation: ar,
-      errors: arErrors,
       common: arCommon,
+      errors: arErrors,
       onboarding: arOnboarding,
+      translation: arTranslation,
     },
     en: {
-      translation: en,
-      errors: enErrors,
       common: enCommon,
+      errors: enErrors,
       onboarding: enOnboarding,
+      translation: enTranslation,
     },
   },
   lng: detectedLanguage,
-  fallbackLng: "en",
-  defaultNS: "translation",
-  ns: ["translation", "errors", "common", "onboarding"],
+  fallbackLng: 'en',
+  defaultNS: 'translation',
+  ns: ['translation', 'errors', 'common', 'onboarding'],
   interpolation: {
     escapeValue: false,
   },
-});
+})
 
 // Listen for language changes and update document attributes
-i18n.on("languageChanged", (lng) => {
-  document.documentElement.dir = lng === "ar" ? "rtl" : "ltr";
-  document.documentElement.lang = lng;
-});
+i18n.on('languageChanged', (lng) => {
+  document.documentElement.dir = lng === 'ar' ? 'rtl' : 'ltr'
+  document.documentElement.lang = lng
+})
 
-export default i18n;
+export default i18n

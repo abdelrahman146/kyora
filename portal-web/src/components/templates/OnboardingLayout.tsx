@@ -1,58 +1,60 @@
-import { type ReactNode } from "react";
-import { useTranslation } from "react-i18next";
-import { LanguageSwitcher } from "../molecules/LanguageSwitcher";
+import { useRouterState } from '@tanstack/react-router'
+import { useTranslation } from 'react-i18next'
+import { LanguageSwitcher } from '../molecules/LanguageSwitcher'
+import type { ReactNode } from 'react'
 
-interface OnboardingLayoutProps {
-  children: ReactNode;
-  currentStep?: number;
-  totalSteps?: number;
-  showProgress?: boolean;
-}
 
 /**
- * OnboardingLayout Component
+ * OnboardingLayout Template
  *
- * Simple, focused layout for the onboarding flow without sidebar navigation.
+ * Minimal layout for onboarding flow with:
+ * - Progress bar showing completion percentage
+ * - Language switcher (icon-only variant)
+ * - Children content for step content
+ * - Clean, distraction-free design matching portal-web
  *
- * Features:
- * - Clean, distraction-free layout
- * - Progress indicator (optional)
- * - Language switcher in header
- * - Mobile-first responsive design
- * - RTL support with logical properties
- * - Smooth animations and transitions
- * - Safe area padding for mobile devices
- *
- * Layout Structure:
- * ```
- * ┌────────────────────────────────────┐
- * │    Header (Logo + Lang Switch)    │
- * ├────────────────────────────────────┤
- * │    Progress Bar (if enabled)      │
- * ├────────────────────────────────────┤
- * │                                    │
- * │         Content Area               │
- * │      (Centered, Scrollable)        │
- * │                                    │
- * └────────────────────────────────────┘
- * ```
- *
- * @example
- * ```tsx
- * <OnboardingLayout currentStep={2} totalSteps={5} showProgress>
- *   <PlanSelectionStep />
- * </OnboardingLayout>
- * ```
+ * Progress stages:
+ * 1. Plan selection (16%)
+ * 2. Email verification (33%)
+ * 3. Identity verified (50%)
+ * 4. Business setup (66%)
+ * 5. Payment (83%)
+ * 6. Complete (100%)
  */
-export function OnboardingLayout({
-  children,
-  currentStep = 0,
-  totalSteps = 5,
-  showProgress = true,
-}: OnboardingLayoutProps) {
-  const { t } = useTranslation(["onboarding", "common"]);
 
-  const progressPercentage = totalSteps > 0 ? (currentStep / totalSteps) * 100 : 0;
+interface OnboardingLayoutProps {
+  children: ReactNode
+}
+
+export function OnboardingLayout({ children }: OnboardingLayoutProps) {
+  const { t: tOnboarding } = useTranslation('onboarding')
+  const { t: tCommon } = useTranslation('common')
+
+  const pathname = useRouterState({
+    select: (s: { location: { pathname: string } }) => s.location.pathname,
+  })
+
+  const totalSteps = 5
+  const currentStep = (() => {
+    switch (pathname) {
+      case '/onboarding/email':
+        return 1
+      case '/onboarding/verify':
+        return 2
+      case '/onboarding/business':
+        return 3
+      case '/onboarding/payment':
+        return 4
+      case '/onboarding/complete':
+        return 5
+      default:
+        return 0
+    }
+  })()
+
+  const showProgress = pathname !== '/onboarding/plan' && currentStep > 0
+
+  const progressPercentage = Math.round((currentStep / totalSteps) * 100)
 
   return (
     <div className="min-h-screen bg-linear-to-br from-base-100 to-base-200 flex flex-col">
@@ -73,12 +75,15 @@ export function OnboardingLayout({
       </header>
 
       {/* Progress Bar */}
-      {showProgress && totalSteps > 0 && (
+      {showProgress && (
         <div className="bg-base-100/80 backdrop-blur-md">
           <div className="container mx-auto px-4 pb-4 max-w-7xl">
             <div className="flex items-center gap-3">
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
-                {t("onboarding:progress.step", { current: currentStep, total: totalSteps })}
+                {tOnboarding('progress.step', {
+                  current: currentStep,
+                  total: totalSteps,
+                })}
               </span>
               <div className="flex-1 h-2 bg-base-300 rounded-full overflow-hidden">
                 <div
@@ -88,11 +93,13 @@ export function OnboardingLayout({
                   aria-valuenow={currentStep}
                   aria-valuemin={0}
                   aria-valuemax={totalSteps}
-                  aria-label={t("onboarding:progress.label", { percentage: Math.round(progressPercentage) })}
+                  aria-label={tOnboarding('progress.label', {
+                    percentage: progressPercentage,
+                  })}
                 />
               </div>
               <span className="text-sm text-base-content/70 font-medium whitespace-nowrap">
-                {Math.round(progressPercentage)}%
+                {progressPercentage}%
               </span>
             </div>
           </div>
@@ -113,7 +120,10 @@ export function OnboardingLayout({
         <div className="container mx-auto px-4 max-w-7xl">
           <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-base-content/60">
             <p>
-              {t("common:copyright", { year: new Date().getFullYear(), company: "Kyora" })}
+              {tCommon('copyright', {
+                year: new Date().getFullYear(),
+                company: 'Kyora',
+              })}
             </p>
             <div className="flex gap-4">
               <a
@@ -122,7 +132,7 @@ export function OnboardingLayout({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t("common:privacy")}
+                {tCommon('privacy')}
               </a>
               <a
                 href="/terms"
@@ -130,7 +140,7 @@ export function OnboardingLayout({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t("common:terms")}
+                {tCommon('terms')}
               </a>
               <a
                 href="/support"
@@ -138,12 +148,12 @@ export function OnboardingLayout({
                 target="_blank"
                 rel="noopener noreferrer"
               >
-                {t("common:support")}
+                {tCommon('support')}
               </a>
             </div>
           </div>
         </div>
       </footer>
     </div>
-  );
+  )
 }
