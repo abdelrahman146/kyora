@@ -140,5 +140,15 @@
     "decrementHours": "تقليل الساعات",
     "incrementMinutes": "زيادة الدقائق",
     "decrementMinutes": "تقليل الدقائق"
+  },
+  "array": {
+    "addItem": "إضافة عنصر",
+    "removeItem": "إزالة عنصر",
+    "moveUp": "تحريك لأعلى",
+    "moveDown": "تحريك لأسفل",
+    "noItems": "لا توجد عناصر بعد",
+    "maxItemsReached": "تم الوصول إلى الحد الأقصى من العناصر",
+    "dragToReorder": "اسحب لإعادة الترتيب",
+    "item": "العنصر {{index}}"
   }
 }

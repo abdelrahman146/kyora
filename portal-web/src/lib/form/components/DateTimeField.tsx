@@ -1,6 +1,8 @@
+import type { DatePickerProps } from '@/components/atoms/DatePicker'
+import type { TimePickerProps } from '@/components/atoms/TimePicker'
 import { useFieldContext } from '@/lib/form/contexts'
-import { DatePicker, type DatePickerProps } from '@/components/atoms/DatePicker'
-import { TimePicker, type TimePickerProps } from '@/components/atoms/TimePicker'
+import { DatePicker } from '@/components/atoms/DatePicker'
+import { TimePicker } from '@/components/atoms/TimePicker'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
 
@@ -34,12 +36,18 @@ export interface DateTimeFieldProps {
   /**
    * Props to pass to the DatePicker (when mode includes date)
    */
-  datePickerProps?: Omit<DatePickerProps, 'value' | 'onChange' | 'onBlur' | 'error' | 'label'>
+  datePickerProps?: Omit<
+    DatePickerProps,
+    'value' | 'onChange' | 'onBlur' | 'error' | 'label'
+  >
 
   /**
    * Props to pass to the TimePicker (when mode includes time)
    */
-  timePickerProps?: Omit<TimePickerProps, 'value' | 'onChange' | 'onBlur' | 'error' | 'label'>
+  timePickerProps?: Omit<
+    TimePickerProps,
+    'value' | 'onChange' | 'onBlur' | 'error' | 'label'
+  >
 
   /**
    * If true, field takes full width of container
@@ -102,7 +110,9 @@ export function DateTimeField({
   const field = useFieldContext<Date>()
   const isMobile = useMediaQuery('(max-width: 768px)')
 
-  const error = field.state.meta.isTouched ? field.state.meta.errors.join(', ') : undefined
+  const error = field.state.meta.isTouched
+    ? field.state.meta.errors.join(', ')
+    : undefined
 
   // Date-only mode
   if (mode === 'date') {
@@ -112,7 +122,9 @@ export function DateTimeField({
         label={showLabel ? label : undefined}
         helperText={helperText}
         value={field.state.value}
-        onChange={(date: Date | undefined) => field.handleChange(date ?? field.state.value)}
+        onChange={(date: Date | undefined) =>
+          field.handleChange(date ?? field.state.value)
+        }
         onBlur={field.handleBlur}
         error={error}
         fullWidth={fullWidth}
@@ -131,7 +143,9 @@ export function DateTimeField({
         label={showLabel ? label : undefined}
         helperText={helperText}
         value={field.state.value}
-        onChange={(date: Date | undefined) => field.handleChange(date ?? field.state.value)}
+        onChange={(date: Date | undefined) =>
+          field.handleChange(date ?? field.state.value)
+        }
         onBlur={field.handleBlur}
         error={error}
         fullWidth={fullWidth}
@@ -157,7 +171,7 @@ export function DateTimeField({
       <div
         className={cn(
           'flex gap-3',
-          isMobile ? 'flex-col' : 'flex-row items-start'
+          isMobile ? 'flex-col' : 'flex-row items-start',
         )}
       >
         {/* Date Picker */}
@@ -167,6 +181,7 @@ export function DateTimeField({
             value={field.state.value}
             onChange={(date: Date | undefined) => {
               // Preserve time when changing date
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               if (date && field.state.value) {
                 date.setHours(field.state.value.getHours())
                 date.setMinutes(field.state.value.getMinutes())
@@ -189,6 +204,7 @@ export function DateTimeField({
             value={field.state.value}
             onChange={(date: Date | undefined) => {
               // Preserve date when changing time
+              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               if (date && field.state.value) {
                 const newDate = new Date(field.state.value)
                 newDate.setHours(date.getHours())

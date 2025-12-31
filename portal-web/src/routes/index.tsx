@@ -12,7 +12,6 @@
  */
 
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import {
   BookOpen,
@@ -33,11 +32,7 @@ import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { requireAuth } from '@/lib/routeGuards'
-import {
-  businessStore,
-  selectBusiness,
-  setBusinesses,
-} from '@/stores/businessStore'
+import { selectBusiness, setBusinesses } from '@/stores/businessStore'
 
 /**
  * Home Route Configuration
@@ -61,7 +56,7 @@ export const Route = createFileRoute('/')({
 
     // Use businessQueries.list() for type-safe data fetching
     const response = await queryClient.ensureQueryData(businessQueries.list())
-    
+
     // Extract businesses array from response (ensureQueryData doesn't apply select)
     const businesses = response.businesses
 
@@ -120,7 +115,6 @@ function HomePage() {
   const { user, logout } = useAuth()
   const { isRTL } = useLanguage()
   const { businesses } = Route.useLoaderData()
-  const state = useStore(businessStore)
 
   const handleLogout = () => {
     void logout()
@@ -228,7 +222,9 @@ function HomePage() {
         {/* Businesses Section */}
         <section className="mb-8">
           <div className="mb-4 flex items-center justify-between">
-            <h2 className="text-xl font-semibold">{t('home.your_businesses')}</h2>
+            <h2 className="text-xl font-semibold">
+              {t('home.your_businesses')}
+            </h2>
             <button className="btn btn-primary btn-sm gap-2" disabled>
               <Plus size={18} />
               {t('home.add_business')}
@@ -269,7 +265,9 @@ function HomePage() {
                         className="shrink-0"
                       />
                       <div className="min-w-0 flex-1">
-                        <h3 className="truncate font-semibold">{business.name}</h3>
+                        <h3 className="truncate font-semibold">
+                          {business.name}
+                        </h3>
                         <p className="truncate text-sm text-base-content/60">
                           @{business.descriptor}
                         </p>
@@ -288,7 +286,9 @@ function HomePage() {
 
         {/* Quick Links Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold">{t('home.quick_links')}</h2>
+          <h2 className="mb-4 text-xl font-semibold">
+            {t('home.quick_links')}
+          </h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {quickLinks.map((link) => (
               <button
@@ -301,7 +301,9 @@ function HomePage() {
                     <link.icon size={24} className="text-primary" />
                     <h3 className="font-semibold">{link.label}</h3>
                   </div>
-                  <p className="text-sm text-base-content/60">{link.description}</p>
+                  <p className="text-sm text-base-content/60">
+                    {link.description}
+                  </p>
                   {link.disabled && (
                     <span className="badge badge-ghost badge-sm mt-2">
                       {t('common.coming_soon')}

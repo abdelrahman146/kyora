@@ -59,6 +59,23 @@
     "end_date_must_be_after_start_date": "End date must be after start date.",
     "outside_business_hours": "Time must be within business hours (9 AM - 5 PM)."
   },
+  "form": {
+    "minItemsRequired": "At least {{min}} item(s) required.",
+    "maxItemsExceeded": "Maximum {{max}} item(s) allowed.",
+    "duplicateValues": "Duplicate values are not allowed.",
+    "overlappingRanges": "Items have overlapping ranges.",
+    "invalidItem": "Item {{index}} is invalid.",
+    "atLeastOnePhone": "At least one phone number is required.",
+    "tooManyPhones": "Too many phone numbers. Maximum {{max}} allowed.",
+    "duplicateEmails": "Duplicate email addresses are not allowed.",
+    "overlappingTimeRanges": "Time ranges cannot overlap.",
+    "exactlyOnePrimary": "Exactly one primary item is required.",
+    "atLeastTwoAdmins": "At least two administrators are required.",
+    "invalidCount": "Invalid count of items.",
+    "countTooLow": "Not enough items matching the criteria.",
+    "countTooHigh": "Too many items matching the criteria.",
+    "noPrimary": "At least one item must be marked as primary."
+  },
   "auth": {
     "invalid_credentials": "Invalid email or password.",
     "session_expired": "Your session has expired. Please log in again.",

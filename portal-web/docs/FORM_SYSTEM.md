@@ -892,6 +892,422 @@ z.custom<DateRange>((val) => {
 - Focus trap within calendar
 - Keyboard navigation with screen reader announcements
 
+#### `<form.FieldArray>`
+
+Dynamic array field for managing lists of repeating items with drag-and-drop reordering, add/remove operations, and array-specific validations.
+
+```tsx
+<form.AppField
+  name="phoneNumbers"
+  validators={{
+    onChange: ({ value }) => {
+      // Validate min/max items
+      const minMaxError = validateArrayLength(value, {
+        min: 1,
+        max: 5,
+        minErrorKey: 'form.atLeastOnePhone',
+        maxErrorKey: 'form.tooManyPhones',
+      })
+      if (minMaxError) return minMaxError
+      
+      // Validate uniqueness
+      return validateUniqueValues(value, {
+        errorKey: 'form.duplicateEmails',
+      })
+    },
+  }}
+>
+  {(field) => (
+    <field.FieldArray
+      label="Phone Numbers"
+      addButtonLabel="Add Phone Number"
+      emptyMessage="No phone numbers yet"
+      minItems={1}
+      maxItems={5}
+      reorderable
+      defaultValue={{ number: '', type: 'mobile' }}
+      render={(item, operations, index) => (
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            value={item.number}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, number: e.target.value }
+              field.handleChange(updated)
+            }}
+            placeholder="Phone number"
+            className="input flex-1"
+          />
+          <select
+            value={item.type}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, type: e.target.value }
+              field.handleChange(updated)
+            }}
+            className="select"
+          >
+            <option value="mobile">Mobile</option>
+            <option value="home">Home</option>
+            <option value="work">Work</option>
+          </select>
+        </div>
+      )}
+    />
+  )}
+</form.AppField>
+```
+
+**Props:**
+- `label` (string): Field label
+- `addButtonLabel` (string): Label for add button (default: "Add Item")
+- `emptyMessage` (string): Message when array is empty
+- `minItems` (number): Minimum number of items
+- `maxItems` (number): Maximum number of items
+- `reorderable` (boolean): Enable drag-and-drop reordering
+- `defaultValue` (T): Default value for new items
+- `render` (function): Render function for each item
+  - `item`: Current item data
+  - `operations`: Object with `remove()`, `moveUp()`, `moveDown()` methods
+  - `index`: Item index
+
+**Features:**
+- Drag-and-drop reordering (via @dnd-kit)
+- Add/remove operations with keyboard support
+- Move up/down buttons (accessible alternative to drag-and-drop)
+- Empty state with add button
+- Max items warning (disables add button)
+- Array validation helpers (min/max items, unique values, cross-item validation)
+- Smooth animations (300ms transitions)
+- RTL support (drag handles positioned correctly)
+- Touch-optimized (50px minimum touch targets)
+- Keyboard navigation (Tab, Space/Enter for drag, Arrow keys for reorder)
+- Screen reader accessible (live regions, ARIA labels)
+
+**Array Validation Utilities:**
+
+The form system provides comprehensive validation utilities for array fields:
+
+```typescript
+import {
+  validateArrayLength,
+  validateUniqueValues,
+  validateArrayItems,
+  validateNoOverlap,
+  validateArrayConditionally,
+  validateArrayAnd,
+  validateArrayOr,
+  validateArrayCount,
+} from '@/lib/form'
+
+// 1. Min/Max Items Validation
+validators: {
+  onChange: ({ value }) => validateArrayLength(value, {
+    min: 1,
+    max: 10,
+    minErrorKey: 'form.atLeastOnePhone',
+    maxErrorKey: 'form.tooManyPhones',
+  })
+}
+
+// 2. Unique Values Validation
+validators: {
+  onChange: ({ value }) => {
+    // Simple string array
+    return validateUniqueValues(value, {
+      errorKey: 'form.duplicateEmails',
+    })
+    
+    // Object array with extractor
+    return validateUniqueValues(value, {
+      extractor: (item) => item.email,
+      errorKey: 'form.duplicateEmails',
+    })
+  }
+}
+
+// 3. Per-Item Validation
+validators: {
+  onChange: ({ value }) => validateArrayItems(value, (item, index) => {
+    if (!item.name) return 'form.nameRequired'
+    if (item.price < 0) return 'form.priceNegative'
+    return undefined
+  })
+}
+
+// 4. Overlap Validation (e.g., time ranges)
+validators: {
+  onChange: ({ value }) => validateNoOverlap(value, {
+    extractor: (item) => ({ start: item.startTime, end: item.endTime }),
+    errorKey: 'form.overlappingTimeRanges',
+  })
+}
+
+// 5. Conditional Array Validation
+validators: {
+  onChange: ({ value, fieldApi }) => validateArrayConditionally(
+    value,
+    () => fieldApi.form.getFieldValue('hasPhoneSupport'),
+    (array) => validateArrayLength(array, {
+      min: 1,
+      minErrorKey: 'form.atLeastOnePhone',
+    })
+  )
+}
+
+// 6. Combine Validators (AND logic)
+validators: {
+  onChange: ({ value }) => validateArrayAnd(value, [
+    (array) => validateArrayLength(array, { min: 1, max: 10 }),
+    (array) => validateUniqueValues(array),
+    (array) => validateArrayItems(array, (item) => 
+      item.email?.includes('@') ? undefined : 'form.invalidEmail'
+    ),
+  ])
+}
+
+// 7. Combine Validators (OR logic - at least one must pass)
+validators: {
+  onChange: ({ value }) => validateArrayOr(value, [
+    (array) => validateArrayLength(array, { min: 1 }),
+    (array) => array.some(item => item.isPrimary) ? undefined : 'form.noPrimary',
+  ])
+}
+
+// 8. Count Validation (e.g., exactly one primary)
+validators: {
+  onChange: ({ value }) => validateArrayCount(value, {
+    extractor: (item) => item.isPrimary,
+    matchValue: true,
+    exactCount: 1,
+    errorKey: 'form.exactlyOnePrimary',
+  })
+}
+```
+
+**Common Use Cases:**
+
+**1. Contact List with Multiple Phones:**
+```tsx
+<form.AppField
+  name="phoneNumbers"
+  validators={{
+    onChange: ({ value }) => validateArrayAnd(value, [
+      (array) => validateArrayLength(array, {
+        min: 1,
+        minErrorKey: 'form.atLeastOnePhone',
+      }),
+      (array) => validateUniqueValues(array, {
+        extractor: (item) => item.number,
+        errorKey: 'form.duplicatePhones',
+      }),
+    ]),
+  }}
+>
+  {(field) => (
+    <field.FieldArray
+      label="Phone Numbers"
+      addButtonLabel="Add Phone"
+      minItems={1}
+      maxItems={3}
+      defaultValue={{ number: '', type: 'mobile', isPrimary: false }}
+      render={(item, operations, index) => (
+        <div className="flex gap-2">
+          <input
+            type="tel"
+            value={item.number}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, number: e.target.value }
+              field.handleChange(updated)
+            }}
+            placeholder="+1 (555) 123-4567"
+            className="input flex-1"
+          />
+          <label className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              checked={item.isPrimary}
+              onChange={(e) => {
+                const updated = field.state.value.map((phone, i) => ({
+                  ...phone,
+                  isPrimary: i === index ? e.target.checked : false,
+                }))
+                field.handleChange(updated)
+              }}
+            />
+            Primary
+          </label>
+        </div>
+      )}
+    />
+  )}
+</form.AppField>
+```
+
+**2. Order Items with Quantity and Price:**
+```tsx
+<form.AppField
+  name="orderItems"
+  validators={{
+    onChange: ({ value }) => validateArrayAnd(value, [
+      (array) => validateArrayLength(array, { min: 1 }),
+      (array) => validateArrayItems(array, (item) => {
+        if (!item.productId) return 'form.productRequired'
+        if (item.quantity <= 0) return 'form.quantityInvalid'
+        if (item.price < 0) return 'form.priceInvalid'
+        return undefined
+      }),
+    ]),
+  }}
+>
+  {(field) => (
+    <field.FieldArray
+      label="Order Items"
+      addButtonLabel="Add Item"
+      reorderable
+      defaultValue={{ productId: '', quantity: 1, price: 0 }}
+      render={(item, operations, index) => (
+        <div className="grid grid-cols-3 gap-2">
+          <select
+            value={item.productId}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, productId: e.target.value }
+              field.handleChange(updated)
+            }}
+            className="select"
+          >
+            <option value="">Select Product</option>
+            {products.map((p) => (
+              <option key={p.id} value={p.id}>{p.name}</option>
+            ))}
+          </select>
+          <input
+            type="number"
+            min="1"
+            value={item.quantity}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, quantity: parseInt(e.target.value) }
+              field.handleChange(updated)
+            }}
+            placeholder="Qty"
+            className="input"
+          />
+          <input
+            type="number"
+            min="0"
+            step="0.01"
+            value={item.price}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, price: parseFloat(e.target.value) }
+              field.handleChange(updated)
+            }}
+            placeholder="Price"
+            className="input"
+          />
+        </div>
+      )}
+    />
+  )}
+</form.AppField>
+```
+
+**3. Time Range Scheduling with Overlap Validation:**
+```tsx
+<form.AppField
+  name="timeRanges"
+  validators={{
+    onChange: ({ value }) => validateArrayAnd(value, [
+      (array) => validateArrayLength(array, { min: 1, max: 10 }),
+      (array) => validateNoOverlap(array, {
+        extractor: (item) => ({
+          start: new Date(`2024-01-01T${item.startTime}`),
+          end: new Date(`2024-01-01T${item.endTime}`),
+        }),
+        errorKey: 'form.overlappingTimeRanges',
+      }),
+      (array) => validateArrayItems(array, (item) => {
+        const start = new Date(`2024-01-01T${item.startTime}`)
+        const end = new Date(`2024-01-01T${item.endTime}`)
+        if (end <= start) return 'form.endBeforeStart'
+        return undefined
+      }),
+    ]),
+  }}
+>
+  {(field) => (
+    <field.FieldArray
+      label="Available Time Slots"
+      addButtonLabel="Add Time Slot"
+      reorderable
+      defaultValue={{ startTime: '09:00', endTime: '17:00' }}
+      render={(item, operations, index) => (
+        <div className="flex gap-2">
+          <input
+            type="time"
+            value={item.startTime}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, startTime: e.target.value }
+              field.handleChange(updated)
+            }}
+            className="input"
+          />
+          <span className="flex items-center">to</span>
+          <input
+            type="time"
+            value={item.endTime}
+            onChange={(e) => {
+              const updated = [...field.state.value]
+              updated[index] = { ...item, endTime: e.target.value }
+              field.handleChange(updated)
+            }}
+            className="input"
+          />
+        </div>
+      )}
+    />
+  )}
+</form.AppField>
+```
+
+**Drag-and-Drop Behavior:**
+- **Desktop**: Grab handle appears on hover (GripVertical icon)
+- **Mobile**: Tap and hold (300ms) to start dragging
+- **Keyboard**: Tab to handle → Space/Enter to grab → Arrow Up/Down to move → Space/Enter to drop
+- **Visual Feedback**: Item dims and transforms during drag
+- **Smooth Animations**: 300ms easing transitions
+- **RTL Support**: Handle positioned correctly for Arabic layout
+
+**Translation Keys Used:**
+- `common.array.addItem`: "Add Item"
+- `common.array.removeItem`: "Remove Item"
+- `common.array.moveUp`: "Move Up"
+- `common.array.moveDown`: "Move Down"
+- `common.array.noItems`: "No items yet"
+- `common.array.maxItemsReached`: "Maximum items reached"
+- `common.array.dragToReorder`: "Drag to reorder"
+- `common.array.item`: "Item {{index}}"
+- `errors.form.minItemsRequired`: "At least {{min}} item(s) required."
+- `errors.form.maxItemsExceeded`: "Maximum {{max}} item(s) allowed."
+- `errors.form.duplicateValues`: "Duplicate values are not allowed."
+- `errors.form.overlappingRanges`: "Items have overlapping ranges."
+- `errors.form.invalidItem`: "Item {{index}} is invalid."
+
+**Accessibility:**
+- `role="list"` on container
+- `role="listitem"` on each item
+- `aria-label` on drag handle: "Drag to reorder"
+- `aria-label` on remove button: "Remove item {{index}}"
+- `aria-live="polite"` for add/remove announcements
+- Keyboard navigation (Tab, Space/Enter, Arrow keys)
+- Focus management (focus returns to appropriate element after operations)
+- Screen reader announcements for all operations
+
 #### `<form.SubmitButton>`
 
 Submit button with loading state.

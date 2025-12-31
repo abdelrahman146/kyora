@@ -54,9 +54,10 @@ import { fieldContext, formContext } from './contexts'
 import {
   CheckboxField,
   DateField,
-  DateTimeField,
   DateRangeField,
+  DateTimeField,
   ErrorInfo,
+  FieldArray,
   PasswordField,
   RadioField,
   SelectField,
@@ -89,6 +90,7 @@ const { useAppForm, withForm } = createFormHook({
     TimeField,
     DateTimeField,
     DateRangeField,
+    FieldArray,
     ErrorInfo,
   },
 

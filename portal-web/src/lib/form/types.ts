@@ -175,3 +175,41 @@ export type ValidationMode = 'onBlur' | 'onChange' | 'onSubmit' | 'onDynamic'
  * validation failures (400/422 responses)
  */
 export type ServerErrors = Record<string, string>
+
+/**
+ * Array item operations provided to render function in FieldArray
+ */
+export interface ArrayItemOperations {
+  /** Remove this item from the array */
+  remove: () => void
+  /** Move this item up in the list */
+  moveUp: () => void
+  /** Move this item down in the list */
+  moveDown: () => void
+}
+
+/**
+ * FieldArray specific props for dynamic array field management
+ */
+export interface FieldArrayProps<T = any> extends BaseFieldProps {
+  /** Minimum number of items required */
+  minItems?: number
+  /** Maximum number of items allowed */
+  maxItems?: number
+  /** Factory function to create new item with default values */
+  defaultValue?: () => T
+  /** Label for the add button */
+  addButtonLabel?: string
+  /** Message to show when array is empty */
+  emptyMessage?: string
+  /** Whether items can be reordered via drag-and-drop */
+  reorderable?: boolean
+  /** Helper text displayed below array field */
+  helperText?: string
+  /** Render function for each array item */
+  render: (
+    item: T,
+    index: number,
+    operations: ArrayItemOperations,
+  ) => React.ReactNode
+}

@@ -22,15 +22,13 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
   loader: async ({ location, context }) => {
     const { queryClient } = context as unknown as RouterContext
     const parsed = OAuthCallbackSearchSchema.parse(location.search)
-    
+
     // Preload session data
-    await queryClient.ensureQueryData(
-      onboardingQueries.session(parsed.session)
-    )
+    await queryClient.ensureQueryData(onboardingQueries.session(parsed.session))
   },
 
   component: OAuthCallbackPage,
-  
+
   errorComponent: ({ error }) => {
     const { t } = useTranslation('translation')
     return (
@@ -38,7 +36,9 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
         <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
           <div className="card-body">
             <h2 className="card-title text-error">{t('error.title')}</h2>
-            <p className="text-base-content/70">{error.message || t('error.generic')}</p>
+            <p className="text-base-content/70">
+              {error.message || t('error.generic')}
+            </p>
           </div>
         </div>
       </div>
@@ -58,8 +58,13 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
 function OAuthCallbackPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const navigate = useNavigate()
-  const { session: sessionToken, code, error, error_description } = Route.useSearch()
-  
+  const {
+    session: sessionToken,
+    code,
+    error,
+    error_description,
+  } = Route.useSearch()
+
   useSuspenseQuery(onboardingQueries.session(sessionToken))
   const oauthMutation = useOAuthGoogleMutation()
 
@@ -72,7 +77,7 @@ function OAuthCallbackPage() {
         setTimeout(() => {
           void navigate({
             to: '/onboarding/verify',
-            search: { sessionToken },
+            search: { session: sessionToken },
             replace: true,
           })
         }, 3000)
@@ -84,7 +89,7 @@ function OAuthCallbackPage() {
         setTimeout(() => {
           void navigate({
             to: '/onboarding/verify',
-            search: { sessionToken },
+            search: { session: sessionToken },
             replace: true,
           })
         }, 3000)
@@ -101,7 +106,7 @@ function OAuthCallbackPage() {
         // Navigate to business step on success
         void navigate({
           to: '/onboarding/business',
-          search: { sessionToken },
+          search: { session: sessionToken },
           replace: true,
         })
       } catch (err) {
@@ -109,7 +114,7 @@ function OAuthCallbackPage() {
         setTimeout(() => {
           void navigate({
             to: '/onboarding/verify',
-            search: { sessionToken },
+            search: { session: sessionToken },
             replace: true,
           })
         }, 3000)
@@ -138,7 +143,9 @@ function OAuthCallbackPage() {
                   {tOnboarding('oauth.errorTitle')}
                 </h2>
                 <p className="text-base-content/70 mb-4">
-                  {oauthError || oauthMutation.error?.message || tOnboarding('oauth.noCode')}
+                  {oauthError ||
+                    oauthMutation.error?.message ||
+                    tOnboarding('oauth.noCode')}
                 </p>
                 <p className="text-sm text-base-content/50">
                   {tOnboarding('oauth.redirecting')}

@@ -59,6 +59,23 @@
     "end_date_must_be_after_start_date": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.",
     "outside_business_hours": "يجب أن يكون الوقت ضمن ساعات العمل (9 صباحاً - 5 مساءً)."
   },
+  "form": {
+    "minItemsRequired": "مطلوب {{min}} عنصر على الأقل.",
+    "maxItemsExceeded": "الحد الأقصى {{max}} عنصر مسموح.",
+    "duplicateValues": "القيم المكررة غير مسموح بها.",
+    "overlappingRanges": "العناصر لها نطاقات متداخلة.",
+    "invalidItem": "العنصر {{index}} غير صالح.",
+    "atLeastOnePhone": "رقم هاتف واحد على الأقل مطلوب.",
+    "tooManyPhones": "أرقام هواتف كثيرة جداً. الحد الأقصى {{max}} مسموح.",
+    "duplicateEmails": "عناوين البريد الإلكتروني المكررة غير مسموح بها.",
+    "overlappingTimeRanges": "الفترات الزمنية لا يمكن أن تتداخل.",
+    "exactlyOnePrimary": "عنصر رئيسي واحد فقط مطلوب.",
+    "atLeastTwoAdmins": "مطلوب مديران على الأقل.",
+    "invalidCount": "عدد غير صالح من العناصر.",
+    "countTooLow": "عناصر غير كافية تطابق المعايير.",
+    "countTooHigh": "عناصر كثيرة جداً تطابق المعايير.",
+    "noPrimary": "يجب تحديد عنصر واحد على الأقل كرئيسي."
+  },
   "auth": {
     "invalid_credentials": "بريد إلكتروني أو كلمة مرور غير صحيحة.",
     "session_expired": "انتهت صلاحية جلستك. يرجى تسجيل الدخول مرة أخرى.",

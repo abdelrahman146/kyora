@@ -140,5 +140,15 @@
     "decrementHours": "Decrement hours",
     "incrementMinutes": "Increment minutes",
     "decrementMinutes": "Decrement minutes"
+  },
+  "array": {
+    "addItem": "Add Item",
+    "removeItem": "Remove Item",
+    "moveUp": "Move Up",
+    "moveDown": "Move Down",
+    "noItems": "No items yet",
+    "maxItemsReached": "Maximum items reached",
+    "dragToReorder": "Drag to reorder",
+    "item": "Item {{index}}"
   }
 }

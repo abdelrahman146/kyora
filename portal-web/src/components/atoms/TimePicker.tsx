@@ -255,7 +255,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
         <div
           className={cn(
             'flex items-center gap-1 input input-bordered transition-all duration-200',
-            sizeClasses[size as keyof typeof sizeClasses],
+            sizeClasses[size],
             error && 'input-error border-error focus-within:border-error focus-within:ring-error/20',
             disabled && 'opacity-50 cursor-not-allowed',
             className
