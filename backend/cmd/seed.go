@@ -598,7 +598,12 @@ func createBusinessWithRetries(ctx context.Context, svc *business.Service, owner
 			}
 			var logo *assetTypes.AssetReference
 			if decor.logoURL != "" {
-				logo = &assetTypes.AssetReference{URL: decor.logoURL}
+				// Generate both CDN and original URLs for logo
+				origURL := decor.logoURL
+				logo = &assetTypes.AssetReference{
+					URL:         decor.logoURL, // CDN URL (primary)
+					OriginalURL: &origURL,      // Storage URL (same for placeholder.pics)
+				}
 			}
 			created, err := svc.CreateBusiness(ctx, owner, &business.CreateBusinessInput{
 				Name:              cfg.BusinessName,
@@ -745,18 +750,43 @@ func seedInventoryData(ctx context.Context, svc *inventory.Service, owner *accou
 			standardPhotos := []string{placeholderVariantImageURL(name, "standard")}
 			premiumPhotos := []string{placeholderVariantImageURL(name, "premium")}
 
-			// Convert to AssetReference
+			// Convert to AssetReference with full CDN and thumbnail support
 			photoRefs := make([]assetTypes.AssetReference, len(photos))
 			for i, url := range photos {
-				photoRefs[i] = assetTypes.AssetReference{URL: url}
+				// Generate thumbnail URL (smaller dimension for placeholder.pics)
+				thumbURL := strings.Replace(url, "/800/600", "/512/512", 1)
+				origURL := url
+				thumbOrigURL := thumbURL
+				photoRefs[i] = assetTypes.AssetReference{
+					URL:                  url,           // CDN URL (primary)
+					OriginalURL:          &origURL,      // Storage URL (same for placeholder.pics)
+					ThumbnailURL:         &thumbURL,     // CDN thumbnail URL
+					ThumbnailOriginalURL: &thumbOrigURL, // Storage thumbnail URL
+				}
 			}
 			standardPhotoRefs := make([]assetTypes.AssetReference, len(standardPhotos))
 			for i, url := range standardPhotos {
-				standardPhotoRefs[i] = assetTypes.AssetReference{URL: url}
+				thumbURL := strings.Replace(url, "/800/600", "/512/512", 1)
+				origURL := url
+				thumbOrigURL := thumbURL
+				standardPhotoRefs[i] = assetTypes.AssetReference{
+					URL:                  url,
+					OriginalURL:          &origURL,
+					ThumbnailURL:         &thumbURL,
+					ThumbnailOriginalURL: &thumbOrigURL,
+				}
 			}
 			premiumPhotoRefs := make([]assetTypes.AssetReference, len(premiumPhotos))
 			for i, url := range premiumPhotos {
-				premiumPhotoRefs[i] = assetTypes.AssetReference{URL: url}
+				thumbURL := strings.Replace(url, "/800/600", "/512/512", 1)
+				origURL := url
+				thumbOrigURL := thumbURL
+				premiumPhotoRefs[i] = assetTypes.AssetReference{
+					URL:                  url,
+					OriginalURL:          &origURL,
+					ThumbnailURL:         &thumbURL,
+					ThumbnailOriginalURL: &thumbOrigURL,
+				}
 			}
 
 			p, err := svc.CreateProductWithVariants(ctx, owner, biz, &inventory.CreateProductWithVariantsRequest{

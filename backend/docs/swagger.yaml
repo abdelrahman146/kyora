@@ -938,25 +938,23 @@ definitions:
       totalRevenue:
         type: number
     type: object
-  asset.CompleteUploadResponse:
+  asset.CompleteMultipartUploadRequest:
     properties:
-      assetId:
-        type: string
-      publicUrl:
-        type: string
-      status:
-        $ref: '#/definitions/asset.Status'
+      parts:
+        items:
+          $ref: '#/definitions/asset.PartInfo'
+        minItems: 1
+        type: array
+    required:
+    - parts
     type: object
-  asset.CreateUploadRequest:
+  asset.FileUploadRequest:
     properties:
       contentType:
         maxLength: 128
         type: string
       fileName:
         maxLength: 255
-        type: string
-      idempotencyKey:
-        maxLength: 128
         type: string
       sizeBytes:
         type: integer
@@ -965,34 +963,103 @@ definitions:
     - fileName
     - sizeBytes
     type: object
-  asset.CreateUploadResponse:
+  asset.GenerateUploadURLsRequest:
+    properties:
+      files:
+        items:
+          $ref: '#/definitions/asset.FileUploadRequest'
+        maxItems: 50
+        minItems: 1
+        type: array
+    required:
+    - files
+    type: object
+  asset.GenerateUploadURLsResponse:
+    properties:
+      uploads:
+        items:
+          $ref: '#/definitions/asset.UploadDescriptor'
+        type: array
+    type: object
+  asset.PartInfo:
+    properties:
+      etag:
+        type: string
+      partNumber:
+        type: integer
+    type: object
+  asset.PartURLInfo:
+    properties:
+      partNumber:
+        type: integer
+      url:
+        type: string
+    type: object
+  asset.ThumbnailDescriptor:
     properties:
       assetId:
         type: string
-      expiresAt:
+      cdnUrl:
         type: string
-      publicUrl:
+      contentType:
         type: string
-      status:
-        $ref: '#/definitions/asset.Status'
-      upload:
-        $ref: '#/definitions/asset.UploadDescriptor'
-    type: object
-  asset.Status:
-    enum:
-    - pending
-    - ready
-    type: string
-    x-enum-varnames:
-    - StatusPending
-    - StatusReady
-  asset.UploadDescriptor:
-    properties:
+      fileName:
+        type: string
       headers:
         additionalProperties:
           type: string
         type: object
       method:
+        type: string
+      partSize:
+        type: integer
+      partUrls:
+        items:
+          $ref: '#/definitions/asset.PartURLInfo'
+        type: array
+      publicUrl:
+        type: string
+      totalParts:
+        type: integer
+      uploadId:
+        type: string
+      url:
+        type: string
+    type: object
+  asset.UploadDescriptor:
+    properties:
+      assetId:
+        type: string
+      cdnUrl:
+        type: string
+      contentType:
+        type: string
+      fileName:
+        type: string
+      headers:
+        additionalProperties:
+          type: string
+        type: object
+      isThumbnail:
+        description: Thumbnail support
+        type: boolean
+      method:
+        type: string
+      partSize:
+        type: integer
+      partUrls:
+        items:
+          $ref: '#/definitions/asset.PartURLInfo'
+        type: array
+      publicUrl:
+        type: string
+      sizeBytes:
+        type: integer
+      thumbnail:
+        $ref: '#/definitions/asset.ThumbnailDescriptor'
+      totalParts:
+        type: integer
+      uploadId:
         type: string
       url:
         type: string
@@ -1290,8 +1357,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
-      logoUrl:
-        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
       name:
         type: string
       phoneNumber:
@@ -1345,8 +1412,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
-      logoUrl:
-        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
       name:
         type: string
       phoneNumber:
@@ -1457,8 +1524,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
-      logoUrl:
-        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
       name:
         type: string
       phoneNumber:
@@ -1534,8 +1601,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
-      logoUrl:
-        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
       name:
         type: string
       phoneNumber:
@@ -1683,8 +1750,6 @@ definitions:
         items:
           $ref: '#/definitions/customer.CustomerAddress'
         type: array
-      avatarUrl:
-        type: string
       business:
         $ref: '#/definitions/business.Business'
       businessId:
@@ -1713,10 +1778,6 @@ definitions:
         items:
           $ref: '#/definitions/customer.CustomerNote'
         type: array
-      ordersCount:
-        description: Computed fields (not stored in database, populated via aggregation
-          queries)
-        type: integer
       phoneCode:
         $ref: '#/definitions/nullable.String'
       phoneNumber:
@@ -1725,8 +1786,6 @@ definitions:
         $ref: '#/definitions/nullable.String'
       tiktokUsername:
         $ref: '#/definitions/nullable.String'
-      totalSpent:
-        type: number
       updatedAt:
         type: string
       whatsappNumber:
@@ -1853,6 +1912,38 @@ definitions:
       valid:
         type: boolean
     type: object
+  github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetMetadata:
+    properties:
+      altText:
+        type: string
+      caption:
+        type: string
+      height:
+        type: integer
+      width:
+        type: integer
+    type: object
+  github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference:
+    properties:
+      assetId:
+        type: string
+      metadata:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetMetadata'
+      originalUrl:
+        maxLength: 2048
+        type: string
+      thumbnailOriginalUrl:
+        maxLength: 2048
+        type: string
+      thumbnailUrl:
+        maxLength: 2048
+        type: string
+      url:
+        maxLength: 2048
+        type: string
+    required:
+    - url
+    type: object
   gorm.DeletedAt:
     properties:
       time:
@@ -1900,13 +1991,12 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         maxItems: 10
         type: array
     required:
     - categoryId
     - name
-    - photos
     type: object
   inventory.CreateProductVariantRequest:
     properties:
@@ -1916,7 +2006,7 @@ definitions:
         type: number
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         maxItems: 10
         type: array
       salePrice:
@@ -1932,7 +2022,6 @@ definitions:
     required:
     - code
     - costPrice
-    - photos
     - salePrice
     - stockQuantity
     - stockQuantityAlert
@@ -1958,7 +2047,7 @@ definitions:
         type: number
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         maxItems: 10
         type: array
       productId:
@@ -1976,7 +2065,6 @@ definitions:
     required:
     - code
     - costPrice
-    - photos
     - productId
     - salePrice
     - stockQuantity
@@ -2004,7 +2092,7 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         type: array
       updatedAt:
         type: string
@@ -2037,11 +2125,9 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         maxItems: 10
         type: array
-    required:
-    - photos
     type: object
   inventory.UpdateVariantRequest:
     properties:
@@ -2053,7 +2139,7 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         maxItems: 10
         type: array
       salePrice:
@@ -2066,8 +2152,6 @@ definitions:
       stockQuantityAlert:
         minimum: 0
         type: integer
-    required:
-    - photos
     type: object
   inventory.Variant:
     properties:
@@ -2091,7 +2175,7 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         type: array
       product:
         $ref: '#/definitions/inventory.Product'
@@ -2925,8 +3009,8 @@ definitions:
         type: string
       instagramUrl:
         type: string
-      logoUrl:
-        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
       name:
         type: string
       phoneNumber:
@@ -2971,7 +3055,7 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         type: array
       variants:
         items:
@@ -3007,7 +3091,7 @@ definitions:
         type: string
       photos:
         items:
-          type: string
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         type: array
       productId:
         type: string
@@ -21871,6 +21955,49 @@ info:
   title: Kyora API
   version: "1.0"
 paths:
+  /v1/assets/internal/upload/{assetId}:
+    post:
+      consumes:
+      - application/octet-stream
+      description: Internal endpoint for uploading file content when using local storage
+        provider. Clients should not call this directly - use the URL returned from
+        GenerateUploadURLs instead.
+      parameters:
+      - description: Asset ID
+        in: path
+        name: assetId
+        required: true
+        type: string
+      - description: File content (raw bytes)
+        in: body
+        name: body
+        required: true
+        schema:
+          type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Asset not found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Failed to store content
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: 'Internal: Upload content for local provider'
+      tags:
+      - assets
   /v1/auth/forgot-password:
     post:
       consumes:
@@ -24609,444 +24736,140 @@ paths:
       summary: Archive business
       tags:
       - business
-  /v1/businesses/{businessDescriptor}/assets/{assetId}:
-    delete:
-      description: Deletes an uploaded asset if it belongs to the business and is
-        not referenced.
+  /v1/businesses/{businessDescriptor}/assets/uploads:
+    post:
+      consumes:
+      - application/json
+      description: |
+        Generates pre-signed URLs for direct file uploads. Supports multiple files, S3 multipart uploads (with resumable chunking), and local simple uploads. Returns upload descriptors with method, URLs, headers, uploadId (S3), partUrls (S3 multipart), and assetId for each file.
+
+        **S3 Multipart Upload Flow (for large files):**
+        1. Call this endpoint with file details (name, size, contentType)
+        2. Response includes uploadId, partSize, totalParts, and partUrls array
+        3. Client chunks file into parts (each partSize bytes)
+        4. Client uploads each chunk to corresponding partUrl (PUT request)
+        5. Client collects ETag from each upload response header
+        6. Client calls CompleteMultipartUpload endpoint with parts array (partNumber + ETag)
+        7. Asset is ready and can be referenced in product/business APIs
+
+        **Local Upload Flow (for development):**
+        1. Call this endpoint with file details
+        2. Response includes simple POST URL
+        3. Client uploads entire file to URL with Content-Type header
+        4. Asset is ready immediately and can be referenced
+
+        **Using Uploaded Assets:**
+        - After upload completes, use the returned assetId and publicUrl in product photos or business logo
+        - Pass AssetReference object: `{"url": "<publicUrl>", "assetId": "<assetId>", "metadata": {"altText": "...", "caption": "..."}}`
+        - assetId is optional but enables automatic garbage collection
       parameters:
-      - description: Business descriptor
+      - description: Business descriptor (ID or slug)
         in: path
         name: businessDescriptor
         required: true
         type: string
-      - description: Asset ID
+      - description: Upload request with files array
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/asset.GenerateUploadURLsRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Upload descriptors for each file
+          schema:
+            $ref: '#/definitions/asset.GenerateUploadURLsResponse'
+        "400":
+          description: Invalid request (bad file details, unsupported content type,
+            too many files)
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized (missing or invalid JWT)
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden (insufficient permissions)
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal server error (blob storage failure)
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: Generate pre-signed upload URLs
+      tags:
+      - assets
+  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete:
+    post:
+      consumes:
+      - application/json
+      description: |-
+        Finalizes a multipart upload after all parts have been uploaded. Client must provide all part numbers with their ETags collected from upload responses. This endpoint assembles the parts on S3 and marks the asset as ready. Only applicable for S3 multipart uploads (not local uploads).
+
+        **Required Data:**
+        - parts: array of objects with partNumber (int) and etag (string)
+        - ETags are returned in the ETag response header from each part upload
+        - Parts must be in order (1, 2, 3, ...)
+
+        **Example Request:**
+        ```json
+        {
+        "parts": [
+        {"partNumber": 1, "etag": "abc123..."},
+        {"partNumber": 2, "etag": "def456..."},
+        {"partNumber": 3, "etag": "ghi789..."}
+        ]
+        }
+        ```
+      parameters:
+      - description: Business descriptor (ID or slug)
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Asset ID (returned from GenerateUploadURLs)
         in: path
         name: assetId
         required: true
         type: string
+      - description: Parts with ETags
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/asset.CompleteMultipartUploadRequest'
+      produces:
+      - application/json
       responses:
-        "204":
-          description: No Content
+        "200":
+          description: Success message
+          schema:
+            additionalProperties:
+              type: string
+            type: object
         "400":
-          description: Bad Request
+          description: Invalid request (missing parts, invalid asset)
           schema:
             $ref: '#/definitions/problem.Problem'
         "401":
           description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
           schema:
             $ref: '#/definitions/problem.Problem'
         "404":
-          description: Not Found
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "409":
-          description: Conflict
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
+          description: Asset not found
           schema:
             $ref: '#/definitions/problem.Problem'
         "500":
-          description: Internal Server Error
+          description: S3 completion failed
           schema:
             $ref: '#/definitions/problem.Problem'
-      summary: Delete uploaded asset
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/business_logo:
-    post:
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CompleteUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Complete business logo upload
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/product_photo:
-    post:
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CompleteUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Complete product photo upload
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/variant_photo:
-    post:
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CompleteUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Complete variant photo upload
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/business_logo:
-    put:
-      description: Uploads file bytes to Kyora when storage.provider=local.
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Upload logo content (local provider only)
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/product_photo:
-    put:
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Upload product photo content (local provider only)
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/variant_photo:
-    put:
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Asset ID
-        in: path
-        name: assetId
-        required: true
-        type: string
-      responses:
-        "204":
-          description: No Content
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Upload variant photo content (local provider only)
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/logo:
-    post:
-      consumes:
-      - application/json
-      description: Returns a direct upload URL for a business logo (image). Requires
-        manage business permission.
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Upload request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/asset.CreateUploadRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CreateUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Initiate business logo upload
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/product-photo:
-    post:
-      consumes:
-      - application/json
-      description: Returns a direct upload URL for a product photo (image). Requires
-        manage inventory permission.
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Upload request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/asset.CreateUploadRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CreateUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Initiate product photo upload
-      tags:
-      - assets
-  /v1/businesses/{businessDescriptor}/assets/uploads/variant-photo:
-    post:
-      consumes:
-      - application/json
-      description: Returns a direct upload URL for a variant photo (image). Requires
-        manage inventory permission.
-      parameters:
-      - description: Business descriptor
-        in: path
-        name: businessDescriptor
-        required: true
-        type: string
-      - description: Upload request
-        in: body
-        name: body
-        required: true
-        schema:
-          $ref: '#/definitions/asset.CreateUploadRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: OK
-          schema:
-            $ref: '#/definitions/asset.CreateUploadResponse'
-        "400":
-          description: Bad Request
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "401":
-          description: Unauthorized
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "403":
-          description: Forbidden
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "429":
-          description: Too Many Requests
-          schema:
-            $ref: '#/definitions/problem.Problem'
-        "500":
-          description: Internal Server Error
-          schema:
-            $ref: '#/definitions/problem.Problem'
-      summary: Initiate variant photo upload
+      security:
+      - BearerAuth: []
+      summary: Complete a multipart upload
       tags:
       - assets
   /v1/businesses/{businessDescriptor}/customers:
@@ -27987,8 +27810,18 @@ paths:
       - onboarding
   /v1/public/assets/{assetId}:
     get:
-      description: Serves public assets. For local provider, streams bytes. For S3,
-        redirects to the public URL.
+      description: |-
+        Serves a public asset file. For local provider, streams the file from disk with CDN-friendly immutable cache headers. For S3, redirects to the public URL. No authentication required - all assets are public by design.
+
+        **Cache Headers:**
+        - Cache-Control: public, max-age=31536000, immutable (1 year, assets never change)
+        - CDN-Cache-Control: max-age=31536000 (CDN-specific caching)
+        - ETag: MD5 hash of file content (for local provider)
+        - Last-Modified: file modification time
+
+        **Response:**
+        - For local: streams file content with appropriate Content-Type
+        - For S3: 307 Temporary Redirect to S3 public URL
       parameters:
       - description: Asset ID
         in: path
@@ -27999,14 +27832,22 @@ paths:
       - application/octet-stream
       responses:
         "200":
-          description: OK
-        "302":
-          description: Found
+          description: Asset file content (local provider)
+          schema:
+            type: file
+        "307":
+          description: Redirect to S3 public URL (S3 provider)
+          schema:
+            type: string
         "404":
-          description: Not Found
+          description: Asset not found
           schema:
             $ref: '#/definitions/problem.Problem'
-      summary: Get public asset
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      summary: Serve public asset
       tags:
       - assets
   /v1/storefront/{storefrontPublicId}/catalog:

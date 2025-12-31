@@ -84,8 +84,13 @@ const (
 	StoragePublicBaseURL     = "storage.public_base_url"        // optional public base URL (e.g., https://bucket.endpoint)
 	StorageLocalPath         = "storage.local_path"             // local file storage directory (default: ./tmp/assets)
 	StorageMultipartPartSize = "storage.multipart_part_size_mb" // S3 multipart part size in MB (default: 10)
+	StorageCDNBaseURL        = "storage.cdn_base_url"           // optional CDN base URL for assets (e.g., https://cdn.kyora.com)
 
-	UploadsMaxBytes = "uploads.max_bytes" // max file size in bytes for direct uploads
+	UploadsMaxBytes          = "uploads.max_bytes"          // max file size in bytes for direct uploads (legacy/default)
+	UploadsAllowedExtensions = "uploads.allowed_extensions" // JSONB map of category -> []string extensions
+	UploadsMaxSizeBytes      = "uploads.max_size_bytes"     // JSONB map of category -> int64 size limits
+	ThumbnailsMaxDimension   = "thumbnails.max_dimension"   // max width/height for client-side thumbnail generation (default: 512)
+	ThumbnailsQuality        = "thumbnails.quality"         // JPEG quality for thumbnail compression (default: 80)
 
 	// inventory configuration
 	InventoryMaxPhotosPerProduct = "inventory.max_photos_per_product" // max photos per product/variant (default: 10)
@@ -112,6 +117,8 @@ func Configure() {
 	viper.SetDefault(StorageLocalPath, "./tmp/assets")
 	viper.SetDefault(StorageMultipartPartSize, 10)        // 10 MB per part
 	viper.SetDefault(UploadsMaxBytes, int64(5*1024*1024)) // 5 MiB per upload default
+	viper.SetDefault(ThumbnailsMaxDimension, 512)         // 512px max thumbnail dimension
+	viper.SetDefault(ThumbnailsQuality, 80)               // 80% JPEG quality
 	viper.SetDefault(InventoryMaxPhotosPerProduct, 10)
 	// CORS defaults - allow all origins in development
 	viper.SetDefault(CORSAllowedOrigins, []string{"*"})

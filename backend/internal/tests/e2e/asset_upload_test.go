@@ -256,6 +256,288 @@ func (s *AssetUploadSuite) TestGenerateUploadURLs_WithoutAuthentication() {
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
 }
 
+func (s *AssetUploadSuite) TestGenerateUploadURLs_FileTypeValidation() {
+	ctx := context.Background()
+
+	_, ws, token, err := s.helper.CreateTestUser(ctx, "filetest@example.com", "Password123!", "Test", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.createSubscription(ctx, ws.ID)
+	s.createBusiness(ctx, ws.ID, "test-biz")
+
+	testCases := []struct {
+		name           string
+		fileName       string
+		contentType    string
+		sizeBytes      int64
+		expectSuccess  bool
+		expectedReason string
+	}{
+		// Images - should succeed
+		{
+			name:          "valid jpeg image",
+			fileName:      "photo.jpg",
+			contentType:   "image/jpeg",
+			sizeBytes:     5_000_000, // 5MB
+			expectSuccess: true,
+		},
+		{
+			name:          "valid png image",
+			fileName:      "logo.png",
+			contentType:   "image/png",
+			sizeBytes:     2_000_000,
+			expectSuccess: true,
+		},
+		{
+			name:          "valid webp image",
+			fileName:      "banner.webp",
+			contentType:   "image/webp",
+			sizeBytes:     3_000_000,
+			expectSuccess: true,
+		},
+		// Videos - should succeed
+		{
+			name:          "valid mp4 video",
+			fileName:      "demo.mp4",
+			contentType:   "video/mp4",
+			sizeBytes:     50_000_000, // 50MB
+			expectSuccess: true,
+		},
+		{
+			name:          "valid mov video",
+			fileName:      "tutorial.mov",
+			contentType:   "video/quicktime",
+			sizeBytes:     60_000_000,
+			expectSuccess: true,
+		},
+		// Documents - should succeed
+		{
+			name:          "valid pdf document",
+			fileName:      "invoice.pdf",
+			contentType:   "application/pdf",
+			sizeBytes:     5_000_000,
+			expectSuccess: true,
+		},
+		// Unsupported types - should fail
+		{
+			name:           "unsupported exe file",
+			fileName:       "virus.exe",
+			contentType:    "application/x-msdownload",
+			sizeBytes:      1_000,
+			expectSuccess:  false,
+			expectedReason: "file type not allowed",
+		},
+		{
+			name:           "unsupported php file",
+			fileName:       "malicious.php",
+			contentType:    "application/x-httpd-php",
+			sizeBytes:      500,
+			expectSuccess:  false,
+			expectedReason: "file type not allowed",
+		},
+		// Size limit violations - should fail
+		{
+			name:           "image too large",
+			fileName:       "huge.jpg",
+			contentType:    "image/jpeg",
+			sizeBytes:      15_000_000, // 15MB > 10MB default limit
+			expectSuccess:  false,
+			expectedReason: "file too large",
+		},
+		{
+			name:           "video too large",
+			fileName:       "movie.mp4",
+			contentType:    "video/mp4",
+			sizeBytes:      150_000_000, // 150MB > 100MB default limit
+			expectSuccess:  false,
+			expectedReason: "file too large",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			reqBody := asset.GenerateUploadURLsRequest{
+				Files: []asset.FileUploadRequest{
+					{FileName: tc.fileName, ContentType: tc.contentType, SizeBytes: tc.sizeBytes},
+				},
+			}
+			body, _ := json.Marshal(reqBody)
+
+			req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/businesses/test-biz/assets/uploads", e2eBaseURL), bytes.NewReader(body))
+			s.NoError(err)
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(req)
+			s.NoError(err)
+			defer resp.Body.Close()
+
+			if tc.expectSuccess {
+				s.Equal(http.StatusOK, resp.StatusCode, "Expected success for %s", tc.name)
+			} else {
+				s.Equal(http.StatusBadRequest, resp.StatusCode, "Expected validation error for %s", tc.name)
+			}
+		})
+	}
+}
+
+func (s *AssetUploadSuite) TestGenerateUploadURLs_ThumbnailGeneration() {
+	ctx := context.Background()
+
+	_, ws, token, err := s.helper.CreateTestUser(ctx, "thumb@example.com", "Password123!", "Test", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.createSubscription(ctx, ws.ID)
+	s.createBusiness(ctx, ws.ID, "test-biz")
+
+	testCases := []struct {
+		name             string
+		fileName         string
+		contentType      string
+		sizeBytes        int64
+		expectThumbnail  bool
+		expectedCategory string
+	}{
+		{
+			name:             "image should have thumbnail",
+			fileName:         "product.jpg",
+			contentType:      "image/jpeg",
+			sizeBytes:        5_000_000,
+			expectThumbnail:  true,
+			expectedCategory: "image",
+		},
+		{
+			name:             "video should have thumbnail",
+			fileName:         "demo.mp4",
+			contentType:      "video/mp4",
+			sizeBytes:        30_000_000,
+			expectThumbnail:  true,
+			expectedCategory: "video",
+		},
+		{
+			name:             "pdf should not have thumbnail",
+			fileName:         "invoice.pdf",
+			contentType:      "application/pdf",
+			sizeBytes:        2_000_000,
+			expectThumbnail:  false,
+			expectedCategory: "document",
+		},
+		{
+			name:             "audio should not have thumbnail",
+			fileName:         "podcast.mp3",
+			contentType:      "audio/mpeg",
+			sizeBytes:        10_000_000,
+			expectThumbnail:  false,
+			expectedCategory: "audio",
+		},
+	}
+
+	for _, tc := range testCases {
+		s.Run(tc.name, func() {
+			reqBody := asset.GenerateUploadURLsRequest{
+				Files: []asset.FileUploadRequest{
+					{FileName: tc.fileName, ContentType: tc.contentType, SizeBytes: tc.sizeBytes},
+				},
+			}
+			body, _ := json.Marshal(reqBody)
+
+			req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/businesses/test-biz/assets/uploads", e2eBaseURL), bytes.NewReader(body))
+			s.NoError(err)
+			req.Header.Set("Authorization", "Bearer "+token)
+			req.Header.Set("Content-Type", "application/json")
+
+			resp, err := http.DefaultClient.Do(req)
+			s.NoError(err)
+			defer resp.Body.Close()
+
+			s.Equal(http.StatusOK, resp.StatusCode)
+
+			var result asset.GenerateUploadURLsResponse
+			s.NoError(json.NewDecoder(resp.Body).Decode(&result))
+
+			s.Len(result.Uploads, 1)
+			upload := result.Uploads[0]
+
+			if tc.expectThumbnail {
+				s.NotNil(upload.Thumbnail, "Expected thumbnail for %s", tc.name)
+				s.NotEmpty(upload.Thumbnail.AssetID)
+				s.NotEmpty(upload.Thumbnail.URL)
+				s.NotEmpty(upload.Thumbnail.PublicURL)
+				s.NotEmpty(upload.Thumbnail.CDNURL)
+				s.Equal("image/jpeg", upload.Thumbnail.ContentType, "Thumbnails should always be JPEG")
+
+				// Verify thumbnail asset was created in DB
+				assetRepo := database.NewRepository[asset.Asset](testEnv.Database)
+				thumbAsset, err := assetRepo.FindByID(ctx, upload.Thumbnail.AssetID)
+				s.NoError(err)
+				s.Equal("image/jpeg", thumbAsset.ContentType)
+				s.Equal("image", thumbAsset.FileCategory)
+			} else {
+				s.Nil(upload.Thumbnail, "Expected no thumbnail for %s", tc.name)
+			}
+
+			// Verify main asset has correct category
+			assetRepo := database.NewRepository[asset.Asset](testEnv.Database)
+			mainAsset, err := assetRepo.FindByID(ctx, upload.AssetID)
+			s.NoError(err)
+			s.Equal(tc.expectedCategory, mainAsset.FileCategory)
+		})
+	}
+}
+
+func (s *AssetUploadSuite) TestGenerateUploadURLs_CDNUrls() {
+	ctx := context.Background()
+
+	_, ws, token, err := s.helper.CreateTestUser(ctx, "cdn@example.com", "Password123!", "Test", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.createSubscription(ctx, ws.ID)
+	s.createBusiness(ctx, ws.ID, "test-biz")
+
+	reqBody := asset.GenerateUploadURLsRequest{
+		Files: []asset.FileUploadRequest{
+			{FileName: "logo.png", ContentType: "image/png", SizeBytes: 50_000},
+		},
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/businesses/test-biz/assets/uploads", e2eBaseURL), bytes.NewReader(body))
+	s.NoError(err)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	s.NoError(err)
+	defer resp.Body.Close()
+
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result asset.GenerateUploadURLsResponse
+	s.NoError(json.NewDecoder(resp.Body).Decode(&result))
+
+	s.Len(result.Uploads, 1)
+	upload := result.Uploads[0]
+
+	// Verify CDN URLs are present (even if CDN not configured, they should equal public URLs)
+	s.NotEmpty(upload.PublicURL)
+	s.NotEmpty(upload.CDNURL)
+
+	// Verify asset record has CDN URL
+	assetRepo := database.NewRepository[asset.Asset](testEnv.Database)
+	dbAsset, err := assetRepo.FindByID(ctx, upload.AssetID)
+	s.NoError(err)
+	s.NotEmpty(dbAsset.PublicURL)
+	s.NotEmpty(dbAsset.CDNURL)
+
+	// If thumbnail exists, verify its CDN URLs too
+	if upload.Thumbnail != nil {
+		s.NotEmpty(upload.Thumbnail.PublicURL)
+		s.NotEmpty(upload.Thumbnail.CDNURL)
+
+		thumbAsset, err := assetRepo.FindByID(ctx, upload.Thumbnail.AssetID)
+		s.NoError(err)
+		s.NotEmpty(thumbAsset.PublicURL)
+		s.NotEmpty(thumbAsset.CDNURL)
+	}
+}
+
 func TestAssetUploadSuite(t *testing.T) {
 	suite.Run(t, new(AssetUploadSuite))
 }

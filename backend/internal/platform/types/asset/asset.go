@@ -19,10 +19,14 @@ type AssetMetadata struct {
 
 // AssetReference represents a reference to an asset, used in other domains (inventory, business).
 // This allows flexible asset referencing with optional metadata.
+// URL and ThumbnailURL are CDN URLs (primary access). OriginalURL is the storage provider URL (fallback).
 type AssetReference struct {
-	URL      string         `json:"url" binding:"required,max=2048"`
-	AssetID  *string        `json:"assetId,omitempty" binding:"omitempty"`
-	Metadata *AssetMetadata `json:"metadata,omitempty"`
+	URL                  string         `json:"url" binding:"required,max=2048"`
+	OriginalURL          *string        `json:"originalUrl,omitempty" binding:"omitempty,max=2048"`
+	ThumbnailURL         *string        `json:"thumbnailUrl,omitempty" binding:"omitempty,max=2048"`
+	ThumbnailOriginalURL *string        `json:"thumbnailOriginalUrl,omitempty" binding:"omitempty,max=2048"`
+	AssetID              *string        `json:"assetId,omitempty" binding:"omitempty"`
+	Metadata             *AssetMetadata `json:"metadata,omitempty"`
 }
 
 // Value implements driver.Valuer for JSONB storage.

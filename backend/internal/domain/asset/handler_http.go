@@ -159,10 +159,11 @@ func (h *HttpHandler) CompleteMultipartUpload(c *gin.Context) {
 
 // GetPublicAsset godoc
 // @Summary      Serve public asset
-// @Description  Serves a public asset file. For local provider, streams the file from disk with cache headers. For S3, redirects to the public URL. No authentication required - all assets are public by design.
+// @Description  Serves a public asset file. For local provider, streams the file from disk with CDN-friendly immutable cache headers. For S3, redirects to the public URL. No authentication required - all assets are public by design.
 // @Description
 // @Description  **Cache Headers:**
-// @Description  - Cache-Control: public, max-age=3600 (1 hour)
+// @Description  - Cache-Control: public, max-age=31536000, immutable (1 year, assets never change)
+// @Description  - CDN-Cache-Control: max-age=31536000 (CDN-specific caching)
 // @Description  - ETag: MD5 hash of file content (for local provider)
 // @Description  - Last-Modified: file modification time
 // @Description
@@ -239,8 +240,9 @@ func (h *HttpHandler) serveLocalFile(c *gin.Context, asset *Asset) {
 		return
 	}
 
-	// Set cache headers
-	c.Header("Cache-Control", "public, max-age=3600") // 1 hour
+	// Set cache headers (CDN-friendly immutable caching)
+	c.Header("Cache-Control", "public, max-age=31536000, immutable") // 1 year
+	c.Header("CDN-Cache-Control", "max-age=31536000")                // CDN-specific
 	c.Header("ETag", etag)
 	c.Header("Last-Modified", fileInfo.ModTime().UTC().Format(http.TimeFormat))
 

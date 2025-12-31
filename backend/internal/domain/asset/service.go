@@ -29,6 +29,7 @@ type Service struct {
 	localDir            string
 	multipartPartSizeMB int
 	maxUploadBytes      int64
+	validator           *FileTypeValidator
 }
 
 // NewService creates a new asset service instance.
@@ -55,6 +56,7 @@ func NewService(storage *Storage, atomic *database.AtomicProcess, provider blob.
 		localDir:            localDir,
 		multipartPartSizeMB: multipartPartSizeMB,
 		maxUploadBytes:      maxUploadBytes,
+		validator:           NewFileTypeValidator(),
 	}
 }
 
@@ -74,12 +76,23 @@ func (s *Service) GenerateUploadURLs(ctx context.Context, actor *account.User, b
 		return nil, problem.BadRequest("maximum 50 files per request").With("field", "files")
 	}
 
-	// Validate content types (images only for now)
+	// Validate file types and sizes
 	for i, file := range req.Files {
-		if !isImageContentType(file.ContentType) {
-			return nil, problem.BadRequest("only image files are supported").
-				With("field", fmt.Sprintf("files[%d].contentType", i)).
+		if !s.validator.IsAllowed(file.FileName, file.ContentType) {
+			return nil, problem.BadRequest("file type not allowed").
+				With("field", fmt.Sprintf("files[%d]", i)).
+				With("fileName", file.FileName).
 				With("contentType", file.ContentType)
+		}
+
+		category := s.validator.GetCategory(file.ContentType)
+		maxSize := s.validator.GetMaxSize(category)
+		if file.SizeBytes > maxSize {
+			return nil, problem.BadRequest("file too large").
+				With("field", fmt.Sprintf("files[%d].sizeBytes", i)).
+				With("maxSize", maxSize).
+				With("actualSize", file.SizeBytes).
+				With("category", category)
 		}
 	}
 
@@ -98,12 +111,15 @@ func (s *Service) GenerateUploadURLs(ctx context.Context, actor *account.User, b
 
 // generateSingleUpload generates upload instructions for a single file.
 func (s *Service) generateSingleUpload(ctx context.Context, actor *account.User, biz *business.Business, file FileUploadRequest) (*UploadDescriptor, error) {
+	category := s.validator.GetCategory(file.ContentType)
+
 	// Create asset record immediately
 	asset := &Asset{
 		WorkspaceID:     biz.WorkspaceID,
 		BusinessID:      biz.ID,
 		CreatedByUserID: actor.ID,
 		ContentType:     file.ContentType,
+		FileCategory:    string(category),
 		SizeBytes:       file.SizeBytes,
 		ObjectKey:       s.buildObjectKey(biz.ID, "", sanitizeFilename(file.FileName)),
 	}
@@ -134,6 +150,7 @@ func (s *Service) generateLocalUpload(ctx context.Context, asset *Asset, file Fi
 	localPath := filepath.Join(s.localDir, asset.ID)
 	asset.LocalFilePath = localPath
 	asset.PublicURL = s.buildPublicURL(asset)
+	asset.CDNURL = GenerateCDNURL(asset.PublicURL)
 
 	if err := s.storage.Create(ctx, asset); err != nil {
 		return nil, err
@@ -142,16 +159,29 @@ func (s *Service) generateLocalUpload(ctx context.Context, asset *Asset, file Fi
 	baseURL := viper.GetString(config.HTTPBaseURL)
 	uploadURL := fmt.Sprintf("%s/v1/assets/internal/upload/%s", baseURL, asset.ID)
 
-	return &UploadDescriptor{
+	descriptor := &UploadDescriptor{
 		AssetID:     asset.ID,
 		FileName:    file.FileName,
 		Method:      "POST",
 		URL:         uploadURL,
 		Headers:     map[string]string{"Content-Type": file.ContentType},
-		PublicURL:   asset.PublicURL,
+		PublicURL:   asset.CDNURL,
+		CDNURL:      asset.CDNURL,
 		ContentType: file.ContentType,
 		SizeBytes:   file.SizeBytes,
-	}, nil
+	}
+
+	// Generate thumbnail upload if needed
+	category := FileCategory(asset.FileCategory)
+	if s.validator.NeedsThumbnail(category) {
+		thumbnailDescriptor, err := s.generateThumbnailUpload(ctx, asset, file)
+		if err != nil {
+			return nil, err
+		}
+		descriptor.Thumbnail = thumbnailDescriptor
+	}
+
+	return descriptor, nil
 }
 
 // generateS3MultipartUpload creates a multipart upload with presigned part URLs.
@@ -200,6 +230,7 @@ func (s *Service) generateS3MultipartUpload(ctx context.Context, asset *Asset, f
 		publicURL = ""
 	}
 	asset.PublicURL = publicURL
+	asset.CDNURL = GenerateCDNURL(publicURL)
 	asset.UploadID = uploadID
 	asset.IsMultipart = true
 	asset.TotalParts = totalParts
@@ -210,7 +241,7 @@ func (s *Service) generateS3MultipartUpload(ctx context.Context, asset *Asset, f
 		return nil, err
 	}
 
-	return &UploadDescriptor{
+	descriptor := &UploadDescriptor{
 		AssetID:     asset.ID,
 		FileName:    file.FileName,
 		Method:      "PUT",
@@ -218,10 +249,25 @@ func (s *Service) generateS3MultipartUpload(ctx context.Context, asset *Asset, f
 		PartSize:    partSizeBytes,
 		TotalParts:  totalParts,
 		PartURLs:    partURLs,
-		PublicURL:   publicURL,
+		PublicURL:   asset.CDNURL,
+		CDNURL:      asset.CDNURL,
 		ContentType: file.ContentType,
 		SizeBytes:   file.SizeBytes,
-	}, nil
+	}
+
+	// Generate thumbnail upload if needed
+	category := FileCategory(asset.FileCategory)
+	if s.validator.NeedsThumbnail(category) {
+		thumbnailDescriptor, err := s.generateThumbnailUpload(ctx, asset, file)
+		if err != nil {
+			// Don't fail main upload if thumbnail fails
+			// Just log and continue without thumbnail
+		} else {
+			descriptor.Thumbnail = thumbnailDescriptor
+		}
+	}
+
+	return descriptor, nil
 }
 
 // CompleteMultipartUpload completes a multipart upload after all parts are uploaded.
@@ -356,15 +402,111 @@ func (s *Service) buildPublicURL(asset *Asset) string {
 	return fmt.Sprintf("%s/v1/public/assets/%s", baseURL, asset.ID)
 }
 
-// isImageContentType checks if the content type is a supported image format.
-func isImageContentType(ct string) bool {
-	ct = strings.ToLower(strings.TrimSpace(ct))
-	switch ct {
-	case "image/jpeg", "image/jpg", "image/png", "image/webp", "image/gif":
-		return true
-	default:
-		return false
+// generateThumbnailUpload creates upload instructions for a thumbnail asset.
+func (s *Service) generateThumbnailUpload(ctx context.Context, parentAsset *Asset, parentFile FileUploadRequest) (*ThumbnailDescriptor, error) {
+	// Create thumbnail asset record
+	thumbnailAsset := &Asset{
+		WorkspaceID:     parentAsset.WorkspaceID,
+		BusinessID:      parentAsset.BusinessID,
+		CreatedByUserID: parentAsset.CreatedByUserID,
+		ContentType:     "image/jpeg", // Thumbnails are always JPEG
+		FileCategory:    string(FileCategoryImage),
+		SizeBytes:       0, // Will be determined by client after generation
 	}
+
+	// Generate thumbnail assetId
+	if err := thumbnailAsset.BeforeCreate(nil); err != nil {
+		return nil, err
+	}
+
+	// Build thumbnail object key: thumbnails/{businessId}/{assetId}/{filename}
+	thumbnailFileName := "thumb_" + sanitizeFilename(parentFile.FileName)
+	// Replace extension with .jpg
+	ext := filepath.Ext(thumbnailFileName)
+	if ext != "" {
+		thumbnailFileName = thumbnailFileName[:len(thumbnailFileName)-len(ext)] + ".jpg"
+	}
+	thumbnailAsset.ObjectKey = fmt.Sprintf("thumbnails/%s/%s/%s", parentAsset.BusinessID, thumbnailAsset.ID, thumbnailFileName)
+
+	provider := viper.GetString(config.StorageProvider)
+	isLocal := provider == "local" || provider == ""
+
+	if isLocal {
+		// Local thumbnail upload
+		localPath := filepath.Join(s.localDir, thumbnailAsset.ID)
+		thumbnailAsset.LocalFilePath = localPath
+		thumbnailAsset.PublicURL = s.buildPublicURL(thumbnailAsset)
+		thumbnailAsset.CDNURL = GenerateCDNURL(thumbnailAsset.PublicURL)
+
+		if err := s.storage.Create(ctx, thumbnailAsset); err != nil {
+			return nil, err
+		}
+
+		// Update parent asset with thumbnail reference
+		parentAsset.ThumbnailAssetID = &thumbnailAsset.ID
+		parentAsset.ThumbnailObjectKey = thumbnailAsset.ObjectKey
+		parentAsset.ThumbnailPublicURL = thumbnailAsset.PublicURL
+		parentAsset.ThumbnailCDNURL = thumbnailAsset.CDNURL
+		if err := s.storage.Update(ctx, parentAsset); err != nil {
+			return nil, err
+		}
+
+		baseURL := viper.GetString(config.HTTPBaseURL)
+		uploadURL := fmt.Sprintf("%s/v1/assets/internal/upload/%s", baseURL, thumbnailAsset.ID)
+
+		return &ThumbnailDescriptor{
+			AssetID:     thumbnailAsset.ID,
+			FileName:    thumbnailFileName,
+			Method:      "POST",
+			URL:         uploadURL,
+			Headers:     map[string]string{"Content-Type": "image/jpeg"},
+			PublicURL:   thumbnailAsset.CDNURL,
+			CDNURL:      thumbnailAsset.CDNURL,
+			ContentType: "image/jpeg",
+		}, nil
+	}
+
+	// S3 thumbnail upload (simple, not multipart - thumbnails are small)
+	expiresIn := 24 * time.Hour
+	presignOutput, err := s.blob.PresignPut(ctx, blob.PresignPutInput{
+		Key:         thumbnailAsset.ObjectKey,
+		ContentType: "image/jpeg",
+		ExpiresIn:   expiresIn,
+	})
+	if err != nil {
+		return nil, problem.InternalError().WithError(err)
+	}
+
+	publicURL, ok := s.blob.PublicURL(thumbnailAsset.ObjectKey)
+	if !ok {
+		publicURL = ""
+	}
+	thumbnailAsset.PublicURL = publicURL
+	thumbnailAsset.CDNURL = GenerateCDNURL(publicURL)
+
+	if err := s.storage.Create(ctx, thumbnailAsset); err != nil {
+		return nil, err
+	}
+
+	// Update parent asset with thumbnail reference
+	parentAsset.ThumbnailAssetID = &thumbnailAsset.ID
+	parentAsset.ThumbnailObjectKey = thumbnailAsset.ObjectKey
+	parentAsset.ThumbnailPublicURL = thumbnailAsset.PublicURL
+	parentAsset.ThumbnailCDNURL = thumbnailAsset.CDNURL
+	if err := s.storage.Update(ctx, parentAsset); err != nil {
+		return nil, err
+	}
+
+	return &ThumbnailDescriptor{
+		AssetID:     thumbnailAsset.ID,
+		FileName:    thumbnailFileName,
+		Method:      presignOutput.Method,
+		URL:         presignOutput.URL,
+		Headers:     presignOutput.Headers,
+		PublicURL:   thumbnailAsset.CDNURL,
+		CDNURL:      thumbnailAsset.CDNURL,
+		ContentType: "image/jpeg",
+	}, nil
 }
 
 // sanitizeFilename removes dangerous characters from filenames.

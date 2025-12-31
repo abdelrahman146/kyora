@@ -8,6 +8,68 @@
     },
     "basePath": "/",
     "paths": {
+        "/v1/assets/internal/upload/{assetId}": {
+            "post": {
+                "description": "Internal endpoint for uploading file content when using local storage provider. Clients should not call this directly - use the URL returned from GenerateUploadURLs instead.",
+                "consumes": [
+                    "application/octet-stream"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "assets"
+                ],
+                "summary": "Internal: Upload content for local provider",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Asset ID",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "File content (raw bytes)",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "type": "string"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Success message",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Asset not found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Failed to store content",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/auth/forgot-password": {
             "post": {
                 "description": "Sends a password reset email to the user",
@@ -4275,9 +4337,14 @@
                 }
             }
         },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/logo": {
+        "/v1/businesses/{businessDescriptor}/assets/uploads": {
             "post": {
-                "description": "Returns a direct upload URL for a business logo (image). Requires manage business permission.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Generates pre-signed URLs for direct file uploads. Supports multiple files, S3 multipart uploads (with resumable chunking), and local simple uploads. Returns upload descriptors with method, URLs, headers, uploadId (S3), partUrls (S3 multipart), and assetId for each file.\n\n**S3 Multipart Upload Flow (for large files):**\n1. Call this endpoint with file details (name, size, contentType)\n2. Response includes uploadId, partSize, totalParts, and partUrls array\n3. Client chunks file into parts (each partSize bytes)\n4. Client uploads each chunk to corresponding partUrl (PUT request)\n5. Client collects ETag from each upload response header\n6. Client calls CompleteMultipartUpload endpoint with parts array (partNumber + ETag)\n7. Asset is ready and can be referenced in product/business APIs\n\n**Local Upload Flow (for development):**\n1. Call this endpoint with file details\n2. Response includes simple POST URL\n3. Client uploads entire file to URL with Content-Type header\n4. Asset is ready immediately and can be referenced\n\n**Using Uploaded Assets:**\n- After upload completes, use the returned assetId and publicUrl in product photos or business logo\n- Pass AssetReference object: `{\"url\": \"\u003cpublicUrl\u003e\", \"assetId\": \"\u003cassetId\u003e\", \"metadata\": {\"altText\": \"...\", \"caption\": \"...\"}}`\n- assetId is optional but enables automatic garbage collection\n",
                 "consumes": [
                     "application/json"
                 ],
@@ -4287,58 +4354,52 @@
                 "tags": [
                     "assets"
                 ],
-                "summary": "Initiate business logo upload",
+                "summary": "Generate pre-signed upload URLs",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Business descriptor",
+                        "description": "Business descriptor (ID or slug)",
                         "name": "businessDescriptor",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Upload request",
+                        "description": "Upload request with files array",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadRequest"
+                            "$ref": "#/definitions/asset.GenerateUploadURLsRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Upload descriptors for each file",
                         "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadResponse"
+                            "$ref": "#/definitions/asset.GenerateUploadURLsResponse"
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request (bad file details, unsupported content type, too many files)",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "401": {
-                        "description": "Unauthorized",
+                        "description": "Unauthorized (missing or invalid JWT)",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
+                        "description": "Forbidden (insufficient permissions)",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "Internal server error (blob storage failure)",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -4346,9 +4407,14 @@
                 }
             }
         },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/product-photo": {
+        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete": {
             "post": {
-                "description": "Returns a direct upload URL for a product photo (image). Requires manage inventory permission.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Finalizes a multipart upload after all parts have been uploaded. Client must provide all part numbers with their ETags collected from upload responses. This endpoint assembles the parts on S3 and marks the asset as ready. Only applicable for S3 multipart uploads (not local uploads).\n\n**Required Data:**\n- parts: array of objects with partNumber (int) and etag (string)\n- ETags are returned in the ETag response header from each part upload\n- Parts must be in order (1, 2, 3, ...)\n\n**Example Request:**\n```json\n{\n\"parts\": [\n{\"partNumber\": 1, \"etag\": \"abc123...\"},\n{\"partNumber\": 2, \"etag\": \"def456...\"},\n{\"partNumber\": 3, \"etag\": \"ghi789...\"}\n]\n}\n```",
                 "consumes": [
                     "application/json"
                 ],
@@ -4358,574 +4424,62 @@
                 "tags": [
                     "assets"
                 ],
-                "summary": "Initiate product photo upload",
+                "summary": "Complete a multipart upload",
                 "parameters": [
                     {
                         "type": "string",
-                        "description": "Business descriptor",
+                        "description": "Business descriptor (ID or slug)",
                         "name": "businessDescriptor",
                         "in": "path",
                         "required": true
                     },
                     {
-                        "description": "Upload request",
+                        "type": "string",
+                        "description": "Asset ID (returned from GenerateUploadURLs)",
+                        "name": "assetId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Parts with ETags",
                         "name": "body",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadRequest"
+                            "$ref": "#/definitions/asset.CompleteMultipartUploadRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK",
+                        "description": "Success message",
                         "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadResponse"
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
                         }
                     },
                     "400": {
-                        "description": "Bad Request",
+                        "description": "Invalid request (missing parts, invalid asset)",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "401": {
                         "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/variant-photo": {
-            "post": {
-                "description": "Returns a direct upload URL for a variant photo (image). Requires manage inventory permission.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Initiate variant photo upload",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Upload request",
-                        "name": "body",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/asset.CreateUploadResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/business_logo": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Complete business logo upload",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/asset.CompleteUploadResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/product_photo": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Complete product photo upload",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/asset.CompleteUploadResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete/variant_photo": {
-            "post": {
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Complete variant photo upload",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "OK",
-                        "schema": {
-                            "$ref": "#/definitions/asset.CompleteUploadResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/business_logo": {
-            "put": {
-                "description": "Uploads file bytes to Kyora when storage.provider=local.",
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Upload logo content (local provider only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/product_photo": {
-            "put": {
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Upload product photo content (local provider only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/content/variant_photo": {
-            "put": {
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Upload variant photo content (local provider only)",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal Server Error",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    }
-                }
-            }
-        },
-        "/v1/businesses/{businessDescriptor}/assets/{assetId}": {
-            "delete": {
-                "description": "Deletes an uploaded asset if it belongs to the business and is not referenced.",
-                "tags": [
-                    "assets"
-                ],
-                "summary": "Delete uploaded asset",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Business descriptor",
-                        "name": "businessDescriptor",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "Asset ID",
-                        "name": "assetId",
-                        "in": "path",
-                        "required": true
-                    }
-                ],
-                "responses": {
-                    "204": {
-                        "description": "No Content"
-                    },
-                    "400": {
-                        "description": "Bad Request",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "401": {
-                        "description": "Unauthorized",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "403": {
-                        "description": "Forbidden",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "404": {
-                        "description": "Not Found",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflict",
-                        "schema": {
-                            "$ref": "#/definitions/problem.Problem"
-                        }
-                    },
-                    "429": {
-                        "description": "Too Many Requests",
+                        "description": "Asset not found",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
                     },
                     "500": {
-                        "description": "Internal Server Error",
+                        "description": "S3 completion failed",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -9383,14 +8937,14 @@
         },
         "/v1/public/assets/{assetId}": {
             "get": {
-                "description": "Serves public assets. For local provider, streams bytes. For S3, redirects to the public URL.",
+                "description": "Serves a public asset file. For local provider, streams the file from disk with CDN-friendly immutable cache headers. For S3, redirects to the public URL. No authentication required - all assets are public by design.\n\n**Cache Headers:**\n- Cache-Control: public, max-age=31536000, immutable (1 year, assets never change)\n- CDN-Cache-Control: max-age=31536000 (CDN-specific caching)\n- ETag: MD5 hash of file content (for local provider)\n- Last-Modified: file modification time\n\n**Response:**\n- For local: streams file content with appropriate Content-Type\n- For S3: 307 Temporary Redirect to S3 public URL",
                 "produces": [
                     "application/octet-stream"
                 ],
                 "tags": [
                     "assets"
                 ],
-                "summary": "Get public asset",
+                "summary": "Serve public asset",
                 "parameters": [
                     {
                         "type": "string",
@@ -9402,13 +8956,25 @@
                 ],
                 "responses": {
                     "200": {
-                        "description": "OK"
+                        "description": "Asset file content (local provider)",
+                        "schema": {
+                            "type": "file"
+                        }
                     },
-                    "302": {
-                        "description": "Found"
+                    "307": {
+                        "description": "Redirect to S3 public URL (S3 provider)",
+                        "schema": {
+                            "type": "string"
+                        }
                     },
                     "404": {
-                        "description": "Not Found",
+                        "description": "Asset not found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -11260,21 +10826,22 @@
                 }
             }
         },
-        "asset.CompleteUploadResponse": {
+        "asset.CompleteMultipartUploadRequest": {
             "type": "object",
+            "required": [
+                "parts"
+            ],
             "properties": {
-                "assetId": {
-                    "type": "string"
-                },
-                "publicUrl": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/asset.Status"
+                "parts": {
+                    "type": "array",
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/asset.PartInfo"
+                    }
                 }
             }
         },
-        "asset.CreateUploadRequest": {
+        "asset.FileUploadRequest": {
             "type": "object",
             "required": [
                 "contentType",
@@ -11290,49 +10857,75 @@
                     "type": "string",
                     "maxLength": 255
                 },
-                "idempotencyKey": {
-                    "type": "string",
-                    "maxLength": 128
-                },
                 "sizeBytes": {
                     "type": "integer"
                 }
             }
         },
-        "asset.CreateUploadResponse": {
+        "asset.GenerateUploadURLsRequest": {
+            "type": "object",
+            "required": [
+                "files"
+            ],
+            "properties": {
+                "files": {
+                    "type": "array",
+                    "maxItems": 50,
+                    "minItems": 1,
+                    "items": {
+                        "$ref": "#/definitions/asset.FileUploadRequest"
+                    }
+                }
+            }
+        },
+        "asset.GenerateUploadURLsResponse": {
+            "type": "object",
+            "properties": {
+                "uploads": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/asset.UploadDescriptor"
+                    }
+                }
+            }
+        },
+        "asset.PartInfo": {
+            "type": "object",
+            "properties": {
+                "etag": {
+                    "type": "string"
+                },
+                "partNumber": {
+                    "type": "integer"
+                }
+            }
+        },
+        "asset.PartURLInfo": {
+            "type": "object",
+            "properties": {
+                "partNumber": {
+                    "type": "integer"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "asset.ThumbnailDescriptor": {
             "type": "object",
             "properties": {
                 "assetId": {
                     "type": "string"
                 },
-                "expiresAt": {
+                "cdnUrl": {
                     "type": "string"
                 },
-                "publicUrl": {
+                "contentType": {
                     "type": "string"
                 },
-                "status": {
-                    "$ref": "#/definitions/asset.Status"
+                "fileName": {
+                    "type": "string"
                 },
-                "upload": {
-                    "$ref": "#/definitions/asset.UploadDescriptor"
-                }
-            }
-        },
-        "asset.Status": {
-            "type": "string",
-            "enum": [
-                "pending",
-                "ready"
-            ],
-            "x-enum-varnames": [
-                "StatusPending",
-                "StatusReady"
-            ]
-        },
-        "asset.UploadDescriptor": {
-            "type": "object",
-            "properties": {
                 "headers": {
                     "type": "object",
                     "additionalProperties": {
@@ -11340,6 +10933,81 @@
                     }
                 },
                 "method": {
+                    "type": "string"
+                },
+                "partSize": {
+                    "type": "integer"
+                },
+                "partUrls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/asset.PartURLInfo"
+                    }
+                },
+                "publicUrl": {
+                    "type": "string"
+                },
+                "totalParts": {
+                    "type": "integer"
+                },
+                "uploadId": {
+                    "type": "string"
+                },
+                "url": {
+                    "type": "string"
+                }
+            }
+        },
+        "asset.UploadDescriptor": {
+            "type": "object",
+            "properties": {
+                "assetId": {
+                    "type": "string"
+                },
+                "cdnUrl": {
+                    "type": "string"
+                },
+                "contentType": {
+                    "type": "string"
+                },
+                "fileName": {
+                    "type": "string"
+                },
+                "headers": {
+                    "type": "object",
+                    "additionalProperties": {
+                        "type": "string"
+                    }
+                },
+                "isThumbnail": {
+                    "description": "Thumbnail support",
+                    "type": "boolean"
+                },
+                "method": {
+                    "type": "string"
+                },
+                "partSize": {
+                    "type": "integer"
+                },
+                "partUrls": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/asset.PartURLInfo"
+                    }
+                },
+                "publicUrl": {
+                    "type": "string"
+                },
+                "sizeBytes": {
+                    "type": "integer"
+                },
+                "thumbnail": {
+                    "$ref": "#/definitions/asset.ThumbnailDescriptor"
+                },
+                "totalParts": {
+                    "type": "integer"
+                },
+                "uploadId": {
                     "type": "string"
                 },
                 "url": {
@@ -11779,8 +11447,8 @@
                 "instagramUrl": {
                     "type": "string"
                 },
-                "logoUrl": {
-                    "type": "string"
+                "logo": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                 },
                 "name": {
                     "type": "string"
@@ -11867,8 +11535,8 @@
                 "instagramUrl": {
                     "type": "string"
                 },
-                "logoUrl": {
-                    "type": "string"
+                "logo": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                 },
                 "name": {
                     "type": "string"
@@ -12028,8 +11696,8 @@
                 "instagramUrl": {
                     "type": "string"
                 },
-                "logoUrl": {
-                    "type": "string"
+                "logo": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                 },
                 "name": {
                     "type": "string"
@@ -12144,8 +11812,8 @@
                 "instagramUrl": {
                     "type": "string"
                 },
-                "logoUrl": {
-                    "type": "string"
+                "logo": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                 },
                 "name": {
                     "type": "string"
@@ -12369,9 +12037,6 @@
                         "$ref": "#/definitions/customer.CustomerAddress"
                     }
                 },
-                "avatarUrl": {
-                    "type": "string"
-                },
                 "business": {
                     "$ref": "#/definitions/business.Business"
                 },
@@ -12414,10 +12079,6 @@
                         "$ref": "#/definitions/customer.CustomerNote"
                     }
                 },
-                "ordersCount": {
-                    "description": "Computed fields (not stored in database, populated via aggregation queries)",
-                    "type": "integer"
-                },
                 "phoneCode": {
                     "$ref": "#/definitions/nullable.String"
                 },
@@ -12429,9 +12090,6 @@
                 },
                 "tiktokUsername": {
                     "$ref": "#/definitions/nullable.String"
-                },
-                "totalSpent": {
-                    "type": "number"
                 },
                 "updatedAt": {
                     "type": "string"
@@ -12625,6 +12283,53 @@
                 }
             }
         },
+        "github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetMetadata": {
+            "type": "object",
+            "properties": {
+                "altText": {
+                    "type": "string"
+                },
+                "caption": {
+                    "type": "string"
+                },
+                "height": {
+                    "type": "integer"
+                },
+                "width": {
+                    "type": "integer"
+                }
+            }
+        },
+        "github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference": {
+            "type": "object",
+            "required": [
+                "url"
+            ],
+            "properties": {
+                "assetId": {
+                    "type": "string"
+                },
+                "metadata": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetMetadata"
+                },
+                "originalUrl": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "thumbnailOriginalUrl": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "thumbnailUrl": {
+                    "type": "string",
+                    "maxLength": 2048
+                },
+                "url": {
+                    "type": "string",
+                    "maxLength": 2048
+                }
+            }
+        },
         "gorm.DeletedAt": {
             "type": "object",
             "properties": {
@@ -12685,8 +12390,7 @@
             "type": "object",
             "required": [
                 "categoryId",
-                "name",
-                "photos"
+                "name"
             ],
             "properties": {
                 "categoryId": {
@@ -12702,7 +12406,7 @@
                     "type": "array",
                     "maxItems": 10,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 }
             }
@@ -12712,7 +12416,6 @@
             "required": [
                 "code",
                 "costPrice",
-                "photos",
                 "salePrice",
                 "stockQuantity",
                 "stockQuantityAlert"
@@ -12728,7 +12431,7 @@
                     "type": "array",
                     "maxItems": 10,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "salePrice": {
@@ -12771,7 +12474,6 @@
             "required": [
                 "code",
                 "costPrice",
-                "photos",
                 "productId",
                 "salePrice",
                 "stockQuantity",
@@ -12788,7 +12490,7 @@
                     "type": "array",
                     "maxItems": 10,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "productId": {
@@ -12843,7 +12545,7 @@
                 "photos": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "updatedAt": {
@@ -12881,9 +12583,6 @@
         },
         "inventory.UpdateProductRequest": {
             "type": "object",
-            "required": [
-                "photos"
-            ],
             "properties": {
                 "categoryId": {
                     "type": "string"
@@ -12898,16 +12597,13 @@
                     "type": "array",
                     "maxItems": 10,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 }
             }
         },
         "inventory.UpdateVariantRequest": {
             "type": "object",
-            "required": [
-                "photos"
-            ],
             "properties": {
                 "code": {
                     "type": "string"
@@ -12922,7 +12618,7 @@
                     "type": "array",
                     "maxItems": 10,
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "salePrice": {
@@ -12974,7 +12670,7 @@
                 "photos": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "product": {
@@ -14207,8 +13903,8 @@
                 "instagramUrl": {
                     "type": "string"
                 },
-                "logoUrl": {
-                    "type": "string"
+                "logo": {
+                    "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                 },
                 "name": {
                     "type": "string"
@@ -14277,7 +13973,7 @@
                 "photos": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "variants": {
@@ -14332,7 +14028,7 @@
                 "photos": {
                     "type": "array",
                     "items": {
-                        "type": "string"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
                 },
                 "productId": {
