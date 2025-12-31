@@ -55,6 +55,7 @@ import {
   CheckboxField,
   DateField,
   DateTimeField,
+  DateRangeField,
   ErrorInfo,
   PasswordField,
   RadioField,
@@ -87,6 +88,7 @@ const { useAppForm, withForm } = createFormHook({
     DateField,
     TimeField,
     DateTimeField,
+    DateRangeField,
     ErrorInfo,
   },
 

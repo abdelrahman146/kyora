@@ -640,6 +640,258 @@ const form = useKyoraForm({
 - All DateField and TimeField translation keys
 - `errors.validation.end_date_must_be_after_start_date`: "End date must be after start date."
 
+#### `<form.DateRangeField>`
+
+Date range picker for selecting start and end dates with dual-calendar interface.
+
+```tsx
+<form.AppField
+  name="reportDateRange"
+  validators={{
+    onBlur: z.custom<DateRange>((val) => {
+      const range = val as DateRange
+      if (!range?.from || !range?.to) {
+        return 'date_range_required'
+      }
+      if (range.to < range.from) {
+        return 'date_range_invalid'
+      }
+      return undefined
+    }),
+  }}
+>
+  {(field) => (
+    <field.DateRangeField
+      label="Report Period"
+      placeholder="Select date range"
+      minDate={new Date('2020-01-01')}
+      maxDate={new Date()}
+      numberOfMonths={2}              // Show 2 months side-by-side (default: 2)
+      disabledDates={[               // Disable specific dates
+        new Date('2024-12-25'),
+        new Date('2024-01-01'),
+      ]}
+      clearable
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Features:**
+- Dual-calendar popup (configurable with `numberOfMonths`)
+- Date range selection with visual highlighting
+- Auto-close when both dates selected
+- Clear button to reset selection
+- Format: "MM/DD/YYYY - MM/DD/YYYY" (locale-aware)
+- RTL support (Arabic/English locales)
+- Keyboard navigation (Arrow keys navigate calendar, Escape closes, Enter opens)
+- Mobile: Action bar with Clear/Apply buttons
+- Desktop: Dropdown popup with side-by-side months
+- Min/max date constraints
+- Disabled dates support
+- Touch-optimized (50px minimum height)
+
+**DateRange Type:**
+```typescript
+import type { DateRange } from 'react-day-picker'
+
+interface DateRange {
+  from?: Date
+  to?: Date
+}
+
+// Usage
+const form = useKyoraForm({
+  defaultValues: {
+    dateRange: undefined as DateRange | undefined,
+  },
+})
+```
+
+**Common Use Cases:**
+
+**1. Booking System:**
+```tsx
+<form.AppField
+  name="bookingRange"
+  validators={{
+    onBlur: z.custom<DateRange>((val) => {
+      const range = val as DateRange
+      if (!range?.from || !range?.to) return 'date_range_required'
+      
+      // Minimum 1 night
+      const days = Math.ceil((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+      if (days < 1) return 'minimum_one_night'
+      
+      // Maximum 30 days
+      if (days > 30) return 'maximum_30_days'
+      
+      return undefined
+    }),
+  }}
+>
+  {(field) => (
+    <field.DateRangeField
+      label="Check-in / Check-out"
+      minDate={new Date()}
+      numberOfMonths={2}
+    />
+  )}
+</form.AppField>
+```
+
+**2. Analytics Date Filter:**
+```tsx
+<form.AppField
+  name="analyticsRange"
+  validators={{
+    onBlur: z.custom<DateRange>((val) => {
+      const range = val as DateRange
+      if (!range?.from || !range?.to) return 'date_range_required'
+      
+      // Cannot be future dates
+      const now = new Date()
+      if (range.to > now) return 'date_cannot_be_future'
+      
+      return undefined
+    }),
+  }}
+>
+  {(field) => (
+    <field.DateRangeField
+      label="Analysis Period"
+      maxDate={new Date()}
+      numberOfMonths={2}
+    />
+  )}
+</form.AppField>
+```
+
+**3. Business Report with Weekday Validation:**
+```tsx
+<form.AppField
+  name="reportRange"
+  validators={{
+    onBlur: z.custom<DateRange>((val) => {
+      const range = val as DateRange
+      if (!range?.from || !range?.to) return 'date_range_required'
+      
+      // Start and end must be weekdays
+      if (range.from.getDay() === 0 || range.from.getDay() === 6) {
+        return 'start_must_be_weekday'
+      }
+      if (range.to.getDay() === 0 || range.to.getDay() === 6) {
+        return 'end_must_be_weekday'
+      }
+      
+      return undefined
+    }),
+  }}
+>
+  {(field) => (
+    <field.DateRangeField
+      label="Report Period (Weekdays Only)"
+      numberOfMonths={1}
+      disabledDates={getWeekendDates()}  // Helper to disable all weekends
+    />
+  )}
+</form.AppField>
+```
+
+**Validation Patterns:**
+```typescript
+// Basic date range required
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  return undefined
+})
+
+// End date must be after start date
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  if (range.to < range.from) return 'date_range_invalid'
+  return undefined
+})
+
+// Maximum range duration (e.g., 90 days)
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  
+  const days = Math.ceil((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+  if (days > 90) return 'maximum_90_days'
+  
+  return undefined
+})
+
+// Minimum range duration (e.g., 7 days)
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  
+  const days = Math.ceil((range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24))
+  if (days < 7) return 'minimum_7_days'
+  
+  return undefined
+})
+
+// Business days only (no weekends)
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  
+  const isWeekday = (date: Date) => {
+    const day = date.getDay()
+    return day !== 0 && day !== 6
+  }
+  
+  if (!isWeekday(range.from) || !isWeekday(range.to)) {
+    return 'weekdays_only'
+  }
+  
+  return undefined
+})
+
+// Range cannot include today
+z.custom<DateRange>((val) => {
+  const range = val as DateRange
+  if (!range?.from || !range?.to) return 'date_range_required'
+  
+  const today = new Date()
+  today.setHours(0, 0, 0, 0)
+  
+  if (range.from <= today && range.to >= today) {
+    return 'cannot_include_today'
+  }
+  
+  return undefined
+})
+```
+
+**Translation Keys Used:**
+- `common.date.selectDateRange`: "Select date range"
+- `common.clear`: "Clear"
+- `common.apply`: "Apply"
+- `errors.validation.invalid_date_range`: "Please enter a valid date range."
+- `errors.validation.date_range_required`: "Both start and end dates are required."
+- `errors.validation.date_range_invalid`: "End date must be after start date."
+- `errors.validation.minimum_one_night`: "Booking must be at least 1 night."
+- `errors.validation.maximum_30_days`: "Booking cannot exceed 30 days."
+- `errors.validation.maximum_90_days`: "Date range cannot exceed 90 days."
+- `errors.validation.minimum_7_days`: "Date range must be at least 7 days."
+- `errors.validation.weekdays_only`: "Dates must be weekdays only."
+- `errors.validation.cannot_include_today`: "Date range cannot include today."
+
+**Accessibility:**
+- `role="dialog"` on calendar popup
+- `aria-label` with translated "Select date range"
+- `aria-invalid` and `aria-describedby` for error states
+- Focus trap within calendar
+- Keyboard navigation with screen reader announcements
+
 #### `<form.SubmitButton>`
 
 Submit button with loading state.
@@ -1345,25 +1597,3 @@ src/lib/form/
 - No manual translation calls
 - Consistent UX
 - Easy to maintain
-
-## Contributing
-
-When adding new form patterns:
-
-1. Check if existing components cover the use case
-2. If custom component needed, use `<form.Field>`
-3. Document new patterns in this file
-4. Add example to examples section
-5. Update migration checklist if needed
-
-## Future Enhancements
-
-- [ ] Async validation support
-- [ ] File upload component
-- [ ] Multi-select support in FormSelect
-- [ ] Date/time pickers
-- [ ] Rich text editor
-- [ ] Form arrays (repeating fields)
-- [ ] Wizard/stepper pattern
-- [ ] Auto-save draft
-- [ ] Optimistic UI updates

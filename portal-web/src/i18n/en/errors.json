@@ -50,7 +50,11 @@
     "array_max_items": "You can select at most {{max}} item(s).",
     "invalid_date": "Please enter a valid date.",
     "invalid_time": "Please enter a valid time.",
+    "invalid_date_range": "Please enter a valid date range.",
+    "date_range_required": "Both start and end dates are required.",
+    "date_range_invalid": "End date must be after start date.",
     "date_cannot_be_future": "Date cannot be in the future.",
+    "date_cannot_be_past": "Date cannot be in the past.",
     "must_be_18_or_older": "You must be at least 18 years old.",
     "end_date_must_be_after_start_date": "End date must be after start date.",
     "outside_business_hours": "Time must be within business hours (9 AM - 5 PM)."

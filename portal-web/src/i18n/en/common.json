@@ -131,6 +131,7 @@
   },
   "date": {
     "selectDate": "Select date",
+    "selectDateRange": "Select date range",
     "today": "Today",
     "hours": "Hours",
     "minutes": "Minutes",

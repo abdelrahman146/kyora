@@ -131,6 +131,7 @@
   },
   "date": {
     "selectDate": "اختر التاريخ",
+    "selectDateRange": "اختر نطاق التاريخ",
     "today": "اليوم",
     "hours": "الساعات",
     "minutes": "الدقائق",
