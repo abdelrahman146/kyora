@@ -237,7 +237,7 @@ Update `FORM_SYSTEM.md`:
 
 ---
 
-## Phase 2: Date/Time Pickers (PLANNED)
+## Phase 2: Date/Time Pickers (COMPLETED)
 
 ### Architecture
 

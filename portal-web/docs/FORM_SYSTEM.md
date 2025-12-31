@@ -371,6 +371,275 @@ Toggle/switch component.
 - Toggle state
 - Error display
 
+#### `<form.DateField>`
+
+Date picker with calendar popup.
+
+```tsx
+<form.AppField
+  name="birthdate"
+  validators={{
+    onBlur: z.date()
+      .max(new Date(), 'date_cannot_be_future')
+      .refine(
+        (date) => {
+          const age = new Date().getFullYear() - date.getFullYear()
+          return age >= 18
+        },
+        { message: 'must_be_18_or_older' }
+      ),
+  }}
+>
+  {(field) => (
+    <field.DateField
+      label="Birth Date"
+      minAge={18}                     // Min age validation (years)
+      maxDate={new Date()}            // Max date allowed
+      disableWeekends                 // Disable Sat/Sun
+      clearable                       // Show clear button
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Features:**
+- Calendar popup with month/year navigation
+- RTL support (Arabic/English locales)
+- Date format: dd/MM/yyyy (Arabic) or MM/dd/yyyy (English)
+- Keyboard navigation (Arrow keys, Page Up/Down, Home/End, Enter, Escape)
+- Mobile: Full-screen modal
+- Desktop: Dropdown popup
+- Min/max date validation
+- Disabled dates support
+- Clear button
+- Touch-optimized (50px minimum height)
+
+**Validation Patterns:**
+```typescript
+// Basic date required
+z.date()
+
+// Date cannot be in future
+z.date().max(new Date(), 'date_cannot_be_future')
+
+// Minimum age (18+)
+z.date().refine(
+  (date) => {
+    const age = new Date().getFullYear() - date.getFullYear()
+    return age >= 18
+  },
+  { message: 'must_be_18_or_older' }
+)
+
+// Date range
+z.date()
+  .min(new Date('2020-01-01'))
+  .max(new Date('2025-12-31'))
+
+// Custom business logic
+z.date().refine(
+  (date) => {
+    const day = date.getDay()
+    return day !== 0 && day !== 6 // No weekends
+  },
+  { message: 'weekdays_only' }
+)
+```
+
+**Translation Keys Used:**
+- `common.date.selectDate`: "Select date"
+- `common.date.today`: "Today"
+- `common.clear`: "Clear"
+- `errors.validation.invalid_date`: "Please enter a valid date."
+- `errors.validation.date_cannot_be_future`: "Date cannot be in the future."
+- `errors.validation.must_be_18_or_older`: "You must be at least 18 years old."
+
+#### `<form.TimeField>`
+
+Time picker with hour/minute controls.
+
+```tsx
+<form.AppField
+  name="appointmentTime"
+  validators={{
+    onBlur: z.date()
+      .refine(
+        (date) => {
+          const hours = date.getHours()
+          return hours >= 9 && hours < 17 // 9 AM - 5 PM
+        },
+        { message: 'outside_business_hours' }
+      ),
+  }}
+>
+  {(field) => (
+    <field.TimeField
+      label="Appointment Time"
+      use24Hour={false}               // 12-hour format with AM/PM
+      minuteStep={15}                 // 15-minute increments
+      clearable
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Features:**
+- Two numeric inputs (hours, minutes)
+- AM/PM toggle for 12-hour format
+- 24-hour format support (locale-aware)
+- Arrow buttons for increment/decrement
+- Keyboard navigation (Arrow Up/Down, Tab)
+- Auto-advance from hours to minutes
+- Minute step intervals (1, 5, 15, 30)
+- Touch-optimized (50px minimum height)
+
+**Validation Patterns:**
+```typescript
+// Basic time required
+z.date()
+
+// Business hours only (9 AM - 5 PM)
+z.date().refine(
+  (date) => {
+    const hours = date.getHours()
+    return hours >= 9 && hours < 17
+  },
+  { message: 'outside_business_hours' }
+)
+
+// Specific time range
+z.date().refine(
+  (date) => {
+    const hours = date.getHours()
+    const minutes = date.getMinutes()
+    const totalMinutes = hours * 60 + minutes
+    return totalMinutes >= 540 && totalMinutes <= 1020 // 9:00 AM - 5:00 PM
+  },
+  { message: 'outside_hours' }
+)
+
+// 15-minute intervals only
+z.date().refine(
+  (date) => date.getMinutes() % 15 === 0,
+  { message: 'must_be_15_min_intervals' }
+)
+```
+
+**Translation Keys Used:**
+- `common.date.hours`: "Hours"
+- `common.date.minutes`: "Minutes"
+- `common.date.period`: "Period"
+- `common.date.incrementHours`: "Increment hours"
+- `common.date.decrementHours`: "Decrement hours"
+- `common.date.incrementMinutes`: "Increment minutes"
+- `common.date.decrementMinutes`: "Decrement minutes"
+- `errors.validation.invalid_time`: "Please enter a valid time."
+- `errors.validation.outside_business_hours`: "Time must be within business hours (9 AM - 5 PM)."
+
+#### `<form.DateTimeField>`
+
+Combined date and time picker with flexible modes.
+
+```tsx
+// Date and Time mode
+<form.AppField
+  name="eventDateTime"
+  validators={{
+    onBlur: z.date()
+      .min(new Date(), 'must_be_future')
+      .refine(
+        (date) => {
+          const hours = date.getHours()
+          return hours >= 9 && hours < 17
+        },
+        { message: 'outside_business_hours' }
+      ),
+  }}
+>
+  {(field) => (
+    <field.DateTimeField
+      mode="datetime"                 // 'date' | 'time' | 'datetime'
+      label="Event Date & Time"
+      datePickerProps={{
+        minDate: new Date(),
+        disableWeekends: true,
+      }}
+      timePickerProps={{
+        minuteStep: 30,
+        use24Hour: false,
+      }}
+      required
+    />
+  )}
+</form.AppField>
+
+// Date only mode (equivalent to DateField)
+<form.AppField name="startDate">
+  {(field) => (
+    <field.DateTimeField
+      mode="date"
+      label="Start Date"
+    />
+  )}
+</form.AppField>
+
+// Time only mode (equivalent to TimeField)
+<form.AppField name="meetingTime">
+  {(field) => (
+    <field.DateTimeField
+      mode="time"
+      label="Meeting Time"
+    />
+  )}
+</form.AppField>
+```
+
+**Features:**
+- Three modes: date, time, datetime
+- Responsive layout: side-by-side on desktop, stacked on mobile
+- Independent date and time props
+- Preserves date when changing time and vice versa
+- All DateField and TimeField features combined
+
+**Validation Patterns:**
+```typescript
+// End date must be after start date
+const form = useKyoraForm({
+  defaultValues: {
+    startDate: null as Date | null,
+    endDate: null as Date | null,
+  },
+})
+
+<form.AppField
+  name="endDate"
+  validators={{
+    onChange: z.date(),
+    onBlurListenTo: ['startDate'],
+    onBlur: ({ value, fieldApi }) => {
+      const startDate = fieldApi.form.getFieldValue('startDate')
+      if (startDate && value && value <= startDate) {
+        return 'end_date_must_be_after_start_date'
+      }
+      return undefined
+    },
+  }}
+>
+  {(field) => (
+    <field.DateTimeField
+      mode="datetime"
+      label="End Date & Time"
+    />
+  )}
+</form.AppField>
+```
+
+**Translation Keys Used:**
+- All DateField and TimeField translation keys
+- `errors.validation.end_date_must_be_after_start_date`: "End date must be after start date."
+
 #### `<form.SubmitButton>`
 
 Submit button with loading state.

@@ -47,7 +47,13 @@
     "select_too_many": "You can select at most {{max}} options.",
     "duplicate_selection": "Duplicate selections are not allowed.",
     "array_min_items": "Please select at least {{min}} item(s).",
-    "array_max_items": "You can select at most {{max}} item(s)."
+    "array_max_items": "You can select at most {{max}} item(s).",
+    "invalid_date": "Please enter a valid date.",
+    "invalid_time": "Please enter a valid time.",
+    "date_cannot_be_future": "Date cannot be in the future.",
+    "must_be_18_or_older": "You must be at least 18 years old.",
+    "end_date_must_be_after_start_date": "End date must be after start date.",
+    "outside_business_hours": "Time must be within business hours (9 AM - 5 PM)."
   },
   "auth": {
     "invalid_credentials": "Invalid email or password.",

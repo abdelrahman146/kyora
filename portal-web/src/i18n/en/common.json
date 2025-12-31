@@ -128,5 +128,16 @@
     "invalid_email": "Invalid email address",
     "min_length": "Must be at least {{min}} characters",
     "max_length": "Must not exceed {{max}} characters"
+  },
+  "date": {
+    "selectDate": "Select date",
+    "today": "Today",
+    "hours": "Hours",
+    "minutes": "Minutes",
+    "period": "Period",
+    "incrementHours": "Increment hours",
+    "decrementHours": "Decrement hours",
+    "incrementMinutes": "Increment minutes",
+    "decrementMinutes": "Decrement minutes"
   }
 }

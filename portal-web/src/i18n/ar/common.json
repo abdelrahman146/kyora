@@ -128,5 +128,16 @@
     "invalid_email": "البريد الإلكتروني غير صالح",
     "min_length": "يجب أن يكون على الأقل {{min}} أحرف",
     "max_length": "يجب أن لا يتجاوز {{max}} حرف"
+  },
+  "date": {
+    "selectDate": "اختر التاريخ",
+    "today": "اليوم",
+    "hours": "الساعات",
+    "minutes": "الدقائق",
+    "period": "الفترة",
+    "incrementHours": "زيادة الساعات",
+    "decrementHours": "تقليل الساعات",
+    "incrementMinutes": "زيادة الدقائق",
+    "decrementMinutes": "تقليل الدقائق"
   }
 }
