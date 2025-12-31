@@ -20,7 +20,6 @@ import { FormSelect } from '@/components'
 import { useCreateCustomerMutation } from '@/api/customer'
 import { useCountriesQuery } from '@/api/metadata'
 import { useKyoraForm } from '@/lib/form'
-import { TextField } from '@/lib/form/components'
 import { buildE164Phone } from '@/lib/phone'
 import { showErrorToast, showSuccessToast } from '@/lib/toast'
 
@@ -180,71 +179,70 @@ export function AddCustomerSheet({
     onClose()
   }
 
-  const footer = (
-    <div className="flex gap-2">
-      <button
-        type="button"
-        className="btn btn-ghost flex-1"
-        onClick={safeClose}
-        disabled={createMutation.isPending}
-        aria-disabled={createMutation.isPending}
-      >
-        {t('common.cancel')}
-      </button>
-      <form.SubmitButton
-        form={`add-customer-form-${formId}`}
-        variant="primary"
-        className="flex-1"
-      >
-        {createMutation.isPending
-          ? t('customers.create_submitting')
-          : t('customers.create_submit')}
-      </form.SubmitButton>
-    </div>
-  )
-
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={safeClose}
-      title={t('customers.create_title')}
-      footer={footer}
-      side="end"
-      size="md"
-      closeOnOverlayClick={!createMutation.isPending}
-      closeOnEscape={!createMutation.isPending}
-      contentClassName="space-y-4"
-      ariaLabel={t('customers.create_title')}
-    >
-      <form.FormRoot
-        id={`add-customer-form-${formId}`}
-        className="space-y-4"
-        aria-busy={createMutation.isPending}
+    <form.AppForm>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={safeClose}
+        title={t('customers.create_title')}
+        footer={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-ghost flex-1"
+              onClick={safeClose}
+              disabled={createMutation.isPending}
+              aria-disabled={createMutation.isPending}
+            >
+              {t('common.cancel')}
+            </button>
+            <form.SubmitButton
+              form={`add-customer-form-${formId}`}
+              variant="primary"
+              className="flex-1"
+            >
+              {createMutation.isPending
+                ? t('customers.create_submitting')
+                : t('customers.create_submit')}
+            </form.SubmitButton>
+          </div>
+        }
+        side="end"
+        size="md"
+        closeOnOverlayClick={!createMutation.isPending}
+        closeOnEscape={!createMutation.isPending}
+        contentClassName="space-y-4"
+        ariaLabel={t('customers.create_title')}
       >
-        <form.Field
+        <form.FormRoot
+          id={`add-customer-form-${formId}`}
+          className="space-y-4"
+          aria-busy={createMutation.isPending}
+        >
+        <form.AppField
           name="name"
           validators={{
             onBlur: z.string().trim().min(1, 'validation.required'),
           }}
         >
-          {() => (
-            <TextField
+          {(field) => (
+            <field.TextField
               label={t('customers.form.name')}
               placeholder={t('customers.form.name_placeholder')}
               autoComplete="name"
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
-        <form.Field
+        <form.AppField
           name="email"
           validators={{
             onBlur: z.string().trim().min(1, 'validation.required').email('validation.invalid_email'),
           }}
         >
-          {() => (
-            <TextField
+          {(field) => (
+            <field.TextField
               type="email"
               label={t('customers.form.email')}
               placeholder={t('customers.form.email_placeholder')}
@@ -252,10 +250,10 @@ export function AddCustomerSheet({
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-          <form.Field
+          <form.AppField
             name="countryCode"
             validators={{
               onBlur: z.string().trim().min(1, 'validation.required').refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
@@ -272,9 +270,9 @@ export function AddCustomerSheet({
                 required
               />
             )}
-          </form.Field>
+          </form.AppField>
 
-          <form.Field
+          <form.AppField
             name="gender"
             validators={{
               onBlur: z.enum(['male', 'female', 'other'], { message: 'validation.required' }),
@@ -299,11 +297,11 @@ export function AddCustomerSheet({
                 placeholder={t('customers.form.select_gender')}
               />
             )}
-          </form.Field>
+          </form.AppField>
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-          <form.Field
+          <form.AppField
             name="phoneCode"
             validators={{
               onBlur: z.string().trim().refine((v) => v === '' || /^\+?\d{1,4}$/.test(v), 'validation.invalid_phone_code'),
@@ -316,24 +314,24 @@ export function AddCustomerSheet({
                 disabled={createMutation.isPending}
               />
             )}
-          </form.Field>
+          </form.AppField>
 
           <div className="sm:col-span-2">
-            <form.Field
+            <form.AppField
               name="phoneNumber"
               validators={{
                 onBlur: z.string().trim().refine((v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v), 'validation.invalid_phone'),
               }}
             >
-              {() => (
-                <TextField
+              {(field) => (
+                <field.TextField
                   type="tel"
                   label={t('customers.form.phone_number')}
                   placeholder={t('customers.form.phone_placeholder')}
                   autoComplete="tel"
                 />
               )}
-            </form.Field>
+            </form.AppField>
           </div>
         </div>
 
@@ -370,6 +368,7 @@ export function AddCustomerSheet({
           )}
         </form.Subscribe>
       </form.FormRoot>
-    </BottomSheet>
+      </BottomSheet>
+    </form.AppForm>
   )
 }

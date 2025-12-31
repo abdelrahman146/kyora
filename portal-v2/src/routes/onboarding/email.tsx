@@ -6,7 +6,6 @@ import { onboardingQueries, useStartSessionMutation } from '@/api/onboarding'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { TextField } from '@/lib/form/components'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 
 // Search params schema for URL-driven state
@@ -132,40 +131,42 @@ function EmailEntryPage() {
       {/* Email Form */}
       <div className="card bg-base-100 border border-base-300 shadow-lg">
         <div className="card-body">
-          <form.FormRoot className="space-y-6">
-            <form.Field
-              name="email"
-              validators={{
-                onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
-              }}
-            >
-              {() => (
-                <TextField
-                  type="email"
-                  label={tCommon('email')}
-                  placeholder={tOnboarding('email.emailPlaceholder')}
-                  autoFocus
-                />
+          <form.AppForm>
+            <form.FormRoot className="space-y-6">
+              <form.AppField
+                name="email"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
+                }}
+              >
+                {(field) => (
+                  <field.TextField
+                    type="email"
+                    label={tCommon('email')}
+                    placeholder={tOnboarding('email.emailPlaceholder')}
+                    autoFocus
+                  />
+                )}
+              </form.AppField>
+
+              {startSessionMutation.error && (
+                <div className="alert alert-error">
+                  <span className="text-sm">
+                    {startSessionMutation.error.message}
+                  </span>
+                </div>
               )}
-            </form.Field>
 
-            {startSessionMutation.error && (
-              <div className="alert alert-error">
-                <span className="text-sm">
-                  {startSessionMutation.error.message}
-                </span>
-              </div>
-            )}
-
-            <form.SubmitButton
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={startSessionMutation.isPending}
-            >
-              {tOnboarding('email.continue')}
-            </form.SubmitButton>
-          </form.FormRoot>
+              <form.SubmitButton
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={startSessionMutation.isPending}
+              >
+                {tOnboarding('email.continue')}
+              </form.SubmitButton>
+            </form.FormRoot>
+          </form.AppForm>
 
           <div className="divider">{tCommon('or')}</div>
 

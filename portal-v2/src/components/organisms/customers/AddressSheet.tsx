@@ -22,7 +22,6 @@ import { PhoneCodeSelect } from '../../molecules/PhoneCodeSelect'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress } from '@/api/customer'
 import { useKyoraForm } from '@/lib/form'
-import { TextField } from '@/lib/form/components'
 import { useCountriesQuery } from '@/api/metadata'
 import { buildE164Phone, parseE164Phone } from '@/lib/phone'
 import { showErrorToast, showSuccessToast } from '@/lib/toast'
@@ -178,12 +177,13 @@ export function AddressSheet({
           : t('customers.address.add_title')
       }
     >
-      <form.FormRoot
-        className="space-y-4"
-        aria-busy={isSubmitting}
-      >
+      <form.AppForm>
+        <form.FormRoot
+          className="space-y-4"
+          aria-busy={isSubmitting}
+        >
         {/* Country */}
-        <form.Field
+        <form.AppField
           name="countryCode"
           validators={{
             onBlur: z.string().length(2, 'validation.country_required'),
@@ -199,62 +199,62 @@ export function AddressSheet({
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* State */}
-        <form.Field
+        <form.AppField
           name="state"
           validators={{
             onBlur: z.string().min(1, 'validation.state_required'),
           }}
         >
-          {() => (
-            <TextField
+          {(field) => (
+            <field.TextField
               label={t('customers.form.state')}
               placeholder={t('customers.form.state_placeholder')}
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* City */}
-        <form.Field
+        <form.AppField
           name="city"
           validators={{
             onBlur: z.string().min(1, 'validation.city_required'),
           }}
         >
-          {() => (
-            <TextField
+          {(field) => (
+            <field.TextField
               label={t('customers.form.city')}
               placeholder={t('customers.form.city_placeholder')}
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* Street (Optional) */}
-        <form.Field name="street">
-          {() => (
-            <TextField
+        <form.AppField name="street">
+          {(field) => (
+            <field.TextField
               label={t('customers.form.street')}
               placeholder={t('customers.form.street_placeholder')}
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* Zip Code (Optional) */}
-        <form.Field name="zipCode">
-          {() => (
-            <TextField
+        <form.AppField name="zipCode">
+          {(field) => (
+            <field.TextField
               label={t('customers.form.zip_code')}
               placeholder={t('customers.form.zip_placeholder')}
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* Phone Code - Auto-updated from country, disabled */}
-        <form.Field
+        <form.AppField
           name="phoneCode"
           validators={{
             onBlur: z.string().min(1, 'validation.phone_code_required'),
@@ -268,24 +268,24 @@ export function AddressSheet({
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* Phone Number */}
-        <form.Field
+        <form.AppField
           name="phoneNumber"
           validators={{
             onBlur: z.string().min(1, 'validation.phone_required'),
           }}
         >
-          {() => (
-            <TextField
+          {(field) => (
+            <field.TextField
               type="tel"
               label={t('customers.form.phone_number')}
               placeholder={t('customers.form.phone_placeholder')}
               required
             />
           )}
-        </form.Field>
+        </form.AppField>
 
         {/* Footer Actions */}
         <div className="flex gap-2 pt-4">
@@ -309,6 +309,7 @@ export function AddressSheet({
           </form.SubmitButton>
         </div>
       </form.FormRoot>
+      </form.AppForm>
     </BottomSheet>
   )
 }

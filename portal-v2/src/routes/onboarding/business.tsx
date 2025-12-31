@@ -10,7 +10,6 @@ import { onboardingQueries, useSetBusinessMutation } from '@/api/onboarding'
 
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
-import { SelectField, TextField } from '@/lib/form/components'
 
 // Search params schema
 const BusinessSearchSchema = z.object({
@@ -218,102 +217,104 @@ function BusinessSetupPage() {
             </p>
           </div>
 
-          <form.FormRoot className="space-y-6">
-            {/* Business Name */}
-            <form.Field 
-              name="name"
-              validators={{
-                onBlur: z.string().min(1, 'validation.required'),
-              }}
-            >
-              {() => (
-                <TextField
-                  type="text"
-                  label={tOnboarding('business.name')}
-                  placeholder={tOnboarding('business.namePlaceholder')}
-                  autoFocus
-                  hint={tOnboarding('business.nameHint')}
-                  startIcon={<Building2 className="w-5 h-5" />}
-                />
+          <form.AppForm>
+            <form.FormRoot className="space-y-6">
+              {/* Business Name */}
+              <form.AppField 
+                name="name"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {(field) => (
+                  <field.TextField
+                    type="text"
+                    label={tOnboarding('business.name')}
+                    placeholder={tOnboarding('business.namePlaceholder')}
+                    autoFocus
+                    hint={tOnboarding('business.nameHint')}
+                    startIcon={<Building2 className="w-5 h-5" />}
+                  />
+                )}
+              </form.AppField>
+
+              {/* Business Descriptor */}
+              <form.AppField 
+                name="descriptor"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {(field) => (
+                  <field.TextField
+                    type="text"
+                    label={tOnboarding('business.descriptor')}
+                    placeholder={tOnboarding('business.descriptorPlaceholder')}
+                    hint={tOnboarding('business.descriptorHint')}
+                  />
+                )}
+              </form.AppField>
+
+              {/* Country */}
+              <form.AppField 
+                name="country"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {(field) => (
+                  <field.SelectField
+                    label={tOnboarding('business.country')}
+                    placeholder={tOnboarding('business.selectCountry')}
+                    options={countryOptions}
+                    disabled={isLoadingCountries || isCountriesError}
+                  />
+                )}
+              </form.AppField>
+
+              {/* Currency */}
+              <form.AppField 
+                name="currency"
+                validators={{
+                  onBlur: z.string().min(1, 'validation.required'),
+                }}
+              >
+                {(field) => (
+                  <field.SelectField
+                    label={tOnboarding('business.currency')}
+                    placeholder={tOnboarding('business.selectCurrency')}
+                    options={currencyOptions}
+                    disabled={isLoadingCountries || isCountriesError}
+                  />
+                )}
+              </form.AppField>
+
+              {isCountriesError && (
+                <div className="alert alert-error">
+                  <span className="text-sm">
+                    {tTranslation('errors:generic.unexpected')}
+                  </span>
+                </div>
               )}
-            </form.Field>
 
-            {/* Business Descriptor */}
-            <form.Field 
-              name="descriptor"
-              validators={{
-                onBlur: z.string().min(1, 'validation.required'),
-              }}
-            >
-              {() => (
-                <TextField
-                  type="text"
-                  label={tOnboarding('business.descriptor')}
-                  placeholder={tOnboarding('business.descriptorPlaceholder')}
-                  hint={tOnboarding('business.descriptorHint')}
-                />
+              {setBusinessMutation.error && (
+                <div className="alert alert-error">
+                  <span className="text-sm">
+                    {setBusinessMutation.error.message}
+                  </span>
+                </div>
               )}
-            </form.Field>
 
-            {/* Country */}
-            <form.Field 
-              name="country"
-              validators={{
-                onBlur: z.string().min(1, 'validation.required'),
-              }}
-            >
-              {() => (
-                <SelectField
-                  label={tOnboarding('business.country')}
-                  placeholder={tOnboarding('business.selectCountry')}
-                  options={countryOptions}
-                  disabled={isLoadingCountries || isCountriesError}
-                />
-              )}
-            </form.Field>
-
-            {/* Currency */}
-            <form.Field 
-              name="currency"
-              validators={{
-                onBlur: z.string().min(1, 'validation.required'),
-              }}
-            >
-              {() => (
-                <SelectField
-                  label={tOnboarding('business.currency')}
-                  placeholder={tOnboarding('business.selectCurrency')}
-                  options={currencyOptions}
-                  disabled={isLoadingCountries || isCountriesError}
-                />
-              )}
-            </form.Field>
-
-            {isCountriesError && (
-              <div className="alert alert-error">
-                <span className="text-sm">
-                  {tTranslation('errors:generic.unexpected')}
-                </span>
-              </div>
-            )}
-
-            {setBusinessMutation.error && (
-              <div className="alert alert-error">
-                <span className="text-sm">
-                  {setBusinessMutation.error.message}
-                </span>
-              </div>
-            )}
-
-            <form.SubmitButton
-              variant="primary"
-              size="lg"
-              fullWidth
-              disabled={setBusinessMutation.isPending}
-            >
-              {tCommon('continue')}
-            </form.SubmitButton>
-          </form.FormRoot>
+              <form.SubmitButton
+                variant="primary"
+                size="lg"
+                fullWidth
+                disabled={setBusinessMutation.isPending}
+              >
+                {tCommon('continue')}
+              </form.SubmitButton>
+            </form.FormRoot>
+          </form.AppForm>
         </div>
       </div>
       </div>

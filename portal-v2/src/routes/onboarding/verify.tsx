@@ -16,7 +16,6 @@ import { isHTTPError } from '@/lib/errorParser'
 import { formatCountdownDuration } from '@/lib/utils'
 import { OnboardingLayout } from '@/components/templates/OnboardingLayout'
 import { useKyoraForm } from '@/lib/form'
-import { PasswordField, TextField } from '@/lib/form/components'
 
 // Search params schema
 const VerifySearchSchema = z.object({
@@ -349,113 +348,115 @@ function VerifyEmailPage() {
               </p>
             </div>
 
-            <profileForm.FormRoot className="space-y-5">
-              <profileForm.Field
-                name="firstName"
-                validators={{
-                  onBlur: z.string().min(1, 'validation.required'),
-                }}
-              >
-                {() => (
-                  <TextField
-                    type="text"
-                    label={tCommon('firstName')}
-                    placeholder={tCommon('firstName')}
-                  />
-                )}
-              </profileForm.Field>
+            <profileForm.AppForm>
+              <profileForm.FormRoot className="space-y-5">
+                <profileForm.AppField
+                  name="firstName"
+                  validators={{
+                    onBlur: z.string().min(1, 'validation.required'),
+                  }}
+                >
+                  {(field) => (
+                    <field.TextField
+                      type="text"
+                      label={tCommon('firstName')}
+                      placeholder={tCommon('firstName')}
+                    />
+                  )}
+                </profileForm.AppField>
 
-              <profileForm.Field
-                name="lastName"
-                validators={{
-                  onBlur: z.string().min(1, 'validation.required'),
-                }}
-              >
-                {() => (
-                  <TextField
-                    type="text"
-                    label={tCommon('lastName')}
-                    placeholder={tCommon('lastName')}
-                  />
-                )}
-              </profileForm.Field>
+                <profileForm.AppField
+                  name="lastName"
+                  validators={{
+                    onBlur: z.string().min(1, 'validation.required'),
+                  }}
+                >
+                  {(field) => (
+                    <field.TextField
+                      type="text"
+                      label={tCommon('lastName')}
+                      placeholder={tCommon('lastName')}
+                    />
+                  )}
+                </profileForm.AppField>
 
-              <profileForm.Field
-                name="password"
-                validators={{
-                  onBlur: z.string().min(8, 'validation.password_min_length'),
-                  onChange: ({ value }: { value: string }) => {
-                    if (value.length > 0 && value.length < 8) {
-                      return 'validation.password_min_length'
-                    }
-                    return undefined
-                  },
-                }}
-              >
-                {() => (
-                  <PasswordField
-                    label={tCommon('password')}
-                    placeholder={tCommon('password')}
-                    hint={tOnboarding('verify.passwordHint')}
-                  />
-                )}
-              </profileForm.Field>
+                <profileForm.AppField
+                  name="password"
+                  validators={{
+                    onBlur: z.string().min(8, 'validation.password_min_length'),
+                    onChange: ({ value }: { value: string }) => {
+                      if (value.length > 0 && value.length < 8) {
+                        return 'validation.password_min_length'
+                      }
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <field.PasswordField
+                      label={tCommon('password')}
+                      placeholder={tCommon('password')}
+                      hint={tOnboarding('verify.passwordHint')}
+                    />
+                  )}
+                </profileForm.AppField>
 
-              <profileForm.Field
-                name="confirmPassword"
-                validators={{
-                  onChangeListenTo: ['password'],
-                  onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
-                    const password = fieldApi.form.getFieldValue('password')
-                    if (value !== password) {
-                      return 'validation.passwords_must_match'
-                    }
-                    return undefined
-                  },
-                }}
-              >
-                {() => (
-                  <PasswordField
-                    label={tCommon('confirmPassword')}
-                    placeholder={tCommon('confirmPassword')}
-                  />
-                )}
-              </profileForm.Field>
+                <profileForm.AppField
+                  name="confirmPassword"
+                  validators={{
+                    onChangeListenTo: ['password'],
+                    onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
+                      const password = fieldApi.form.getFieldValue('password')
+                      if (value !== password) {
+                        return 'validation.passwords_must_match'
+                      }
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <field.PasswordField
+                      label={tCommon('confirmPassword')}
+                      placeholder={tCommon('confirmPassword')}
+                    />
+                  )}
+                </profileForm.AppField>
 
-              {verifyEmailMutation.error && (
-                <div className="alert alert-error">
-                  <div className="flex flex-col gap-2">
-                    <span className="text-sm">
-                      {verifyEmailMutation.error.message}
-                    </span>
-                    {showLoginCta && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        onClick={async () => {
-                          await navigate({
-                            to: '/auth/login',
-                            search: { redirect: '/' },
-                          })
-                        }}
-                      >
-                        {tTranslation('auth.login')}
-                      </Button>
-                    )}
+                {verifyEmailMutation.error && (
+                  <div className="alert alert-error">
+                    <div className="flex flex-col gap-2">
+                      <span className="text-sm">
+                        {verifyEmailMutation.error.message}
+                      </span>
+                      {showLoginCta && (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          onClick={async () => {
+                            await navigate({
+                              to: '/auth/login',
+                              search: { redirect: '/' },
+                            })
+                          }}
+                        >
+                          {tTranslation('auth.login')}
+                        </Button>
+                      )}
+                    </div>
                   </div>
-                </div>
-              )}
+                )}
 
-              <profileForm.SubmitButton
-                variant="primary"
-                size="lg"
-                fullWidth
-                disabled={verifyEmailMutation.isPending}
-              >
-                {tCommon('continue')}
-              </profileForm.SubmitButton>
-            </profileForm.FormRoot>
+                <profileForm.SubmitButton
+                  variant="primary"
+                  size="lg"
+                  fullWidth
+                  disabled={verifyEmailMutation.isPending}
+                >
+                  {tCommon('continue')}
+                </profileForm.SubmitButton>
+              </profileForm.FormRoot>
+            </profileForm.AppForm>
           </div>
         </div>
       )}

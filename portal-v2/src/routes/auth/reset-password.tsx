@@ -7,7 +7,6 @@ import { redirectIfAuthenticated } from '@/lib/routeGuards'
 import { authApi } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { PasswordField } from '@/lib/form/components'
 
 export const Route = createFileRoute('/auth/reset-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -183,73 +182,75 @@ function ResetPasswordPage() {
               {t('auth.reset_password_description')}
             </p>
 
-            <form.FormRoot className="space-y-6">
-              <form.FormError />
+            <form.AppForm>
+              <form.FormRoot className="space-y-6">
+                <form.FormError />
 
-              <form.Field 
-                name="password"
-                validators={{
-                  onBlur: z.string().min(8, 'validation.password_min_length'),
-                  onChange: ({ value }: { value: string }) => {
-                    if (value.length > 0 && value.length < 8) {
-                      return 'validation.password_min_length'
-                    }
-                    return undefined
-                  },
-                }}
-              >
-                {() => (
-                  <PasswordField
-                    label={t('auth.new_password')}
-                    placeholder={t('auth.new_password_placeholder')}
-                    hint={t('auth.password_requirements')}
-                    autoComplete="new-password"
-                    autoFocus
-                  />
-                )}
-              </form.Field>
+                <form.AppField 
+                  name="password"
+                  validators={{
+                    onBlur: z.string().min(8, 'validation.password_min_length'),
+                    onChange: ({ value }: { value: string }) => {
+                      if (value.length > 0 && value.length < 8) {
+                        return 'validation.password_min_length'
+                      }
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <field.PasswordField
+                      label={t('auth.new_password')}
+                      placeholder={t('auth.new_password_placeholder')}
+                      hint={t('auth.password_requirements')}
+                      autoComplete="new-password"
+                      autoFocus
+                    />
+                  )}
+                </form.AppField>
 
-              <form.Field 
-                name="confirmPassword"
-                validators={{
-                  onBlur: z.string().min(1, 'validation.required'),
-                  onChangeListenTo: ['password'],
-                  onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
-                    if (value !== fieldApi.form.getFieldValue('password')) {
-                      return 'validation.passwords_must_match'
-                    }
-                    return undefined
-                  },
-                }}
-              >
-                {() => (
-                  <PasswordField
-                    label={t('auth.confirm_password')}
-                    placeholder={t('auth.confirm_password_placeholder')}
-                    autoComplete="new-password"
-                  />
-                )}
-              </form.Field>
+                <form.AppField 
+                  name="confirmPassword"
+                  validators={{
+                    onBlur: z.string().min(1, 'validation.required'),
+                    onChangeListenTo: ['password'],
+                    onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {
+                      if (value !== fieldApi.form.getFieldValue('password')) {
+                        return 'validation.passwords_must_match'
+                      }
+                      return undefined
+                    },
+                  }}
+                >
+                  {(field) => (
+                    <field.PasswordField
+                      label={t('auth.confirm_password')}
+                      placeholder={t('auth.confirm_password_placeholder')}
+                      autoComplete="new-password"
+                    />
+                  )}
+                </form.AppField>
 
-              <form.SubmitButton variant="primary" size="lg" fullWidth>
-                {t('auth.reset_password_submit')}
-              </form.SubmitButton>
+                <form.SubmitButton variant="primary" size="lg" fullWidth>
+                  {t('auth.reset_password_submit')}
+                </form.SubmitButton>
 
-              <div className="text-center">
-                <p className="text-sm text-base-content/60">
-                  {t('auth.remember_password')}{' '}
-                  <button
-                    type="button"
-                    onClick={() => {
-                      void handleBackToLogin()
-                    }}
-                    className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
-                  >
-                    {t('auth.login')}
-                  </button>
-                </p>
-              </div>
-            </form.FormRoot>
+                <div className="text-center">
+                  <p className="text-sm text-base-content/60">
+                    {t('auth.remember_password')}{' '}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        void handleBackToLogin()
+                      }}
+                      className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
+                    >
+                      {t('auth.login')}
+                    </button>
+                  </p>
+                </div>
+              </form.FormRoot>
+            </form.AppForm>
           </div>
         </div>
       </div>

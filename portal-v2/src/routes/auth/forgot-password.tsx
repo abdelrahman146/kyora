@@ -8,7 +8,6 @@ import { authApi } from '@/api/auth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { TextField } from '@/lib/form/components'
 
 export const Route = createFileRoute('/auth/forgot-password')({
   beforeLoad: redirectIfAuthenticated,
@@ -116,30 +115,31 @@ function ForgotPasswordPage() {
               {t('auth.forgot_password_description')}
             </p>
 
-            <form.FormRoot className="space-y-6">
-              <form.FormError />
+            <form.AppForm>
+              <form.FormRoot className="space-y-6">
+                <form.FormError />
 
-              <form.Field 
-                name="email"
-                validators={{
-                  onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
-                }}
-              >
-                {() => (
-                  <TextField
-                    type="email"
-                    label={t('auth.email')}
-                    placeholder={t('auth.email_placeholder')}
-                    startIcon={<Mail size={20} />}
-                    autoComplete="email"
-                    autoFocus
-                  />
-                )}
-              </form.Field>
+                <form.AppField 
+                  name="email"
+                  validators={{
+                    onBlur: z.string().min(1, 'validation.required').email('validation.invalid_email'),
+                  }}
+                >
+                  {(field) => (
+                    <field.TextField
+                      type="email"
+                      label={t('auth.email')}
+                      placeholder={t('auth.email_placeholder')}
+                      startIcon={<Mail size={20} />}
+                      autoComplete="email"
+                      autoFocus
+                    />
+                  )}
+                </form.AppField>
 
-              <form.SubmitButton variant="primary" size="lg" fullWidth>
-                {t('auth.send_reset_link')}
-              </form.SubmitButton>
+                <form.SubmitButton variant="primary" size="lg" fullWidth>
+                  {t('auth.send_reset_link')}
+                </form.SubmitButton>
 
               <div className="text-center">
                 <p className="text-sm text-base-content/60">
@@ -155,7 +155,8 @@ function ForgotPasswordPage() {
                   </button>
                 </p>
               </div>
-            </form.FormRoot>
+              </form.FormRoot>
+            </form.AppForm>
           </div>
         </div>
       </div>

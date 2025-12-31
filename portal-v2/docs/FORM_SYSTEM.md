@@ -2,7 +2,14 @@
 
 ## Overview
 
-The portal-v2 uses a sophisticated form management system built on **TanStack Form v0.x** with a custom `useKyoraForm` composition layer that eliminates boilerplate while providing production-grade form handling.
+The portal-v2 uses a sophisticated form management system built on **TanStack Form v1** with a custom `useKyoraForm` composition layer that eliminates boilerplate while providing production-grade form handling.
+
+### Key Architecture
+
+**TanStack Form Composition Pattern:**
+- `useKyoraForm` returns a form instance with `form.AppForm` (provides form context) and `form.AppField` (provides field context)
+- Components registered in `fieldComponents` are accessed via `field.TextField`, `field.PasswordField`, etc.
+- Components registered in `formComponents` (FormRoot, SubmitButton, FormError) require form context from `form.AppForm`
 
 ### Key Features
 
@@ -14,9 +21,17 @@ The portal-v2 uses a sophisticated form management system built on **TanStack Fo
 - ✅ **Server Errors**: RFC7807 problem details integration
 - ✅ **Performance**: Granular subscriptions prevent unnecessary re-renders
 
+### ⚠️ Critical Rule
+
+**ALL components that use form context (FormRoot, SubmitButton, FormError, Subscribe) MUST be inside `<form.AppForm>`.**
+
+If you see: `Error: formContext only works when within a formComponent passed to createFormHook`, you have a component using form context placed outside `<form.AppForm>`.
+
 ## Quick Start
 
 ###  Basic Form
+
+**IMPORTANT:** Always wrap forms in `<form.AppForm>` and use `<form.AppField>` with `field.ComponentName` pattern.
 
 ```tsx
 import { useKyoraForm } from '@/lib/form'
@@ -30,40 +45,60 @@ function LoginForm() {
       email: '',
       password: '',
     },
-    validators: {
-      email: { onBlur: z.string().email('invalid_email') },
-      password: { onBlur: z.string().min(8, 'password_too_short') },
-    },
     onSubmit: async ({ value }) => {
       await api.login(value)
     },
   })
 
   return (
-    <form.FormRoot className="space-y-4">
-      <form.TextField
-        name="email"
-        type="email"
-        label={t('auth.email')}
-        placeholder={t('auth.email_placeholder')}
-        autoComplete="email"
-        required
-      />
+    <form.AppForm>
+      <form.FormRoot className="space-y-4">
+        <form.FormError />
+        
+        <form.AppField
+          name="email"
+          validators={{
+            onBlur: z.string().email('invalid_email'),
+          }}
+        >
+          {(field) => (
+            <field.TextField
+              type="email"
+              label={t('auth.email')}
+              placeholder={t('auth.email_placeholder')}
+              autoComplete="email"
+            />
+          )}
+        </form.AppField>
 
-      <form.PasswordField
-        name="password"
-        label={t('auth.password')}
-        autoComplete="current-password"
-        required
-      />
+        <form.AppField
+          name="password"
+          validators={{
+            onBlur: z.string().min(8, 'password_too_short'),
+          }}
+        >
+          {(field) => (
+            <field.PasswordField
+              label={t('auth.password')}
+              autoComplete="current-password"
+            />
+          )}
+        </form.AppField>
 
-      <form.SubmitButton variant="primary">
-        {t('auth.login')}
-      </form.SubmitButton>
-    </form.FormRoot>
+        <form.SubmitButton variant="primary">
+          {t('auth.login')}
+        </form.SubmitButton>
+      </form.FormRoot>
+    </form.AppForm>
   )
 }
 ```
+
+**Key points:**
+1. `<form.AppForm>` wraps everything (provides form context)
+2. `<form.AppField>` instead of `<form.Field>` (provides field context)
+3. Use `{(field) => <field.TextField />}` pattern (components from `fieldComponents`)
+4. FormRoot, SubmitButton, FormError must be inside `<form.AppForm>`
 
 ## API Reference
 
@@ -433,20 +468,84 @@ For errors that don't belong to a specific field:
 
 ## Advanced Patterns
 
+### ⚠️ CRITICAL: Form Context and Component Placement
+
+**The `form.AppForm` wrapper is REQUIRED for all form components that use form context.**
+
+Components that use `useFormContext()` internally (FormRoot, SubmitButton, FormError) **MUST** be inside `<form.AppForm>`:
+
+```tsx
+// ❌ WRONG - SubmitButton outside form.AppForm
+function MyForm() {
+  const form = useKyoraForm({ /* ... */ })
+  
+  return (
+    <>
+      <form.AppForm>
+        <form.FormRoot>
+          {/* fields */}
+        </form.FormRoot>
+      </form.AppForm>
+      <form.SubmitButton>Submit</form.SubmitButton>  {/* ❌ Error: formContext not available */}
+    </>
+  )
+}
+
+// ✅ CORRECT - All form components inside form.AppForm
+function MyForm() {
+  const form = useKyoraForm({ /* ... */ })
+  
+  return (
+    <form.AppForm>
+      <form.FormRoot>
+        {/* fields */}
+      </form.FormRoot>
+      <form.SubmitButton>Submit</form.SubmitButton>  {/* ✅ Has form context */}
+    </form.AppForm>
+  )
+}
+```
+
+**Error symptom:** If you see `Error: formContext only works when within a formComponent passed to createFormHook`, it means a component using `useFormContext()` is placed outside `<form.AppForm>`.
+
 ### External Form Submission
 
-For modals/sheets with footer buttons:
+For modals/sheets with footer buttons outside the form:
 
 ```tsx
 function AddCustomerSheet() {
   const formId = useId()
-  
   const form = useKyoraForm({ /* ... */ })
   
-  const footer = (
+  // ✅ CORRECT - Wrap ENTIRE component in form.AppForm
+  return (
+    <form.AppForm>
+      <BottomSheet
+        footer={
+          <div>
+            <button onClick={onClose}>Cancel</button>
+            <form.SubmitButton form={formId}>  {/* ✅ Has access to form context */}
+              Submit
+            </form.SubmitButton>
+          </div>
+        }
+      >
+        <form.FormRoot id={formId}>
+          {/* fields */}
+        </form.FormRoot>
+      </BottomSheet>
+    </form.AppForm>
+  )
+}
+
+// ❌ WRONG - form.AppForm only wraps FormRoot
+function AddCustomerSheetWrong() {
+  const formId = useId()
+  const form = useKyoraForm({ /* ... */ })
+  
+  const footer = (  // ❌ Defined outside form.AppForm
     <div>
-      <button onClick={onClose}>Cancel</button>
-      <form.SubmitButton form={formId}>
+      <form.SubmitButton form={formId}>  {/* ❌ No form context! */}
         Submit
       </form.SubmitButton>
     </div>
@@ -454,13 +553,17 @@ function AddCustomerSheet() {
   
   return (
     <BottomSheet footer={footer}>
-      <form.FormRoot id={formId}>
-        {/* fields */}
-      </form.FormRoot>
+      <form.AppForm>  {/* ❌ form.AppForm in wrong place */}
+        <form.FormRoot id={formId}>
+          {/* fields */}
+        </form.FormRoot>
+      </form.AppForm>
     </BottomSheet>
   )
 }
 ```
+
+**Key principle:** `<form.AppForm>` must be the outermost wrapper that contains ALL components using form context (FormRoot, SubmitButton, FormError, Subscribe).
 
 ### Dependent Fields
 
