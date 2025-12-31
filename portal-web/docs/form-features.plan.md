@@ -1,50 +1,111 @@
-# Advanced Form Features Implementation Plan
+# Form Features Implementation Plan
 
 ## Executive Summary
+
+This document tracks the implementation status of the Kyora Portal Web form system, documenting what has been built and outlining future enhancements. The system is built on **TanStack Form v1** with a custom `useKyoraForm` composition layer that eliminates boilerplate while providing production-grade form handling.
 
 This plan outlines the implementation of 4 critical advanced form features for the Kyora Portal Web form system. The approach prioritizes **optimal UX and best code quality** over quick delivery, ensuring all new components follow the established patterns of TanStack Form + Zod + i18n + daisyUI.
 
 ---
 
-## Current Architecture Foundation
+## ✅ Phase 0: Core Form System (COMPLETED)
 
-### Core Stack
-- **TanStack Form v0.x**: Granular state management with Subscribe pattern
+### Architecture Foundation
+
+**Core Stack:**
+- **TanStack Form v1**: Granular state management with Subscribe pattern
 - **Zod**: Runtime validation with translation key error messages
 - **react-i18next**: Automatic error translation via 'errors' namespace
-- **daisyUI + Tailwind CSS**: Atomic UI components with RTL support
+- **daisyUI + Tailwind CSS v4**: Component classes with RTL support
 - **useKyoraForm**: Composition layer providing pre-bound components
 
-### Existing Component Patterns
-- **Atomic Components**: `FormInput`, `FormSelect`, `FormTextarea`, `FormCheckbox`, `FormRadio`, `FormToggle`
-- **Composition Components**: `TextField`, `PasswordField`, `SubmitButton`
-- **Integration Pattern**: Atomic component wrapped with `form.Field` in composition layer
-- **Validation**: Field-level Zod schemas, progressive modes (submit → blur after first error)
-- **Accessibility**: Automatic ARIA attributes, focus management, screen reader support
-- **Styling**: daisyUI utilities, RTL-first with logical properties (`start-*`, `end-*`)
+### Implemented Components
 
----
+**Field Components (via useKyoraForm):**
+- ✅ `TextField`: Text/email/tel inputs with auto error handling
+- ✅ `PasswordField`: Password input with visibility toggle
+- ✅ `TextareaField`: Multi-line text input with character counter
+- ✅ `SelectField`: Dropdown select with search support
+- ✅ `CheckboxField`: Checkbox with label and description
+- ✅ `RadioField`: Radio button group with flexible layout
+- ✅ `ToggleField`: Toggle/switch component
 
-## Phase 1: Multi-Select Support in FormSelect
+**Form Components:**
+- ✅ `FormRoot`: Replaces `<form>` with auto submit handling
+- ✅ `SubmitButton`: Submit button with loading state
+- ✅ `ErrorInfo`: Field-level error display
+- ✅ `FormError`: Form-level error display
 
-### Architecture
+### Core Features Implemented
 
-**Goal:** Extend existing `FormSelect` atomic component to support multi-select mode, then create `SelectField` composition component with TanStack Form integration.
+**Validation System:**
+- ✅ Field-level Zod schema validation
+- ✅ Progressive validation modes (submit → blur → change)
+- ✅ Cross-field validation support
+- ✅ Server error injection with RFC7807 support
+- ✅ Auto-translated error messages
+
+**User Experience:**
+- ✅ Automatic focus on first invalid field
+- ✅ Granular subscriptions prevent unnecessary re-renders
+- ✅ Zero boilerplate with pre-bound components
+- ✅ Type-safe with full TypeScript inference
+- ✅ Mobile-optimized touch targets (50px minimum)
+- ✅ RTL-first design with logical properties
+
+**Accessibility:**
+- ✅ ARIA attributes auto-applied
+- ✅ Screen reader support
+- ✅ Keyboard navigation
+- ✅ Focus management
+- ✅ Error announcements
+
+### Architecture Patterns
 
 **Component Structure:**
 ```
-SelectField (composition) 
+useKyoraForm (composition layer)
+  ↓ returns
+form.AppForm (context provider)
+  ↓ wraps
+form.AppField (field context)
+  ↓ renders
+field.TextField / field.PasswordField / etc.
+```
+
+**Critical Rule:**
+ALL components using form context (FormRoot, SubmitButton, FormError, Subscribe) MUST be inside `<form.AppForm>` wrapper.
+
+---
+
+## 🚧 Future Enhancements (PLANNED)
+
+---
+
+## Phase 1: Multi-Select Support in FormSelect (PLANNED)
+
+### Current Status
+
+**SelectField exists** with single-select and search support. Multi-select mode is NOT yet implemented.
+
+### Architecture
+
+**Goal:** Extend existing `SelectField` component to support multi-select mode with chip-based UI.
+
+**Component Structure:**
+```
+SelectField (composition - existing)
   ↓ wraps
 form.Field (TanStack Form binding)
-  ↓ wraps  
-FormSelect (atomic, multi-select capable)
+  ↓ renders
+Multi-select chips UI (NEW)
 ```
 
 ### Implementation Steps
 
 #### Step 1.1: Enhance FormSelect Atomic Component
 
-**File:** `portal-v2/src/components/atoms/FormSelect.tsx`
+**File:** `portal-web/src/components/atoms/FormSelect.tsx`
 
 **Changes:**
 1. Add `multiple?: boolean` prop to `FormSelectProps`
@@ -59,7 +120,7 @@ FormSelect (atomic, multi-select capable)
    - `aria-selected` on options
    - Screen reader announcements for selections
 5. Add daisyUI styling for chips:
-   - Use `badge` component with `badge-primary` variant
+   - Use `badge` component with `badge-neutral` variant
    - Add close button with `btn-xs btn-circle` styling
 
 **Validation Patterns:**
@@ -76,7 +137,7 @@ const tagsSchema = z.array(z.string())
 
 **Translation Keys:**
 ```typescript
-// Add to portal-v2/src/i18n/en/errors.json
+// Add to portal-web/src/i18n/en/errors.json
 {
   "form": {
     "selectAtLeastOne": "Please select at least one option",
@@ -86,9 +147,9 @@ const tagsSchema = z.array(z.string())
 }
 ```
 
-#### Step 1.2: Create SelectField Composition Component
+#### Step 1.2: Update SelectField Composition Component
 
-**File:** `portal-v2/src/components/molecules/SelectField.tsx`
+**File:** `portal-web/src/components/molecules/SelectField.tsx`
 
 **API:**
 ```typescript
@@ -148,7 +209,7 @@ interface SelectFieldProps<T> {
 
 #### Step 1.4: Update useKyoraForm
 
-**File:** `portal-v2/src/hooks/useKyoraForm.ts`
+**File:** `portal-web/src/hooks/useKyoraForm.ts`
 
 Add `SelectField` to pre-bound components:
 ```typescript
@@ -165,7 +226,7 @@ return {
 }
 ```
 
-#### Step 1.5: Testing & Documentation
+#### Step 1.5: Documentation
 
 **Documentation:**
 Update `FORM_SYSTEM.md`:
@@ -176,20 +237,20 @@ Update `FORM_SYSTEM.md`:
 
 ---
 
-## Phase 2: Date/Time Pickers
+## Phase 2: Date/Time Pickers (PLANNED)
 
 ### Architecture
 
-**Goal:** Create production-grade date/time components using `react-day-picker` v9 and `date-fns`, following established atomic → composition pattern.
+**Goal:** Create production-grade date/time field components integrated with useKyoraForm.
 
 **Component Structure:**
 ```
-DateField / TimeField / DateTimeField (composition)
-  ↓ wraps
-form.Field (TanStack Form binding)
-  ↓ wraps
-DatePicker / TimePicker (atomic)
-  ↓ uses
+DateField / TimeField / DateTimeField (new field components)
+  ↓ registered in useKyoraForm
+form.AppField
+  ↓ renders
+field.DateField / field.TimeField / field.DateTimeField
+  ↓ internally uses
 react-day-picker (library)
 ```
 
@@ -198,19 +259,19 @@ react-day-picker (library)
 #### Step 2.1: Install Dependencies
 
 ```bash
-cd portal-v2
-npm install react-day-picker@^9.0.0 date-fns@^3.0.0
+cd portal-web
+npm install react-day-picker date-fns
 npm install -D @types/react-day-picker
 ```
 
 **Rationale:**
-- `react-day-picker` v9: Production-ready, accessible, customizable calendar
+- `react-day-picker`: Production-ready, accessible, customizable calendar
 - `date-fns`: Lightweight date utilities (already used in backend)
 - Full TypeScript support
 
 #### Step 2.2: Create DatePicker Atomic Component
 
-**File:** `portal-v2/src/components/atoms/DatePicker.tsx`
+**File:** `portal-web/src/components/atoms/DatePicker.tsx`
 
 **Features:**
 1. **Base Calendar UI:**
@@ -218,6 +279,7 @@ npm install -D @types/react-day-picker
    - daisyUI styled input (`input input-bordered`)
    - Calendar styled with daisyUI colors (primary for selected date)
    - RTL support for Arabic (calendar flows right-to-left)
+   - Consistent UI Design with Other UI elements and form elements.
 
 2. **Input Formatting:**
    - Locale-aware display (en: MM/DD/YYYY, ar: DD/MM/YYYY)
@@ -283,7 +345,7 @@ className="text-base-300 cursor-not-allowed"
 
 #### Step 2.3: Create TimePicker Atomic Component
 
-**File:** `portal-v2/src/components/atoms/TimePicker.tsx`
+**File:** `portal-web/src/components/atoms/TimePicker.tsx`
 
 **Features:**
 1. **Time Input UI:**
@@ -317,9 +379,9 @@ className="text-base-300 cursor-not-allowed"
    }
    ```
 
-#### Step 2.4: Create DateTimeField Composition Component (2 days)
+#### Step 2.4: Create DateTimeField Composition Component
 
-**File:** `portal-v2/src/components/molecules/DateTimeField.tsx`
+**File:** `portal-web/src/components/molecules/DateTimeField.tsx`
 
 **API:**
 ```typescript
@@ -366,8 +428,8 @@ interface DateTimeFieldProps {
 #### Step 2.5: Create Composition Wrappers
 
 **Files:**
-- `portal-v2/src/components/molecules/DateField.tsx` (thin wrapper for mode="date")
-- `portal-v2/src/components/molecules/TimeField.tsx` (thin wrapper for mode="time")
+- `portal-web/src/components/molecules/DateField.tsx` (thin wrapper for mode="date")
+- `portal-web/src/components/molecules/TimeField.tsx` (thin wrapper for mode="time")
 
 **Update useKyoraForm:**
 ```typescript
@@ -380,7 +442,7 @@ return {
 }
 ```
 
-#### Step 2.6: Validation Patterns
+#### Step 2.3: Validation Patterns
 
 **Common Validators:**
 ```typescript
@@ -415,7 +477,7 @@ const appointmentTimeSchema = z.date()
 
 **Translation Keys:**
 ```typescript
-// Add to portal-v2/src/i18n/en/errors.json
+// Add to portal-web/src/i18n/en/errors.json
 {
   "form": {
     "dateCannotBeFuture": "Date cannot be in the future",
@@ -429,9 +491,9 @@ const appointmentTimeSchema = z.date()
 }
 ```
 
-#### Step 2.7: Testing & Documentation
+#### Step 2.4: Testing & Documentation
 
-**Tests:**
+**Testing:**
 - Date selection and formatting
 - Time input validation
 - Min/max date enforcement
@@ -439,37 +501,37 @@ const appointmentTimeSchema = z.date()
 - Screen reader announcements
 - Mobile full-screen modal
 - RTL layout (Arabic)
-- Timezone handling (if applicable)
+- Locale-aware formatting
 
 **Documentation:**
 Update `FORM_SYSTEM.md`:
-- Add DateField/TimeField/DateTimeField API reference
+- Add field components to API reference
 - Add date/time validation patterns
-- Add locale-specific formatting notes
-- Add mobile optimization notes
+- Add usage examples
+- Add accessibility notes
 
 ---
 
-## Phase 3: Wizard/Stepper Pattern
+## Phase 3: Wizard/Stepper Pattern (PLANNED)
 
 ### Architecture
 
-**Goal:** Create multi-step form flow with TanStack Router integration, step-aware validation, and progress persistence.
+**Goal:** Create multi-step form pattern with step-aware validation and progress tracking.
 
 **Component Structure:**
 ```
-WizardForm (page-level)
-  ↓ uses
-useWizardForm (hook) → wraps useKyoraForm
-  ↓ uses
-Stepper (molecule) → visual progress indicator
+useWizardForm (custom hook)
+  ↓ wraps
+useKyoraForm (form management)
+  ↓ with
+Stepper (progress indicator component)
 ```
 
 ### Implementation Steps
 
-#### Step 3.1: Create Stepper Molecule Component
+#### Step 3.1: Create Stepper Component
 
-**File:** `portal-v2/src/components/molecules/Stepper.tsx`
+**File:** `portal-web/src/components/molecules/Stepper.tsx`
 
 **Features:**
 1. **Visual Progress:**
@@ -481,7 +543,7 @@ Stepper (molecule) → visual progress indicator
 
 2. **Responsive Layout:**
    - Desktop: Horizontal steps across top
-   - Mobile: Vertical steps on left side OR compact progress bar
+   - Mobile: Vertical steps on left side OR compact progress bar (Which ever provides the best mobile and small screen sizes experience)
 
 3. **Interactivity:**
    - Click completed steps to navigate back
@@ -519,7 +581,7 @@ interface StepperProps {
 
 #### Step 3.2: Create useWizardForm Hook
 
-**File:** `portal-v2/src/hooks/useWizardForm.ts`
+**File:** `portal-web/src/hooks/useWizardForm.ts`
 
 **Features:**
 1. **Step Management:**
@@ -536,7 +598,7 @@ interface StepperProps {
    - Validate all steps on final submit
 
 3. **Progress Persistence:**
-   - Serialize step state to URL search params (`?step=2`)
+   - Serialize step state to URL search params (`?step=<step_name>`)
    - Restore on page load
    - Optionally persist form values to localStorage
    - Clear on final submission or explicit reset
@@ -569,13 +631,13 @@ function useWizardForm(options: UseWizardFormOptions) {
     ...form, // All useKyoraForm methods
     
     // Wizard-specific
-    currentStep: number,
+    currentStep: string,
     totalSteps: number,
-    completedSteps: Set<number>,
+    completedSteps: Set<string>,
     isFirstStep: boolean,
     isLastStep: boolean,
     canGoNext: boolean, // Current step valid
-    canGoBack: boolean,
+    canGoBack: boolean, // can be globally disabled
     
     nextStep: () => Promise<void>, // Validates + navigates
     prevStep: () => void,
@@ -658,7 +720,7 @@ const OnboardingWizard = () => {
 - `aria-current="step"` on active step
 
 **Visual Feedback:**
-- Smooth step transitions (slide animation)
+- Smooth step transitions (slide animation) -- slide direction depends on page direction and screen size (right/left/up/down).
 - Loading state during validation
 - Success checkmarks for completed steps
 - Error indicators on steps with invalid fields
@@ -668,13 +730,13 @@ const OnboardingWizard = () => {
 - Full-width "Next"/"Back" buttons at bottom
 - Sticky stepper at top during scroll
 
-#### Step 3.4: Testing & Documentation
+#### Step 3.3: Testing & Documentation
 
-**Tests:**
+**Testing:**
 - Step navigation (next/back/jump)
 - Step-level validation
 - URL persistence and deep-linking
-- localStorage persistence
+- Progress persistence
 - Form reset on completion
 - Accessibility (keyboard, screen reader)
 
@@ -682,33 +744,33 @@ const OnboardingWizard = () => {
 Update `FORM_SYSTEM.md`:
 - Add useWizardForm API reference
 - Add Stepper component usage
-- Add multi-step form examples
-- Add URL persistence notes
+- Add multi-step examples
+- Add persistence patterns
 
 ---
 
-## Phase 4: Form Arrays (Repeating Fields)
+## Phase 4: Form Arrays (Repeating Fields) (PLANNED)
 
 ### Architecture
 
-**Goal:** Support dynamic field arrays (add/remove/reorder) with validation, drag-and-drop, and accessibility.
+**Goal:** Support dynamic field arrays with add/remove/reorder operations.
 
 **Component Structure:**
 ```
-FieldArray (composition)
-  ↓ wraps
-form.Field mode="array" (TanStack Form)
+FieldArray (new component)
+  ↓ uses
+form.AppField with mode="array"
   ↓ renders
-Field item components (repeated)
+Repeated field items
   ↓ with
-Array operations (add/remove/reorder)
+Array operations UI
 ```
 
 ### Implementation Steps
 
-#### Step 4.1: Create FieldArray Composition Component
+#### Step 4.1: Create FieldArray Component
 
-**File:** `portal-v2/src/components/molecules/FieldArray.tsx`
+**File:** `portal-web/src/components/molecules/FieldArray.tsx`
 
 **Features:**
 1. **Array Operations:**
@@ -821,6 +883,8 @@ import {
 } from '@dnd-kit/sortable'
 
 const FieldArray = <T,>(props: FieldArrayProps<T>) => {
+  // Implementation
+}
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
@@ -885,7 +949,7 @@ const timeRangesSchema = z.array(z.object({
 
 **Translation Keys:**
 ```typescript
-// Add to portal-v2/src/i18n/en/errors.json
+// Add to portal-web/src/i18n/en/errors.json
 {
   "form": {
     "atLeastOnePhone": "Please add at least one phone number",
@@ -949,7 +1013,7 @@ const timeRangesSchema = z.array(z.object({
 
 #### Step 4.5: Update useKyoraForm
 
-**File:** `portal-v2/src/hooks/useKyoraForm.ts`
+**File:** `portal-web/src/hooks/useKyoraForm.ts`
 
 Add `FieldArray` to pre-bound components:
 ```typescript
