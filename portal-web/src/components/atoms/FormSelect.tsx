@@ -1,26 +1,32 @@
 /**
- * FormSelect - Refactored Advanced Select Component
+ * FormSelect - Mobile-First Advanced Select Component
  *
- * Production-grade select/dropdown with composition pattern.
- * Reduced from 551 lines to ~250 lines through hook extraction.
+ * Production-grade select/dropdown optimized for mobile with bottom sheet on small screens.
  *
  * Features:
+ * - Mobile-first: Bottom sheet on mobile (< 768px), dropdown on desktop
  * - RTL-first design with logical properties
  * - Searchable with real-time filtering
  * - Multi-select support
  * - Full keyboard navigation
- * - Accessible with ARIA attributes
- * - Mobile-optimized
+ * - Accessible with ARIA attributes (WCAG AA compliant)
+ * - Optimized for use inside modals/bottom sheets (portal rendering)
+ * - Smart scroll lock management (respects parent modals)
+ * - Touch-optimized interactions
+ * - Smooth animations and transitions
  * - Standard error prop integration
  */
 
 import { forwardRef, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
+import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { useSelectSearch } from './useSelectSearch'
 import { useSelectKeyboard } from './useSelectKeyboard'
 import { useClickOutside } from './useClickOutside'
+import { FormInput } from './FormInput'
 import type { ReactNode } from 'react'
 import { getErrorText } from '@/lib/formErrors'
 
@@ -52,6 +58,12 @@ export interface FormSelectProps<T = string> {
   disabled?: boolean
   required?: boolean
   className?: string
+  /** Title for mobile bottom sheet (defaults to label) */
+  mobileTitle?: string
+  /** Callback when dropdown opens */
+  onOpen?: () => void
+  /** Callback when dropdown closes */
+  onClose?: () => void
 }
 
 export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
@@ -75,6 +87,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       id,
       disabled,
       required,
+      mobileTitle,
+      onOpen,
+      onClose,
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
@@ -85,7 +100,11 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     const hasError = Boolean(errorText)
     const placeholder = placeholderProp ?? t('common.select')
     const [isOpen, setIsOpen] = useState(false)
+    const [isAnimating, setIsAnimating] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
+    const mobileContentRef = useRef<HTMLDivElement>(null)
+    const triggerRef = useRef<HTMLButtonElement>(null)
+    const isMobile = useMediaQuery('(max-width: 768px)')
 
     // Selected values normalization
     const selectedValues = (() => {
@@ -100,11 +119,27 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       searchable,
     })
 
-    // Close handler
+    // Close handler with animation
     const handleClose = useCallback(() => {
-      setIsOpen(false)
-      clearSearch()
-    }, [clearSearch])
+      setIsAnimating(false)
+      
+      // Wait for animation before unmounting
+      setTimeout(() => {
+        setIsOpen(false)
+        clearSearch()
+        onClose?.()
+        
+        // Restore focus to trigger
+        triggerRef.current?.focus()
+      }, 200)
+    }, [clearSearch, onClose])
+
+    // Open handler
+    const handleOpen = useCallback(() => {
+      setIsOpen(true)
+      setIsAnimating(true)
+      onOpen?.()
+    }, [onOpen])
 
     // Toggle option selection
     const handleToggleOption = useCallback(
@@ -134,45 +169,47 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       disabled,
     })
 
-    // Click outside detection
+    // Click outside detection (desktop only)
     const containerRef = useClickOutside<HTMLDivElement>({
-      isActive: isOpen,
+      isActive: isOpen && !isMobile,
       onClickOutside: handleClose,
     })
 
     // Auto-focus search input when dropdown opens
     useEffect(() => {
       if (isOpen && searchable && searchInputRef.current) {
-        searchInputRef.current.focus()
+        // Add delay for mobile to allow animation to complete
+        const delay = isMobile ? 300 : 50
+        const timer = setTimeout(() => {
+          searchInputRef.current?.focus()
+        }, delay)
+        return () => clearTimeout(timer)
       }
-    }, [isOpen, searchable])
+    }, [isOpen, searchable, isMobile])
 
-    // Prevent body scroll when dropdown is open on mobile
+    // Smart scroll lock for mobile (only if not already locked by parent)
     useEffect(() => {
-      if (isOpen && typeof window !== 'undefined') {
-        const originalOverflow = document.body.style.overflow
-        const originalPaddingRight = document.body.style.paddingRight
-
-        // Only lock scroll on mobile/tablet
-        const isMobile = window.innerWidth < 1024
-        if (isMobile) {
+      if (isOpen && isMobile && typeof window !== 'undefined') {
+        // Check if body scroll is already locked by a parent modal
+        const isAlreadyLocked = document.body.style.overflow === 'hidden'
+        
+        if (!isAlreadyLocked) {
+          const originalOverflow = document.body.style.overflow
           const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
+          
           document.body.style.overflow = 'hidden'
+          
           if (scrollbarWidth > 0) {
-            document.body.style.paddingRight = `${String(scrollbarWidth)}px`
+            document.body.style.paddingInlineEnd = `${scrollbarWidth}px`
           }
-        }
-
-        return () => {
-          if (isMobile) {
+          
+          return () => {
             document.body.style.overflow = originalOverflow
-            document.body.style.paddingRight = originalPaddingRight
+            document.body.style.paddingInlineEnd = ''
           }
         }
       }
-
-      return undefined
-    }, [isOpen])
+    }, [isOpen, isMobile])
 
     // Clear button handler
     const handleClear = useCallback(
@@ -222,9 +259,17 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         <div ref={containerRef} className="relative">
           {/* Select Trigger Button */}
           <button
+            ref={triggerRef}
             type="button"
             id={inputId}
-            onClick={() => !disabled && setIsOpen(!isOpen)}
+            onClick={() => {
+              if (disabled) return
+              if (isOpen) {
+                handleClose()
+              } else {
+                handleOpen()
+              }
+            }}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             className={cn(
@@ -263,25 +308,166 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             </div>
           </button>
 
-          {/* Dropdown Panel */}
+          {/* Dropdown Panel - Mobile (Bottom Sheet) or Desktop (Dropdown) */}
           {isOpen && !disabled && (
-            <div
-              className={cn(
-                'absolute z-50 mt-2 w-full',
-                'bg-base-100 border border-base-300 rounded-lg shadow-xl',
-                'overflow-hidden',
-                'animate-in fade-in-0 zoom-in-95 duration-100',
-              )}
-              style={{ maxHeight }}
-              role="presentation"
-              onClick={(e) => e.stopPropagation()}
-            >
-              {/* Search Input */}
-              {searchable && (
-                <div className="p-2 border-b border-base-300">
-                  <div className="relative">
-                    <Search className="absolute start-3 top-1/2 -translate-y-1/2 w-4 h-4 text-base-content/50" />
-                    <input
+            isMobile ? (
+              // Mobile: Bottom Sheet with Portal
+              createPortal(
+                <div
+                  className={cn(
+                    'fixed inset-0 z-[9999] flex items-end justify-center',
+                    'transition-opacity duration-200',
+                    isAnimating ? 'opacity-100' : 'opacity-0',
+                  )}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={mobileTitle || label || t('common.select')}
+                  onClick={(e) => {
+                    // Close on backdrop click
+                    if (e.target === e.currentTarget) {
+                      handleClose()
+                    }
+                  }}
+                >
+                  {/* Backdrop */}
+                  <div
+                    className="absolute inset-0 bg-base-content/50 backdrop-blur-sm"
+                    aria-hidden="true"
+                  />
+
+                  {/* Bottom Sheet Content */}
+                  <div
+                    ref={mobileContentRef}
+                    className={cn(
+                      'relative w-full max-h-[85vh]',
+                      'bg-base-100 rounded-t-xl shadow-2xl',
+                      'overflow-hidden flex flex-col',
+                      'transition-transform duration-200 ease-out',
+                      isAnimating ? 'translate-y-0' : 'translate-y-full',
+                    )}
+                    onClick={(e) => e.stopPropagation()}
+                  >
+                    {/* Drag Handle */}
+                    <div className="flex justify-center py-2 px-4 shrink-0">
+                      <div className="w-12 h-1 bg-base-300 rounded-full" aria-hidden="true" />
+                    </div>
+
+                    {/* Header */}
+                    <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-base-300">
+                      <h2 className="text-lg font-semibold text-base-content">
+                        {mobileTitle || label || t('common.select')}
+                      </h2>
+                      <button
+                        type="button"
+                        onClick={handleClose}
+                        className="btn btn-ghost btn-sm btn-square"
+                        aria-label={t('common.close')}
+                      >
+                        <X className="w-5 h-5" />
+                      </button>
+                    </div>
+
+                    {/* Search Input */}
+                    {searchable && (
+                      <div className="px-4 pt-4 pb-2 border-b border-base-300 shrink-0">
+                        <FormInput
+                          ref={searchInputRef}
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => {
+                            setSearchQuery(e.target.value)
+                            setFocusedIndex(-1)
+                          }}
+                          placeholder={t('common.search_placeholder_generic')}
+                          startIcon={<Search className="w-5 h-5" />}
+                          size="lg"
+                          variant="filled"
+                          fullWidth
+                          aria-label={t('common.search_options')}
+                        />
+                      </div>
+                    )}
+
+                    {/* Options List */}
+                    <ul
+                      role="listbox"
+                      aria-multiselectable={multiSelect}
+                      className="overflow-y-auto flex-1 overscroll-contain"
+                    >
+                      {filteredOptions.length === 0 ? (
+                        <li className="p-6 text-center text-base-content/50">
+                          {t('common.no_options_found')}
+                        </li>
+                      ) : (
+                        filteredOptions.map((option) => {
+                          const isSelected = selectedValues.includes(option.value)
+
+                          return (
+                            <li
+                              key={option.value}
+                              role="option"
+                              aria-selected={isSelected}
+                              aria-disabled={option.disabled}
+                              onClick={() => {
+                                if (!option.disabled) {
+                                  handleToggleOption(option.value)
+                                  // Close immediately on single select
+                                  if (!multiSelect) {
+                                    handleClose()
+                                  }
+                                }
+                              }}
+                              className={cn(
+                                'flex items-center gap-3 px-4 py-4 cursor-pointer transition-colors',
+                                'min-h-[56px]',
+                                'active:bg-base-300',
+                                isSelected && 'bg-primary/10',
+                                option.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+                              )}
+                            >
+                              {option.renderCustom ? (
+                                option.renderCustom()
+                              ) : (
+                                <>
+                                  {option.icon && <span className="shrink-0 text-xl">{option.icon}</span>}
+                                  <div className="flex-1 min-w-0">
+                                    <div className="font-medium text-base">{option.label}</div>
+                                    {option.description && (
+                                      <div className="text-sm text-base-content/60 mt-0.5">
+                                        {option.description}
+                                      </div>
+                                    )}
+                                  </div>
+                                  {isSelected && <Check className="w-6 h-6 text-primary shrink-0" />}
+                                </>
+                              )}
+                            </li>
+                          )
+                        })
+                      )}
+                    </ul>
+                  </div>
+                </div>,
+                document.body,
+              )
+            ) : (
+              // Desktop: Dropdown
+              <div
+                className={cn(
+                  'absolute z-50 mt-2 w-full',
+                  'bg-base-100 border border-base-300 rounded-lg shadow-xl',
+                  'overflow-hidden',
+                  'transition-all duration-200 origin-top',
+                  isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
+                )}
+                style={{ maxHeight }}
+                role="presentation"
+                onClick={(e) => e.stopPropagation()}
+              >
+                {/* Search Input */}
+                {searchable && (
+                  <div className="p-2 border-b border-base-300">
+                    <FormInput
                       ref={searchInputRef}
                       type="text"
                       value={searchQuery}
@@ -290,70 +476,73 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         setFocusedIndex(-1)
                       }}
                       placeholder={t('common.search_placeholder_generic')}
-                      className="input input-sm w-full ps-9"
+                      startIcon={<Search className="w-4 h-4" />}
+                      size="sm"
+                      variant="filled"
+                      fullWidth
                       aria-label={t('common.search_options')}
                     />
                   </div>
-                </div>
-              )}
-
-              {/* Options List */}
-              <ul
-                role="listbox"
-                aria-multiselectable={multiSelect}
-                className="overflow-y-auto"
-                style={{ maxHeight: maxHeight - (searchable ? 60 : 0) }}
-              >
-                {filteredOptions.length === 0 ? (
-                  <li className="p-4 text-center text-base-content/50">{t('common.no_options_found')}</li>
-                ) : (
-                  filteredOptions.map((option, index) => {
-                    const isSelected = selectedValues.includes(option.value)
-                    const isFocused = index === focusedIndex
-
-                    return (
-                      <li
-                        key={option.value}
-                        role="option"
-                        aria-selected={isSelected}
-                        aria-disabled={option.disabled}
-                        onClick={() => !option.disabled && handleToggleOption(option.value)}
-                        tabIndex={isFocused ? 0 : -1}
-                        ref={(el) => {
-                          if (isFocused && el) {
-                            el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
-                          }
-                        }}
-                        className={cn(
-                          'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
-                          'min-h-[48px]',
-                          'hover:bg-base-200 focus:bg-base-200 focus:outline-none',
-                          'active:bg-base-300',
-                          isSelected && 'bg-primary/10',
-                          isFocused && 'bg-base-200 ring-2 ring-inset ring-primary/30',
-                          option.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
-                        )}
-                      >
-                        {option.renderCustom ? (
-                          option.renderCustom()
-                        ) : (
-                          <>
-                            {option.icon && <span className="shrink-0">{option.icon}</span>}
-                            <div className="flex-1 min-w-0">
-                              <div className="font-medium truncate">{option.label}</div>
-                              {option.description && (
-                                <div className="text-sm text-base-content/60 truncate">{option.description}</div>
-                              )}
-                            </div>
-                            {isSelected && <Check className="w-5 h-5 text-primary shrink-0" />}
-                          </>
-                        )}
-                      </li>
-                    )
-                  })
                 )}
-              </ul>
-            </div>
+
+                {/* Options List */}
+                <ul
+                  role="listbox"
+                  aria-multiselectable={multiSelect}
+                  className="overflow-y-auto"
+                  style={{ maxHeight: maxHeight - (searchable ? 60 : 0) }}
+                >
+                  {filteredOptions.length === 0 ? (
+                    <li className="p-4 text-center text-base-content/50">{t('common.no_options_found')}</li>
+                  ) : (
+                    filteredOptions.map((option, index) => {
+                      const isSelected = selectedValues.includes(option.value)
+                      const isFocused = index === focusedIndex
+
+                      return (
+                        <li
+                          key={option.value}
+                          role="option"
+                          aria-selected={isSelected}
+                          aria-disabled={option.disabled}
+                          onClick={() => !option.disabled && handleToggleOption(option.value)}
+                          tabIndex={isFocused ? 0 : -1}
+                          ref={(el) => {
+                            if (isFocused && el) {
+                              el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+                            }
+                          }}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+                            'min-h-[48px]',
+                            'hover:bg-base-200 focus:bg-base-200 focus:outline-none',
+                            'active:bg-base-300',
+                            isSelected && 'bg-primary/10',
+                            isFocused && 'bg-base-200 ring-2 ring-inset ring-primary/30',
+                            option.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+                          )}
+                        >
+                          {option.renderCustom ? (
+                            option.renderCustom()
+                          ) : (
+                            <>
+                              {option.icon && <span className="shrink-0">{option.icon}</span>}
+                              <div className="flex-1 min-w-0">
+                                <div className="font-medium truncate">{option.label}</div>
+                                {option.description && (
+                                  <div className="text-sm text-base-content/60 truncate">{option.description}</div>
+                                )}
+                              </div>
+                              {isSelected && <Check className="w-5 h-5 text-primary shrink-0" />}
+                            </>
+                          )}
+                        </li>
+                      )
+                    })
+                  )}
+                </ul>
+              </div>
+            )
           )}
         </div>
 
