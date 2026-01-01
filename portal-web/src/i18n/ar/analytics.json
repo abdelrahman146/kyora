@@ -1,0 +1,41 @@
+{
+  "emptyState": {
+    "noData": "لا توجد بيانات متاحة",
+    "subtitle": "ستظهر البيانات هنا عند توفرها"
+  },
+  "error": {
+    "title": "فشل تحميل الرسم البياني",
+    "subtitle": "حدث خطأ ما",
+    "retry": "إعادة المحاولة"
+  },
+  "granularity": {
+    "hourly": "كل ساعة",
+    "daily": "يومي",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "quarterly": "ربع سنوي",
+    "yearly": "سنوي"
+  },
+  "trends": {
+    "increased": "ارتفع",
+    "decreased": "انخفض",
+    "noChange": "بدون تغيير",
+    "vsLastMonth": "مقارنة بالشهر الماضي",
+    "vsLastWeek": "مقارنة بالأسبوع الماضي",
+    "vsLastYear": "مقارنة بالعام الماضي"
+  },
+  "legends": {
+    "revenue": "الإيرادات",
+    "profit": "الربح",
+    "expenses": "المصروفات",
+    "orders": "الطلبات",
+    "customers": "العملاء",
+    "sales": "المبيعات"
+  },
+  "tooltips": {
+    "value": "القيمة",
+    "total": "الإجمالي",
+    "average": "المتوسط",
+    "count": "العدد"
+  }
+}

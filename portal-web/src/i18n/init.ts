@@ -5,11 +5,13 @@ import arErrors from './ar/errors.json'
 import arOnboarding from './ar/onboarding.json'
 import arTranslation from './ar/translation.json'
 import arUpload from './ar/upload.json'
+import arAnalytics from './ar/analytics.json'
 import enCommon from './en/common.json'
 import enErrors from './en/errors.json'
 import enOnboarding from './en/onboarding.json'
 import enTranslation from './en/translation.json'
 import enUpload from './en/upload.json'
+import enAnalytics from './en/analytics.json'
 import { getCookie } from '@/lib/cookies'
 
 /**
@@ -59,6 +61,7 @@ void i18n.use(initReactI18next).init({
       onboarding: arOnboarding,
       translation: arTranslation,
       upload: arUpload,
+      analytics: arAnalytics,
     },
     en: {
       common: enCommon,
@@ -66,12 +69,13 @@ void i18n.use(initReactI18next).init({
       onboarding: enOnboarding,
       translation: enTranslation,
       upload: enUpload,
+      analytics: enAnalytics,
     },
   },
   lng: detectedLanguage,
   fallbackLng: 'en',
   defaultNS: 'translation',
-  ns: ['translation', 'errors', 'common', 'onboarding', 'upload'],
+  ns: ['translation', 'errors', 'common', 'onboarding', 'upload', 'analytics'],
   interpolation: {
     escapeValue: false,
   },

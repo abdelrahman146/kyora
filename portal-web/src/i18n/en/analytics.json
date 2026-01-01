@@ -1,0 +1,41 @@
+{
+  "emptyState": {
+    "noData": "No data available",
+    "subtitle": "Data will appear here once available"
+  },
+  "error": {
+    "title": "Failed to load chart",
+    "subtitle": "Something went wrong",
+    "retry": "Retry"
+  },
+  "granularity": {
+    "hourly": "Hourly",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "quarterly": "Quarterly",
+    "yearly": "Yearly"
+  },
+  "trends": {
+    "increased": "Increased",
+    "decreased": "Decreased",
+    "noChange": "No change",
+    "vsLastMonth": "vs last month",
+    "vsLastWeek": "vs last week",
+    "vsLastYear": "vs last year"
+  },
+  "legends": {
+    "revenue": "Revenue",
+    "profit": "Profit",
+    "expenses": "Expenses",
+    "orders": "Orders",
+    "customers": "Customers",
+    "sales": "Sales"
+  },
+  "tooltips": {
+    "value": "Value",
+    "total": "Total",
+    "average": "Average",
+    "count": "Count"
+  }
+}
