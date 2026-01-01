@@ -57,6 +57,7 @@ import {
 import { useFileUpload } from '@/lib/upload'
 import { useObjectURLs } from '@/lib/upload/filePreviewManager'
 import { validateFiles } from '@/lib/upload/fileValidator'
+import { getThumbnailUrl } from '@/lib/assetUrl'
 import { useMediaQuery } from '@/hooks'
 
 // Business Context for getting businessDescriptor from route/layout
@@ -354,7 +355,7 @@ export function FileUploadField(props: FileUploadFieldProps) {
           {existingReferences.map((ref) => (
             <FilePreview
               key={ref.assetId}
-              src={ref.thumbnailUrl || ref.url}
+              src={getThumbnailUrl(ref) || ''}
               alt={ref.metadata?.altText || 'Uploaded file'}
               onRemove={() => handleRemove(ref)}
               disabled={disabled}

@@ -1,8 +1,18 @@
 import { z } from 'zod'
+import {
+  AssetMetadataSchema,
+  AssetReferenceSchema,
+  type AssetMetadata,
+  type AssetReference,
+} from './asset'
 
 /**
  * Business API types based on backend swagger.json
  */
+
+// Re-export asset types for backward compatibility
+export { AssetMetadataSchema, AssetReferenceSchema }
+export type { AssetMetadata, AssetReference }
 
 // Storefront Theme Schema
 export const StorefrontThemeSchema = z.object({
@@ -21,7 +31,7 @@ export const BusinessSchema = z.object({
   name: z.string(),
   descriptor: z.string(),
   brand: z.string().optional(),
-  logoUrl: z.string().optional(),
+  logo: AssetReferenceSchema.optional().nullable(),
   phoneNumber: z.string().optional(),
   whatsappNumber: z.string().optional(),
   supportEmail: z.string().optional(),

@@ -4,6 +4,7 @@ import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
 
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
+import { AssetReferenceSchema } from './types/asset'
 
 /**
  * Business API Types and Schemas
@@ -15,7 +16,7 @@ export const BusinessSchema = z.object({
   descriptor: z.string(),
   name: z.string(),
   brand: z.string(),
-  logoUrl: z.string(),
+  logo: AssetReferenceSchema.optional().nullable(),
   countryCode: z.string(),
   currency: z.string(),
   storefrontPublicId: z.string(),

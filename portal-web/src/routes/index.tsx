@@ -32,6 +32,7 @@ import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { useAuth } from '@/hooks/useAuth'
 import { useLanguage } from '@/hooks/useLanguage'
 import { requireAuth } from '@/lib/routeGuards'
+import { getThumbnailUrl } from '@/lib/assetUrl'
 import { selectBusiness, setBusinesses } from '@/stores/businessStore'
 
 /**
@@ -258,7 +259,7 @@ function HomePage() {
                   <div className="card-body p-4">
                     <div className="flex items-start gap-3">
                       <Avatar
-                        src={business.logoUrl}
+                        src={getThumbnailUrl(business.logo)}
                         fallback={business.name}
                         size="md"
                         shape="square"

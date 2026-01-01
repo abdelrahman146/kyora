@@ -9,6 +9,7 @@ import { businessStore } from '../../stores/businessStore'
 import { businessApi } from '../../api/business'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
 import { cn } from '../../lib/utils'
+import { getThumbnailUrl } from '../../lib/assetUrl'
 import type { Business } from '../../stores/businessStore'
 
 /**
@@ -130,7 +131,7 @@ export function BusinessSwitcher() {
           )}
         >
           <Avatar
-            src={selectedBusiness?.logoUrl}
+            src={getThumbnailUrl(selectedBusiness?.logo)}
             fallback={selectedBusiness?.name}
             size="sm"
             shape="square"
@@ -174,7 +175,7 @@ export function BusinessSwitcher() {
               )}
             >
               <Avatar
-                src={business.logoUrl}
+                src={getThumbnailUrl(business.logo)}
                 fallback={business.name}
                 size="sm"
                 shape="square"
