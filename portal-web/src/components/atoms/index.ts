@@ -43,3 +43,11 @@ export { PasswordInput, type PasswordInputProps } from './PasswordInput'
 export { DatePicker } from './DatePicker'
 export { TimePicker } from './TimePicker'
 export { DateRangePicker } from './DateRangePicker'
+
+// File Upload Components
+export { FormFileInput, type FormFileInputProps } from './FormFileInput'
+export { FileUploadZone, type FileUploadZoneProps } from './FileUploadZone'
+export { FilePreview, type FilePreviewProps } from './FilePreview'
+export { UploadProgress, type UploadProgressProps } from './UploadProgress'
+export { FileThumbnail, type FileThumbnailProps } from './FileThumbnail'
+export { DragHandle, type DragHandleProps } from './DragHandle'

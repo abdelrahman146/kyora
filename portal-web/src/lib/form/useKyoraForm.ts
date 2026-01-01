@@ -58,6 +58,8 @@ import {
   DateTimeField,
   ErrorInfo,
   FieldArray,
+  FileUploadField,
+  ImageUploadField,
   PasswordField,
   RadioField,
   SelectField,
@@ -91,6 +93,8 @@ const { useAppForm, withForm } = createFormHook({
     DateTimeField,
     DateRangeField,
     FieldArray,
+    FileUploadField,
+    ImageUploadField,
     ErrorInfo,
   },
 

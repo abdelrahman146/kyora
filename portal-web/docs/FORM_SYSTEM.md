@@ -1308,6 +1308,456 @@ validators: {
 - Focus management (focus returns to appropriate element after operations)
 - Screen reader announcements for all operations
 
+#### `<form.FileUploadField>`
+
+Generic file upload field with drag-and-drop, progress tracking, mobile camera support, and automatic thumbnail generation. Handles both file creation (File[]) and asset updates (AssetReference[]) seamlessly.
+
+**Basic File Upload:**
+```tsx
+<form.AppField
+  name="documents"
+  validators={{
+    onBlur: fileSchema({
+      maxSize: '5MB',
+      maxFiles: 3,
+    }),
+  }}
+>
+  {(field) => (
+    <field.FileUploadField
+      label={t('documents.upload')}
+      accept=".pdf,.doc,.docx"
+      maxFiles={3}
+      maxSize="5MB"
+      multiple
+    />
+  )}
+</form.AppField>
+```
+
+**Single Business Logo (with Update Mode):**
+```tsx
+import { BusinessContext } from '@/contexts/BusinessContext'
+
+function BusinessSettings() {
+  const { business } = useBusiness()
+  const form = useKyoraForm({
+    defaultValues: {
+      logo: business.logo || null, // AssetReference | null
+      name: business.name,
+    },
+    onSubmit: async ({ value }) => {
+      await api.updateBusiness(value)
+    },
+  })
+
+  return (
+    <BusinessContext.Provider value={business.descriptor}>
+      <form.AppForm>
+        <form.FormRoot>
+          <form.AppField
+            name="logo"
+            validators={{
+              onBlur: businessLogoSchema(), // Single image, 2MB
+            }}
+          >
+            {(field) => (
+              <field.FileUploadField
+                label={t('business.logo')}
+                accept="image/*"
+                maxFiles={1}
+                maxSize="2MB"
+              />
+            )}
+          </form.AppField>
+          
+          <form.SubmitButton>
+            {t('common.save')}
+          </form.SubmitButton>
+        </form.FormRoot>
+      </form.AppForm>
+    </BusinessContext.Provider>
+  )
+}
+```
+
+**Multiple Product Photos (Reorderable):**
+```tsx
+<form.AppField
+  name="photos"
+  validators={{
+    onBlur: productPhotosSchema(), // 2-10 images, 10MB each
+  }}
+>
+  {(field) => (
+    <field.FileUploadField
+      label={t('product.photos')}
+      description={t('product.photos_description')}
+      maxFiles={10}
+      maxSize="10MB"
+      reorderable
+      multiple
+      required
+    />
+  )}
+</form.AppField>
+```
+
+**Props:**
+```ts
+interface FileUploadFieldProps {
+  label?: string                   // Field label
+  description?: string             // Helper text
+  accept?: string                  // MIME types or extensions
+  maxFiles?: number                // Maximum number of files
+  maxSize?: string                 // Max file size (e.g., "10MB")
+  multiple?: boolean               // Allow multiple files
+  reorderable?: boolean            // Enable drag-drop reordering
+  required?: boolean               // Visual indicator
+  disabled?: boolean               // Disable field
+  onUploadComplete?: (refs: AssetReference[]) => void // Upload callback
+}
+```
+
+**Features:**
+- **Optimistic UI**: Shows preview immediately, uploads in background
+- **Mode Detection**: Automatically detects File[] vs AssetReference[] mode
+- **Progress Tracking**: Real-time upload progress with cancel support
+- **Mobile Optimized**: Camera/gallery buttons (50px touch targets)
+- **Thumbnail Generation**: Automatic image thumbnails (300x300px WebP)
+- **Video Support**: FFmpeg-based video thumbnail extraction
+- **Concurrent Uploads**: Max 3 simultaneous uploads with queuing
+- **Error Recovery**: Retry failed uploads, clear validation errors
+- **Drag-Drop**: Native file drop zone with visual feedback
+- **Accessible**: ARIA labels, keyboard navigation, screen reader support
+
+**Upload Flow:**
+1. User selects/drops files → Client-side validation
+2. Optimistic preview shown immediately
+3. Background upload starts (progress tracked)
+4. Thumbnail generated and uploaded
+5. Field value updates with AssetReference[]
+6. Form can be submitted anytime
+
+**Validation Example:**
+```tsx
+// Using preset schema
+validators={{
+  onBlur: productPhotosSchema(), // 2-10 images, 10MB
+}}
+
+// Custom validation
+validators={{
+  onBlur: fileSchema({
+    accept: ['image/jpeg', 'image/png', 'application/pdf'],
+    maxSize: '5MB',
+    maxFiles: 5,
+    minFiles: 1,
+  }),
+}}
+
+// Array validation
+validators={{
+  onBlur: assetReferenceArraySchema({
+    min: 2,
+    max: 10,
+  }),
+}}
+```
+
+**Business Context Requirement:**
+The upload system requires `businessDescriptor` from context to generate upload URLs:
+
+```tsx
+import { BusinessContext } from '@/contexts/BusinessContext'
+
+// Provide context at component root
+<BusinessContext.Provider value={business.descriptor}>
+  <form.AppForm>
+    {/* FileUploadField components */}
+  </form.AppForm>
+</BusinessContext.Provider>
+```
+
+#### `<form.ImageUploadField>`
+
+Specialized variant of FileUploadField for image-only uploads with smart defaults.
+
+**Single Image Upload:**
+```tsx
+<form.AppField
+  name="avatar"
+  validators={{
+    onBlur: imageSchema({
+      maxSize: '2MB',
+    }),
+  }}
+>
+  {(field) => (
+    <field.ImageUploadField
+      label={t('user.avatar')}
+      single
+      maxSize="2MB"
+    />
+  )}
+</form.AppField>
+```
+
+**Multiple Images (Gallery):**
+```tsx
+<form.AppField
+  name="gallery"
+  validators={{
+    onBlur: imageSchema({
+      maxSize: '10MB',
+      maxFiles: 20,
+    }),
+  }}
+>
+  {(field) => (
+    <field.ImageUploadField
+      label={t('product.gallery')}
+      maxFiles={20}
+      reorderable
+    />
+  )}
+</form.AppField>
+```
+
+**Props:**
+```ts
+interface ImageUploadFieldProps {
+  single?: boolean                 // Single image (maxFiles=1)
+  // ... all FileUploadFieldProps except 'accept' and 'multiple'
+}
+```
+
+**Features:**
+- Pre-configured for images: `image/jpeg,image/jpg,image/png,image/webp,image/heic,image/heif`
+- Default maxFiles: 10 (or 1 if single=true)
+- Automatic WebP thumbnail generation
+- Mobile camera/gallery access
+- All FileUploadField features
+
+**Preset Schemas:**
+```tsx
+// Business logo (single, 2MB)
+import { businessLogoSchema } from '@/schemas/upload'
+
+// Product photos (2-10 images, 10MB each)
+import { productPhotosSchema } from '@/schemas/upload'
+
+// Variant photos (1-5 images, 10MB each)
+import { variantPhotosSchema } from '@/schemas/upload'
+```
+
+**Within FieldArray (Nested Upload):**
+```tsx
+<form.AppField name="variants">
+  {(field) => (
+    <field.FieldArray>
+      {({ fields, pushItem, removeItem }) => (
+        <>
+          {fields.map((item, i) => (
+            <div key={item.id}>
+              <form.AppField name={`variants[${i}].name`}>
+                {(field) => <field.TextField label="Variant Name" />}
+              </form.AppField>
+              
+              <form.AppField
+                name={`variants[${i}].photos`}
+                validators={{
+                  onBlur: variantPhotosSchema(), // 1-5 images
+                }}
+              >
+                {(field) => (
+                  <field.ImageUploadField
+                    label="Variant Photos"
+                    maxFiles={5}
+                  />
+                )}
+              </form.AppField>
+              
+              <button onClick={() => removeItem(i)}>
+                Remove Variant
+              </button>
+            </div>
+          ))}
+          
+          <button onClick={() => pushItem({ name: '', photos: [] })}>
+            Add Variant
+          </button>
+        </>
+      )}
+    </field.FieldArray>
+  )}
+</form.AppField>
+```
+
+**BottomSheet Integration:**
+```tsx
+import { BottomSheet } from '@/components/molecules/BottomSheet'
+
+function AddProductModal({ isOpen, onClose }) {
+  const form = useKyoraForm({
+    defaultValues: {
+      name: '',
+      photos: [],
+    },
+    onSubmit: async ({ value }) => {
+      await api.createProduct(value)
+      onClose()
+    },
+  })
+
+  return (
+    <BottomSheet
+      isOpen={isOpen}
+      onClose={onClose}
+      title={t('product.add')}
+    >
+      <form.AppForm>
+        <form.FormRoot className="p-4 space-y-4">
+          <form.AppField name="name">
+            {(field) => (
+              <field.TextField
+                label={t('product.name')}
+                required
+              />
+            )}
+          </form.AppField>
+          
+          <form.AppField
+            name="photos"
+            validators={{
+              onBlur: productPhotosSchema(),
+            }}
+          >
+            {(field) => (
+              <field.ImageUploadField
+                label={t('product.photos')}
+                maxFiles={10}
+                reorderable
+              />
+            )}
+          </form.AppField>
+          
+          {/* Sticky footer with progress */}
+          <div className="sticky bottom-0 bg-base-100 p-4 border-t">
+            <form.Subscribe selector={(state) => state.isSubmitting}>
+              {(isSubmitting) => (
+                <form.SubmitButton className="w-full" disabled={isSubmitting}>
+                  {isSubmitting ? t('common.uploading') : t('common.save')}
+                </form.SubmitButton>
+              )}
+            </form.Subscribe>
+          </div>
+        </form.FormRoot>
+      </form.AppForm>
+    </BottomSheet>
+  )
+}
+```
+
+**Translation Keys:**
+```yaml
+# Upload namespace (upload.json)
+upload:
+  dropzone_title: "Drop files here"
+  dropzone_or: "or"
+  choose_files: "Choose Files"
+  choose_file: "Choose File"
+  take_picture: "Take Picture"
+  choose_from_gallery: "Choose from Gallery"
+  uploading: "Uploading..."
+  uploading_thumbnail: "Uploading thumbnail..."
+  upload_failed: "Upload failed"
+  retry: "Retry"
+  remove: "Remove"
+  drag_to_reorder: "Drag to reorder"
+  max_files_reached: "Maximum {{max}} files allowed"
+  filesUploading_one: "{{count}} file uploading"
+  filesUploading_other: "{{count}} files uploading"
+  
+# Validation errors (errors.validation)
+errors:
+  validation:
+    file_too_large: "File size exceeds {{maxSize}}"
+    invalid_file_type: "Invalid file type. Accepted: {{accept}}"
+    too_many_files: "Maximum {{max}} files allowed"
+    min_files_required: "At least {{min}} file(s) required"
+```
+
+**Troubleshooting:**
+
+**Issue:** "businessDescriptor is required"
+```tsx
+// ❌ Missing context
+<form.AppForm>
+  <form.AppField name="photos">
+    {(field) => <field.ImageUploadField />}
+  </form.AppField>
+</form.AppForm>
+
+// ✅ Provide context
+import { BusinessContext } from '@/contexts/BusinessContext'
+
+<BusinessContext.Provider value={business.descriptor}>
+  <form.AppForm>
+    <form.AppField name="photos">
+      {(field) => <field.ImageUploadField />}
+    </form.AppField>
+  </form.AppForm>
+</BusinessContext.Provider>
+```
+
+**Issue:** FFmpeg not loading for video thumbnails
+```bash
+# Ensure FFmpeg WASM files are in public/
+cp node_modules/@ffmpeg/core/dist/ffmpeg-core.js public/
+cp node_modules/@ffmpeg/core/dist/ffmpeg-core.wasm public/
+```
+
+**Issue:** Thumbnails not generating
+```tsx
+// Check browser support (WebP fallback to JPEG)
+// Thumbnails: 300x300px, 0.8 quality, WebP/JPEG format
+// Configurable in /lib/upload/constants.ts
+```
+
+**Issue:** Upload progress not showing
+```tsx
+// Upload progress is tracked automatically via useFileUpload
+// Ensure field value updates trigger re-render
+<form.Subscribe selector={(state) => state.values.photos}>
+  {(photos) => <div>Uploaded: {photos?.length || 0}</div>}
+</form.Subscribe>
+```
+
+**Issue:** Mobile camera not working
+```tsx
+// Ensure accept includes image types
+<field.ImageUploadField
+  accept="image/*"  // Enables camera/gallery
+  maxFiles={1}
+/>
+
+// For generic files, camera won't appear (correct behavior)
+<field.FileUploadField
+  accept=".pdf,.doc"  // No camera for documents
+/>
+```
+
+**Best Practices:**
+1. **Always provide BusinessContext** at component root
+2. **Use preset schemas** (businessLogoSchema, productPhotosSchema) for consistency
+3. **Enable reorderable** for multiple images (better UX)
+4. **Set appropriate maxSize** based on file type (2MB logos, 10MB products)
+5. **Show upload progress** in BottomSheet/Modal footers
+6. **Handle failed uploads** with retry button (automatic)
+7. **Test mobile experience** with real devices (camera/gallery)
+8. **Validate both files and references** depending on mode
+
 #### `<form.SubmitButton>`
 
 Submit button with loading state.

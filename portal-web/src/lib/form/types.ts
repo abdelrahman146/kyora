@@ -213,3 +213,34 @@ export interface FieldArrayProps<T = any> extends BaseFieldProps {
     operations: ArrayItemOperations,
   ) => React.ReactNode
 }
+
+/**
+ * FileUploadField props for generic file uploads
+ */
+export interface FileUploadFieldProps extends BaseFieldProps {
+  /** Accepted file types (MIME types or extensions) */
+  accept?: string
+  /** Maximum number of files */
+  maxFiles?: number
+  /** Maximum file size (e.g., "10MB") */
+  maxSize?: string
+  /** Allow multiple file selection */
+  multiple?: boolean
+  /** Enable drag-and-drop reordering */
+  reorderable?: boolean
+  /** Visual required indicator */
+  required?: boolean
+  /** Callback when upload completes */
+  onUploadComplete?: (references: Array<any>) => void
+}
+
+/**
+ * ImageUploadField props for image-only uploads
+ */
+export interface ImageUploadFieldProps extends Omit<
+  FileUploadFieldProps,
+  'accept' | 'multiple'
+> {
+  /** Single image mode (default: multiple) */
+  single?: boolean
+}
