@@ -36,8 +36,15 @@ applyTo: "portal-web/**"
 
 - **Tailwind CSS 4.0.6**: CSS-first (no JS config), utility-first styling
 - **daisyUI 5.5.14**: Semantic component classes built on Tailwind
-- **clsx + tailwind-merge**: Dynamic className composition
-- **lucide-react + react-icons**: Icon libraries
+- **clsx 2.1.1 + tailwind-merge 3.4.0**: Dynamic className composition
+- **lucide-react 0.561.0 + react-icons 5.5.0**: Icon libraries
+
+### Data Visualization
+
+- **Chart.js 4.5.1**: Canvas-based charting library
+- **react-chartjs-2 5.3.1**: React wrapper for Chart.js
+- **chartjs-adapter-date-fns 3.0.0**: Date adapter for time-series charts
+- **date-fns 4.1.0**: Date formatting and manipulation
 
 ### HTTP Client
 
@@ -48,17 +55,28 @@ applyTo: "portal-web/**"
 - **i18next 25.7.3**: Internationalization framework
 - **react-i18next 16.5.0**: React bindings for i18next
 
+### UI Enhancements
+
+- **react-hot-toast 2.6.0**: Toast notifications
+- **react-day-picker 9.13.0**: Date and date range picker component
+- **@dnd-kit 6.3.1**: Drag and drop functionality (sortable, utilities)
+- **@ffmpeg/ffmpeg 0.12.15**: Video thumbnail generation (client-side)
+
 ### State Management
 
-- **TanStack Store 0.8.0**: Reactive state management (used for auth store)
+- **TanStack Store 0.8.0**: Reactive state management with persistence layer
+- **Multiple stores**: authStore, businessStore, metadataStore, onboardingStore
 - **No Redux or Zustand**: We use TanStack Query for server state and TanStack Store for client state
 
 ### Developer Tools
 
-- **TanStack Router Devtools**: Route debugging
-- **TanStack Query Devtools**: Query cache visualization
+- **TanStack Router Devtools 1.132.0**: Route debugging and visualization
+- **TanStack Query Devtools 5.84.2**: Query cache visualization
+- **TanStack React Devtools 0.7.0**: General TanStack devtools
 - **React Devtools**: Component tree inspection
 - **ESLint + Prettier**: Code linting and formatting
+- **Vitest 3.0.5**: Unit testing framework
+- **TypeScript 5.7.2**: Static type checking
 
 ## Project Structure
 
@@ -74,6 +92,7 @@ portal-web/
 │   │   ├── onboarding.ts       # Onboarding API
 │   │   ├── metadata.ts         # Metadata API (countries, currencies)
 │   │   ├── address.ts          # Address API
+│   │   ├── assets.ts           # Asset/file upload API
 │   │   └── types/              # API response/request types
 │   ├── components/             # UI components (Atomic Design)
 │   │   ├── atoms/              # Basic building blocks
@@ -111,12 +130,35 @@ portal-web/
 │   │   ├── storePersistence.ts # Store persistence helpers
 │   │   ├── toast.ts            # Toast notification helpers
 │   │   ├── translateError.ts   # Error translation
-│   │   ├── translateValidationError.ts # Zod error translation
+│   │   ├── formErrors.ts       # Form error utilities
+│   │   ├── onboarding.ts       # Onboarding utilities
 │   │   ├── utils.ts            # General utilities
-│   │   └── form/               # Form system utilities
-│   │       ├── createFormHook.tsx # Form hook factory
-│   │       ├── fieldComponents.tsx # Field component registry
-│   │       ├── formComponents.tsx # Form component registry
+│   │   ├── form/               # Form system utilities
+│   │   │   ├── createFormHook.tsx # Form hook factory
+│   │   │   ├── fieldComponents.tsx # Field component registry
+│   │   │   ├── formComponents.tsx # Form component registry
+│   │   │   ├── contexts.tsx    # Form/field context providers
+│   │   │   ├── types.ts        # Form type definitions
+│   │   │   ├── useServerErrors.ts # Server error injection
+│   │   │   ├── useFocusManagement.ts # Focus on error
+│   │   │   ├── useKyoraForm.tsx # Main form hook
+│   │   │   ├── components.tsx  # Form UI components
+│   │   │   └── validation/     # Array field validation
+│   │   ├── charts/             # Chart.js integration utilities
+│   │   │   ├── chartTheme.ts   # Theme token resolver & hook
+│   │   │   ├── chartPlugins.ts # Custom Chart.js plugins
+│   │   │   ├── chartUtils.ts   # Data transformers & formatters
+│   │   │   ├── rtlSupport.ts   # RTL configuration helpers
+│   │   │   └── index.ts        # Public exports
+│   │   └── upload/             # File upload utilities
+│   │       ├── constants.ts    # File size limits, MIME types
+│   │       ├── fileValidator.ts # File validation logic
+│   │       ├── metadataExtractor.ts # Extract file metadata
+│   │       ├── filePreviewManager.ts # Preview URL management
+│   │       ├── thumbnailWorker.ts # Canvas thumbnail generation
+│   │       ├── videoThumbnail.ts # Video frame extraction
+│   │       ├── useFileUpload.ts # File upload hook
+│   │       └── index.ts        # Public expormponents.tsx # Form component registry
 │   │       └── index.ts
 │   ├── routes/                 # File-based routes (TanStack Router)
 │   │   ├── __root.tsx          # Root layout
@@ -127,9 +169,15 @@ portal-web/
 │   ├── schemas/                # Zod validation schemas
 │   │   ├── auth.ts             # Auth form schemas
 │   │   ├── business.ts         # Business form schemas
+│   │   ├── onboarding.ts       # Onboarding form schemas
+│   │   ├── upload.ts           # File upload schemas
 │   │   └── ...
 │   ├── stores/                 # TanStack Store instances
-│   │   └── authStore.ts        # Authentication state store
+│   │   ├── authStore.ts        # Authentication state store
+│   │   ├── businessStore.ts    # Business selection & sidebar state
+│   │   ├── metadataStore.ts    # Countries & currencies cache
+│   │   ├── onboardingStore.ts  # Onboarding session state
+│   │   └── authStore.test.ts   # Auth store unit tests
 │   ├── types/                  # TypeScript type definitions
 │   ├── data/                   # Static data (mock data, constants)
 │   ├── main.tsx                # Application entry point
@@ -138,6 +186,7 @@ portal-web/
 │   └── styles.css              # Global styles and Tailwind imports
 ├── docs/                       # Documentation
 │   ├── FORM_SYSTEM.md          # Form system documentation
+│   ├── CHARTS.md               # Chart.js integration guide
 │   └── form-features.plan.md   # Form feature planning
 ├── public/                     # Static assets
 ├── index.html                  # HTML entry point
@@ -466,7 +515,179 @@ const navigate = useNavigate();
 navigate({ to: "/customers", search: { page: 1 } });
 ```
 
-### 5. Internationalization
+### 5. State Management with TanStack Store
+
+**Store Pattern**: Kyora uses TanStack Store for reactive client state management with optional localStorage persistence.
+
+#### Auth Store
+
+**Purpose**: Manages authentication state (user, isAuthenticated, isLoading)
+
+**Location**: `src/stores/authStore.ts`
+
+**State Shape**:
+
+```typescript
+interface AuthState {
+  user: User | null;
+  isAuthenticated: boolean;
+  isLoading: boolean;
+}
+```
+
+**Key Features**:
+
+- No persistence - session restored from refresh token cookie
+- Initializes on app mount via `initializeAuth()`
+- Prevents concurrent initialization with shared promise
+
+**Usage**:
+
+```typescript
+import { authStore, setUser, clearAuth } from "@/stores/authStore";
+import { useStore } from "@tanstack/react-store";
+
+// In component
+const user = useStore(authStore, (state) => state.user);
+const isAuthenticated = useStore(authStore, (state) => state.isAuthenticated);
+
+// Actions
+setUser(userData);
+clearAuth();
+```
+
+#### Business Store
+
+**Purpose**: Manages business list, selected business, and sidebar preferences
+
+**Location**: `src/stores/businessStore.ts`
+
+**State Shape**:
+
+```typescript
+interface BusinessState {
+  businesses: Array<Business>;
+  selectedBusinessDescriptor: string | null;
+  sidebarCollapsed: boolean; // Desktop: icon-only mode
+  sidebarOpen: boolean; // Mobile: drawer open state
+}
+```
+
+**Persistence**: Only `selectedBusinessDescriptor` and `sidebarCollapsed` are persisted to localStorage (key: `kyora_business_prefs`)
+
+**Usage**:
+
+```typescript
+import {
+  businessStore,
+  setBusinesses,
+  selectBusiness,
+  toggleSidebar,
+} from "@/stores/businessStore";
+import { useStore } from "@tanstack/react-store";
+
+// In component
+const businesses = useStore(businessStore, (state) => state.businesses);
+const selected = useStore(
+  businessStore,
+  (state) => state.selectedBusinessDescriptor
+);
+
+// Actions
+setBusinesses(businessesArray);
+selectBusiness("my-business");
+toggleSidebar(); // Desktop: collapse/expand, Mobile: open/close
+```
+
+#### Metadata Store
+
+**Purpose**: Caches countries and currencies reference data with 24-hour TTL
+
+**Location**: `src/stores/metadataStore.ts`
+
+**State Shape**:
+
+```typescript
+interface MetadataState {
+  countries: Array<CountryMetadata>;
+  currencies: Array<CurrencyInfo>;
+  lastFetched: number | null;
+  status: "idle" | "loading" | "loaded" | "error";
+  loadCountries: () => Promise<void>;
+}
+```
+
+**Persistence**: Full state persisted to localStorage (key: `kyora_metadata`) with 24-hour TTL. Auto-clears stale data.
+
+**Usage**:
+
+```typescript
+import { metadataStore, loadCountries } from "@/stores/metadataStore";
+import { useStore } from "@tanstack/react-store";
+
+// In component
+const countries = useStore(metadataStore, (state) => state.countries);
+const status = useStore(metadataStore, (state) => state.status);
+
+// Load metadata (auto-cached for 24 hours)
+await loadCountries();
+```
+
+#### Onboarding Store
+
+**Purpose**: Tracks multi-step onboarding flow state (email verification, plan selection, business creation, payment)
+
+**Location**: `src/stores/onboardingStore.ts`
+
+**State Shape**:
+
+```typescript
+interface OnboardingState {
+  sessionToken: string | null;
+  stage: SessionStage | null; // 'plan_selected', 'identity_verified', etc.
+  email: string | null;
+  planId: string | null;
+  planDescriptor: string | null;
+  isPaidPlan: boolean;
+  businessData: BusinessData | null;
+  paymentCompleted: boolean;
+  checkoutUrl: string | null;
+}
+```
+
+**Persistence**: Full state persisted to localStorage (key: `kyora_onboarding_session`) with no TTL. Must be manually cleared after completion.
+
+**Usage**:
+
+```typescript
+import {
+  onboardingStore,
+  setOnboardingEmail,
+  setSelectedPlan,
+  clearOnboardingSession,
+} from "@/stores/onboardingStore";
+import { useStore } from "@tanstack/react-store";
+
+// In component
+const stage = useStore(onboardingStore, (state) => state.stage);
+const businessData = useStore(onboardingStore, (state) => state.businessData);
+
+// Actions
+setOnboardingEmail("user@example.com");
+setSelectedPlan("plan_abc", "pro", true);
+clearOnboardingSession(); // After successful completion
+```
+
+**Store Persistence Pattern**:
+
+All stores use `createPersistencePlugin` from `src/lib/storePersistence.ts` which provides:
+
+- Selective state persistence (choose what to save)
+- TTL support (auto-expire cached data)
+- Type-safe restore logic
+- Automatic localStorage management
+
+### 6. Internationalization
 
 **Setup** (`src/i18n/init.ts`):
 
@@ -541,7 +762,389 @@ setLanguage("en");
 - Use logical properties in CSS: `start` instead of `left`, `end` instead of `right`
 - Tailwind utilities: `ms-4` (margin-start), `pe-2` (padding-end)
 
-### 6. Error Handling
+### 7. Chart System
+
+**Overview**: Portal-web includes a comprehensive Chart.js integration with theme integration, RTL support, custom plugins, and reusable chart components.
+
+**Full documentation**: See `portal-web/docs/CHARTS.md` for detailed API reference and advanced patterns.
+
+#### Chart Components
+
+Located in `src/components/atoms/`:
+
+- **LineChart**: Line charts for trends over time
+- **BarChart**: Bar charts for comparisons
+- **PieChart**: Pie charts for proportions
+- **DoughnutChart**: Doughnut charts with center labels
+- **MixedChart**: Combined chart types (line + bar)
+- **ChartCard**: Wrapper component with title, loading, empty states
+- **ChartSkeleton**: Loading skeleton
+- **ChartEmptyState**: Empty state placeholder
+
+#### Theme Integration
+
+**Theme Hook** (`src/lib/charts/chartTheme.ts`):
+
+```typescript
+import { useChartTheme } from "@/lib/charts";
+
+function MyChart() {
+  const theme = useChartTheme();
+
+  const options = {
+    plugins: {
+      legend: {
+        labels: {
+          color: theme.text.primary,
+          font: { family: theme.fontFamily },
+        },
+      },
+    },
+    scales: {
+      x: {
+        ticks: { color: theme.text.secondary },
+        grid: { color: theme.grid },
+      },
+    },
+  };
+
+  return <Line data={data} options={options} />;
+}
+```
+
+**Theme Structure**:
+
+```typescript
+interface ChartTheme {
+  colors: {
+    primary: string;
+    secondary: string;
+    success: string;
+    error: string;
+    warning: string;
+    info: string;
+  };
+  text: {
+    primary: string;
+    secondary: string;
+    tertiary: string;
+  };
+  background: {
+    base100: string;
+    base200: string;
+    base300: string;
+  };
+  grid: string;
+  fontFamily: string;
+}
+```
+
+Theme automatically resolves from CSS variables (daisyUI tokens) and updates reactively when theme changes.
+
+#### RTL Support
+
+**Auto-Configuration** (`src/lib/charts/rtlSupport.ts`):
+
+```typescript
+import { getChartRTLConfig } from "@/lib/charts";
+import { useLanguage } from "@/hooks/useLanguage";
+
+function MyChart() {
+  const { isRTL } = useLanguage();
+
+  const options = {
+    ...getChartRTLConfig(isRTL),
+    // Your other options
+  };
+
+  return <Line data={data} options={options} />;
+}
+```
+
+RTL configuration handles:
+
+- Text alignment (right-aligned in RTL)
+- Legend positioning (right side in RTL)
+- Tooltip alignment
+- Axis label positioning
+
+#### Custom Plugins
+
+**Available Plugins** (`src/lib/charts/chartPlugins.ts`):
+
+```typescript
+import { centerTextPlugin, gradientPlugin } from "@/lib/charts";
+
+// Center text in doughnut/pie charts
+const options = {
+  plugins: {
+    centerText: {
+      text: "Total",
+      value: "1,234",
+      color: theme.text.primary,
+    },
+  },
+};
+
+<Doughnut data={data} options={options} plugins={[centerTextPlugin]} />
+
+// Gradient backgrounds
+<Bar data={data} options={options} plugins={[gradientPlugin]} />
+```
+
+#### Data Utilities
+
+**Transformers** (`src/lib/charts/chartUtils.ts`):
+
+```typescript
+import {
+  formatChartCurrency,
+  formatChartDate,
+  generateChartColors,
+  aggregateChartData,
+} from "@/lib/charts";
+
+// Currency formatting
+const formatted = formatChartCurrency(12500, "SAR"); // "SAR 12,500"
+
+// Date formatting (respects locale)
+const formatted = formatChartDate(new Date(), "MMM dd"); // "Jan 15" or "15 يناير"
+
+// Generate color palette
+const colors = generateChartColors(5, theme.colors.primary); // Returns 5 shades
+
+// Aggregate data by time period
+const aggregated = aggregateChartData(rawData, "day"); // Group by day
+```
+
+#### ChartCard Component
+
+**Wrapper with Loading/Empty States**:
+
+```typescript
+import { ChartCard } from "@/components/atoms/ChartCard";
+
+<ChartCard
+  title="Sales Trend"
+  subtitle="Last 30 days"
+  isLoading={isLoading}
+  isEmpty={data.length === 0}
+  emptyMessage="No sales data available"
+>
+  <Line data={chartData} options={chartOptions} />
+</ChartCard>;
+```
+
+### 8. File Upload System
+
+**Overview**: Portal-web includes a comprehensive file upload system with validation, metadata extraction, preview management, and thumbnail generation for images and videos.
+
+**Architecture**: Located in `src/lib/upload/`
+
+#### File Validation
+
+**Constants** (`src/lib/upload/constants.ts`):
+
+```typescript
+// MIME type validation
+ALLOWED_IMAGE_TYPES = [
+  "image/jpeg",
+  "image/png",
+  "image/webp",
+  "image/gif",
+  "image/heic",
+  "image/heif",
+];
+ALLOWED_VIDEO_TYPES = ["video/mp4", "video/quicktime", "video/webm"];
+
+// Size limits
+MAX_IMAGE_SIZE = 10 * 1024 * 1024; // 10 MB
+MAX_VIDEO_SIZE = 100 * 1024 * 1024; // 100 MB
+```
+
+**Validator** (`src/lib/upload/fileValidator.ts`):
+
+```typescript
+import { validateFile, FileValidationError } from "@/lib/upload";
+
+try {
+  const result = validateFile(file, {
+    allowedTypes: ["image/jpeg", "image/png"],
+    maxSize: 5 * 1024 * 1024, // 5 MB
+  });
+
+  if (result.isValid) {
+    // File is valid
+  }
+} catch (error) {
+  if (error instanceof FileValidationError) {
+    toast.error(error.message);
+  }
+}
+```
+
+#### Metadata Extraction
+
+**Extract File Metadata** (`src/lib/upload/metadataExtractor.ts`):
+
+```typescript
+import { extractImageMetadata, extractVideoMetadata } from "@/lib/upload";
+
+// Image metadata
+const metadata = await extractImageMetadata(file);
+// Returns: { width, height, aspectRatio, format, size }
+
+// Video metadata
+const metadata = await extractVideoMetadata(file);
+// Returns: { width, height, duration, format, size }
+```
+
+#### Preview Management
+
+**Object URL Management** (`src/lib/upload/filePreviewManager.ts`):
+
+```typescript
+import { createFilePreview, revokeFilePreview } from "@/lib/upload";
+
+// Create preview URL
+const previewUrl = createFilePreview(file);
+
+// Display in UI
+<img src={previewUrl} alt="Preview" />;
+
+// Cleanup when done (prevent memory leaks)
+useEffect(() => {
+  return () => revokeFilePreview(previewUrl);
+}, [previewUrl]);
+```
+
+#### Thumbnail Generation
+
+**Image Thumbnails** (`src/lib/upload/thumbnailWorker.ts`):
+
+```typescript
+import { generateImageThumbnail } from "@/lib/upload";
+
+const thumbnail = await generateImageThumbnail(file, {
+  maxWidth: 200,
+  maxHeight: 200,
+  quality: 0.8,
+});
+
+// Returns: Blob
+```
+
+Uses canvas-based resizing for fast, high-quality thumbnails.
+
+**Video Thumbnails** (`src/lib/upload/videoThumbnail.ts`):
+
+```typescript
+import { generateVideoThumbnail } from "@/lib/upload";
+
+const thumbnail = await generateVideoThumbnail(file, {
+  timeInSeconds: 1.0, // Extract frame at 1 second
+  width: 200,
+  height: 200,
+});
+
+// Returns: Blob
+```
+
+Uses FFmpeg.wasm to extract video frames client-side without server upload.
+
+#### Upload Hook
+
+**useFileUpload Hook** (`src/lib/upload/useFileUpload.ts`):
+
+```typescript
+import { useFileUpload } from "@/lib/upload";
+
+function UploadForm() {
+  const {
+    files,
+    isUploading,
+    progress,
+    errors,
+    addFiles,
+    removeFile,
+    uploadFiles,
+    reset,
+  } = useFileUpload({
+    maxFiles: 10,
+    maxSize: 10 * 1024 * 1024,
+    allowedTypes: ["image/jpeg", "image/png"],
+    generateThumbnails: true,
+    onUploadComplete: (uploadedFiles) => {
+      console.log("Uploaded:", uploadedFiles);
+    },
+    onError: (error) => {
+      toast.error(error.message);
+    },
+  });
+
+  return (
+    <div>
+      <input
+        type="file"
+        multiple
+        accept="image/*"
+        onChange={(e) => addFiles(Array.from(e.target.files || []))}
+      />
+
+      {files.map((file) => (
+        <div key={file.id}>
+          <img src={file.preview} alt={file.name} />
+          <button onClick={() => removeFile(file.id)}>Remove</button>
+        </div>
+      ))}
+
+      <button onClick={uploadFiles} disabled={isUploading}>
+        {isUploading ? `Uploading... ${progress}%` : "Upload"}
+      </button>
+    </div>
+  );
+}
+```
+
+**Hook Features**:
+
+- Automatic file validation
+- Preview URL generation and cleanup
+- Thumbnail generation (images + videos)
+- Upload progress tracking
+- Error handling with translated messages
+- File management (add, remove, reset)
+
+#### Integration with Backend
+
+See `.github/instructions/asset_upload.instructions.md` for backend contract and upload flow.
+
+**Upload Flow**:
+
+1. **Generate Upload URLs**: `POST /v1/businesses/{businessDescriptor}/assets/uploads`
+2. **Upload File Bytes**: Direct upload to storage using pre-signed URL
+3. **Complete Multipart** (S3 only): `POST /v1/businesses/{businessDescriptor}/assets/uploads/{assetId}/complete`
+4. **Save AssetReference**: Store returned `{ url, assetId, thumbnailUrl }` in business/product/variant
+
+**AssetReference Type**:
+
+```typescript
+interface AssetReference {
+  url: string; // CDN/public URL
+  originalUrl?: string; // Storage URL (fallback)
+  thumbnailUrl?: string; // Thumbnail CDN URL
+  thumbnailOriginalUrl?: string; // Thumbnail storage URL
+  assetId: string; // Backend asset ID (required for GC)
+  metadata?: {
+    altText?: string;
+    caption?: string;
+    width?: number;
+    height?: number;
+  };
+}
+```
+
+### 9. Error Handling
 
 **RFC 7807 Problem Details** (`src/lib/errorParser.ts`):
 
@@ -592,7 +1195,7 @@ toast.info(t("common.processing"));
 toast.loading(t("common.loading"));
 ```
 
-### 7. Styling Guidelines
+### 10. Styling Guidelines
 
 **Tailwind CSS 4 (CSS-First)**:
 
@@ -661,7 +1264,7 @@ function Button({ variant = "primary", className, ...props }) {
 }
 ```
 
-### 8. Component Architecture (Atomic Design)
+### 11. Component Architecture (Atomic Design)
 
 **Atoms** (`src/components/atoms/`):
 
@@ -701,7 +1304,7 @@ export { Navbar } from "./organisms/Navbar";
 export { AppLayout } from "./templates/AppLayout";
 ```
 
-### 9. State Management Strategy
+### 12. State Management Strategy
 
 **Server State**: TanStack Query
 
@@ -730,7 +1333,7 @@ export { AppLayout } from "./templates/AppLayout";
 - Transient UI state (modals, dropdowns, toggles)
 - Component-local state
 
-### 10. API Client Patterns
+### 13. API Client Patterns
 
 **Base Client** (`src/api/client.ts`):
 
