@@ -1,11 +1,11 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Edit, Eye, Trash2, Users } from 'lucide-react'
 import type { MouseEvent } from 'react'
 
-import type { Customer } from '@/api/customer'
+import type { Customer, SocialPlatform } from '@/api/customer'
 import type { TableColumn } from '@/components/organisms/Table'
 import {
   customerQueries,
@@ -24,6 +24,8 @@ import {
 import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
+import { useKyoraForm } from '@/lib/form/useKyoraForm'
+import { CountrySelect } from '@/components/molecules/CountrySelect'
 
 /**
  * Customers List Route Search Params Schema
@@ -34,6 +36,13 @@ const CustomersSearchSchema = z.object({
   pageSize: z.number().optional().default(20),
   sortBy: z.string().optional(),
   sortOrder: z.enum(['asc', 'desc']).optional().default('desc'),
+  countryCode: z.string().optional(),
+  hasOrders: z.boolean().optional(),
+  socialPlatforms: z
+    .array(
+      z.enum(['instagram', 'tiktok', 'facebook', 'x', 'snapchat', 'whatsapp']),
+    )
+    .optional(),
 })
 
 type CustomersSearch = z.infer<typeof CustomersSearchSchema>
@@ -65,11 +74,12 @@ export const Route = createFileRoute(
     // Parse search params from location
     const searchParams = CustomersSearchSchema.parse(location.search)
 
-    // Build orderBy from sortBy/sortOrder
-    let orderBy: Array<string> | undefined
-    if (searchParams.sortBy) {
-      orderBy = [`${searchParams.sortBy}:${searchParams.sortOrder}`]
-    }
+    // Build orderBy from sortBy/sortOrder (default to -createdAt if not specified)
+    const orderBy = searchParams.sortBy
+      ? [
+          `${searchParams.sortOrder === 'desc' ? '-' : ''}${searchParams.sortBy}`,
+        ]
+      : ['-createdAt']
 
     // Prefetch customer list (non-blocking, uses cache if available)
     await queryClient.prefetchQuery(
@@ -78,6 +88,9 @@ export const Route = createFileRoute(
         page: searchParams.page,
         pageSize: searchParams.pageSize,
         orderBy,
+        countryCode: searchParams.countryCode,
+        hasOrders: searchParams.hasOrders,
+        socialPlatforms: searchParams.socialPlatforms,
       }),
     )
   },
@@ -112,6 +125,39 @@ function CustomersListPage() {
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
 
+  const filterForm = useKyoraForm({
+    defaultValues: {
+      countryCode: search.countryCode ?? '',
+      hasOrders: search.hasOrders ?? false,
+      socialPlatforms: (search.socialPlatforms ?? []) as Array<SocialPlatform>,
+    },
+    onSubmit: async ({ value }) => {
+      await navigate({
+        to: '.',
+        search: {
+          ...search,
+          countryCode: value.countryCode || undefined,
+          hasOrders: value.hasOrders ? true : undefined,
+          socialPlatforms:
+            value.socialPlatforms.length > 0
+              ? value.socialPlatforms
+              : undefined,
+          page: 1,
+        },
+      })
+    },
+  })
+
+  // Sync form with URL search params when they change
+  useEffect(() => {
+    filterForm.setFieldValue('countryCode', search.countryCode ?? '')
+    filterForm.setFieldValue('hasOrders', search.hasOrders ?? false)
+    filterForm.setFieldValue(
+      'socialPlatforms',
+      (search.socialPlatforms ?? []) as Array<SocialPlatform>,
+    )
+  }, [search.countryCode, search.hasOrders, search.socialPlatforms])
+
   const { data: customersResponse, isLoading } = useCustomersQuery(
     businessDescriptor,
     {
@@ -119,12 +165,20 @@ function CustomersListPage() {
       page: search.page,
       pageSize: search.pageSize,
       orderBy,
+      countryCode: search.countryCode,
+      hasOrders: search.hasOrders,
+      socialPlatforms: search.socialPlatforms,
     },
   )
 
   const customers = customersResponse?.items ?? []
   const totalItems = customersResponse?.totalCount ?? 0
   const totalPages = customersResponse?.totalPages ?? 0
+
+  const activeFilterCount =
+    (search.countryCode ? 1 : 0) +
+    (search.hasOrders ? 1 : 0) +
+    (search.socialPlatforms && search.socialPlatforms.length > 0 ? 1 : 0)
 
   const deleteMutation = useDeleteCustomerMutation(businessDescriptor, {
     onSuccess: () => {
@@ -159,6 +213,20 @@ function CustomersListPage() {
     void navigate({
       to: '.',
       search: { ...search, pageSize: newPageSize, page: 1 },
+    })
+  }
+
+  const handleResetFilters = async () => {
+    filterForm.reset()
+    await navigate({
+      to: '.',
+      search: {
+        ...search,
+        countryCode: undefined,
+        hasOrders: undefined,
+        socialPlatforms: undefined,
+        page: 1,
+      },
     })
   }
 
@@ -335,16 +403,73 @@ function CustomersListPage() {
         filterTitle={t('customers.filters')}
         filterButtonText={t('common.filter')}
         filterButton={
-          <div className="space-y-4">
-            <p className="text-sm text-base-content/60">
-              {t('customers.filters_coming_soon')}
-            </p>
-          </div>
+          <filterForm.AppForm>
+            <div className="space-y-6 p-4">
+              <filterForm.AppField name="countryCode">
+                {(field) => (
+                  <div className="form-control">
+                    <CountrySelect
+                      value={field.state.value}
+                      onChange={(val) => field.handleChange(val)}
+                      placeholder={t('customers.all_countries')}
+                      searchable
+                    />
+                  </div>
+                )}
+              </filterForm.AppField>
+
+              <filterForm.AppField name="hasOrders">
+                {(field) => (
+                  <field.ToggleField
+                    label={t('customers.filter_only_with_orders')}
+                    description={t('customers.filter_only_with_orders_desc')}
+                  />
+                )}
+              </filterForm.AppField>
+
+              <filterForm.AppField name="socialPlatforms">
+                {(field) => (
+                  <field.CheckboxGroupField
+                    label={t('customers.filter_by_social_platform')}
+                    options={[
+                      {
+                        value: 'instagram' as const,
+                        label: t('customers.instagram'),
+                      },
+                      {
+                        value: 'tiktok' as const,
+                        label: t('customers.tiktok'),
+                      },
+                      {
+                        value: 'facebook' as const,
+                        label: t('customers.facebook'),
+                      },
+                      {
+                        value: 'x' as const,
+                        label: t('customers.x'),
+                      },
+                      {
+                        value: 'snapchat' as const,
+                        label: t('customers.snapchat'),
+                      },
+                      {
+                        value: 'whatsapp' as const,
+                        label: t('customers.whatsapp'),
+                      },
+                    ]}
+                  />
+                )}
+              </filterForm.AppField>
+            </div>
+          </filterForm.AppForm>
         }
+        activeFilterCount={activeFilterCount}
         applyLabel={t('common.apply')}
         resetLabel={t('common.reset')}
-        onApplyFilters={() => {}}
-        onResetFilters={() => {}}
+        onApplyFilters={() => {
+          filterForm.handleSubmit()
+        }}
+        onResetFilters={handleResetFilters}
         emptyIcon={<Users size={48} />}
         emptyTitle={
           search.search

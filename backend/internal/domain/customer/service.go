@@ -235,9 +235,64 @@ func (s *Service) DeleteCustomer(ctx context.Context, actor *account.User, biz *
 	return s.storage.customer.DeleteOne(ctx, customer)
 }
 
-func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*CustomerResponse, int64, error) {
+type ListCustomersFilters struct {
+	CountryCode     string
+	HasOrders       *bool
+	SocialPlatforms []string
+}
+
+func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListCustomersFilters) ([]*CustomerResponse, int64, error) {
 	scopes := []func(*gorm.DB) *gorm.DB{
 		s.storage.customer.ScopeBusinessID(biz.ID),
+	}
+
+	// Apply filters
+	if filters != nil {
+		// Filter by country
+		if filters.CountryCode != "" {
+			scopes = append(scopes,
+				s.storage.customer.ScopeEquals(CustomerSchema.CountryCode, strings.ToUpper(filters.CountryCode)),
+			)
+		}
+
+		// Filter by hasOrders
+		if filters.HasOrders != nil {
+			if *filters.HasOrders {
+				scopes = append(scopes,
+					s.storage.customer.ScopeWhere("EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)"),
+				)
+			} else {
+				scopes = append(scopes,
+					s.storage.customer.ScopeWhere("NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)"),
+				)
+			}
+		}
+
+		// Filter by social media platforms
+		if len(filters.SocialPlatforms) > 0 {
+			conditions := []string{}
+			for _, platform := range filters.SocialPlatforms {
+				switch strings.ToLower(platform) {
+				case "instagram":
+					conditions = append(conditions, "customers.instagram_username IS NOT NULL AND customers.instagram_username != ''")
+				case "tiktok":
+					conditions = append(conditions, "customers.tiktok_username IS NOT NULL AND customers.tiktok_username != ''")
+				case "facebook":
+					conditions = append(conditions, "customers.facebook_username IS NOT NULL AND customers.facebook_username != ''")
+				case "x":
+					conditions = append(conditions, "customers.x_username IS NOT NULL AND customers.x_username != ''")
+				case "snapchat":
+					conditions = append(conditions, "customers.snapchat_username IS NOT NULL AND customers.snapchat_username != ''")
+				case "whatsapp":
+					conditions = append(conditions, "customers.whatsapp_number IS NOT NULL AND customers.whatsapp_number != ''")
+				}
+			}
+			if len(conditions) > 0 {
+				scopes = append(scopes,
+					s.storage.customer.ScopeWhere("("+strings.Join(conditions, " OR ")+")"),
+				)
+			}
+		}
 	}
 
 	// Apply search if provided

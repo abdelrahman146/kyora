@@ -103,6 +103,25 @@ export interface CheckboxFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Checkbox group specific props
+ */
+export interface CheckboxGroupFieldProps<
+  T extends string = string,
+> extends BaseFieldProps {
+  /** Description text displayed below label */
+  description?: string
+  /** Options for the checkbox group */
+  options: Array<{
+    value: T
+    label: string
+    /** Optional icon/emoji to display next to the label */
+    icon?: string
+    description?: string
+    disabled?: boolean
+  }>
+}
+
+/**
  * Textarea specific props
  */
 export interface TextareaFieldProps extends BaseFieldProps {

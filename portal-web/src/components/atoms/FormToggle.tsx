@@ -28,6 +28,33 @@ export interface FormToggleProps extends Omit<
  * - Keyboard navigation support
  * - Disabled state handling with visual feedback
  *
+ * DESIGN GUIDELINES FOR TOGGLE FIELDS:
+ * =====================================
+ * 1. **Label Position**: Always use `labelPosition="start"` for consistent alignment
+ *    - This creates a left-aligned label with right-aligned toggle
+ *    - Works perfectly on all screen sizes (mobile to desktop)
+ *    - Maintains visual balance and readability
+ *
+ * 2. **Responsive Layout**: The toggle automatically adapts:
+ *    - On small screens: Label and toggle stack vertically if needed
+ *    - Label text wraps naturally without breaking the layout
+ *    - Touch targets remain accessible (minimum 44px)
+ *
+ * 3. **Content Structure**:
+ *    - Use `label` for the main action (e.g., "Only customers with orders")
+ *    - Use `description` for clarification (e.g., "Show only customers who have placed orders")
+ *    - Keep labels concise but descriptive
+ *
+ * 4. **Visual Consistency**:
+ *    - Matches the form-control pattern used by other fields
+ *    - Uses standard spacing (gap-3 for content)
+ *    - Error states follow the same pattern as text/select fields
+ *
+ * 5. **Accessibility**:
+ *    - Always set `role="switch"` and `aria-checked`
+ *    - Connect labels with `htmlFor` and proper IDs
+ *    - Provide `aria-describedby` for descriptions and errors
+ *
  * @example
  * ```tsx
  * <FormToggle
@@ -97,9 +124,11 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
           htmlFor={inputId}
           className={cn(
             'label cursor-pointer',
+            // Stack vertically on small screens, horizontal on larger screens
+            'flex-col items-start gap-3 sm:flex-row sm:items-center',
             labelPosition === 'start'
-              ? 'justify-between'
-              : 'justify-start gap-3',
+              ? 'sm:justify-between'
+              : 'sm:justify-start sm:gap-3',
             disabled && 'opacity-60 cursor-not-allowed',
           )}
         >
@@ -115,6 +144,8 @@ export const FormToggle = forwardRef<HTMLInputElement, FormToggleProps>(
               sizeClasses[size],
               variantClasses[variant],
               hasError && 'toggle-error',
+              // Ensure toggle doesn't shrink
+              'shrink-0',
               className,
             )}
             role="switch"

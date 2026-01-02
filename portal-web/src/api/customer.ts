@@ -16,6 +16,20 @@ import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
 
 export type CustomerGender = 'male' | 'female' | 'other'
 
+export type SocialPlatform =
+  | 'instagram'
+  | 'tiktok'
+  | 'facebook'
+  | 'x'
+  | 'snapchat'
+  | 'whatsapp'
+
+export interface ListCustomersFilters {
+  countryCode?: string
+  hasOrders?: boolean
+  socialPlatforms?: Array<SocialPlatform>
+}
+
 export interface CustomerAddress {
   id: string
   customerId: string
@@ -124,6 +138,9 @@ export const customerApi = {
       page?: number
       pageSize?: number
       orderBy?: Array<string>
+      countryCode?: string
+      hasOrders?: boolean
+      socialPlatforms?: Array<SocialPlatform>
     },
   ): Promise<ListCustomersResponse> {
     const searchParams = new URLSearchParams()
@@ -134,6 +151,13 @@ export const customerApi = {
     if (params?.orderBy && params.orderBy.length > 0) {
       // swagger: orderBy is collectionFormat=csv
       searchParams.set('orderBy', params.orderBy.join(','))
+    }
+    if (params?.countryCode) searchParams.set('countryCode', params.countryCode)
+    if (params?.hasOrders !== undefined)
+      searchParams.set('hasOrders', params.hasOrders.toString())
+    if (params?.socialPlatforms && params.socialPlatforms.length > 0) {
+      // swagger: socialPlatforms is collectionFormat=csv
+      searchParams.set('socialPlatforms', params.socialPlatforms.join(','))
     }
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
@@ -212,6 +236,9 @@ export const customerQueries = {
       page?: number
       pageSize?: number
       orderBy?: Array<string>
+      countryCode?: string
+      hasOrders?: boolean
+      socialPlatforms?: Array<SocialPlatform>
     },
   ) =>
     queryOptions({
@@ -253,6 +280,9 @@ export function useCustomersQuery(
     page?: number
     pageSize?: number
     orderBy?: Array<string>
+    countryCode?: string
+    hasOrders?: boolean
+    socialPlatforms?: Array<SocialPlatform>
   },
 ) {
   return useQuery(customerQueries.list(businessDescriptor, params))

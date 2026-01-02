@@ -126,3 +126,77 @@ func (h *CustomerTestHelper) CountNotes(ctx context.Context, customerID string) 
 	noteRepo := database.NewRepository[customer.CustomerNote](h.db)
 	return noteRepo.Count(ctx, noteRepo.ScopeEquals(customer.CustomerNoteSchema.CustomerID, customerID))
 }
+
+// CreateTestCustomerWithCountry creates a customer with a specific country
+func (h *CustomerTestHelper) CreateTestCustomerWithCountry(ctx context.Context, businessID, email, name, countryCode string) (*customer.Customer, error) {
+	customerRepo := database.NewRepository[customer.Customer](h.db)
+	cust := &customer.Customer{
+		BusinessID:  businessID,
+		Name:        name,
+		Email:       transformer.ToNullableString(email),
+		CountryCode: countryCode,
+		Gender:      customer.GenderMale,
+	}
+	if err := customerRepo.CreateOne(ctx, cust); err != nil {
+		return nil, err
+	}
+	return cust, nil
+}
+
+// CreateTestCustomerWithSocial creates a customer with a specific social media platform
+func (h *CustomerTestHelper) CreateTestCustomerWithSocial(ctx context.Context, businessID, email, name, platform, username string) (*customer.Customer, error) {
+	customerRepo := database.NewRepository[customer.Customer](h.db)
+	cust := &customer.Customer{
+		BusinessID:  businessID,
+		Name:        name,
+		Email:       transformer.ToNullableString(email),
+		CountryCode: "EG",
+		Gender:      customer.GenderMale,
+	}
+
+	switch platform {
+	case "instagram":
+		cust.InstagramUsername = transformer.ToNullableString(username)
+	case "tiktok":
+		cust.TikTokUsername = transformer.ToNullableString(username)
+	case "facebook":
+		cust.FacebookUsername = transformer.ToNullableString(username)
+	case "x":
+		cust.XUsername = transformer.ToNullableString(username)
+	case "snapchat":
+		cust.SnapchatUsername = transformer.ToNullableString(username)
+	case "whatsapp":
+		cust.WhatsappNumber = transformer.ToNullableString(username)
+	}
+
+	if err := customerRepo.CreateOne(ctx, cust); err != nil {
+		return nil, err
+	}
+	return cust, nil
+}
+
+// SetCustomerSocial updates a customer's social media platform
+func (h *CustomerTestHelper) SetCustomerSocial(ctx context.Context, customerID, platform, username string) error {
+	customerRepo := database.NewRepository[customer.Customer](h.db)
+	cust, err := customerRepo.FindByID(ctx, customerID)
+	if err != nil {
+		return err
+	}
+
+	switch platform {
+	case "instagram":
+		cust.InstagramUsername = transformer.ToNullableString(username)
+	case "tiktok":
+		cust.TikTokUsername = transformer.ToNullableString(username)
+	case "facebook":
+		cust.FacebookUsername = transformer.ToNullableString(username)
+	case "x":
+		cust.XUsername = transformer.ToNullableString(username)
+	case "snapchat":
+		cust.SnapchatUsername = transformer.ToNullableString(username)
+	case "whatsapp":
+		cust.WhatsappNumber = transformer.ToNullableString(username)
+	}
+
+	return customerRepo.UpdateOne(ctx, cust)
+}

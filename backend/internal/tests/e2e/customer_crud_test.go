@@ -618,6 +618,178 @@ func (s *CustomerCRUDSuite) TestDeleteCustomer_CrossWorkspaceIsolation() {
 	s.Equal(int64(1), count)
 }
 
+func (s *CustomerCRUDSuite) TestListCustomers_FilterByCountry() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customers from different countries
+	_, err = s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "ahmed@example.com", "Ahmed Ali", "EG")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "sara@example.com", "Sara Mohamed", "SA")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "fatima@example.com", "Fatima Hassan", "AE")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "omar@example.com", "Omar Khalil", "EG")
+	s.NoError(err)
+
+	// Filter by Egypt
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?countryCode=EG", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 2)
+	s.Equal(float64(2), result["totalCount"])
+
+	for _, item := range items {
+		customer := item.(map[string]interface{})
+		s.Equal("EG", customer["countryCode"])
+	}
+}
+
+func (s *CustomerCRUDSuite) TestListCustomers_FilterByHasOrders_False() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customers without orders
+	_, err = s.customerHelper.CreateTestCustomer(ctx, biz.ID, "customer1@example.com", "Customer 1")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomer(ctx, biz.ID, "customer2@example.com", "Customer 2")
+	s.NoError(err)
+
+	// Filter for customers without orders
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?hasOrders=false", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 2)
+	s.Equal(float64(2), result["totalCount"])
+}
+
+func (s *CustomerCRUDSuite) TestListCustomers_FilterBySocialPlatform_Instagram() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customers with different social platforms
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "ahmed@example.com", "Ahmed Ali", "instagram", "ahmed_insta")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "sara@example.com", "Sara Mohamed", "tiktok", "sara_tiktok")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "fatima@example.com", "Fatima Hassan", "instagram", "fatima_insta")
+	s.NoError(err)
+
+	// Filter by Instagram
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?socialPlatforms=instagram", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 2)
+	s.Equal(float64(2), result["totalCount"])
+
+	for _, item := range items {
+		customer := item.(map[string]interface{})
+		s.NotEmpty(customer["instagramUsername"])
+	}
+}
+
+func (s *CustomerCRUDSuite) TestListCustomers_FilterBySocialPlatform_Multiple() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customers with different social platforms
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "ahmed@example.com", "Ahmed Ali", "instagram", "ahmed_insta")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "sara@example.com", "Sara Mohamed", "tiktok", "sara_tiktok")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "omar@example.com", "Omar Khalil", "facebook", "omar_fb")
+	s.NoError(err)
+	_, err = s.customerHelper.CreateTestCustomerWithSocial(ctx, biz.ID, "layla@example.com", "Layla Ibrahim", "whatsapp", "+962123456789")
+	s.NoError(err)
+
+	// Filter by Instagram and TikTok
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?socialPlatforms=instagram&socialPlatforms=tiktok", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 2)
+	s.Equal(float64(2), result["totalCount"])
+}
+
+func (s *CustomerCRUDSuite) TestListCustomers_FilterCombined() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.customerHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	// Create customers with different combinations
+	customer1, err := s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "ahmed@example.com", "Ahmed Ali", "EG")
+	s.NoError(err)
+	err = s.customerHelper.SetCustomerSocial(ctx, customer1.ID, "instagram", "ahmed_insta")
+	s.NoError(err)
+
+	customer2, err := s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "sara@example.com", "Sara Mohamed", "SA")
+	s.NoError(err)
+	err = s.customerHelper.SetCustomerSocial(ctx, customer2.ID, "instagram", "sara_insta")
+	s.NoError(err)
+
+	_, err = s.customerHelper.CreateTestCustomerWithCountry(ctx, biz.ID, "omar@example.com", "Omar Khalil", "EG")
+	s.NoError(err)
+
+	// Filter by Egypt AND Instagram
+	resp, err := s.customerHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/customers?countryCode=EG&socialPlatforms=instagram", nil, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &result))
+	items := result["items"].([]interface{})
+	s.Len(items, 1)
+	s.Equal(float64(1), result["totalCount"])
+
+	customer := items[0].(map[string]interface{})
+	s.Equal("EG", customer["countryCode"])
+	s.NotEmpty(customer["instagramUsername"])
+}
+
 func TestCustomerCRUDSuite(t *testing.T) {
 	if testServer == nil {
 		t.Skip("Test server not initialized")

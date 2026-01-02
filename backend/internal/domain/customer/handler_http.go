@@ -52,16 +52,19 @@ func (h *HttpHandler) getBusinessForWorkspace(c *gin.Context, actor *account.Use
 // Customer endpoints
 
 type listCustomersQuery struct {
-	Page       int      `form:"page" binding:"omitempty,min=1"`
-	PageSize   int      `form:"pageSize" binding:"omitempty,min=1,max=100"`
-	OrderBy    []string `form:"orderBy" binding:"omitempty"`
-	SearchTerm string   `form:"search" binding:"omitempty"`
+	Page            int      `form:"page" binding:"omitempty,min=1"`
+	PageSize        int      `form:"pageSize" binding:"omitempty,min=1,max=100"`
+	OrderBy         []string `form:"orderBy" binding:"omitempty"`
+	SearchTerm      string   `form:"search" binding:"omitempty"`
+	CountryCode     string   `form:"countryCode" binding:"omitempty"`
+	HasOrders       *bool    `form:"hasOrders" binding:"omitempty"`
+	SocialPlatforms []string `form:"socialPlatforms" binding:"omitempty"`
 }
 
 // ListCustomers returns a paginated list of customers
 //
 // @Summary      List customers
-// @Description  Returns a paginated list of all customers for the authenticated workspace
+// @Description  Returns a paginated list of all customers for the authenticated workspace with optional filters
 // @Tags         customer
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
@@ -69,6 +72,9 @@ type listCustomersQuery struct {
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, email)"
 // @Param        search query string false "Search term for customer name/email/phone/social handles"
+// @Param        countryCode query string false "Filter by country code (e.g., US, AE)"
+// @Param        hasOrders query bool false "Filter by customers with or without orders"
+// @Param        socialPlatforms query []string false "Filter by social media platforms (instagram, tiktok, facebook, x, snapchat, whatsapp)"
 // @Success      200 {object} list.ListResponse[Customer]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -109,7 +115,14 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 	}
 
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
-	customers, totalCount, err := h.service.ListCustomers(c.Request.Context(), actor, biz, listReq)
+
+	filters := &ListCustomersFilters{
+		CountryCode:     query.CountryCode,
+		HasOrders:       query.HasOrders,
+		SocialPlatforms: query.SocialPlatforms,
+	}
+
+	customers, totalCount, err := h.service.ListCustomers(c.Request.Context(), actor, biz, listReq, filters)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return

@@ -53,6 +53,7 @@ import { createFormHook } from '@tanstack/react-form'
 import { fieldContext, formContext } from './contexts'
 import {
   CheckboxField,
+  CheckboxGroupField,
   DateField,
   DateRangeField,
   DateTimeField,
@@ -86,6 +87,7 @@ const { useAppForm, withForm } = createFormHook({
     TextareaField,
     SelectField,
     CheckboxField,
+    CheckboxGroupField,
     RadioField,
     ToggleField,
     DateField,
