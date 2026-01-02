@@ -35,6 +35,7 @@ export interface TableProps<T> {
   sortBy?: string
   sortOrder?: 'asc' | 'desc'
   onSort?: (key: string) => void
+  onRowClick?: (item: T) => void
   stickyHeader?: boolean
 }
 
@@ -47,6 +48,7 @@ export function Table<T>({
   sortBy,
   sortOrder,
   onSort,
+  onRowClick,
   stickyHeader = true,
 }: TableProps<T>) {
   const handleSort = (columnKey: string, sortable?: boolean) => {
@@ -135,7 +137,13 @@ export function Table<T>({
           ) : (
             // Data rows
             data.map((item) => (
-              <tr key={keyExtractor(item)} className="hover:bg-base-200">
+              <tr
+                key={keyExtractor(item)}
+                className={`hover:bg-base-200 ${onRowClick ? 'cursor-pointer' : ''}`}
+                onClick={() => {
+                  onRowClick?.(item)
+                }}
+              >
                 {columns.map((column) => (
                   <td key={column.key} className={getAlignClass(column.align)}>
                     {column.render(item)}

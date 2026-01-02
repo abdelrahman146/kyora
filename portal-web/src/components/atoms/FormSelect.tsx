@@ -17,7 +17,15 @@
  * - Standard error prop integration
  */
 
-import { forwardRef, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import {
+  forwardRef,
+  useCallback,
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { Check, ChevronDown, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
@@ -109,26 +117,28 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     // Selected values normalization
     const selectedValues = (() => {
       if (multiSelect && Array.isArray(value)) return value
-      if (!multiSelect && value !== undefined && !Array.isArray(value)) return [value]
+      if (!multiSelect && value !== undefined && !Array.isArray(value))
+        return [value]
       return []
     })()
 
     // Search management
-    const { searchQuery, setSearchQuery, filteredOptions, clearSearch } = useSelectSearch({
-      options,
-      searchable,
-    })
+    const { searchQuery, setSearchQuery, filteredOptions, clearSearch } =
+      useSelectSearch({
+        options,
+        searchable,
+      })
 
     // Close handler with animation
     const handleClose = useCallback(() => {
       setIsAnimating(false)
-      
+
       // Wait for animation before unmounting
       setTimeout(() => {
         setIsOpen(false)
         clearSearch()
         onClose?.()
-        
+
         // Restore focus to trigger
         triggerRef.current?.focus()
       }, 200)
@@ -203,17 +213,18 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       if (isOpen && isMobile && typeof window !== 'undefined') {
         // Check if body scroll is already locked by a parent modal
         const isAlreadyLocked = document.body.style.overflow === 'hidden'
-        
+
         if (!isAlreadyLocked) {
           const originalOverflow = document.body.style.overflow
-          const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth
-          
+          const scrollbarWidth =
+            window.innerWidth - document.documentElement.clientWidth
+
           document.body.style.overflow = 'hidden'
-          
+
           if (scrollbarWidth > 0) {
             document.body.style.paddingInlineEnd = `${scrollbarWidth}px`
           }
-          
+
           return () => {
             document.body.style.overflow = originalOverflow
             document.body.style.paddingInlineEnd = ''
@@ -226,7 +237,11 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     const handleClear = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation()
-        onChange?.(multiSelect ? ([] as T | Array<T>) : (null as unknown as T | Array<T>))
+        onChange?.(
+          multiSelect
+            ? ([] as T | Array<T>)
+            : (null as unknown as T | Array<T>),
+        )
       },
       [multiSelect, onChange],
     )
@@ -236,7 +251,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       (valueToRemove: T, e?: React.MouseEvent | React.KeyboardEvent) => {
         e?.stopPropagation()
         if (disabled) return
-        
+
         const newValues = selectedValues.filter((v) => v !== valueToRemove)
         onChange?.(newValues as T | Array<T>)
       },
@@ -259,7 +274,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       if (selectedValues.length === 0) return placeholder
 
       if (!multiSelect) {
-        const selectedOption = options.find((opt) => opt.value === selectedValues[0])
+        const selectedOption = options.find(
+          (opt) => opt.value === selectedValues[0],
+        )
         return selectedOption?.label ?? placeholder
       }
 
@@ -270,7 +287,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     // Get selected option objects for chip display
     const selectedOptions = useMemo(() => {
       return selectedValues
-        .map((value) => options.find((opt) => opt.value === value))
+        .map((val) => options.find((opt) => opt.value === val))
         .filter((opt): opt is FormSelectOption<T> => opt !== undefined)
     }, [selectedValues, options])
 
@@ -282,7 +299,8 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
 
     const variantClasses = {
       default: 'input-bordered bg-base-100',
-      filled: 'input-bordered bg-base-200/50 border-transparent focus:bg-base-100',
+      filled:
+        'input-bordered bg-base-200/50 border-transparent focus:bg-base-100',
       ghost: 'input-ghost bg-transparent',
     }
 
@@ -319,7 +337,8 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               variantClasses[variant],
               'text-start cursor-pointer',
               'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
-              hasError && 'input-error border-error focus:border-error focus:ring-error/20',
+              hasError &&
+                'input-error border-error focus:border-error focus:ring-error/20',
               disabled && 'opacity-60 cursor-not-allowed',
               isOpen && 'border-primary ring-2 ring-primary/20',
               multiSelect && selectedValues.length > 0 && 'min-h-fit py-2',
@@ -343,11 +362,17 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     )}
                     tabIndex={0}
                     role="button"
-                    aria-label={t('common.remove_option', { option: option.label })}
+                    aria-label={t('common.remove_option', {
+                      option: option.label,
+                    })}
                     onKeyDown={(e) => handleChipKeyDown(option.value, e)}
                   >
-                    {option.icon && <span className="shrink-0">{option.icon}</span>}
-                    <span className="truncate max-w-[150px]">{option.label}</span>
+                    {option.icon && (
+                      <span className="shrink-0">{option.icon}</span>
+                    )}
+                    <span className="truncate max-w-[150px]">
+                      {option.label}
+                    </span>
                     <button
                       type="button"
                       onClick={(e) => handleRemoveChip(option.value, e)}
@@ -365,7 +390,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               </div>
             ) : (
               // Single-select or empty: Show text
-              <span className={cn('flex-1 truncate', selectedValues.length === 0 && 'text-base-content/40')}>
+              <span
+                className={cn(
+                  'flex-1 truncate',
+                  selectedValues.length === 0 && 'text-base-content/40',
+                )}
+              >
                 {getDisplayText()}
               </span>
             )}
@@ -381,13 +411,19 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   <X className="w-4 h-4" />
                 </button>
               )}
-              <ChevronDown className={cn('w-5 h-5 transition-transform duration-200', isOpen && 'rotate-180')} />
+              <ChevronDown
+                className={cn(
+                  'w-5 h-5 transition-transform duration-200',
+                  isOpen && 'rotate-180',
+                )}
+              />
             </div>
           </button>
 
           {/* Dropdown Panel - Mobile (Bottom Sheet) or Desktop (Dropdown) */}
-          {isOpen && !disabled && (
-            isMobile ? (
+          {isOpen &&
+            !disabled &&
+            (isMobile ? (
               // Mobile: Bottom Sheet with Portal
               createPortal(
                 <div
@@ -426,7 +462,10 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   >
                     {/* Drag Handle */}
                     <div className="flex justify-center py-2 px-4 shrink-0">
-                      <div className="w-12 h-1 bg-base-300 rounded-full" aria-hidden="true" />
+                      <div
+                        className="w-12 h-1 bg-base-300 rounded-full"
+                        aria-hidden="true"
+                      />
                     </div>
 
                     {/* Header */}
@@ -477,7 +516,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         </li>
                       ) : (
                         filteredOptions.map((option) => {
-                          const isSelected = selectedValues.includes(option.value)
+                          const isSelected = selectedValues.includes(
+                            option.value,
+                          )
 
                           return (
                             <li
@@ -499,23 +540,32 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                                 'min-h-[56px]',
                                 'active:bg-base-300',
                                 isSelected && 'bg-primary/10',
-                                option.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+                                option.disabled &&
+                                  'opacity-50 cursor-not-allowed pointer-events-none',
                               )}
                             >
                               {option.renderCustom ? (
                                 option.renderCustom()
                               ) : (
                                 <>
-                                  {option.icon && <span className="shrink-0 text-xl">{option.icon}</span>}
+                                  {option.icon && (
+                                    <span className="shrink-0 text-xl">
+                                      {option.icon}
+                                    </span>
+                                  )}
                                   <div className="flex-1 min-w-0">
-                                    <div className="font-medium text-base">{option.label}</div>
+                                    <div className="font-medium text-base">
+                                      {option.label}
+                                    </div>
                                     {option.description && (
                                       <div className="text-sm text-base-content/60 mt-0.5">
                                         {option.description}
                                       </div>
                                     )}
                                   </div>
-                                  {isSelected && <Check className="w-6 h-6 text-primary shrink-0" />}
+                                  {isSelected && (
+                                    <Check className="w-6 h-6 text-primary shrink-0" />
+                                  )}
                                 </>
                               )}
                             </li>
@@ -570,7 +620,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   style={{ maxHeight: maxHeight - (searchable ? 60 : 0) }}
                 >
                   {filteredOptions.length === 0 ? (
-                    <li className="p-4 text-center text-base-content/50">{t('common.no_options_found')}</li>
+                    <li className="p-4 text-center text-base-content/50">
+                      {t('common.no_options_found')}
+                    </li>
                   ) : (
                     filteredOptions.map((option, index) => {
                       const isSelected = selectedValues.includes(option.value)
@@ -582,11 +634,16 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                           role="option"
                           aria-selected={isSelected}
                           aria-disabled={option.disabled}
-                          onClick={() => !option.disabled && handleToggleOption(option.value)}
+                          onClick={() =>
+                            !option.disabled && handleToggleOption(option.value)
+                          }
                           tabIndex={isFocused ? 0 : -1}
                           ref={(el) => {
                             if (isFocused && el) {
-                              el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
+                              el.scrollIntoView({
+                                block: 'nearest',
+                                behavior: 'smooth',
+                              })
                             }
                           }}
                           className={cn(
@@ -595,22 +652,32 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                             'hover:bg-base-200 focus:bg-base-200 focus:outline-none',
                             'active:bg-base-300',
                             isSelected && 'bg-primary/10',
-                            isFocused && 'bg-base-200 ring-2 ring-inset ring-primary/30',
-                            option.disabled && 'opacity-50 cursor-not-allowed pointer-events-none',
+                            isFocused &&
+                              'bg-base-200 ring-2 ring-inset ring-primary/30',
+                            option.disabled &&
+                              'opacity-50 cursor-not-allowed pointer-events-none',
                           )}
                         >
                           {option.renderCustom ? (
                             option.renderCustom()
                           ) : (
                             <>
-                              {option.icon && <span className="shrink-0">{option.icon}</span>}
+                              {option.icon && (
+                                <span className="shrink-0">{option.icon}</span>
+                              )}
                               <div className="flex-1 min-w-0">
-                                <div className="font-medium truncate">{option.label}</div>
+                                <div className="font-medium truncate">
+                                  {option.label}
+                                </div>
                                 {option.description && (
-                                  <div className="text-sm text-base-content/60 truncate">{option.description}</div>
+                                  <div className="text-sm text-base-content/60 truncate">
+                                    {option.description}
+                                  </div>
                                 )}
                               </div>
-                              {isSelected && <Check className="w-5 h-5 text-primary shrink-0" />}
+                              {isSelected && (
+                                <Check className="w-5 h-5 text-primary shrink-0" />
+                              )}
                             </>
                           )}
                         </li>
@@ -619,14 +686,17 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   )}
                 </ul>
               </div>
-            )
-          )}
+            ))}
         </div>
 
         {/* Error Message */}
         {hasError && (
           <label className="label">
-            <span id={`${inputId}-error`} className="label-text-alt text-error" role="alert">
+            <span
+              id={`${inputId}-error`}
+              className="label-text-alt text-error"
+              role="alert"
+            >
               {errorText}
             </span>
           </label>
@@ -635,7 +705,10 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
         {/* Helper Text */}
         {!hasError && helperText && (
           <label className="label">
-            <span id={`${inputId}-helper`} className="label-text-alt text-base-content/60">
+            <span
+              id={`${inputId}-helper`}
+              className="label-text-alt text-base-content/60"
+            >
               {helperText}
             </span>
           </label>

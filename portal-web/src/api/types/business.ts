@@ -1,10 +1,11 @@
 import { z } from 'zod'
 import {
+  
   AssetMetadataSchema,
-  AssetReferenceSchema,
-  type AssetMetadata,
-  type AssetReference,
+  
+  AssetReferenceSchema
 } from './asset'
+import type {AssetMetadata, AssetReference} from './asset';
 
 /**
  * Business API types based on backend swagger.json

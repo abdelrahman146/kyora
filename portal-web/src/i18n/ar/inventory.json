@@ -1,0 +1,61 @@
+{
+  "title": "المخزون",
+  "subtitle": "إدارة المنتجات والمتغيرات ومستويات المخزون",
+  "add_product": "إضافة منتج",
+  "add_first_product": "إضافة أول منتج",
+  "edit_product": "تعديل المنتج",
+  "delete_product": "حذف المنتج",
+  "product_details": "تفاصيل المنتج",
+  
+  "search_placeholder": "البحث عن المنتجات بالاسم أو رمز SKU أو الفئة...",
+  
+  "no_products": "لا توجد منتجات بعد",
+  "no_results": "لم يتم العثور على نتائج",
+  "try_different_search": "جرب كلمات بحث مختلفة أو عدّل الفلاتر",
+  "get_started_message": "ابدأ بإضافة المنتجات لإدارة مخزونك وتتبع مستويات المخزون",
+  
+  "product_name": "اسم المنتج",
+  "category": "الفئة",
+  "cost_price_avg": "متوسط التكلفة",
+  "stock_quantity": "المخزون",
+  "status": "الحالة",
+  "variants_count": "المتغيرات",
+  "description": "الوصف",
+  "photos": "الصور",
+  "variants": "المتغيرات",
+  
+  "in_stock": "متوفر",
+  "low_stock": "مخزون منخفض",
+  "out_of_stock": "نفد المخزون",
+  
+  "average_cost_tooltip": "متوسط سعر التكلفة عبر جميع المتغيرات",
+  "low_stock_warning": "بعض المتغيرات على وشك النفاد",
+  
+  "variant_code": "الرمز",
+  "sku": "رمز SKU",
+  "cost_price": "سعر التكلفة",
+  "sale_price": "سعر البيع",
+  "stock_alert": "تنبيه المخزون المنخفض",
+  "no_variants": "لا توجد متغيرات متاحة",
+  "no_photos": "لا توجد صور متاحة",
+  
+  "filters_title": "تصفية المنتجات",
+  "filter_by_category": "التصفية حسب الفئة",
+  "filter_by_stock": "التصفية حسب حالة المخزون",
+  "all_categories": "جميع الفئات",
+  "all_products": "جميع المنتجات",
+  "show_in_stock": "المتوفر فقط",
+  "show_low_stock": "المخزون المنخفض فقط",
+  "show_out_of_stock": "نفد المخزون فقط",
+  
+  "created_success": "تم إنشاء المنتج بنجاح",
+  "updated_success": "تم تحديث المنتج بنجاح",
+  "deleted_success": "تم حذف المنتج بنجاح",
+  
+  "delete_confirm_title": "حذف المنتج",
+  "delete_confirm_message": "هل أنت متأكد من حذف {{name}}؟ سيتم أيضاً حذف جميع المتغيرات بشكل نهائي.",
+  
+  "coming_soon_title": "قريباً",
+  "coming_soon_message": "ستكون ميزات إدارة المنتجات متاحة في التحديث القادم. ترقبوا!",
+  "coming_soon_button": "فهمت"
+}

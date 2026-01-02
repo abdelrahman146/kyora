@@ -166,6 +166,8 @@ export const inventory = {
     filters?: {
       search?: string
       lowStock?: boolean
+      categoryId?: string
+      stockStatus?: string
       page?: number
       limit?: number
     },

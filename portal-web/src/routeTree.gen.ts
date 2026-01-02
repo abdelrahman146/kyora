@@ -24,6 +24,7 @@ import { Route as AuthLoginRouteImport } from './routes/auth/login'
 import { Route as AuthForgotPasswordRouteImport } from './routes/auth/forgot-password'
 import { Route as BusinessBusinessDescriptorIndexRouteImport } from './routes/business/$businessDescriptor/index'
 import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callback'
+import { Route as BusinessBusinessDescriptorInventoryIndexRouteImport } from './routes/business/$businessDescriptor/inventory/index'
 import { Route as BusinessBusinessDescriptorCustomersIndexRouteImport } from './routes/business/$businessDescriptor/customers/index'
 import { Route as BusinessBusinessDescriptorCustomersCustomerIdRouteImport } from './routes/business/$businessDescriptor/customers/$customerId'
 
@@ -104,6 +105,12 @@ const AuthOauthCallbackRoute = AuthOauthCallbackRouteImport.update({
   path: '/auth/oauth/callback',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BusinessBusinessDescriptorInventoryIndexRoute =
+  BusinessBusinessDescriptorInventoryIndexRouteImport.update({
+    id: '/inventory/',
+    path: '/inventory/',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
 const BusinessBusinessDescriptorCustomersIndexRoute =
   BusinessBusinessDescriptorCustomersIndexRouteImport.update({
     id: '/customers/',
@@ -135,6 +142,7 @@ export interface FileRoutesByFullPath {
   '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
   '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
+  '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -153,6 +161,7 @@ export interface FileRoutesByTo {
   '/business/$businessDescriptor': typeof BusinessBusinessDescriptorIndexRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
   '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
+  '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -173,6 +182,7 @@ export interface FileRoutesById {
   '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
   '/business/$businessDescriptor/customers/': typeof BusinessBusinessDescriptorCustomersIndexRoute
+  '/business/$businessDescriptor/inventory/': typeof BusinessBusinessDescriptorInventoryIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -194,6 +204,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor/'
     | '/business/$businessDescriptor/customers/$customerId'
     | '/business/$businessDescriptor/customers'
+    | '/business/$businessDescriptor/inventory'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -212,6 +223,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor'
     | '/business/$businessDescriptor/customers/$customerId'
     | '/business/$businessDescriptor/customers'
+    | '/business/$businessDescriptor/inventory'
   id:
     | '__root__'
     | '/'
@@ -231,6 +243,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor/'
     | '/business/$businessDescriptor/customers/$customerId'
     | '/business/$businessDescriptor/customers/'
+    | '/business/$businessDescriptor/inventory/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -357,6 +370,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthOauthCallbackRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/business/$businessDescriptor/inventory/': {
+      id: '/business/$businessDescriptor/inventory/'
+      path: '/inventory'
+      fullPath: '/business/$businessDescriptor/inventory'
+      preLoaderRoute: typeof BusinessBusinessDescriptorInventoryIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
     '/business/$businessDescriptor/customers/': {
       id: '/business/$businessDescriptor/customers/'
       path: '/customers'
@@ -378,6 +398,7 @@ interface BusinessBusinessDescriptorRouteChildren {
   BusinessBusinessDescriptorIndexRoute: typeof BusinessBusinessDescriptorIndexRoute
   BusinessBusinessDescriptorCustomersCustomerIdRoute: typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
   BusinessBusinessDescriptorCustomersIndexRoute: typeof BusinessBusinessDescriptorCustomersIndexRoute
+  BusinessBusinessDescriptorInventoryIndexRoute: typeof BusinessBusinessDescriptorInventoryIndexRoute
 }
 
 const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteChildren =
@@ -387,6 +408,8 @@ const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteCh
       BusinessBusinessDescriptorCustomersCustomerIdRoute,
     BusinessBusinessDescriptorCustomersIndexRoute:
       BusinessBusinessDescriptorCustomersIndexRoute,
+    BusinessBusinessDescriptorInventoryIndexRoute:
+      BusinessBusinessDescriptorInventoryIndexRoute,
   }
 
 const BusinessBusinessDescriptorRouteWithChildren =
