@@ -2,64 +2,78 @@
  * InventoryCard Component
  *
  * A card component displaying product information for mobile list view.
+ * Redesigned for simplicity, clarity, and elegance following Kyora's Basata principle.
  *
  * Features:
- * - Displays product name, category, cost price, stock quantity
- * - Stock status badge with visual indicators
- * - Low stock warning badge
- * - Click to view details
- * - Photo thumbnail with fallback icon
- * - RTL-compatible
- * - Mobile-optimized (min 44px touch target)
+ * - Clean single-column layout with logical information hierarchy
+ * - Product photo, name, and category at top
+ * - Price information clearly displayed
+ * - Stock status with color coding and tooltips
+ * - Generous white space and touch-friendly (min 44px tap target)
+ * - RTL-compatible with proper logical properties
  */
 
 import { useTranslation } from 'react-i18next'
-import { Box, DollarSign } from 'lucide-react'
 
 import { Avatar } from '../atoms/Avatar'
-import { Badge } from '../atoms/Badge'
 import { Tooltip } from '../atoms/Tooltip'
-import type { Product } from '@/api/inventory'
+import type { Category, Product } from '@/api/inventory'
 import { formatCurrency } from '@/lib/formatCurrency'
+import {
+  calculateTotalStock,
+  getPriceRange,
+  hasLowStock,
+} from '@/lib/inventoryUtils'
 
 export interface InventoryCardProps {
   product: Product
-  avgCostPrice: number
-  totalStock: number
-  stockStatus: 'in_stock' | 'low_stock' | 'out_of_stock'
-  hasLowStock: boolean
   currency: string
+  categories: Array<Category>
   onClick?: (product: Product) => void
 }
 
 export function InventoryCard({
   product,
-  avgCostPrice,
-  totalStock,
-  stockStatus,
-  hasLowStock,
   currency,
+  categories,
   onClick,
 }: InventoryCardProps) {
   const { t } = useTranslation()
 
-  const getStockStatusBadgeClass = () => {
-    switch (stockStatus) {
-      case 'in_stock':
-        return 'badge-success'
-      case 'low_stock':
-        return 'badge-warning'
-      case 'out_of_stock':
-        return 'badge-error'
-      default:
-        return 'badge-neutral'
+  const totalStock = calculateTotalStock(product.variants)
+  const isLowStock = hasLowStock(product.variants)
+  const isOutOfStock = totalStock === 0
+  const costPriceRange = getPriceRange(product.variants, 'costPrice')
+  const salePriceRange = getPriceRange(product.variants, 'salePrice')
+  const category = categories.find((c) => c.id === product.categoryId)
+
+  const getStockColorClass = () => {
+    if (isOutOfStock) return 'text-error'
+    if (isLowStock) return 'text-warning'
+    return 'text-success'
+  }
+
+  const getStockTooltip = () => {
+    if (isOutOfStock) return t('inventory.out_of_stock')
+    if (isLowStock) return t('inventory.low_stock')
+    return undefined
+  }
+
+  const formatPriceDisplay = (range: {
+    min: number
+    max: number
+    isSame: boolean
+  }) => {
+    if (range.isSame) {
+      return formatCurrency(range.min, currency)
     }
+    return `${formatCurrency(range.min, currency)} - ${formatCurrency(range.max, currency)}`
   }
 
   return (
     <div
-      className={`card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow ${
-        onClick ? 'cursor-pointer' : ''
+      className={`bg-base-100 border border-base-300 rounded-xl p-4 hover:shadow-md transition-shadow ${
+        onClick ? 'cursor-pointer active:scale-[0.98]' : ''
       }`}
       onClick={() => onClick?.(product)}
       role={onClick ? 'button' : undefined}
@@ -71,67 +85,61 @@ export function InventoryCard({
         }
       }}
     >
-      <div className="card-body p-4">
-        {/* Header: Product Photo + Name + Category */}
-        <div className="flex items-center gap-3 mb-3">
-          <Avatar
-            src={product.photos[0]?.thumbnail_url}
-            alt={product.name}
-            fallback={product.name.charAt(0).toUpperCase()}
-            size="sm"
-          />
-          <div className="flex-1 min-w-0">
-            <h3 className="font-semibold text-base truncate">{product.name}</h3>
-            {product.category && (
-              <p className="text-sm text-base-content/70 truncate">
-                {product.category.name}
-              </p>
-            )}
-          </div>
+      {/* Header: Photo + Name + Category */}
+      <div className="flex items-start gap-3 mb-4">
+        <Avatar
+          src={product.photos[0]?.thumbnail_url || product.photos[0]?.url}
+          alt={product.name}
+          fallback={product.name.charAt(0).toUpperCase()}
+          size="md"
+          shape="square"
+        />
+        <div className="flex-1 min-w-0">
+          <h3 className="font-semibold text-base text-base-content truncate mb-1">
+            {product.name}
+          </h3>
+          {category && (
+            <p className="text-sm text-base-content/60">{category.name}</p>
+          )}
         </div>
+      </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Average Cost Price */}
-          <div className="stat-item">
-            <div className="flex items-center gap-1 text-sm text-base-content/60 mb-1">
-              <DollarSign size={14} />
-              <Tooltip content={t('inventory.average_cost_tooltip')}>
-                <span className="cursor-help">
-                  {t('inventory.cost_price_avg')}
-                </span>
-              </Tooltip>
-            </div>
-            <div className="text-base font-semibold">
-              {formatCurrency(avgCostPrice, currency)}
-            </div>
-          </div>
-
-          {/* Stock Quantity */}
-          <div className="stat-item">
-            <div className="flex items-center gap-1 text-sm text-base-content/60 mb-1">
-              <Box size={14} />
-              <span>{t('inventory.stock_quantity')}</span>
-            </div>
-            <div className="flex items-center gap-2">
-              <span className="text-base font-semibold">{totalStock}</span>
-              {hasLowStock && (
-                <Badge size="sm" variant="warning">
-                  {t('inventory.low_stock')}
-                </Badge>
-              )}
-            </div>
-          </div>
+      {/* Pricing Info */}
+      <div className="space-y-2 mb-4">
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-base-content/60">
+            {t('inventory.cost_price')}
+          </span>
+          <span className="text-base font-semibold text-base-content">
+            {formatPriceDisplay(costPriceRange)}
+          </span>
         </div>
-
-        {/* Status Badge */}
-        <div className="mt-3">
-          <div
-            className={`badge badge-sm w-full ${getStockStatusBadgeClass()}`}
-          >
-            {t(`inventory.${stockStatus}`)}
-          </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-base-content/60">
+            {t('inventory.sale_price')}
+          </span>
+          <span className="text-base font-semibold text-base-content">
+            {formatPriceDisplay(salePriceRange)}
+          </span>
         </div>
+      </div>
+
+      {/* Stock Status */}
+      <div className="flex items-center justify-between pt-3 border-t border-base-300">
+        <span className="text-sm text-base-content/60">
+          {t('inventory.stock_quantity')}
+        </span>
+        {getStockTooltip() ? (
+          <Tooltip content={getStockTooltip()}>
+            <span className={`text-lg font-bold ${getStockColorClass()}`}>
+              {totalStock}
+            </span>
+          </Tooltip>
+        ) : (
+          <span className={`text-lg font-bold ${getStockColorClass()}`}>
+            {totalStock}
+          </span>
+        )}
       </div>
     </div>
   )

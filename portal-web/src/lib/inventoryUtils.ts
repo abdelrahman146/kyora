@@ -1,6 +1,31 @@
 import type { Variant } from '@/api/inventory'
 
 /**
+ * Get price display (single value or range)
+ * @param variants Array of product variants
+ * @param priceKey Either 'costPrice' or 'salePrice'
+ * @returns Object with min, max, and isSame flag
+ */
+export function getPriceRange(
+  variants: Array<Variant> | undefined,
+  priceKey: 'costPrice' | 'salePrice',
+): { min: number; max: number; isSame: boolean } {
+  if (!variants || variants.length === 0) {
+    return { min: 0, max: 0, isSame: true }
+  }
+
+  const prices = variants.map((v) => parseFloat(v[priceKey]))
+  const min = Math.min(...prices)
+  const max = Math.max(...prices)
+
+  return {
+    min,
+    max,
+    isSame: min === max,
+  }
+}
+
+/**
  * Calculate average cost price across all variants
  * @param variants Array of product variants
  * @returns Average cost price as a number
@@ -11,7 +36,7 @@ export function calculateAverageCostPrice(
   if (!variants || variants.length === 0) return 0
 
   const total = variants.reduce((sum, variant) => {
-    return sum + parseFloat(variant.cost_price)
+    return sum + parseFloat(variant.costPrice)
   }, 0)
 
   return total / variants.length
@@ -28,7 +53,7 @@ export function calculateTotalStock(
   if (!variants || variants.length === 0) return 0
 
   return variants.reduce((sum, variant) => {
-    return sum + variant.stock_quantity
+    return sum + variant.stockQuantity
   }, 0)
 }
 
@@ -50,8 +75,8 @@ export function getStockStatus(
   // Low stock if any variant is at or below its alert threshold
   const hasLowStockVariant = variants.some(
     (variant) =>
-      variant.stock_quantity > 0 &&
-      variant.stock_quantity <= variant.stock_quantity_alert,
+      variant.stockQuantity > 0 &&
+      variant.stockQuantity <= variant.stockQuantityAlert,
   )
 
   if (hasLowStockVariant) return 'low_stock'
@@ -69,8 +94,8 @@ export function hasLowStock(variants: Array<Variant> | undefined): boolean {
 
   return variants.some(
     (variant) =>
-      variant.stock_quantity > 0 &&
-      variant.stock_quantity <= variant.stock_quantity_alert,
+      variant.stockQuantity > 0 &&
+      variant.stockQuantity <= variant.stockQuantityAlert,
   )
 }
 

@@ -62,6 +62,7 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		s.storage.products.WithPagination(req.Offset(), req.Limit()),
 		s.storage.ScopeSearchTermByName(req.SearchTerm()),
 		s.storage.products.WithOrderBy(req.ParsedOrderBy(ProductSchema)),
+		s.storage.products.WithPreload("Variants"),
 	)
 }
 

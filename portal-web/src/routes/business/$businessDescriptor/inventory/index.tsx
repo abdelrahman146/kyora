@@ -8,7 +8,6 @@ import type { TableColumn } from '@/components/organisms/Table'
 import type { Product } from '@/api/inventory'
 import {
   Avatar,
-  Badge,
   Button,
   InventoryCard,
   InventoryListSkeleton,
@@ -31,10 +30,8 @@ import {
 import { useMediaQuery } from '@/hooks'
 import { formatCurrency } from '@/lib/formatCurrency'
 import {
-  calculateAverageCostPrice,
   calculateTotalStock,
-  getStockStatus,
-  getStockStatusBadgeVariant,
+  getPriceRange,
   hasLowStock,
 } from '@/lib/inventoryUtils'
 import { getSelectedBusiness } from '@/stores/businessStore'
@@ -245,10 +242,11 @@ function InventoryListPage() {
       render: (product: Product) => (
         <div className="flex items-center gap-3">
           <Avatar
-            src={product.photos[0]?.thumbnail_url}
+            src={product.photos[0]?.thumbnail_url || product.photos[0]?.url}
             alt={product.name}
             fallback={product.name.charAt(0).toUpperCase()}
             size="sm"
+            shape="square"
           />
           <div>
             <p className="font-medium text-base-content">{product.name}</p>
@@ -259,28 +257,45 @@ function InventoryListPage() {
     {
       key: 'category',
       label: t('inventory.category'),
-      render: (product: Product) =>
-        product.category ? (
-          <Badge variant="neutral">{product.category.name}</Badge>
-        ) : (
-          <span className="text-base-content/40">
-            {t('inventory.category')}
+      render: (product: Product) => {
+        const category = categories.find((c) => c.id === product.categoryId)
+        return (
+          <span className="text-sm text-base-content/70">
+            {category ? category.name : '-'}
           </span>
-        ),
+        )
+      },
     },
     {
       key: 'cost_price',
-      label: t('inventory.cost_price_avg'),
+      label: t('inventory.cost_price'),
       sortable: true,
       render: (product: Product) => {
-        const avgCost = calculateAverageCostPrice(product.variants)
+        const priceRange = getPriceRange(product.variants, 'costPrice')
+        if (priceRange.isSame) {
+          return <span>{formatCurrency(priceRange.min, currency)}</span>
+        }
         return (
-          <div className="flex items-center gap-2">
-            <span>{formatCurrency(avgCost, currency)}</span>
-            <Tooltip content={t('inventory.average_cost_tooltip')}>
-              <span className="text-base-content/60 cursor-help">ⓘ</span>
-            </Tooltip>
-          </div>
+          <span>
+            {formatCurrency(priceRange.min, currency)} -{' '}
+            {formatCurrency(priceRange.max, currency)}
+          </span>
+        )
+      },
+    },
+    {
+      key: 'sale_price',
+      label: t('inventory.sale_price'),
+      render: (product: Product) => {
+        const priceRange = getPriceRange(product.variants, 'salePrice')
+        if (priceRange.isSame) {
+          return <span>{formatCurrency(priceRange.min, currency)}</span>
+        }
+        return (
+          <span>
+            {formatCurrency(priceRange.min, currency)} -{' '}
+            {formatCurrency(priceRange.max, currency)}
+          </span>
         )
       },
     },
@@ -290,27 +305,28 @@ function InventoryListPage() {
       render: (product: Product) => {
         const totalStock = calculateTotalStock(product.variants)
         const isLowStock = hasLowStock(product.variants)
+        const isOutOfStock = totalStock === 0
 
-        return (
-          <div className="flex items-center gap-2">
-            <span>{totalStock}</span>
-            {isLowStock && (
-              <Badge variant="warning" size="sm">
-                {t('inventory.low_stock')}
-              </Badge>
-            )}
-          </div>
-        )
-      },
-    },
-    {
-      key: 'status',
-      label: t('inventory.status'),
-      render: (product: Product) => {
-        const status = getStockStatus(product.variants)
-        const badgeVariant = getStockStatusBadgeVariant(status)
+        let colorClass = ''
+        let tooltipText = ''
 
-        return <Badge variant={badgeVariant}>{t(`inventory.${status}`)}</Badge>
+        if (isOutOfStock) {
+          colorClass = 'text-error font-semibold'
+          tooltipText = t('inventory.out_of_stock')
+        } else if (isLowStock) {
+          colorClass = 'text-warning font-semibold'
+          tooltipText = t('inventory.low_stock')
+        }
+
+        if (tooltipText) {
+          return (
+            <Tooltip content={tooltipText}>
+              <span className={colorClass}>{totalStock}</span>
+            </Tooltip>
+          )
+        }
+
+        return <span>{totalStock}</span>
       },
     },
     {
@@ -413,20 +429,12 @@ function InventoryListPage() {
           // Mobile: Card Grid
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {products.map((product) => {
-              const avgCost = calculateAverageCostPrice(product.variants)
-              const totalStock = calculateTotalStock(product.variants)
-              const stockStatus = getStockStatus(product.variants)
-              const lowStock = hasLowStock(product.variants)
-
               return (
                 <InventoryCard
                   key={product.id}
                   product={product}
-                  avgCostPrice={avgCost}
-                  totalStock={totalStock}
-                  stockStatus={stockStatus}
-                  hasLowStock={lowStock}
                   currency={currency}
+                  categories={categories}
                   onClick={() => {
                     handleProductClick(product)
                   }}

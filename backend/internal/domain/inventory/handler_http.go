@@ -41,7 +41,7 @@ type listInventoryQuery struct {
 // ListProducts returns a paginated list of products.
 //
 // @Summary      List products
-// @Description  Returns a paginated list of products for the authenticated workspace/business
+// @Description  Returns a paginated list of products for the authenticated workspace/business. Each product includes its variants.
 // @Tags         inventory
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
@@ -49,7 +49,7 @@ type listInventoryQuery struct {
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
 // @Param        search query string false "Search term for product name"
-// @Success      200 {object} list.ListResponse[Product]
+// @Success      200 {object} list.ListResponse[Product] "Products with their variants included"
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/inventory/products [get]

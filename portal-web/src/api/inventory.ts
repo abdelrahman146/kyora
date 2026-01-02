@@ -43,7 +43,7 @@ export interface Product {
   name: string
   description: string
   photos: Array<AssetReference>
-  category_id: string
+  categoryId: string
   category?: Category
   variants?: Array<Variant>
   created_at: string
@@ -58,12 +58,12 @@ export interface Variant {
   name: string
   code: string
   sku: string
-  cost_price: string
-  sale_price: string
+  costPrice: string
+  salePrice: string
   currency: string
   photos: Array<AssetReference>
-  stock_quantity: number
-  stock_quantity_alert: number
+  stockQuantity: number
+  stockQuantityAlert: number
   product?: Product
   created_at: string
   updated_at: string
@@ -87,14 +87,14 @@ export interface CreateProductRequest {
   name: string
   description?: string
   photos?: Array<AssetReference>
-  category_id: string
+  categoryId: string
 }
 
 export interface UpdateProductRequest {
   name?: string
   description?: string
   photos?: Array<AssetReference>
-  category_id?: string
+  categoryId?: string
 }
 
 export interface CreateVariantRequest {
@@ -102,21 +102,21 @@ export interface CreateVariantRequest {
   code: string
   sku?: string
   photos?: Array<AssetReference>
-  cost_price: string
-  sale_price: string
-  stock_quantity: number
-  stock_quantity_alert: number
+  costPrice: string
+  salePrice: string
+  stockQuantity: number
+  stockQuantityAlert: number
 }
 
 export interface UpdateVariantRequest {
   code?: string
   sku?: string
   photos?: Array<AssetReference>
-  cost_price?: string
-  sale_price?: string
+  costPrice?: string
+  salePrice?: string
   currency?: string
-  stock_quantity?: number
-  stock_quantity_alert?: number
+  stockQuantity?: number
+  stockQuantityAlert?: number
 }
 
 export interface CreateCategoryRequest {
