@@ -222,7 +222,7 @@ export function BottomSheet({
     <>
       {/* Backdrop Overlay */}
       <div
-        className={`fixed inset-0 bg-black/50 z-40 transition-opacity duration-300 ${
+        className={`fixed inset-0 bg-black/50 z-[60] transition-opacity duration-300 ${
           isAnimating ? 'opacity-100' : 'opacity-0'
         }`}
         onClick={handleOverlayClick}
@@ -232,7 +232,7 @@ export function BottomSheet({
       {/* Drawer Container */}
       <div
         ref={drawerRef}
-        className={`fixed z-50 bg-base-100 shadow-xl transition-transform duration-300 ease-in-out overflow-y-auto ${getDrawerClasses()} ${className}`}
+        className={`fixed z-[70] bg-base-100 shadow-xl transition-transform duration-300 ease-in-out overflow-y-auto ${getDrawerClasses()} ${className}`}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}
