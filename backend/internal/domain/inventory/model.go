@@ -14,6 +14,15 @@ import (
 	"gorm.io/gorm"
 )
 
+// StockStatus represents the stock availability status of a product/variant.
+type StockStatus string
+
+const (
+	StockStatusInStock    StockStatus = "in_stock"
+	StockStatusLowStock   StockStatus = "low_stock"
+	StockStatusOutOfStock StockStatus = "out_of_stock"
+)
+
 // AssetReferenceList is a JSONB-backed list of asset references.
 type AssetReferenceList []asset.AssetReference
 

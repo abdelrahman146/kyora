@@ -2,12 +2,10 @@ package inventory
 
 import (
 	"fmt"
-	"log/slog"
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"gorm.io/gorm"
-	"gorm.io/gorm/clause"
 )
 
 type Storage struct {
@@ -24,45 +22,53 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 		variants:   database.NewRepository[Variant](db),
 		categories: database.NewRepository[Category](db),
 	}
-	ensurePgTrgmAndIndexes(db)
+	ensureInventorySearchIndexes(db)
 	return st
 }
 
-func ensurePgTrgmAndIndexes(db *database.Database) {
+func ensureInventorySearchIndexes(db *database.Database) {
 	conn := db.GetDB()
-	if err := conn.Exec("CREATE EXTENSION IF NOT EXISTS pg_trgm").Error; err != nil {
-		slog.Error("failed to ensure pg_trgm extension", "error", err)
-		return
-	}
 
-	queries := []string{
-		`CREATE INDEX IF NOT EXISTS "product_trgm_idx" ON "products" USING gin ("name" gin_trgm_ops)`,
-		`CREATE INDEX IF NOT EXISTS "variant_trgm_idx" ON "variants" USING gin ("name" gin_trgm_ops)`,
-		`CREATE INDEX IF NOT EXISTS "category_trgm_idx" ON "categories" USING gin ("name" gin_trgm_ops)`,
-	}
-	for _, q := range queries {
-		if err := conn.Exec(q).Error; err != nil {
-			slog.Error("failed to ensure trigram index", "error", err, "query", q)
-		}
-	}
-}
+	// Product search vector: name (weight A) + description (weight B)
+	productExpr := "" +
+		"setweight(to_tsvector('simple', coalesce(name,'')), 'A') || " +
+		"setweight(to_tsvector('simple', coalesce(description,'')), 'B')"
+	database.EnsureGeneratedTSVectorColumn(conn, ProductTable, "search_vector", productExpr)
+	database.EnsureGinIndex(conn, "products_search_vector_gin_idx", ProductTable, "search_vector")
 
-func (s *Storage) ScopeSearchTermByName(term string) func(db *gorm.DB) *gorm.DB {
-	return func(db *gorm.DB) *gorm.DB {
-		if term == "" {
-			return db
-		}
-		return db.
-			Where("name % ?", term).
-			Order(clause.Expr{
-				SQL:  "similarity(name, ?) DESC",
-				Vars: []any{term},
-			})
-	}
+	// Variant search vector: name (weight A) + sku (weight A) + code (weight B)
+	variantExpr := "" +
+		"setweight(to_tsvector('simple', coalesce(name,'')), 'A') || " +
+		"setweight(to_tsvector('simple', coalesce(sku,'')), 'A') || " +
+		"setweight(to_tsvector('simple', coalesce(code,'')), 'B')"
+	database.EnsureGeneratedTSVectorColumn(conn, VariantTable, "search_vector", variantExpr)
+	database.EnsureGinIndex(conn, "variants_search_vector_gin_idx", VariantTable, "search_vector")
+
+	// Trigram index for fast substring lookup on variant SKU
+	database.EnsureTrigramGinIndex(conn, "variants_sku_trgm_idx", VariantTable, "sku")
+
+	// Category search vector: name (weight A) + descriptor (weight B)
+	categoryExpr := "" +
+		"setweight(to_tsvector('simple', coalesce(name,'')), 'A') || " +
+		"setweight(to_tsvector('simple', coalesce(descriptor,'')), 'B')"
+	database.EnsureGeneratedTSVectorColumn(conn, CategoryTable, "search_vector", categoryExpr)
+	database.EnsureGinIndex(conn, "categories_search_vector_gin_idx", CategoryTable, "search_vector")
 }
 
 func (s *Storage) ScopeLowStockVariants() func(db *gorm.DB) *gorm.DB {
 	return func(db *gorm.DB) *gorm.DB {
 		return db.Where(fmt.Sprintf("%s <= %s", VariantSchema.StockQuantity.Column(), VariantSchema.StockQuantityAlert.Column()))
+	}
+}
+
+func (s *Storage) ScopeOutOfStockVariants() func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where(fmt.Sprintf("%s = 0", VariantSchema.StockQuantity.Column()))
+	}
+}
+
+func (s *Storage) ScopeInStockVariants() func(db *gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		return db.Where(fmt.Sprintf("%s > %s", VariantSchema.StockQuantity.Column(), VariantSchema.StockQuantityAlert.Column()))
 	}
 }

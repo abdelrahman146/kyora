@@ -9,6 +9,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
+	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
@@ -56,21 +57,107 @@ func (s *Service) GetCategoryByID(ctx context.Context, actor *account.User, biz 
 	)
 }
 
-func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Product, error) {
-	return s.storage.products.FindMany(ctx,
-		s.storage.products.ScopeBusinessID(biz.ID),
+// ListProductsFilters contains optional filters for product listing.
+type ListProductsFilters struct {
+	CategoryID  string
+	StockStatus StockStatus
+}
+
+func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListProductsFilters) ([]*Product, int64, error) {
+	baseScopes := []func(db *gorm.DB) *gorm.DB{
+		s.storage.products.ScopeWhere("products.business_id = ?", biz.ID),
+	}
+
+	needsVariantJoin := false
+	useInnerJoin := false // INNER JOIN only if stock filter requires it
+
+	if filters != nil {
+		if filters.CategoryID != "" {
+			baseScopes = append(baseScopes, s.storage.products.ScopeEquals(ProductSchema.CategoryID, filters.CategoryID))
+		}
+
+		if filters.StockStatus != "" {
+			needsVariantJoin = true
+			useInnerJoin = true // Stock filtering requires products to have variants
+			switch filters.StockStatus {
+			case StockStatusInStock:
+				baseScopes = append(baseScopes,
+					s.storage.variants.ScopeWhere("variants.stock_quantity > variants.stock_alert"),
+				)
+			case StockStatusLowStock:
+				baseScopes = append(baseScopes,
+					s.storage.variants.ScopeWhere("variants.stock_quantity > 0 AND variants.stock_quantity <= variants.stock_alert"),
+				)
+			case StockStatusOutOfStock:
+				baseScopes = append(baseScopes,
+					s.storage.variants.ScopeWhere("variants.stock_quantity = 0"),
+				)
+			}
+		}
+	}
+
+	var listExtra []func(db *gorm.DB) *gorm.DB
+	if req.SearchTerm() != "" {
+		term := req.SearchTerm()
+		like := "%" + term + "%"
+
+		needsVariantJoin = true
+		// Don't override useInnerJoin - keep LEFT JOIN for search-only scenarios
+		baseScopes = append(baseScopes,
+			s.storage.products.WithJoins("LEFT JOIN categories ON categories.id = products.category_id AND categories.deleted_at IS NULL"),
+			s.storage.products.ScopeWhere(
+				"(products.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.search_vector @@ websearch_to_tsquery('simple', ?) OR categories.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.sku ILIKE ?)",
+				term,
+				term,
+				term,
+				like,
+			),
+		)
+
+		if !req.HasExplicitOrderBy() {
+			rankExpr, err := database.WebSearchRankOrder(term, "products.search_vector", "variants.search_vector", "categories.search_vector")
+			if err != nil {
+				return nil, 0, err
+			}
+			listExtra = append(listExtra, s.storage.products.WithOrderByExpr(rankExpr))
+		}
+	}
+
+	if needsVariantJoin {
+		joinType := "LEFT"
+		if useInnerJoin {
+			joinType = "INNER"
+		}
+		baseScopes = append([]func(db *gorm.DB) *gorm.DB{
+			s.storage.products.WithJoins(fmt.Sprintf("%s JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL", joinType)),
+		}, baseScopes...)
+	}
+
+	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)
+	findOpts = append(findOpts, listExtra...)
+	findOpts = append(findOpts,
 		s.storage.products.WithPagination(req.Offset(), req.Limit()),
-		s.storage.ScopeSearchTermByName(req.SearchTerm()),
 		s.storage.products.WithOrderBy(req.ParsedOrderBy(ProductSchema)),
 		s.storage.products.WithPreload("Variants"),
 	)
+
+	items, err := s.storage.products.FindMany(ctx, findOpts...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	count, err := s.storage.products.Count(ctx, baseScopes...)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return items, count, nil
 }
 
 func (s *Service) ListVariants(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Variant, error) {
 	return s.storage.variants.FindMany(ctx,
 		s.storage.variants.ScopeBusinessID(biz.ID),
 		s.storage.variants.WithPagination(req.Offset(), req.Limit()),
-		s.storage.ScopeSearchTermByName(req.SearchTerm()),
 		s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)),
 	)
 }
@@ -90,7 +177,6 @@ func (s *Service) ListProductVariants(ctx context.Context, actor *account.User, 
 	items, err := s.storage.variants.FindMany(ctx,
 		append(scopes,
 			s.storage.variants.WithPagination(req.Offset(), req.Limit()),
-			s.storage.ScopeSearchTermByName(req.SearchTerm()),
 			s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)),
 		)...,
 	)

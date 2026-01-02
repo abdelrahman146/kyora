@@ -33,6 +33,8 @@ type listInventoryQuery struct {
 	PageSize    int      `form:"pageSize" binding:"omitempty,min=1,max=100"`
 	OrderBy     []string `form:"orderBy" binding:"omitempty"`
 	SearchTerm  string   `form:"search" binding:"omitempty"`
+	CategoryID  string   `form:"categoryId" binding:"omitempty"`
+	StockStatus string   `form:"stockStatus" binding:"omitempty,oneof=in_stock low_stock out_of_stock"`
 	ProductID   string   `form:"productId" binding:"omitempty"`
 	TopLimit    int      `form:"topLimit" binding:"omitempty,min=1,max=50"`
 	DetailLimit int      `form:"limit" binding:"omitempty,min=1,max=50"`
@@ -41,14 +43,16 @@ type listInventoryQuery struct {
 // ListProducts returns a paginated list of products.
 //
 // @Summary      List products
-// @Description  Returns a paginated list of products for the authenticated workspace/business. Each product includes its variants.
+// @Description  Returns a paginated list of products for the authenticated workspace/business. Each product includes its variants. Supports filtering by category and stock status, and searching across product name, variant name, variant SKU, and category name.
 // @Tags         inventory
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
-// @Param        search query string false "Search term for product name"
+// @Param        search query string false "Search term (matches product name, variant name, variant SKU, or category name)"
+// @Param        categoryId query string false "Filter by category ID"
+// @Param        stockStatus query string false "Filter by stock status (in_stock, low_stock, out_of_stock)"
 // @Success      200 {object} list.ListResponse[Product] "Products with their variants included"
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -85,12 +89,13 @@ func (h *HttpHandler) ListProducts(c *gin.Context) {
 		query.SearchTerm = term
 	}
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
-	items, err := h.service.ListProducts(c.Request.Context(), actor, biz, listReq)
-	if err != nil {
-		response.Error(c, err)
-		return
+
+	filters := &ListProductsFilters{
+		CategoryID:  query.CategoryID,
+		StockStatus: StockStatus(query.StockStatus),
 	}
-	total, err := h.service.CountProducts(c.Request.Context(), actor, biz)
+
+	items, total, err := h.service.ListProducts(c.Request.Context(), actor, biz, listReq, filters)
 	if err != nil {
 		response.Error(c, err)
 		return

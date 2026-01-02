@@ -233,12 +233,12 @@ func (s *Service) listAllProducts(ctx context.Context, biz *business.Business) (
 	all := make([]*inventory.Product, 0, pageSize)
 	for page := 1; page <= maxPages; page++ {
 		req := list.NewListRequest(page, pageSize, nil, "")
-		items, err := s.inventory.ListProducts(ctx, nil, biz, req)
+		items, total, err := s.inventory.ListProducts(ctx, nil, biz, req, nil)
 		if err != nil {
 			return nil, err
 		}
 		all = append(all, items...)
-		if len(items) < pageSize {
+		if int64(len(all)) >= total || len(items) < pageSize {
 			break
 		}
 	}
