@@ -2,32 +2,27 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { Edit, Package, Plus } from 'lucide-react'
+import { Edit, Package } from 'lucide-react'
 
 import type { TableColumn } from '@/components/organisms/Table'
 import type { Product } from '@/api/inventory'
 import {
   Avatar,
-  Button,
+  FormRadio,
+  FormSelect,
   InventoryCard,
   InventoryListSkeleton,
-  Pagination,
-  SearchInput,
-  Table,
+  ResourceListLayout,
   Tooltip,
 } from '@/components'
 import { AddProductSheet } from '@/components/organisms/AddProductSheet'
 import { EditProductSheet } from '@/components/organisms/EditProductSheet'
-import { FilterButton } from '@/components/organisms/FilterButton'
 import { ProductDetailsSheet } from '@/components/organisms/ProductDetailsSheet'
-import { FormRadio } from '@/components/atoms/FormRadio'
-import { FormSelect } from '@/components/atoms/FormSelect'
 import {
   inventoryQueries,
   useCategoriesQuery,
   useProductsQuery,
 } from '@/api/inventory'
-import { useMediaQuery } from '@/hooks'
 import { formatCurrency } from '@/lib/formatCurrency'
 import {
   calculateTotalStock,
@@ -105,14 +100,12 @@ function InventoryListPage() {
   const business = getSelectedBusiness()
   const currency = business?.currency ?? 'USD'
 
-  // Local state
   const [selectedProductId, setSelectedProductId] = useState<string | null>(
     null,
   )
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false)
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
 
-  // Filter state
   const [categoryIdFilter, setCategoryIdFilter] = useState<string | undefined>(
     search.categoryId,
   )
@@ -120,16 +113,11 @@ function InventoryListPage() {
     'in_stock' | 'low_stock' | 'out_of_stock' | undefined
   >(search.stockStatus)
 
-  // Media query for responsive layout
-  const isMobile = useMediaQuery('(max-width: 768px)')
-
-  // Build orderBy from search params
   const orderBy = useMemo<Array<string>>(() => {
     if (!search.sortBy) return ['-createdAt']
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
 
-  // Fetch products
   const productsResponse = useProductsQuery(businessDescriptor, {
     search: search.search,
     page: search.page,
@@ -139,7 +127,6 @@ function InventoryListPage() {
     stockStatus: search.stockStatus,
   })
 
-  // Fetch categories
   const categoriesResponse = useCategoriesQuery(businessDescriptor)
 
   const products = productsResponse.data?.items ?? []
@@ -147,7 +134,6 @@ function InventoryListPage() {
   const totalPages = productsResponse.data?.total_pages ?? 0
   const categories = categoriesResponse.data ?? []
 
-  // Build category options
   const categoryOptions: Array<{ value: string; label: string }> = [
     { value: '', label: t('inventory.all_categories') },
     ...categories.map((cat) => ({
@@ -156,18 +142,15 @@ function InventoryListPage() {
     })),
   ]
 
-  // Build stock status options
   const stockStatusOptions: Array<{ value: string; label: string }> = [
     { value: 'in_stock', label: t('inventory.in_stock') },
     { value: 'low_stock', label: t('inventory.low_stock') },
     { value: 'out_of_stock', label: t('inventory.out_of_stock') },
   ]
 
-  // Calculate active filter count
   const activeFilterCount =
     (search.categoryId ? 1 : 0) + (search.stockStatus ? 1 : 0)
 
-  // Handle search
   const handleSearch = (value: string) => {
     void navigate({
       to: '.',
@@ -179,7 +162,6 @@ function InventoryListPage() {
     })
   }
 
-  // Handle pagination
   const handlePageChange = (newPage: number) => {
     void navigate({
       to: '.',
@@ -194,7 +176,6 @@ function InventoryListPage() {
     })
   }
 
-  // Handle apply filters
   const handleApplyFilters = () => {
     void navigate({
       to: '.',
@@ -207,7 +188,6 @@ function InventoryListPage() {
     })
   }
 
-  // Handle reset filters
   const handleResetFilters = () => {
     setCategoryIdFilter(undefined)
     setStockStatusFilter(undefined)
@@ -222,18 +202,14 @@ function InventoryListPage() {
     })
   }
 
-  // Handle product click
   const handleProductClick = (product: Product) => {
     setSelectedProductId(product.id)
   }
 
-  // Handle edit product
   const handleEditProduct = (product: Product) => {
     setSelectedProductId(product.id)
     setIsEditSheetOpen(true)
   }
-
-  // Table columns (desktop)
   const columns: Array<TableColumn<Product>> = [
     {
       key: 'name',
@@ -349,199 +325,117 @@ function InventoryListPage() {
     },
   ]
 
+  const handleSort = (key: string) => {
+    void navigate({
+      to: '.',
+      search: {
+        ...search,
+        sortBy: key,
+        sortOrder:
+          search.sortBy === key && search.sortOrder === 'asc' ? 'desc' : 'asc',
+        page: 1,
+      },
+    })
+  }
+
   return (
     <>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{t('inventory.title')}</h1>
-            <p className="text-sm text-base-content/60 mt-1">
-              {t('inventory.subtitle')}
-            </p>
-          </div>
-          <button
-            type="button"
-            className="btn btn-primary gap-2"
-            onClick={() => {
-              setIsAddSheetOpen(true)
-            }}
-          >
-            <Plus size={20} />
-            {t('inventory.add_product')}
-          </button>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchInput
-              value={search.search ?? ''}
-              onChange={handleSearch}
-              placeholder={t('inventory.search_placeholder')}
+      <ResourceListLayout
+        title={t('inventory.title')}
+        subtitle={t('inventory.subtitle')}
+        addButtonText={t('inventory.add_product')}
+        onAddClick={() => {
+          setIsAddSheetOpen(true)
+        }}
+        searchPlaceholder={t('inventory.search_placeholder')}
+        searchValue={search.search ?? ''}
+        onSearchChange={handleSearch}
+        filterTitle={t('inventory.filters_title')}
+        filterButtonText={t('common.filter')}
+        filterButton={
+          <div className="space-y-6 p-4">
+            <FormSelect
+              label={t('inventory.filter_by_category')}
+              options={categoryOptions}
+              value={categoryIdFilter ?? ''}
+              onChange={(value) => {
+                const val = Array.isArray(value) ? value[0] : value
+                setCategoryIdFilter(val === '' ? undefined : val)
+              }}
+              disabled={categoriesResponse.isLoading}
+            />
+            <FormRadio
+              label={t('inventory.filter_by_stock')}
+              name="stockStatus"
+              options={stockStatusOptions}
+              value={stockStatusFilter ?? ''}
+              onChange={(e) => {
+                const newValue = e.target.value as
+                  | 'in_stock'
+                  | 'low_stock'
+                  | 'out_of_stock'
+                  | ''
+                setStockStatusFilter(newValue === '' ? undefined : newValue)
+              }}
+              orientation="vertical"
             />
           </div>
-          <FilterButton
-            title={t('inventory.filters_title')}
-            buttonText={t('common.filter')}
-            activeCount={activeFilterCount}
-            onApply={handleApplyFilters}
-            onReset={handleResetFilters}
-            applyLabel={t('common.apply')}
-            resetLabel={t('common.reset')}
-          >
-            <div className="space-y-6 p-4">
-              {/* Category filter */}
-              <FormSelect
-                label={t('inventory.filter_by_category')}
-                options={categoryOptions}
-                value={categoryIdFilter ?? ''}
-                onChange={(value) => {
-                  const val = Array.isArray(value) ? value[0] : value
-                  setCategoryIdFilter(val === '' ? undefined : val)
-                }}
-                disabled={categoriesResponse.isLoading}
-              />
-
-              {/* Stock status filter */}
-              <FormRadio
-                label={t('inventory.filter_by_stock')}
-                name="stockStatus"
-                options={stockStatusOptions}
-                value={stockStatusFilter ?? ''}
-                onChange={(e) => {
-                  const newValue = e.target.value as
-                    | 'in_stock'
-                    | 'low_stock'
-                    | 'out_of_stock'
-                    | ''
-                  setStockStatusFilter(newValue === '' ? undefined : newValue)
-                }}
-                orientation="vertical"
-              />
-            </div>
-          </FilterButton>
-        </div>
-
-        {/* Empty State */}
-        {!productsResponse.isLoading && products.length === 0 && (
-          <div className="card bg-base-100 shadow">
-            <div className="card-body items-center text-center py-12">
-              <Package size={48} className="text-base-content/20 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {search.search
-                  ? t('inventory.no_results')
-                  : t('inventory.no_products')}
-              </h3>
-              <p className="text-sm text-base-content/70 mb-4">
-                {search.search
-                  ? t('inventory.try_different_search')
-                  : t('inventory.get_started_message')}
-              </p>
-              {!search.search && (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm gap-2"
-                  onClick={() => {
-                    setIsAddSheetOpen(true)
-                  }}
-                >
-                  <Plus size={18} />
-                  {t('inventory.add_first_product')}
-                </button>
-              )}
-            </div>
-          </div>
+        }
+        activeFilterCount={activeFilterCount}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        applyLabel={t('common.apply')}
+        resetLabel={t('common.reset')}
+        emptyIcon={<Package size={48} />}
+        emptyTitle={
+          search.search ? t('inventory.no_results') : t('inventory.no_products')
+        }
+        emptyMessage={
+          search.search
+            ? t('inventory.try_different_search')
+            : t('inventory.get_started_message')
+        }
+        emptyActionText={
+          !search.search ? t('inventory.add_first_product') : undefined
+        }
+        onEmptyAction={
+          !search.search
+            ? () => {
+                setIsAddSheetOpen(true)
+              }
+            : undefined
+        }
+        noResultsTitle={t('inventory.no_results')}
+        noResultsMessage={t('inventory.try_different_search')}
+        tableColumns={columns}
+        tableData={products}
+        tableKeyExtractor={(product) => product.id}
+        tableSortBy={search.sortBy}
+        tableSortOrder={search.sortOrder}
+        onTableSort={handleSort}
+        onTableRowClick={handleProductClick}
+        mobileCard={(product) => (
+          <InventoryCard
+            product={product}
+            currency={currency}
+            categories={categories}
+            onClick={() => {
+              handleProductClick(product)
+            }}
+          />
         )}
+        isLoading={productsResponse.isLoading}
+        hasSearchQuery={!!search.search}
+        currentPage={search.page}
+        totalPages={totalPages}
+        pageSize={search.pageSize}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        itemsName={t('inventory.title').toLowerCase()}
+        skeleton={<InventoryListSkeleton />}
+      />
 
-        {/* Desktop: Table View */}
-        {!isMobile &&
-          (!search.search ||
-            productsResponse.isLoading ||
-            products.length > 0) && (
-            <>
-              <div className="overflow-x-auto">
-                <Table<Product>
-                  columns={columns}
-                  data={products}
-                  keyExtractor={(product) => product.id}
-                  isLoading={productsResponse.isLoading}
-                  emptyMessage={t('inventory.no_products')}
-                  sortBy={search.sortBy}
-                  sortOrder={search.sortOrder}
-                  onSort={(key) => {
-                    void navigate({
-                      to: '.',
-                      search: {
-                        ...search,
-                        sortBy: key,
-                        sortOrder:
-                          search.sortBy === key && search.sortOrder === 'asc'
-                            ? 'desc'
-                            : 'asc',
-                        page: 1,
-                      },
-                    })
-                  }}
-                  onRowClick={(product) => {
-                    handleProductClick(product)
-                  }}
-                />
-              </div>
-              <Pagination
-                currentPage={search.page}
-                totalPages={totalPages}
-                pageSize={search.pageSize}
-                totalItems={totalItems}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-                itemsName={t('inventory.title').toLowerCase()}
-              />
-            </>
-          )}
-
-        {/* Mobile: Card View with Pagination */}
-        {isMobile &&
-          (!search.search ||
-            productsResponse.isLoading ||
-            products.length > 0) && (
-            <>
-              <div className="space-y-3">
-                {productsResponse.isLoading && products.length === 0 ? (
-                  Array.from({ length: 5 }).map((_, i) => (
-                    <div key={i} className="skeleton h-32 rounded-box" />
-                  ))
-                ) : products.length === 0 ? (
-                  <div className="text-center py-12 text-base-content/60">
-                    {t('inventory.no_products')}
-                  </div>
-                ) : (
-                  products.map((product) => (
-                    <InventoryCard
-                      key={product.id}
-                      product={product}
-                      currency={currency}
-                      categories={categories}
-                      onClick={() => {
-                        handleProductClick(product)
-                      }}
-                    />
-                  ))
-                )}
-              </div>
-              <Pagination
-                currentPage={search.page}
-                totalPages={totalPages}
-                pageSize={search.pageSize}
-                totalItems={totalItems}
-                onPageChange={handlePageChange}
-                onPageSizeChange={handlePageSizeChange}
-                itemsName={t('inventory.title').toLowerCase()}
-              />
-            </>
-          )}
-      </div>
-      {/* Sheets */}
       <ProductDetailsSheet
         product={
           selectedProductId

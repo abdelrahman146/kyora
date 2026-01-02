@@ -2,7 +2,7 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { Edit, Eye, Plus, Trash2, Users } from 'lucide-react'
+import { Edit, Eye, Trash2, Users } from 'lucide-react'
 import type { MouseEvent } from 'react'
 
 import type { Customer } from '@/api/customer'
@@ -12,20 +12,16 @@ import {
   useCustomersQuery,
   useDeleteCustomerMutation,
 } from '@/api/customer'
-import { Avatar } from '@/components/atoms/Avatar'
-import { Dialog } from '@/components/atoms/Dialog'
-import { CustomerListSkeleton } from '@/components/atoms/skeletons/CustomerListSkeleton'
-import { CustomerCard } from '@/components/molecules/CustomerCard'
-import { Pagination } from '@/components/molecules/Pagination'
-import { SearchInput } from '@/components/molecules/SearchInput'
-import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
-import { FilterButton } from '@/components/organisms/FilterButton'
-import { Table } from '@/components/organisms/Table'
 import {
   AddCustomerSheet,
+  Avatar,
+  CustomerCard,
+  CustomerListSkeleton,
+  Dialog,
   EditCustomerSheet,
-} from '@/components/organisms/customers'
-import { useMediaQuery } from '@/hooks/useMediaQuery'
+  ResourceListLayout,
+} from '@/components'
+import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
@@ -103,7 +99,6 @@ function CustomersListPage() {
   const { businessDescriptor } = Route.useParams()
   const navigate = useNavigate()
   const search = Route.useSearch()
-  const isMobile = useMediaQuery('(max-width: 768px)')
 
   const [isAddCustomerOpen, setIsAddCustomerOpen] = useState(false)
   const [isEditCustomerOpen, setIsEditCustomerOpen] = useState(false)
@@ -117,7 +112,6 @@ function CustomersListPage() {
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
 
-  // Use TanStack Query with keepPreviousData for smooth pagination
   const { data: customersResponse, isLoading } = useCustomersQuery(
     businessDescriptor,
     {
@@ -208,16 +202,13 @@ function CustomersListPage() {
   }
 
   const handleCustomerCreated = () => {
-    // Query will automatically refetch due to invalidation in mutation
     setIsAddCustomerOpen(false)
   }
 
   const handleCustomerUpdated = () => {
-    // Query will automatically refetch due to invalidation in mutation
     setIsEditCustomerOpen(false)
   }
 
-  // Get selected business country code for form defaults
   const selectedBusiness = getSelectedBusiness()
   const businessCountryCode = selectedBusiness?.countryCode ?? 'AE'
   const currency = selectedBusiness?.currency ?? 'AED'
@@ -330,172 +321,104 @@ function CustomersListPage() {
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Header */}
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          <div>
-            <h1 className="text-2xl font-bold">{t('customers.title')}</h1>
-            <p className="text-sm text-base-content/60 mt-1">
-              {t('customers.subtitle')}
+      <ResourceListLayout
+        title={t('customers.title')}
+        subtitle={t('customers.subtitle')}
+        addButtonText={t('customers.add_customer')}
+        onAddClick={() => {
+          setIsAddCustomerOpen(true)
+        }}
+        addButtonDisabled={!businessDescriptor}
+        searchPlaceholder={t('customers.search_placeholder')}
+        searchValue={search.search ?? ''}
+        onSearchChange={handleSearch}
+        filterTitle={t('customers.filters')}
+        filterButtonText={t('common.filter')}
+        filterButton={
+          <div className="space-y-4">
+            <p className="text-sm text-base-content/60">
+              {t('customers.filters_coming_soon')}
             </p>
           </div>
-          <button
-            type="button"
-            className="btn btn-primary gap-2"
-            onClick={() => {
-              setIsAddCustomerOpen(true)
-            }}
-            disabled={!businessDescriptor}
-            aria-disabled={!businessDescriptor}
-          >
-            <Plus size={20} />
-            {t('customers.add_customer')}
-          </button>
-        </div>
-
-        {/* Toolbar */}
-        <div className="flex flex-col sm:flex-row gap-3">
-          <div className="flex-1">
-            <SearchInput
-              value={search.search ?? ''}
-              onChange={handleSearch}
-              placeholder={t('customers.search_placeholder')}
+        }
+        applyLabel={t('common.apply')}
+        resetLabel={t('common.reset')}
+        onApplyFilters={() => {}}
+        onResetFilters={() => {}}
+        emptyIcon={<Users size={48} />}
+        emptyTitle={
+          search.search
+            ? t('customers.no_results')
+            : t('customers.no_customers')
+        }
+        emptyMessage={
+          search.search
+            ? t('customers.try_different_search')
+            : t('customers.get_started_message')
+        }
+        emptyActionText={
+          !search.search ? t('customers.add_first_customer') : undefined
+        }
+        onEmptyAction={
+          !search.search
+            ? () => {
+                setIsAddCustomerOpen(true)
+              }
+            : undefined
+        }
+        noResultsTitle={t('customers.no_results')}
+        noResultsMessage={t('customers.try_different_search')}
+        tableColumns={tableColumns}
+        tableData={customers}
+        tableKeyExtractor={(customer) => customer.id}
+        tableSortBy={search.sortBy}
+        tableSortOrder={search.sortOrder}
+        onTableSort={handleSort}
+        onTableRowClick={handleCustomerClick}
+        mobileCard={(customer) => (
+          <div className="relative group">
+            <CustomerCard
+              customer={customer}
+              onClick={handleCustomerClick}
+              ordersCount={customer.ordersCount ?? 0}
+              totalSpent={customer.totalSpent ?? 0}
+              currency={currency}
             />
+            <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+              <button
+                type="button"
+                className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md"
+                onClick={(e) => {
+                  handleEditClick(customer, e)
+                }}
+                aria-label={t('common.edit')}
+              >
+                <Edit size={16} />
+              </button>
+              <button
+                type="button"
+                className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md text-error"
+                onClick={(e) => {
+                  handleDeleteClick(customer, e)
+                }}
+                aria-label={t('common.delete')}
+              >
+                <Trash2 size={16} />
+              </button>
+            </div>
           </div>
-          <FilterButton
-            title={t('customers.filters')}
-            buttonText={t('common.filter')}
-            applyLabel={t('common.apply')}
-            resetLabel={t('common.reset')}
-            onApply={() => {}}
-            onReset={() => {}}
-          >
-            <div className="space-y-4">
-              <p className="text-sm text-base-content/60">
-                {t('customers.filters_coming_soon')}
-              </p>
-            </div>
-          </FilterButton>
-        </div>
-
-        {/* Empty State */}
-        {!isLoading && customers.length === 0 && (
-          <div className="card bg-base-100 shadow">
-            <div className="card-body items-center text-center py-12">
-              <Users size={48} className="text-base-content/20 mb-4" />
-              <h3 className="text-lg font-semibold mb-2">
-                {search.search
-                  ? t('customers.no_results')
-                  : t('customers.no_customers')}
-              </h3>
-              <p className="text-sm text-base-content/70 mb-4">
-                {search.search
-                  ? t('customers.try_different_search')
-                  : t('customers.get_started_message')}
-              </p>
-              {!search.search && (
-                <button
-                  type="button"
-                  className="btn btn-primary btn-sm gap-2"
-                  onClick={() => {
-                    setIsAddCustomerOpen(true)
-                  }}
-                >
-                  <Plus size={18} />
-                  {t('customers.add_first_customer')}
-                </button>
-              )}
-            </div>
-          </div>
         )}
-
-        {/* Desktop: Table View */}
-        {!isMobile && (!search.search || isLoading || customers.length > 0) && (
-          <>
-            <div className="overflow-x-auto">
-              <Table
-                columns={tableColumns}
-                data={customers}
-                keyExtractor={(customer) => customer.id}
-                isLoading={isLoading}
-                emptyMessage={t('customers.no_customers')}
-                sortBy={search.sortBy}
-                sortOrder={search.sortOrder}
-                onSort={handleSort}
-              />
-            </div>
-            <Pagination
-              currentPage={search.page}
-              totalPages={totalPages}
-              pageSize={search.pageSize}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              itemsName={t('customers.customers').toLowerCase()}
-            />
-          </>
-        )}
-
-        {/* Mobile: Card View with Pagination */}
-        {isMobile && (!search.search || isLoading || customers.length > 0) && (
-          <>
-            <div className="space-y-3">
-              {isLoading && customers.length === 0 ? (
-                Array.from({ length: 5 }).map((_, i) => (
-                  <div key={i} className="skeleton h-32 rounded-box" />
-                ))
-              ) : customers.length === 0 ? (
-                <div className="text-center py-12 text-base-content/60">
-                  {t('customers.no_customers')}
-                </div>
-              ) : (
-                customers.map((customer) => (
-                  <div key={customer.id} className="relative group">
-                    <CustomerCard
-                      customer={customer}
-                      onClick={handleCustomerClick}
-                      ordersCount={customer.ordersCount ?? 0}
-                      totalSpent={customer.totalSpent ?? 0}
-                      currency={currency}
-                    />
-                    <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md"
-                        onClick={(e) => {
-                          handleEditClick(customer, e)
-                        }}
-                        aria-label={t('common.edit')}
-                      >
-                        <Edit size={16} />
-                      </button>
-                      <button
-                        type="button"
-                        className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md text-error"
-                        onClick={(e) => {
-                          handleDeleteClick(customer, e)
-                        }}
-                        aria-label={t('common.delete')}
-                      >
-                        <Trash2 size={16} />
-                      </button>
-                    </div>
-                  </div>
-                ))
-              )}
-            </div>
-            <Pagination
-              currentPage={search.page}
-              totalPages={totalPages}
-              pageSize={search.pageSize}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              itemsName={t('customers.customers').toLowerCase()}
-            />
-          </>
-        )}
-      </div>
+        isLoading={isLoading}
+        hasSearchQuery={!!search.search}
+        currentPage={search.page}
+        totalPages={totalPages}
+        pageSize={search.pageSize}
+        totalItems={totalItems}
+        onPageChange={handlePageChange}
+        onPageSizeChange={handlePageSizeChange}
+        itemsName={t('customers.customers').toLowerCase()}
+        skeleton={<CustomerListSkeleton />}
+      />
 
       <AddCustomerSheet
         isOpen={isAddCustomerOpen}

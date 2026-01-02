@@ -122,6 +122,10 @@ export {
   DashboardLayout,
   type DashboardLayoutProps,
 } from './templates/DashboardLayout'
+export {
+  ResourceListLayout,
+  type ResourceListLayoutProps,
+} from './templates/ResourceListLayout'
 
 // Skeletons
 export { CustomerListSkeleton } from './atoms/skeletons/CustomerListSkeleton'
