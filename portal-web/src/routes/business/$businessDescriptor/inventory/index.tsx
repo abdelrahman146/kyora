@@ -351,35 +351,34 @@ function InventoryListPage() {
 
   return (
     <>
-      <div className="container mx-auto p-4 space-y-6">
+      <div className="space-y-4">
         {/* Header */}
-        <div className="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-base-content">
-              {t('inventory.title')}
-            </h1>
-            <p className="text-base-content/60">{t('inventory.subtitle')}</p>
+            <h1 className="text-2xl font-bold">{t('inventory.title')}</h1>
+            <p className="text-sm text-base-content/60 mt-1">
+              {t('inventory.subtitle')}
+            </p>
           </div>
-          <Button
-            variant="primary"
-            size="md"
+          <button
+            type="button"
+            className="btn btn-primary gap-2"
             onClick={() => {
               setIsAddSheetOpen(true)
             }}
           >
             <Plus size={20} />
             {t('inventory.add_product')}
-          </Button>
+          </button>
         </div>
 
-        {/* Search and Filters */}
-        <div className="flex flex-col gap-3 md:flex-row md:items-center">
+        {/* Toolbar */}
+        <div className="flex flex-col sm:flex-row gap-3">
           <div className="flex-1">
             <SearchInput
               value={search.search ?? ''}
               onChange={handleSearch}
               placeholder={t('inventory.search_placeholder')}
-              debounceMs={300}
             />
           </div>
           <FilterButton
@@ -424,80 +423,123 @@ function InventoryListPage() {
           </FilterButton>
         </div>
 
-        {/* Content - Table (desktop) or Cards (mobile) */}
-        {isMobile ? (
-          // Mobile: Card Grid
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            {products.map((product) => {
-              return (
-                <InventoryCard
-                  key={product.id}
-                  product={product}
-                  currency={currency}
-                  categories={categories}
+        {/* Empty State */}
+        {!productsResponse.isLoading && products.length === 0 && (
+          <div className="card bg-base-100 shadow">
+            <div className="card-body items-center text-center py-12">
+              <Package size={48} className="text-base-content/20 mb-4" />
+              <h3 className="text-lg font-semibold mb-2">
+                {search.search
+                  ? t('inventory.no_results')
+                  : t('inventory.no_products')}
+              </h3>
+              <p className="text-sm text-base-content/70 mb-4">
+                {search.search
+                  ? t('inventory.try_different_search')
+                  : t('inventory.get_started_message')}
+              </p>
+              {!search.search && (
+                <button
+                  type="button"
+                  className="btn btn-primary btn-sm gap-2"
                   onClick={() => {
+                    setIsAddSheetOpen(true)
+                  }}
+                >
+                  <Plus size={18} />
+                  {t('inventory.add_first_product')}
+                </button>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Desktop: Table View */}
+        {!isMobile &&
+          (!search.search ||
+            productsResponse.isLoading ||
+            products.length > 0) && (
+            <>
+              <div className="overflow-x-auto">
+                <Table<Product>
+                  columns={columns}
+                  data={products}
+                  keyExtractor={(product) => product.id}
+                  isLoading={productsResponse.isLoading}
+                  emptyMessage={t('inventory.no_products')}
+                  sortBy={search.sortBy}
+                  sortOrder={search.sortOrder}
+                  onSort={(key) => {
+                    void navigate({
+                      to: '.',
+                      search: {
+                        ...search,
+                        sortBy: key,
+                        sortOrder:
+                          search.sortBy === key && search.sortOrder === 'asc'
+                            ? 'desc'
+                            : 'asc',
+                        page: 1,
+                      },
+                    })
+                  }}
+                  onRowClick={(product) => {
                     handleProductClick(product)
                   }}
                 />
-              )
-            })}
-            {products.length === 0 && (
-              <div className="col-span-full flex flex-col items-center justify-center py-12">
-                <Package size={48} className="text-base-content/20 mb-4" />
-                <p className="text-lg font-medium text-base-content/60">
-                  {t('inventory.no_products')}
-                </p>
-                <p className="text-sm text-base-content/40 mt-2">
-                  {t('inventory.get_started_message')}
-                </p>
               </div>
-            )}
-          </div>
-        ) : (
-          // Desktop: Table
-          <Table<Product>
-            columns={columns}
-            data={products}
-            keyExtractor={(product) => product.id}
-            isLoading={productsResponse.isLoading}
-            emptyMessage={t('inventory.no_products')}
-            sortBy={search.sortBy}
-            sortOrder={search.sortOrder}
-            onSort={(key) => {
-              void navigate({
-                to: '.',
-                search: {
-                  ...search,
-                  sortBy: key,
-                  sortOrder:
-                    search.sortBy === key && search.sortOrder === 'asc'
-                      ? 'desc'
-                      : 'asc',
-                  page: 1,
-                },
-              })
-            }}
-            onRowClick={(product) => {
-              handleProductClick(product)
-            }}
-          />
-        )}
+              <Pagination
+                currentPage={search.page}
+                totalPages={totalPages}
+                pageSize={search.pageSize}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                itemsName={t('inventory.title').toLowerCase()}
+              />
+            </>
+          )}
 
-        {/* Pagination */}
-        {totalPages > 1 && (
-          <div className="flex justify-center">
-            <Pagination
-              currentPage={search.page}
-              totalPages={totalPages}
-              pageSize={search.pageSize}
-              totalItems={totalItems}
-              onPageChange={handlePageChange}
-              onPageSizeChange={handlePageSizeChange}
-              showPageSizeSelector={!isMobile}
-              itemsName={t('inventory.title').toLowerCase()}
-            />
-          </div>
-        )}
+        {/* Mobile: Card View with Pagination */}
+        {isMobile &&
+          (!search.search ||
+            productsResponse.isLoading ||
+            products.length > 0) && (
+            <>
+              <div className="space-y-3">
+                {productsResponse.isLoading && products.length === 0 ? (
+                  Array.from({ length: 5 }).map((_, i) => (
+                    <div key={i} className="skeleton h-32 rounded-box" />
+                  ))
+                ) : products.length === 0 ? (
+                  <div className="text-center py-12 text-base-content/60">
+                    {t('inventory.no_products')}
+                  </div>
+                ) : (
+                  products.map((product) => (
+                    <InventoryCard
+                      key={product.id}
+                      product={product}
+                      currency={currency}
+                      categories={categories}
+                      onClick={() => {
+                        handleProductClick(product)
+                      }}
+                    />
+                  ))
+                )}
+              </div>
+              <Pagination
+                currentPage={search.page}
+                totalPages={totalPages}
+                pageSize={search.pageSize}
+                totalItems={totalItems}
+                onPageChange={handlePageChange}
+                onPageSizeChange={handlePageSizeChange}
+                itemsName={t('inventory.title').toLowerCase()}
+              />
+            </>
+          )}
       </div>
       {/* Sheets */}
       <ProductDetailsSheet

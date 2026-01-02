@@ -1,9 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import {
-  Suspense,
-  useMemo,
-  useState,
-} from 'react'
+import { Suspense, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Edit, Eye, Plus, Trash2, Users } from 'lucide-react'
@@ -11,7 +7,11 @@ import type { MouseEvent } from 'react'
 
 import type { Customer } from '@/api/customer'
 import type { TableColumn } from '@/components/organisms/Table'
-import { customerQueries, useCustomersQuery, useDeleteCustomerMutation } from '@/api/customer'
+import {
+  customerQueries,
+  useCustomersQuery,
+  useDeleteCustomerMutation,
+} from '@/api/customer'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
 import { CustomerListSkeleton } from '@/components/atoms/skeletons/CustomerListSkeleton'
@@ -21,7 +21,10 @@ import { SearchInput } from '@/components/molecules/SearchInput'
 import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { FilterButton } from '@/components/organisms/FilterButton'
 import { Table } from '@/components/organisms/Table'
-import { AddCustomerSheet, EditCustomerSheet } from '@/components/organisms/customers'
+import {
+  AddCustomerSheet,
+  EditCustomerSheet,
+} from '@/components/organisms/customers'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
@@ -62,16 +65,16 @@ export const Route = createFileRoute(
   // Prefetch customer list data based on search params
   loader: async ({ context, params, location }) => {
     const { queryClient } = context as any
-    
+
     // Parse search params from location
     const searchParams = CustomersSearchSchema.parse(location.search)
-    
+
     // Build orderBy from sortBy/sortOrder
     let orderBy: Array<string> | undefined
     if (searchParams.sortBy) {
       orderBy = [`${searchParams.sortBy}:${searchParams.sortOrder}`]
     }
-    
+
     // Prefetch customer list (non-blocking, uses cache if available)
     await queryClient.prefetchQuery(
       customerQueries.list(params.businessDescriptor, {
@@ -79,7 +82,7 @@ export const Route = createFileRoute(
         page: searchParams.page,
         pageSize: searchParams.pageSize,
         orderBy,
-      })
+      }),
     )
   },
 
@@ -115,15 +118,15 @@ function CustomersListPage() {
   }, [search.sortBy, search.sortOrder])
 
   // Use TanStack Query with keepPreviousData for smooth pagination
-  const {
-    data: customersResponse,
-    isLoading,
-  } = useCustomersQuery(businessDescriptor, {
-    search: search.search,
-    page: search.page,
-    pageSize: search.pageSize,
-    orderBy,
-  })
+  const { data: customersResponse, isLoading } = useCustomersQuery(
+    businessDescriptor,
+    {
+      search: search.search,
+      page: search.page,
+      pageSize: search.pageSize,
+      orderBy,
+    },
+  )
 
   const customers = customersResponse?.items ?? []
   const totalItems = customersResponse?.totalCount ?? 0
@@ -322,13 +325,7 @@ function CustomersListPage() {
         ),
       },
     ],
-    [
-      currency,
-      handleCustomerClick,
-      handleDeleteClick,
-      handleEditClick,
-      t,
-    ],
+    [currency, handleCustomerClick, handleDeleteClick, handleEditClick, t],
   )
 
   return (
@@ -387,7 +384,9 @@ function CustomersListPage() {
             <div className="card-body items-center text-center py-12">
               <Users size={48} className="text-base-content/20 mb-4" />
               <h3 className="text-lg font-semibold mb-2">
-                {search.search ? t('customers.no_results') : t('customers.no_customers')}
+                {search.search
+                  ? t('customers.no_results')
+                  : t('customers.no_customers')}
               </h3>
               <p className="text-sm text-base-content/70 mb-4">
                 {search.search
@@ -411,7 +410,7 @@ function CustomersListPage() {
         )}
 
         {/* Desktop: Table View */}
-        {!isMobile && (
+        {!isMobile && (!search.search || isLoading || customers.length > 0) && (
           <>
             <div className="overflow-x-auto">
               <Table
@@ -438,7 +437,7 @@ function CustomersListPage() {
         )}
 
         {/* Mobile: Card View with Pagination */}
-        {isMobile && (
+        {isMobile && (!search.search || isLoading || customers.length > 0) && (
           <>
             <div className="space-y-3">
               {isLoading && customers.length === 0 ? (
