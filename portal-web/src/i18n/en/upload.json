@@ -28,5 +28,14 @@
   "chooseFiles": "Choose files",
   "primaryImage": "Primary image",
   "noFilesSelected": "No files selected",
-  "dragToReorder": "Drag to reorder"
+  "dragToReorder": "Drag to reorder",
+  "dropFilesHere": "Drop files here",
+  "maximumFilesReached": "Maximum files reached",
+  "clickToUploadOrDragDrop": "Click to upload or drag and drop",
+  "tapToUpload": "Tap to upload",
+  "imageFormatsUpTo10MB": "PNG, JPG, WebP up to 10MB",
+  "videoFormatsUpTo100MB": "MP4, MOV up to 100MB",
+  "acceptedFileTypes": "Accepted file types",
+  "maximumFiles": "Maximum {{count}} file",
+  "maximumFiles_other": "Maximum {{count}} files"
 }

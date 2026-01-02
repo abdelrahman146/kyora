@@ -54,8 +54,8 @@ export function InventoryCard({
   }
 
   const getStockTooltip = () => {
-    if (isOutOfStock) return t('inventory.out_of_stock')
-    if (isLowStock) return t('inventory.low_stock')
+    if (isOutOfStock) return t('out_of_stock', { ns: 'inventory' })
+    if (isLowStock) return t('low_stock', { ns: 'inventory' })
     return undefined
   }
 
@@ -88,7 +88,7 @@ export function InventoryCard({
       {/* Header: Photo + Name + Category */}
       <div className="flex items-start gap-3 mb-4">
         <Avatar
-          src={product.photos[0]?.thumbnail_url || product.photos[0]?.url}
+          src={product.photos[0]?.thumbnailUrl || product.photos[0]?.url}
           alt={product.name}
           fallback={product.name.charAt(0).toUpperCase()}
           size="md"
@@ -108,7 +108,7 @@ export function InventoryCard({
       <div className="space-y-2 mb-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-base-content/60">
-            {t('inventory.cost_price')}
+            {t('cost_price', { ns: 'inventory' })}
           </span>
           <span className="text-base font-semibold text-base-content">
             {formatPriceDisplay(costPriceRange)}
@@ -116,7 +116,7 @@ export function InventoryCard({
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-base-content/60">
-            {t('inventory.sale_price')}
+            {t('sale_price', { ns: 'inventory' })}
           </span>
           <span className="text-base font-semibold text-base-content">
             {formatPriceDisplay(salePriceRange)}
@@ -127,7 +127,7 @@ export function InventoryCard({
       {/* Stock Status */}
       <div className="flex items-center justify-between pt-3 border-t border-base-300">
         <span className="text-sm text-base-content/60">
-          {t('inventory.stock_quantity')}
+          {t('stock_quantity', { ns: 'inventory' })}
         </span>
         {getStockTooltip() ? (
           <Tooltip content={getStockTooltip()}>

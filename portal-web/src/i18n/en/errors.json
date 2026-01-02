@@ -57,7 +57,13 @@
     "date_cannot_be_past": "Date cannot be in the past.",
     "must_be_18_or_older": "You must be at least 18 years old.",
     "end_date_must_be_after_start_date": "End date must be after start date.",
-    "outside_business_hours": "Time must be within business hours (9 AM - 5 PM)."
+    "outside_business_hours": "Time must be within business hours (9 AM - 5 PM).",
+    "positive_number": "Must be a positive number.",
+    "min_zero": "Must be zero or greater.",
+    "integer": "Must be a whole number.",
+    "max_photos": "Maximum 10 photos allowed.",
+    "at_least_one_variant": "At least one variant is required.",
+    "max_variants": "Maximum 50 variants allowed."
   },
   "form": {
     "minItemsRequired": "At least {{min}} item(s) required.",

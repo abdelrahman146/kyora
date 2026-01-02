@@ -7,25 +7,15 @@ import {
 
 import { delVoid, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
+import type { AssetReference } from '@/types/asset'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
+
+export type { AssetReference }
 
 /**
  * Inventory API Types
  * Based on backend inventory domain DTOs
  */
-
-export interface AssetReference {
-  asset_id: string
-  url: string
-  thumbnail_url?: string
-  metadata?: {
-    mime_type?: string
-    file_size?: number
-    width?: number
-    height?: number
-    duration?: number
-  }
-}
 
 export interface Category {
   id: string
@@ -106,6 +96,21 @@ export interface CreateVariantRequest {
   salePrice: string
   stockQuantity: number
   stockQuantityAlert: number
+}
+
+export interface CreateProductVariantRequest {
+  code: string
+  sku?: string
+  photos?: Array<AssetReference>
+  costPrice: string
+  salePrice: string
+  stockQuantity: number
+  stockQuantityAlert: number
+}
+
+export interface CreateProductWithVariantsRequest {
+  product: CreateProductRequest
+  variants: Array<CreateProductVariantRequest>
 }
 
 export interface UpdateVariantRequest {
@@ -196,6 +201,19 @@ export const inventoryApi = {
   ): Promise<Product> {
     return post<Product>(
       `v1/businesses/${businessDescriptor}/inventory/products`,
+      { json: data },
+    )
+  },
+
+  /**
+   * Create a product with variants atomically
+   */
+  async createProductWithVariants(
+    businessDescriptor: string,
+    data: CreateProductWithVariantsRequest,
+  ): Promise<Product> {
+    return post<Product>(
+      `v1/businesses/${businessDescriptor}/inventory/products/with-variants`,
       { json: data },
     )
   },
@@ -313,6 +331,45 @@ export const inventoryApi = {
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
     return get<ListVariantsResponse>(
       `v1/businesses/${businessDescriptor}/inventory/products/${productId}/variants${query}`,
+    )
+  },
+
+  /**
+   * Create a new variant for a product
+   */
+  async createVariant(
+    businessDescriptor: string,
+    data: CreateVariantRequest,
+  ): Promise<Variant> {
+    return post<Variant>(
+      `v1/businesses/${businessDescriptor}/inventory/variants`,
+      { json: data },
+    )
+  },
+
+  /**
+   * Update a variant
+   */
+  async updateVariant(
+    businessDescriptor: string,
+    variantId: string,
+    data: UpdateVariantRequest,
+  ): Promise<Variant> {
+    return patch<Variant>(
+      `v1/businesses/${businessDescriptor}/inventory/variants/${variantId}`,
+      { json: data },
+    )
+  },
+
+  /**
+   * Delete a variant
+   */
+  async deleteVariant(
+    businessDescriptor: string,
+    variantId: string,
+  ): Promise<void> {
+    return delVoid(
+      `v1/businesses/${businessDescriptor}/inventory/variants/${variantId}`,
     )
   },
 
@@ -470,6 +527,24 @@ export function useCreateProductMutation(
 }
 
 /**
+ * Hook to create a product with variants
+ */
+export function useCreateProductWithVariantsMutation(
+  businessDescriptor: string,
+  options?: UseMutationOptions<
+    Product,
+    Error,
+    CreateProductWithVariantsRequest
+  >,
+) {
+  return useMutation({
+    mutationFn: (data: CreateProductWithVariantsRequest) =>
+      inventoryApi.createProductWithVariants(businessDescriptor, data),
+    ...options,
+  })
+}
+
+/**
  * Hook to update a product
  */
 export function useUpdateProductMutation(
@@ -538,6 +613,53 @@ export function useDeleteCategoryMutation(
   return useMutation({
     mutationFn: () =>
       inventoryApi.deleteCategory(businessDescriptor, categoryId),
+    ...options,
+  })
+}
+
+/**
+ * Hook to create a variant
+ */
+export function useCreateVariantMutation(
+  businessDescriptor: string,
+  productId: string,
+  options?: UseMutationOptions<Variant, Error, CreateVariantRequest>,
+) {
+  return useMutation({
+    mutationFn: (data: CreateVariantRequest) =>
+      inventoryApi.createVariant(businessDescriptor, {
+        ...data,
+        product_id: productId,
+      }),
+    ...options,
+  })
+}
+
+/**
+ * Hook to update a variant
+ */
+export function useUpdateVariantMutation(
+  businessDescriptor: string,
+  variantId: string,
+  options?: UseMutationOptions<Variant, Error, UpdateVariantRequest>,
+) {
+  return useMutation({
+    mutationFn: (data: UpdateVariantRequest) =>
+      inventoryApi.updateVariant(businessDescriptor, variantId, data),
+    ...options,
+  })
+}
+
+/**
+ * Hook to delete a variant
+ */
+export function useDeleteVariantMutation(
+  businessDescriptor: string,
+  variantId: string,
+  options?: UseMutationOptions<void, Error, void>,
+) {
+  return useMutation({
+    mutationFn: () => inventoryApi.deleteVariant(businessDescriptor, variantId),
     ...options,
   })
 }

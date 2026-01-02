@@ -61,9 +61,9 @@ import { getThumbnailUrl } from '@/lib/assetUrl'
 import { useMediaQuery } from '@/hooks'
 
 // Business Context for getting businessDescriptor from route/layout
-const BusinessContext = createContext<{ businessDescriptor: string } | null>(
-  null,
-)
+export const BusinessContext = createContext<{
+  businessDescriptor: string
+} | null>(null)
 
 export interface FileUploadFieldProps {
   /** Accepted file types (MIME types or extensions) */
@@ -170,6 +170,18 @@ export function FileUploadField(props: FileUploadFieldProps) {
     },
     onError: (error) => {
       console.error('Upload failed:', error)
+      // Show error toast with translated message
+      const errorMessage = error.message.includes('404')
+        ? t('uploadFailed', { ns: 'upload' }) +
+          ': ' +
+          t('invalidPath', { ns: 'errors' })
+        : t('uploadFailed', { ns: 'upload' })
+
+      // Use toast library if available, otherwise console
+      if (typeof window !== 'undefined' && 'toast' in window) {
+        // @ts-ignore - window.toast is dynamically added by react-hot-toast
+        window.toast?.error?.(errorMessage)
+      }
     },
   })
 
@@ -251,6 +263,44 @@ export function FileUploadField(props: FileUploadFieldProps) {
       }
     },
     [field, cancelUpload],
+  )
+
+  // Drag-and-drop reordering
+  const [draggedIndex, setDraggedIndex] = useState<number | null>(null)
+
+  const handleDragStart = useCallback((index: number) => {
+    setDraggedIndex(index)
+  }, [])
+
+  const handleDragEnd = useCallback(() => {
+    setDraggedIndex(null)
+  }, [])
+
+  const handleDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+  }, [])
+
+  const handleDrop = useCallback(
+    (targetIndex: number) => {
+      if (draggedIndex === null || draggedIndex === targetIndex) return
+
+      const currentValue = field.state.value
+      if (!Array.isArray(currentValue)) return
+
+      // Only reorder existing references (not pending files)
+      const refs = currentValue.filter(isAssetReference)
+      if (draggedIndex >= refs.length || targetIndex >= refs.length) return
+
+      // Reorder array
+      const newRefs = [...refs]
+      const [removed] = newRefs.splice(draggedIndex, 1)
+      newRefs.splice(targetIndex, 0, removed)
+
+      // Update field with reordered refs
+      field.handleChange(newRefs as any)
+      setDraggedIndex(null)
+    },
+    [draggedIndex, field],
   )
 
   // Extract error
@@ -351,14 +401,25 @@ export function FileUploadField(props: FileUploadFieldProps) {
       {/* File previews grid */}
       {totalFiles > 0 && (
         <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-          {/* Existing references */}
-          {existingReferences.map((ref) => (
+          {/* Existing references with drag-and-drop reordering */}
+          {existingReferences.map((ref, index) => (
             <FilePreview
               key={ref.assetId}
               src={getThumbnailUrl(ref) || ''}
               alt={ref.metadata?.altText || 'Uploaded file'}
               onRemove={() => handleRemove(ref)}
               disabled={disabled}
+              draggable={props.reorderable !== false}
+              onDragStart={(e) => {
+                e.dataTransfer.effectAllowed = 'move'
+                handleDragStart(index)
+              }}
+              onDragEnd={handleDragEnd}
+              onDragOver={handleDragOver}
+              onDrop={(e) => {
+                e.preventDefault()
+                handleDrop(index)
+              }}
             />
           ))}
 

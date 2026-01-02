@@ -53,7 +53,7 @@ export function ProductDetailsSheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={t('inventory.product_details')}
+      title={t('product_details', { ns: 'inventory' })}
       size="lg"
       side="end"
     >
@@ -78,13 +78,13 @@ export function ProductDetailsSheet({
         {/* Photos Carousel */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-base-content">
-            {t('inventory.photos')}
+            {t('photos', { ns: 'inventory' })}
           </h3>
           {displayProduct.photos.length > 0 ? (
             <div className="flex overflow-x-auto snap-x snap-mandatory gap-3 pb-3 scrollbar-hide -mx-1 px-1">
               {displayProduct.photos.map((photo, index) => (
                 <div
-                  key={photo.asset_id || index}
+                  key={photo.assetId || index}
                   className="snap-start shrink-0 w-64 aspect-square"
                 >
                   <img
@@ -99,7 +99,7 @@ export function ProductDetailsSheet({
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center text-base-content/50 border border-base-300 rounded-xl bg-base-100">
               <ImageOff size={48} className="mb-3" />
-              <p>{t('inventory.no_photos')}</p>
+              <p>{t('no_photos', { ns: 'inventory' })}</p>
             </div>
           )}
         </div>
@@ -107,7 +107,7 @@ export function ProductDetailsSheet({
         {/* Variants Section */}
         <div>
           <h3 className="text-lg font-semibold mb-3 text-base-content">
-            {t('inventory.variants')}
+            {t('variants', { ns: 'inventory' })}
           </h3>
           {isLoading ? (
             <div className="flex items-center justify-center py-8">
@@ -130,8 +130,9 @@ export function ProductDetailsSheet({
                 }
 
                 const getStockTooltip = () => {
-                  if (isOutOfStock) return t('inventory.out_of_stock')
-                  if (isLowStock) return t('inventory.low_stock')
+                  if (isOutOfStock)
+                    return t('out_of_stock', { ns: 'inventory' })
+                  if (isLowStock) return t('low_stock', { ns: 'inventory' })
                   return undefined
                 }
 
@@ -143,7 +144,7 @@ export function ProductDetailsSheet({
                     {/* Header: Photo + Code + SKU */}
                     <div className="flex items-start gap-3 mb-4">
                       <img
-                        src={variantPhoto.thumbnail_url || variantPhoto.url}
+                        src={variantPhoto.thumbnailUrl || variantPhoto.url}
                         alt={variant.code}
                         className="w-16 h-16 object-cover rounded-lg border border-base-300 shrink-0"
                       />
@@ -153,7 +154,7 @@ export function ProductDetailsSheet({
                         </h4>
                         {variant.sku && (
                           <p className="text-sm text-base-content/60 truncate">
-                            {t('inventory.sku')}: {variant.sku}
+                            {t('sku', { ns: 'inventory' })}: {variant.sku}
                           </p>
                         )}
                       </div>
@@ -163,7 +164,7 @@ export function ProductDetailsSheet({
                     <div className="space-y-2 mb-4">
                       <div className="flex items-baseline justify-between">
                         <span className="text-sm text-base-content/60">
-                          {t('inventory.cost_price')}
+                          {t('cost_price', { ns: 'inventory' })}
                         </span>
                         <span className="text-base font-semibold text-base-content">
                           {formatCurrency(
@@ -174,7 +175,7 @@ export function ProductDetailsSheet({
                       </div>
                       <div className="flex items-baseline justify-between">
                         <span className="text-sm text-base-content/60">
-                          {t('inventory.sale_price')}
+                          {t('sale_price', { ns: 'inventory' })}
                         </span>
                         <span className="text-base font-semibold text-base-content">
                           {formatCurrency(
@@ -188,7 +189,7 @@ export function ProductDetailsSheet({
                     {/* Stock Status */}
                     <div className="flex items-center justify-between pt-3 border-t border-base-300">
                       <span className="text-sm text-base-content/60">
-                        {t('inventory.stock_quantity')}
+                        {t('stock_quantity', { ns: 'inventory' })}
                       </span>
                       {getStockTooltip() ? (
                         <Tooltip content={getStockTooltip()}>
@@ -213,7 +214,7 @@ export function ProductDetailsSheet({
           ) : (
             <div className="flex flex-col items-center justify-center py-12 text-center text-base-content/50 border border-base-300 rounded-xl bg-base-100">
               <Package size={48} className="mb-3" />
-              <p>{t('inventory.no_variants')}</p>
+              <p>{t('no_variants', { ns: 'inventory' })}</p>
             </div>
           )}
         </div>

@@ -11,6 +11,12 @@ export interface FilePreviewProps {
   error?: string
   disabled?: boolean
   className?: string
+  // Drag-and-drop reordering
+  draggable?: boolean
+  onDragStart?: (e: React.DragEvent) => void
+  onDragEnd?: (e: React.DragEvent) => void
+  onDragOver?: (e: React.DragEvent) => void
+  onDrop?: (e: React.DragEvent) => void
 }
 
 /**
@@ -44,16 +50,27 @@ export function FilePreview({
   error,
   disabled = false,
   className,
+  draggable = false,
+  onDragStart,
+  onDragEnd,
+  onDragOver,
+  onDrop,
 }: FilePreviewProps) {
   const hasError = Boolean(error)
 
   return (
     <div
+      draggable={draggable && !disabled && !isLoading && !hasError}
+      onDragStart={onDragStart}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDrop={onDrop}
       className={cn(
         'relative group',
         'aspect-square rounded-lg overflow-hidden',
         'border-2 transition-all duration-200',
         hasError ? 'border-error' : 'border-base-300',
+        draggable && !disabled && !isLoading && !hasError && 'cursor-move',
         className,
       )}
     >

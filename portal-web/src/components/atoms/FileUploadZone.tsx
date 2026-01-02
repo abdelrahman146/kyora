@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react'
 import { CloudUpload } from 'lucide-react'
+import { useTranslation } from 'react-i18next'
 import { cn } from '@/lib/utils'
 
 export interface FileUploadZoneProps {
@@ -42,6 +43,7 @@ export function FileUploadZone({
 }: FileUploadZoneProps) {
   const [isDragActive, setIsDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const { t } = useTranslation('upload')
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault()
@@ -153,15 +155,15 @@ export function FileUploadZone({
 
           <p className="text-base md:text-lg font-medium text-base-content/80 mb-2 text-center">
             {isDragActive && !disabled ? (
-              'Drop files here'
+              t('dropFilesHere')
             ) : isMaxFilesReached ? (
-              'Maximum files reached'
+              t('maximumFilesReached')
             ) : (
               <>
                 <span className="hidden md:inline">
-                  Click to upload or drag and drop
+                  {t('clickToUploadOrDragDrop')}
                 </span>
-                <span className="inline md:hidden">Tap to upload</span>
+                <span className="inline md:hidden">{t('tapToUpload')}</span>
               </>
             )}
           </p>
@@ -171,17 +173,17 @@ export function FileUploadZone({
               id="upload-requirements"
               className="text-sm text-base-content/60 text-center"
             >
-              {accept.includes('image') && 'PNG, JPG, WebP up to 10MB'}
-              {accept.includes('video') && 'MP4, MOV up to 100MB'}
+              {accept.includes('image') && t('imageFormatsUpTo10MB')}
+              {accept.includes('video') && t('videoFormatsUpTo100MB')}
               {!accept.includes('image') &&
                 !accept.includes('video') &&
-                'Accepted file types'}
+                t('acceptedFileTypes')}
             </p>
           )}
 
           {maxFiles && !isMaxFilesReached && (
             <p className="text-xs text-base-content/50 mt-2">
-              Maximum {maxFiles} file{maxFiles > 1 ? 's' : ''}
+              {t('maximumFiles', { count: maxFiles })}
             </p>
           )}
         </>

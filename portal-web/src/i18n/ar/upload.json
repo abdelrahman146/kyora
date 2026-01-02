@@ -32,5 +32,18 @@
   "chooseFiles": "اختر الملفات",
   "primaryImage": "الصورة الأساسية",
   "noFilesSelected": "لم يتم تحديد أي ملفات",
-  "dragToReorder": "اسحب لإعادة الترتيب"
+  "dragToReorder": "اسحب لإعادة الترتيب",
+  "dropFilesHere": "أفلت الملفات هنا",
+  "maximumFilesReached": "تم الوصول إلى الحد الأقصى للملفات",
+  "clickToUploadOrDragDrop": "انقر للرفع أو اسحب وأفلت",
+  "tapToUpload": "اضغط للرفع",
+  "imageFormatsUpTo10MB": "PNG, JPG, WebP حتى 10 ميجابايت",
+  "videoFormatsUpTo100MB": "MP4, MOV حتى 100 ميجابايت",
+  "acceptedFileTypes": "أنواع الملفات المقبولة",
+  "maximumFiles_zero": "الحد الأقصى {{count}} ملف",
+  "maximumFiles_one": "الحد الأقصى ملف واحد",
+  "maximumFiles_two": "الحد الأقصى ملفين",
+  "maximumFiles_few": "الحد الأقصى {{count}} ملفات",
+  "maximumFiles_many": "الحد الأقصى {{count}} ملفاً",
+  "maximumFiles_other": "الحد الأقصى {{count}} ملف"
 }

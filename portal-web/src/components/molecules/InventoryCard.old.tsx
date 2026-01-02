@@ -75,7 +75,7 @@ export function InventoryCard({
         {/* Header: Product Photo + Name + Category */}
         <div className="flex items-center gap-3 mb-3">
           <Avatar
-            src={product.photos[0]?.thumbnail_url}
+            src={product.photos[0]?.thumbnailUrl}
             alt={product.name}
             fallback={product.name.charAt(0).toUpperCase()}
             size="sm"
@@ -96,9 +96,9 @@ export function InventoryCard({
           <div className="stat-item">
             <div className="flex items-center gap-1 text-sm text-base-content/60 mb-1">
               <DollarSign size={14} />
-              <Tooltip content={t('inventory.average_cost_tooltip')}>
+              <Tooltip content={t('average_cost_tooltip', { ns: 'inventory' })}>
                 <span className="cursor-help">
-                  {t('inventory.cost_price_avg')}
+                  {t('cost_price_avg', { ns: 'inventory' })}
                 </span>
               </Tooltip>
             </div>
@@ -111,13 +111,13 @@ export function InventoryCard({
           <div className="stat-item">
             <div className="flex items-center gap-1 text-sm text-base-content/60 mb-1">
               <Box size={14} />
-              <span>{t('inventory.stock_quantity')}</span>
+              <span>{t('stock_quantity', { ns: 'inventory' })}</span>
             </div>
             <div className="flex items-center gap-2">
               <span className="text-base font-semibold">{totalStock}</span>
               {hasLowStock && (
                 <Badge size="sm" variant="warning">
-                  {t('inventory.low_stock')}
+                  {t('low_stock', { ns: 'inventory' })}
                 </Badge>
               )}
             </div>
