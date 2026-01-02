@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from '@tanstack/react-router'
-import { Suspense, useMemo, useState } from 'react'
+import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Edit, Package } from 'lucide-react'
@@ -8,8 +8,6 @@ import type { TableColumn } from '@/components/organisms/Table'
 import type { Product } from '@/api/inventory'
 import {
   Avatar,
-  FormRadio,
-  FormSelect,
   InventoryCard,
   InventoryListSkeleton,
   ResourceListLayout,
@@ -30,6 +28,7 @@ import {
   hasLowStock,
 } from '@/lib/inventoryUtils'
 import { getSelectedBusiness } from '@/stores/businessStore'
+import { useKyoraForm } from '@/lib/form/useKyoraForm'
 
 /**
  * Search schema for inventory list
@@ -106,17 +105,40 @@ function InventoryListPage() {
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false)
   const [isEditSheetOpen, setIsEditSheetOpen] = useState(false)
 
-  const [categoryIdFilter, setCategoryIdFilter] = useState<string | undefined>(
-    search.categoryId,
-  )
-  const [stockStatusFilter, setStockStatusFilter] = useState<
-    'in_stock' | 'low_stock' | 'out_of_stock' | undefined
-  >(search.stockStatus)
-
   const orderBy = useMemo<Array<string>>(() => {
     if (!search.sortBy) return ['-createdAt']
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
+
+  const filterForm = useKyoraForm({
+    defaultValues: {
+      categoryId: search.categoryId ?? '',
+      stockStatus: search.stockStatus ?? '',
+    },
+    onSubmit: async ({ value }) => {
+      const stockStatus =
+        value.stockStatus === '' ? undefined : value.stockStatus
+      await navigate({
+        to: '.',
+        search: {
+          ...search,
+          categoryId: value.categoryId || undefined,
+          stockStatus: stockStatus as
+            | 'in_stock'
+            | 'low_stock'
+            | 'out_of_stock'
+            | undefined,
+          page: 1,
+        },
+      })
+    },
+  })
+
+  // Sync form with URL search params when they change
+  useEffect(() => {
+    filterForm.setFieldValue('categoryId', search.categoryId ?? '')
+    filterForm.setFieldValue('stockStatus', search.stockStatus ?? '')
+  }, [search.categoryId, search.stockStatus])
 
   const productsResponse = useProductsQuery(businessDescriptor, {
     search: search.search,
@@ -129,7 +151,16 @@ function InventoryListPage() {
 
   const categoriesResponse = useCategoriesQuery(businessDescriptor)
 
-  const products = productsResponse.data?.items ?? []
+  // Clear previous data when filters change to fix the bug
+  const products = useMemo(() => {
+    if (productsResponse.isFetching && productsResponse.data) {
+      // If we're fetching new data and the query key has changed, return empty array
+      // to prevent showing stale data
+      return []
+    }
+    return productsResponse.data?.items ?? []
+  }, [productsResponse.data, productsResponse.isFetching])
+
   const totalItems = productsResponse.data?.total_count ?? 0
   const totalPages = productsResponse.data?.total_pages ?? 0
   const categories = categoriesResponse.data ?? []
@@ -176,22 +207,9 @@ function InventoryListPage() {
     })
   }
 
-  const handleApplyFilters = () => {
-    void navigate({
-      to: '.',
-      search: {
-        ...search,
-        categoryId: categoryIdFilter,
-        stockStatus: stockStatusFilter,
-        page: 1,
-      },
-    })
-  }
-
-  const handleResetFilters = () => {
-    setCategoryIdFilter(undefined)
-    setStockStatusFilter(undefined)
-    void navigate({
+  const handleResetFilters = async () => {
+    filterForm.reset()
+    await navigate({
       to: '.',
       search: {
         ...search,
@@ -353,36 +371,34 @@ function InventoryListPage() {
         filterTitle={t('inventory.filters_title')}
         filterButtonText={t('common.filter')}
         filterButton={
-          <div className="space-y-6 p-4">
-            <FormSelect
-              label={t('inventory.filter_by_category')}
-              options={categoryOptions}
-              value={categoryIdFilter ?? ''}
-              onChange={(value) => {
-                const val = Array.isArray(value) ? value[0] : value
-                setCategoryIdFilter(val === '' ? undefined : val)
-              }}
-              disabled={categoriesResponse.isLoading}
-            />
-            <FormRadio
-              label={t('inventory.filter_by_stock')}
-              name="stockStatus"
-              options={stockStatusOptions}
-              value={stockStatusFilter ?? ''}
-              onChange={(e) => {
-                const newValue = e.target.value as
-                  | 'in_stock'
-                  | 'low_stock'
-                  | 'out_of_stock'
-                  | ''
-                setStockStatusFilter(newValue === '' ? undefined : newValue)
-              }}
-              orientation="vertical"
-            />
-          </div>
+          <filterForm.AppForm>
+            <div className="space-y-6 p-4">
+              <filterForm.AppField name="categoryId">
+                {(field) => (
+                  <field.SelectField
+                    label={t('inventory.filter_by_category')}
+                    options={categoryOptions}
+                    disabled={categoriesResponse.isLoading}
+                    clearable
+                  />
+                )}
+              </filterForm.AppField>
+              <filterForm.AppField name="stockStatus">
+                {(field) => (
+                  <field.RadioField
+                    label={t('inventory.filter_by_stock')}
+                    options={stockStatusOptions}
+                    orientation="vertical"
+                  />
+                )}
+              </filterForm.AppField>
+            </div>
+          </filterForm.AppForm>
         }
         activeFilterCount={activeFilterCount}
-        onApplyFilters={handleApplyFilters}
+        onApplyFilters={() => {
+          filterForm.handleSubmit()
+        }}
         onResetFilters={handleResetFilters}
         applyLabel={t('common.apply')}
         resetLabel={t('common.reset')}
