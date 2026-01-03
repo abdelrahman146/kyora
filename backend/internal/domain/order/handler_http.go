@@ -83,7 +83,7 @@ type updateOrderNoteRequest struct {
 // @Param        orderNumber query string false "Filter by exact orderNumber"
 // @Param        from query string false "Filter by orderedAt >= from (RFC3339)"
 // @Param        to query string false "Filter by orderedAt <= to (RFC3339)"
-// @Success      200 {object} list.ListResponse[Order]
+// @Success      200 {object} list.ListResponse[OrderResponse]
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -141,8 +141,9 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
+	respItems := toOrderResponses(items)
 	hasMore := int64(query.Page*query.PageSize) < total
-	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(items, query.Page, query.PageSize, total, hasMore))
+	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(respItems, query.Page, query.PageSize, total, hasMore))
 }
 
 // GetOrder returns an order by ID with items and notes.
@@ -153,7 +154,7 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -186,7 +187,7 @@ func (h *HttpHandler) GetOrder(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(ord))
 }
 
 // GetOrderByNumber returns an order by its order number.
@@ -197,7 +198,7 @@ func (h *HttpHandler) GetOrder(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderNumber path string true "Order number"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -229,7 +230,7 @@ func (h *HttpHandler) GetOrderByNumber(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(ord))
 }
 
 // CreateOrder creates a new order.
@@ -241,7 +242,7 @@ func (h *HttpHandler) GetOrderByNumber(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateOrderRequest true "Order"
-// @Success      201 {object} Order
+// @Success      201 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -273,7 +274,12 @@ func (h *HttpHandler) CreateOrder(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, ord)
+	loaded, loadErr := h.service.GetOrderByID(c.Request.Context(), actor, biz, ord.ID)
+	if loadErr != nil {
+		response.Error(c, loadErr)
+		return
+	}
+	response.SuccessJSON(c, http.StatusCreated, toOrderResponse(loaded))
 }
 
 // UpdateOrder updates an order.
@@ -286,7 +292,7 @@ func (h *HttpHandler) CreateOrder(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body UpdateOrderRequest true "Order updates"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -328,7 +334,12 @@ func (h *HttpHandler) UpdateOrder(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	loaded, loadErr := h.service.GetOrderByID(c.Request.Context(), actor, biz, ord.ID)
+	if loadErr != nil {
+		response.Error(c, loadErr)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
 }
 
 // DeleteOrder deletes an order (restricted to safe statuses) and restocks inventory.
@@ -381,7 +392,7 @@ func (h *HttpHandler) DeleteOrder(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body updateOrderStatusRequest true "Status"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -415,7 +426,12 @@ func (h *HttpHandler) UpdateOrderStatus(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	loaded, loadErr := h.service.GetOrderByID(c.Request.Context(), actor, biz, ord.ID)
+	if loadErr != nil {
+		response.Error(c, loadErr)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
 }
 
 // UpdateOrderPaymentStatus updates order payment status.
@@ -428,7 +444,7 @@ func (h *HttpHandler) UpdateOrderStatus(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body updateOrderPaymentStatusRequest true "Payment status"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -462,7 +478,12 @@ func (h *HttpHandler) UpdateOrderPaymentStatus(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	loaded, loadErr := h.service.GetOrderByID(c.Request.Context(), actor, biz, ord.ID)
+	if loadErr != nil {
+		response.Error(c, loadErr)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
 }
 
 // AddOrderPaymentDetails sets payment method/reference without changing payment status.
@@ -475,7 +496,7 @@ func (h *HttpHandler) UpdateOrderPaymentStatus(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body addOrderPaymentDetailsRequest true "Payment details"
-// @Success      200 {object} Order
+// @Success      200 {object} OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -513,7 +534,12 @@ func (h *HttpHandler) AddOrderPaymentDetails(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, ord)
+	loaded, loadErr := h.service.GetOrderByID(c.Request.Context(), actor, biz, ord.ID)
+	if loadErr != nil {
+		response.Error(c, loadErr)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
 }
 
 // CreateOrderNote creates a note for an order.

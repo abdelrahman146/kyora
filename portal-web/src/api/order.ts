@@ -54,6 +54,15 @@ export interface OrderAddress {
   phoneNumber: string
 }
 
+export interface OrderShippingZone {
+  id: string
+  name: string
+  countries: Array<string>
+  currency: string
+  shippingCost: string
+  freeShippingThreshold: string
+}
+
 export interface OrderItem {
   id: string
   orderId: string
@@ -94,6 +103,7 @@ export interface Order {
   customer?: OrderCustomer
   shippingAddressId: string
   shippingAddress?: OrderAddress
+  shippingZone?: OrderShippingZone | null
   shippingZoneId: string | null
   channel: string
   subtotal: string

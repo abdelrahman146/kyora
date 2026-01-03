@@ -44,6 +44,23 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 	}
 }
 
+func (s *Service) orderListPreloads() []func(*gorm.DB) *gorm.DB {
+	return []func(*gorm.DB) *gorm.DB{
+		s.storage.order.WithPreload(customer.CustomerStruct),
+		s.storage.order.WithPreload("ShippingAddress"),
+		s.storage.order.WithPreload("ShippingZone"),
+		s.storage.order.WithPreload(OrderItemStruct),
+		s.storage.order.WithPreload("Items.Product"),
+		s.storage.order.WithPreload("Items.Variant"),
+	}
+}
+
+func (s *Service) orderDetailPreloads() []func(*gorm.DB) *gorm.DB {
+	preloads := s.orderListPreloads()
+	preloads = append(preloads, s.storage.order.WithPreload(OrderNoteStruct))
+	return preloads
+}
+
 func (s *Service) shippingFeeFromZone(subtotal, discount decimal.Decimal, zone *business.ShippingZone) decimal.Decimal {
 	base := subtotal.Sub(discount)
 	if base.LessThan(decimal.Zero) {
@@ -718,20 +735,20 @@ func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.U
 }
 
 func (s *Service) GetOrderByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*Order, error) {
-	return s.storage.order.FindByID(ctx, id,
+	findOpts := []func(*gorm.DB) *gorm.DB{
 		s.storage.order.ScopeBusinessID(biz.ID),
-		s.storage.order.WithPreload(OrderItemStruct),
-		s.storage.order.WithPreload(OrderNoteStruct),
-	)
+	}
+	findOpts = append(findOpts, s.orderDetailPreloads()...)
+	return s.storage.order.FindByID(ctx, id, findOpts...)
 }
 
 func (s *Service) GetOrderByOrderNumber(ctx context.Context, actor *account.User, biz *business.Business, orderNumber string) (*Order, error) {
-	return s.storage.order.FindOne(ctx,
+	findOpts := []func(*gorm.DB) *gorm.DB{
 		s.storage.order.ScopeBusinessID(biz.ID),
 		s.storage.order.ScopeEquals(OrderSchema.OrderNumber, orderNumber),
-		s.storage.order.WithPreload(OrderItemStruct),
-		s.storage.order.WithPreload(OrderNoteStruct),
-	)
+	}
+	findOpts = append(findOpts, s.orderDetailPreloads()...)
+	return s.storage.order.FindOne(ctx, findOpts...)
 }
 
 type ListOrdersFilters struct {
@@ -820,6 +837,7 @@ func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *busi
 
 	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)
 	findOpts = append(findOpts, listExtra...)
+	findOpts = append(findOpts, s.orderListPreloads()...)
 	findOpts = append(findOpts,
 		s.storage.order.WithPagination(req.Offset(), req.Limit()),
 		s.storage.order.WithOrderBy(req.ParsedOrderBy(OrderSchema)),

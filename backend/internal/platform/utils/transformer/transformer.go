@@ -30,6 +30,13 @@ func ToNullString(s string) sql.NullString {
 	}
 }
 
+func NullStringPtr(ns sql.NullString) *string {
+	if !ns.Valid {
+		return nil
+	}
+	return &ns.String
+}
+
 func FromNullString(ns sql.NullString) string {
 	if !ns.Valid {
 		return ""
@@ -93,6 +100,14 @@ func ToNullTime(t time.Time) sql.NullTime {
 		Time:  t,
 		Valid: true,
 	}
+}
+
+func NullTimePtr(nt sql.NullTime) *time.Time {
+	if !nt.Valid {
+		return nil
+	}
+	t := nt.Time
+	return &t
 }
 
 func FromNullTime(nt sql.NullTime) sql.NullTime {

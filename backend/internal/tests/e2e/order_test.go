@@ -86,6 +86,9 @@ func (s *OrderSuite) TestOrderLifecycle() {
 	s.Equal(cust.ID, created["customerId"])
 	s.Equal("instagram", created["channel"])
 	s.Equal(string(order.OrderStatusPending), created["status"])
+	s.Nil(created["paymentReference"])
+	s.Nil(created["placedAt"])
+	s.IsType("", created["orderedAt"])
 
 	// Verify stock reduction
 	updatedVariant, err := s.orderHelper.GetVariant(ctx, variant.ID)
@@ -101,6 +104,35 @@ func (s *OrderSuite) TestOrderLifecycle() {
 	var fetched map[string]interface{}
 	s.NoError(testutils.DecodeJSON(getResp, &fetched))
 	s.Equal(orderID, fetched["id"])
+	customerObj, ok := fetched["customer"].(map[string]interface{})
+	s.True(ok)
+	s.Equal(cust.ID, customerObj["id"])
+	shippingAddressObj, ok := fetched["shippingAddress"].(map[string]interface{})
+	s.True(ok)
+	s.Equal(addr.ID, shippingAddressObj["id"])
+	s.Nil(fetched["shippingZone"])
+	itemsObj, ok := fetched["items"].([]interface{})
+	s.True(ok)
+	s.Len(itemsObj, 1)
+	firstItem, ok := itemsObj[0].(map[string]interface{})
+	s.True(ok)
+	s.Equal(2, int(firstItem["quantity"].(float64)))
+	s.Nil(fetched["paidAt"])
+	s.Nil(fetched["fulfilledAt"])
+
+	listResp, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders", nil, token)
+	s.NoError(err)
+	defer listResp.Body.Close()
+	s.Equal(http.StatusOK, listResp.StatusCode)
+	var listPayload map[string]interface{}
+	s.NoError(testutils.DecodeJSON(listResp, &listPayload))
+	listItems, ok := listPayload["items"].([]interface{})
+	s.True(ok)
+	s.GreaterOrEqual(len(listItems), 1)
+	listFirst, ok := listItems[0].(map[string]interface{})
+	s.True(ok)
+	s.NotNil(listFirst["customer"])
+	s.NotNil(listFirst["items"])
 
 	// Update order
 	updatePayload := map[string]interface{}{
