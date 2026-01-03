@@ -12,7 +12,7 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { DollarSign, MapPin, Phone, ShoppingBag, Calendar } from 'lucide-react'
+import { Calendar, DollarSign, MapPin, Phone, ShoppingBag } from 'lucide-react'
 
 import { Avatar } from '../atoms/Avatar'
 import type { Customer } from '@/api/customer'

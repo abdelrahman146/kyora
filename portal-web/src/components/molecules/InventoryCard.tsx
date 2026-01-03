@@ -14,7 +14,7 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { Layers, Calendar } from 'lucide-react'
+import { Calendar, Layers } from 'lucide-react'
 
 import { Avatar } from '../atoms/Avatar'
 import { Tooltip } from '../atoms/Tooltip'
