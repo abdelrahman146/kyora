@@ -471,6 +471,95 @@ func (s *OrderSuite) TestListOrders_Search_ByCustomerAndOrderNumber() {
 	s.Equal(float64(1), listResult2["totalCount"])
 }
 
+func (s *OrderSuite) TestListOrders_Filter_ByPlatform() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Platform Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product", decimal.NewFromFloat(100), decimal.NewFromFloat(200), 50)
+	s.NoError(err)
+
+	create := func(channel string) (string, error) {
+		payload := map[string]interface{}{
+			"customerId":        cust.ID,
+			"shippingAddressId": addr.ID,
+			"channel":           channel,
+			"items": []map[string]interface{}{
+				{
+					"variantId": variant.ID,
+					"quantity":  1,
+					"unitPrice": 200,
+					"unitCost":  100,
+				},
+			},
+		}
+
+		resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+		if err != nil {
+			return "", err
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode != http.StatusCreated {
+			return "", fmt.Errorf("expected 201, got %d", resp.StatusCode)
+		}
+		var created map[string]interface{}
+		if err := testutils.DecodeJSON(resp, &created); err != nil {
+			return "", err
+		}
+		id, _ := created["id"].(string)
+		return id, nil
+	}
+
+	instagramID, err := create("instagram")
+	s.NoError(err)
+	time.Sleep(1100 * time.Millisecond)
+	whatsappID, err := create("whatsapp")
+	s.NoError(err)
+
+	// Filter by a single platform
+	listResp, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders?socialPlatforms=instagram", nil, token)
+	s.NoError(err)
+	defer listResp.Body.Close()
+	s.Equal(http.StatusOK, listResp.StatusCode)
+
+	var listResult map[string]interface{}
+	s.NoError(testutils.DecodeJSON(listResp, &listResult))
+	s.Equal(float64(1), listResult["totalCount"])
+	items := listResult["items"].([]interface{})
+	s.Len(items, 1)
+	s.Equal(instagramID, items[0].(map[string]interface{})["id"])
+
+	// Filter by multiple platforms (repeatable query param)
+	listResp2, err := s.orderHelper.Client.AuthenticatedRequest("GET", "/v1/businesses/test-biz/orders?socialPlatforms=instagram&socialPlatforms=whatsapp", nil, token)
+	s.NoError(err)
+	defer listResp2.Body.Close()
+	s.Equal(http.StatusOK, listResp2.StatusCode)
+
+	var listResult2 map[string]interface{}
+	s.NoError(testutils.DecodeJSON(listResp2, &listResult2))
+	s.Equal(float64(2), listResult2["totalCount"])
+	items2 := listResult2["items"].([]interface{})
+	s.Len(items2, 2)
+
+	got := map[string]bool{}
+	for _, it := range items2 {
+		id, _ := it.(map[string]interface{})["id"].(string)
+		got[id] = true
+	}
+	s.True(got[instagramID])
+	s.True(got[whatsappID])
+}
+
 func (s *OrderSuite) TestListOrders_Search_TooLong() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)

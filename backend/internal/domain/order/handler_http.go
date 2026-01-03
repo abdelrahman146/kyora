@@ -31,16 +31,17 @@ func (h *HttpHandler) getBusinessForRequest(c *gin.Context, actor *account.User)
 }
 
 type listOrdersQuery struct {
-	Page          int       `form:"page" binding:"omitempty,min=1"`
-	PageSize      int       `form:"pageSize" binding:"omitempty,min=1,max=100"`
-	OrderBy       []string  `form:"orderBy" binding:"omitempty"`
-	SearchTerm    string    `form:"search" binding:"omitempty"`
-	Status        []string  `form:"status" binding:"omitempty"`
-	PaymentStatus []string  `form:"paymentStatus" binding:"omitempty"`
-	CustomerID    string    `form:"customerId" binding:"omitempty"`
-	OrderNumber   string    `form:"orderNumber" binding:"omitempty"`
-	From          time.Time `form:"from" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
-	To            time.Time `form:"to" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
+	Page            int       `form:"page" binding:"omitempty,min=1"`
+	PageSize        int       `form:"pageSize" binding:"omitempty,min=1,max=100"`
+	OrderBy         []string  `form:"orderBy" binding:"omitempty"`
+	SearchTerm      string    `form:"search" binding:"omitempty"`
+	Status          []string  `form:"status" binding:"omitempty"`
+	PaymentStatus   []string  `form:"paymentStatus" binding:"omitempty"`
+	SocialPlatforms []string  `form:"socialPlatforms" binding:"omitempty"`
+	CustomerID      string    `form:"customerId" binding:"omitempty"`
+	OrderNumber     string    `form:"orderNumber" binding:"omitempty"`
+	From            time.Time `form:"from" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
+	To              time.Time `form:"to" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
 }
 
 type updateOrderStatusRequest struct {
@@ -77,6 +78,7 @@ type updateOrderNoteRequest struct {
 // @Param        search query string false "Search term (matches orderNumber, channel, or customer name/email)"
 // @Param        status query []string false "Filter by status (repeatable)"
 // @Param        paymentStatus query []string false "Filter by payment status (repeatable)"
+// @Param        socialPlatforms query []string false "Filter by platform/channel (instagram, tiktok, facebook, x, snapchat, whatsapp)"
 // @Param        customerId query string false "Filter by customerId"
 // @Param        orderNumber query string false "Filter by exact orderNumber"
 // @Param        from query string false "Filter by orderedAt >= from (RFC3339)"
@@ -121,6 +123,7 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, query.SearchTerm)
 
 	filters := &ListOrdersFilters{
+		Channels:    query.SocialPlatforms,
 		CustomerID:  query.CustomerID,
 		OrderNumber: query.OrderNumber,
 		From:        query.From,

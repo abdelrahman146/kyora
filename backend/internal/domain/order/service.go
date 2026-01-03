@@ -737,6 +737,7 @@ func (s *Service) GetOrderByOrderNumber(ctx context.Context, actor *account.User
 type ListOrdersFilters struct {
 	Statuses        []OrderStatus
 	PaymentStatuses []OrderPaymentStatus
+	Channels        []string
 	CustomerID      string
 	OrderNumber     string
 	From            time.Time
@@ -763,6 +764,24 @@ func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *busi
 				vals = append(vals, st)
 			}
 			baseScopes = append(baseScopes, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
+		}
+		if len(filters.Channels) > 0 {
+			normalized := make([]string, 0, len(filters.Channels))
+			seen := map[string]struct{}{}
+			for _, ch := range filters.Channels {
+				c := strings.ToLower(strings.TrimSpace(ch))
+				if c == "" {
+					continue
+				}
+				if _, ok := seen[c]; ok {
+					continue
+				}
+				seen[c] = struct{}{}
+				normalized = append(normalized, c)
+			}
+			if len(normalized) > 0 {
+				baseScopes = append(baseScopes, s.storage.order.ScopeWhere("LOWER(orders.channel) IN ?", normalized))
+			}
 		}
 		if filters.CustomerID != "" {
 			baseScopes = append(baseScopes, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))

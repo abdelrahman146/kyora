@@ -7,6 +7,7 @@ import {
 
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
+import type { SocialPlatform } from '@/api/customer'
 import { STALE_TIME } from '@/lib/queryKeys'
 
 /**
@@ -138,6 +139,7 @@ export type ListOrdersResponse = ListResponse<Order>
 export interface ListOrdersFilters {
   status?: Array<OrderStatus>
   paymentStatus?: Array<OrderPaymentStatus>
+  socialPlatforms?: Array<SocialPlatform>
   customerId?: string
   orderNumber?: string
   from?: string
@@ -210,6 +212,7 @@ export const orderApi = {
       orderBy?: Array<string>
       status?: Array<OrderStatus>
       paymentStatus?: Array<OrderPaymentStatus>
+      socialPlatforms?: Array<SocialPlatform>
       customerId?: string
       orderNumber?: string
       from?: string
@@ -230,6 +233,11 @@ export const orderApi = {
     if (params?.paymentStatus && params.paymentStatus.length > 0) {
       params.paymentStatus.forEach((ps) =>
         searchParams.append('paymentStatus', ps),
+      )
+    }
+    if (params?.socialPlatforms && params.socialPlatforms.length > 0) {
+      params.socialPlatforms.forEach((p) =>
+        searchParams.append('socialPlatforms', p),
       )
     }
     if (params?.customerId) searchParams.set('customerId', params.customerId)
@@ -382,6 +390,7 @@ export const orderQueries = {
       orderBy?: Array<string>
       status?: Array<OrderStatus>
       paymentStatus?: Array<OrderPaymentStatus>
+      socialPlatforms?: Array<SocialPlatform>
       customerId?: string
       orderNumber?: string
       from?: string
@@ -420,6 +429,7 @@ export function useOrdersQuery(
     orderBy?: Array<string>
     status?: Array<OrderStatus>
     paymentStatus?: Array<OrderPaymentStatus>
+    socialPlatforms?: Array<SocialPlatform>
     customerId?: string
     orderNumber?: string
     from?: string

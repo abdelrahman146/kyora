@@ -23,7 +23,7 @@
   "filter_by_customer": "تصفية حسب العميل",
   "filter_by_date_range": "تصفية حسب النطاق الزمني",
   "filter_by_platform": "تصفية حسب المنصة",
-  "filter_by_platform_desc": "تصفية الطلبات حسب المنصة التي جاءت منها (واجهة فقط - دعم الخادم قريباً)",
+  "filter_by_platform_desc": "تصفية الطلبات حسب المنصة التي جاءت منها",
   "search_customer_placeholder": "البحث باسم العميل أو الهاتف أو البريد الإلكتروني...",
   "select_date_range": "اختر النطاق الزمني",
   "platform_instagram": "إنستغرام",

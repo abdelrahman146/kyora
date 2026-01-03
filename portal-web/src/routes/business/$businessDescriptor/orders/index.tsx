@@ -61,6 +61,7 @@ export const Route = createFileRoute('/business/$businessDescriptor/orders/')({
         orderBy: orderByArray,
         status: search.status as Array<Order['status']>,
         paymentStatus: search.paymentStatus as Array<Order['paymentStatus']>,
+        socialPlatforms: search.socialPlatforms as Array<SocialPlatform>,
         customerId: search.customerId,
         from: search.from,
         to: search.to,
@@ -88,6 +89,7 @@ function OrdersListPage() {
     orderBy: orderByArray,
     status: search.status as Array<Order['status']>,
     paymentStatus: search.paymentStatus as Array<Order['paymentStatus']>,
+    socialPlatforms: search.socialPlatforms as Array<SocialPlatform>,
     customerId: search.customerId,
     from: search.from,
     to: search.to,
@@ -495,7 +497,7 @@ function OrdersListPage() {
           )}
         </form.AppField>
 
-        {/* Platform Filter (UI Only - Backend not supported yet) */}
+        {/* Platform Filter */}
         <form.AppField name="socialPlatforms">
           {(field) => (
             <field.CheckboxGroupField
