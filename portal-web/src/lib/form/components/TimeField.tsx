@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { TimePickerProps } from '@/components/atoms/TimePicker'
 import { useFieldContext } from '@/lib/form/contexts'
 import { TimePicker } from '@/components/atoms/TimePicker'
@@ -6,11 +8,6 @@ export interface TimeFieldProps extends Omit<
   TimePickerProps,
   'value' | 'onChange' | 'error'
 > {
-  /**
-   * If true, shows field label from the label prop
-   * If false, no label is rendered (useful when label is in parent)
-   * @default true
-   */
   showLabel?: boolean
 }
 
@@ -21,7 +18,7 @@ export interface TimeFieldProps extends Omit<
  * Automatically handles value, onChange, onBlur, and error display.
  *
  * @example
- * <form.AppField name="appointmentTime" validators={{ onBlur: z.date() }}>
+ * <form.AppField name="appointmentTime" validators={{ onBlur: z.string() }}>
  *   {(field) => <field.TimeField label="Appointment Time" minuteStep={15} />}
  * </form.AppField>
  */
@@ -30,20 +27,40 @@ export function TimeField({
   label,
   ...props
 }: TimeFieldProps) {
-  const field = useFieldContext<Date>()
+  const field = useFieldContext<string>()
+  const { t } = useTranslation('errors')
+
+  const error = useMemo(() => {
+    const errors = field.state.meta.errors
+    if (errors.length === 0) return undefined
+
+    const firstError = errors[0]
+    if (typeof firstError === 'string') {
+      return t(firstError)
+    }
+
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
+      const errorObj = firstError as { message: string; code?: number }
+      return t(errorObj.message)
+    }
+
+    return undefined
+  }, [field.state.meta.errors, t])
+
+  const showError = field.state.meta.isTouched && error
 
   return (
     <TimePicker
       {...props}
       label={showLabel ? label : undefined}
       value={field.state.value}
-      onChange={(date) => field.handleChange(date ?? new Date())}
+      onChange={(time) => field.handleChange(time ?? '')}
       onBlur={field.handleBlur}
-      error={
-        field.state.meta.isTouched
-          ? field.state.meta.errors.join(', ')
-          : undefined
-      }
+      error={showError ? error : undefined}
     />
   )
 }

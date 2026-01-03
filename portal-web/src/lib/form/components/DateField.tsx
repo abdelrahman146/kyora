@@ -1,3 +1,5 @@
+import { useMemo } from 'react'
+import { useTranslation } from 'react-i18next'
 import type { DatePickerProps } from '@/components/atoms/DatePicker'
 import { useFieldContext } from '@/lib/form/contexts'
 import { DatePicker } from '@/components/atoms/DatePicker'
@@ -6,11 +8,6 @@ export interface DateFieldProps extends Omit<
   DatePickerProps,
   'value' | 'onChange' | 'error'
 > {
-  /**
-   * If true, shows field label from the label prop
-   * If false, no label is rendered (useful when label is in parent)
-   * @default true
-   */
   showLabel?: boolean
 }
 
@@ -22,7 +19,7 @@ export interface DateFieldProps extends Omit<
  *
  * @example
  * <form.AppField name="birthdate" validators={{ onBlur: z.date() }}>
- *   {(field) => <field.DateField label="Birth Date" minAge={18} />}
+ *   {(field) => <field.DateField label="Birth Date" />}
  * </form.AppField>
  */
 export function DateField({
@@ -31,6 +28,30 @@ export function DateField({
   ...props
 }: DateFieldProps) {
   const field = useFieldContext<Date>()
+  const { t } = useTranslation('errors')
+
+  const error = useMemo(() => {
+    const errors = field.state.meta.errors
+    if (errors.length === 0) return undefined
+
+    const firstError = errors[0]
+    if (typeof firstError === 'string') {
+      return t(firstError)
+    }
+
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
+      const errorObj = firstError as { message: string; code?: number }
+      return t(errorObj.message)
+    }
+
+    return undefined
+  }, [field.state.meta.errors, t])
+
+  const showError = field.state.meta.isTouched && error
 
   return (
     <DatePicker
@@ -39,11 +60,7 @@ export function DateField({
       value={field.state.value}
       onChange={(date) => field.handleChange(date ?? new Date())}
       onBlur={field.handleBlur}
-      error={
-        field.state.meta.isTouched
-          ? field.state.meta.errors.join(', ')
-          : undefined
-      }
+      error={showError ? error : undefined}
     />
   )
 }

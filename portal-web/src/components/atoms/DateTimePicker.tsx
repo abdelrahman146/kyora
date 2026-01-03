@@ -1,25 +1,24 @@
 /**
- * DateRangePicker - Production-Grade Date Range Selection Component
+ * DateTimePicker - Production-Grade Date and Time Selection Component
  *
- * Mobile-first date range picker with bottom sheet on mobile, dropdown on desktop.
- * Fully aligned with Kyora Design System (KDS) - matches DatePicker patterns.
+ * Combines DatePicker and TimePicker into unified component.
+ * Mobile-first with bottom sheet on mobile, dropdown on desktop.
+ * Fully aligned with Kyora Design System (KDS).
  *
  * Features:
- * - Mobile-first: Bottom sheet with single month (<768px), dropdown with two months (≥768px)
- * - RTL-native: Proper Arabic calendar layout
- * - daisyUI styled: Consistent with form system
- * - Range selection: Intuitive from/to date picking
- * - Keyboard accessible: Arrow keys, Enter, Escape
- * - Touch-optimized: 50px minimum touch targets
- * - Quick actions: Clear and Apply buttons
- * - Validation: Min/max dates, disabled dates
+ * - Combined date + time selection
+ * - Tab interface for switching between date/time
+ * - Mobile-first: Bottom sheet (<768px), dropdown (≥768px)
+ * - RTL-native support
+ * - daisyUI styled
+ * - Keyboard accessible
+ * - Returns ISO datetime string
  *
  * @example
- * <DateRangePicker
- *   label="Order Date Range"
- *   value={dateRange}
- *   onChange={setDateRange}
- *   minDate={new Date(2020, 0, 1)}
+ * <DateTimePicker
+ *   label="Event Date & Time"
+ *   value="2024-01-15T14:30"
+ *   onChange={setDateTime}
  * />
  */
 
@@ -33,39 +32,37 @@ import {
 } from 'react'
 import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
-import { format } from 'date-fns'
+import { format, isValid } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Calendar, ChevronLeft, ChevronRight, Clock, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { InputHTMLAttributes } from 'react'
-import type { DateRange } from 'react-day-picker'
 import { cn } from '@/lib/utils'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
-export interface DateRangePickerProps extends Omit<
+export interface DateTimePickerProps extends Omit<
   InputHTMLAttributes<HTMLInputElement>,
   'value' | 'onChange' | 'size'
 > {
   label?: string
-  value?: DateRange
-  onChange?: (range: DateRange | undefined) => void
+  value?: string
+  onChange?: (datetime: string | undefined) => void
   onBlur?: () => void
   error?: string
   helperText?: string
   minDate?: Date
   maxDate?: Date
   disabledDates?: Array<Date>
+  disableWeekends?: boolean
+  timeFormat?: 12 | 24
+  minuteStep?: number
   clearable?: boolean
   fullWidth?: boolean
   size?: 'sm' | 'md' | 'lg'
-  numberOfMonths?: number
 }
 
-export const DateRangePicker = forwardRef<
-  HTMLInputElement,
-  DateRangePickerProps
->(
+export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
   (
     {
       label,
@@ -77,10 +74,12 @@ export const DateRangePicker = forwardRef<
       minDate,
       maxDate,
       disabledDates = [],
+      disableWeekends = false,
+      timeFormat = 24,
+      minuteStep = 1,
       clearable = true,
       fullWidth = true,
       size = 'md',
-      numberOfMonths,
       className,
       id,
       disabled,
@@ -97,13 +96,25 @@ export const DateRangePicker = forwardRef<
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
+    const [activeTab, setActiveTab] = useState<'date' | 'time'>('date')
+    const [selectedDate, setSelectedDate] = useState<Date | undefined>()
+    const [selectedHour, setSelectedHour] = useState<number>(12)
+    const [selectedMinute, setSelectedMinute] = useState<number>(0)
+    const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM')
     const containerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const isMobile = useMediaQuery('(max-width: 768px)')
 
     const locale = isRTL ? ar : enUS
-    const monthCount = numberOfMonths ?? (isMobile ? 1 : 2)
+    const hours =
+      timeFormat === 12
+        ? Array.from({ length: 12 }, (_, i) => i + 1)
+        : Array.from({ length: 24 }, (_, i) => i)
+    const minutes = Array.from(
+      { length: 60 / minuteStep },
+      (_, i) => i * minuteStep,
+    )
 
     const sizeClasses = {
       sm: 'h-[44px] text-sm',
@@ -111,32 +122,93 @@ export const DateRangePicker = forwardRef<
       lg: 'h-[56px] text-lg',
     }
 
-    const formatDateRange = (range?: DateRange): string => {
-      if (!range?.from) return ''
-      if (!range.to) {
-        return format(range.from, 'PP', { locale })
+    useEffect(() => {
+      if (value) {
+        const date = new Date(value)
+        if (isValid(date)) {
+          setSelectedDate(date)
+          const hour = date.getHours()
+          const minute = date.getMinutes()
+
+          if (timeFormat === 12) {
+            if (hour === 0) {
+              setSelectedHour(12)
+              setSelectedPeriod('AM')
+            } else if (hour === 12) {
+              setSelectedHour(12)
+              setSelectedPeriod('PM')
+            } else if (hour > 12) {
+              setSelectedHour(hour - 12)
+              setSelectedPeriod('PM')
+            } else {
+              setSelectedHour(hour)
+              setSelectedPeriod('AM')
+            }
+          } else {
+            setSelectedHour(hour)
+          }
+          setSelectedMinute(minute)
+        }
       }
-      const fromStr = format(range.from, 'PP', { locale })
-      const toStr = format(range.to, 'PP', { locale })
-      return `${fromStr} - ${toStr}`
+    }, [value, timeFormat])
+
+    const formatDateTime = (): string => {
+      if (!selectedDate) return ''
+
+      const hour24 =
+        timeFormat === 12
+          ? selectedPeriod === 'AM' && selectedHour === 12
+            ? 0
+            : selectedPeriod === 'PM' && selectedHour !== 12
+              ? selectedHour + 12
+              : selectedHour
+          : selectedHour
+
+      const dateStr = format(selectedDate, 'PP', { locale })
+      const timeStr =
+        timeFormat === 12
+          ? `${selectedHour.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')} ${selectedPeriod}`
+          : `${hour24.toString().padStart(2, '0')}:${selectedMinute.toString().padStart(2, '0')}`
+
+      return `${dateStr} ${timeStr}`
     }
 
-    const handleDateSelect = (range: DateRange | undefined) => {
-      onChange?.(range)
-      if (range?.from && range.to) {
-        handleClose()
+    const handleDateSelect = (date: Date | undefined) => {
+      setSelectedDate(date)
+      if (date) {
+        setActiveTab('time')
       }
+    }
+
+    const handleApply = () => {
+      if (!selectedDate) return
+
+      const hour24 =
+        timeFormat === 12
+          ? selectedPeriod === 'AM' && selectedHour === 12
+            ? 0
+            : selectedPeriod === 'PM' && selectedHour !== 12
+              ? selectedHour + 12
+              : selectedHour
+          : selectedHour
+
+      const datetime = new Date(selectedDate)
+      datetime.setHours(hour24, selectedMinute, 0, 0)
+      onChange?.(datetime.toISOString())
+      handleClose()
     }
 
     const handleClear = (e: React.MouseEvent) => {
       e.stopPropagation()
       onChange?.(undefined)
+      setSelectedDate(undefined)
       inputRef.current?.focus()
     }
 
     const handleOpen = useCallback(() => {
       setIsOpen(true)
       setIsAnimating(true)
+      setActiveTab('date')
     }, [])
 
     const handleClose = useCallback(() => {
@@ -206,28 +278,25 @@ export const DateRangePicker = forwardRef<
       const isInDisabledList = disabledDates.some(
         (d: Date) => format(d, 'yyyy-MM-dd') === format(date, 'yyyy-MM-dd'),
       )
+      const isWeekend =
+        disableWeekends && (date.getDay() === 0 || date.getDay() === 6)
 
-      return !!(isBeforeMin || isAfterMax || isInDisabledList)
+      return !!(isBeforeMin || isAfterMax || isInDisabledList || isWeekend)
     }
 
-    const calendarContent = (
+    const dateContent = (
       <DayPicker
-        mode="range"
-        selected={value}
+        mode="single"
+        selected={selectedDate}
         onSelect={handleDateSelect}
         disabled={disabledMatcher}
-        numberOfMonths={monthCount}
         locale={locale}
         dir={isRTL ? 'rtl' : 'ltr'}
         className="kyora-datepicker"
         classNames={{
-          months: cn(
-            'flex gap-4',
-            isMobile ? 'flex-col' : 'flex-col sm:flex-row',
-          ),
-          month: 'space-y-4 w-full',
-          month_caption:
-            'flex justify-center relative items-center h-10 w-full mb-2',
+          months: 'flex flex-col gap-4',
+          month: 'space-y-4',
+          month_caption: 'flex justify-center pt-1 relative items-center h-10',
           caption_label: 'text-base font-semibold text-base-content',
           nav: 'flex items-center gap-1',
           button_previous: cn(
@@ -257,12 +326,6 @@ export const DateRangePicker = forwardRef<
             'hover:bg-base-200 transition-colors',
           ),
           selected: 'bg-primary text-primary-content hover:bg-primary/90',
-          range_start:
-            'bg-primary text-primary-content hover:bg-primary/90 rounded-s-lg',
-          range_end:
-            'bg-primary text-primary-content hover:bg-primary/90 rounded-e-lg',
-          range_middle:
-            'bg-primary/20 text-base-content hover:bg-primary/30 rounded-none',
           today: 'border-2 border-primary',
           outside: 'text-base-content/30 opacity-50',
           disabled:
@@ -278,6 +341,106 @@ export const DateRangePicker = forwardRef<
             ),
         }}
       />
+    )
+
+    const timeContent = (
+      <div className="flex gap-2 justify-center items-center p-4">
+        <div className="flex flex-col items-center gap-2 min-w-[80px]">
+          <label className="text-sm font-medium text-base-content/70">
+            {t('common:hour')}
+          </label>
+          <select
+            value={selectedHour}
+            onChange={(e) => setSelectedHour(Number(e.target.value))}
+            className="select select-bordered w-full"
+          >
+            {hours.map((hour) => (
+              <option key={hour} value={hour}>
+                {hour.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        <span className="text-2xl font-bold text-base-content mt-8">:</span>
+
+        <div className="flex flex-col items-center gap-2 min-w-[80px]">
+          <label className="text-sm font-medium text-base-content/70">
+            {t('common:minute')}
+          </label>
+          <select
+            value={selectedMinute}
+            onChange={(e) => setSelectedMinute(Number(e.target.value))}
+            className="select select-bordered w-full"
+          >
+            {minutes.map((minute) => (
+              <option key={minute} value={minute}>
+                {minute.toString().padStart(2, '0')}
+              </option>
+            ))}
+          </select>
+        </div>
+
+        {timeFormat === 12 && (
+          <div className="flex flex-col items-center gap-2 min-w-[80px]">
+            <label className="text-sm font-medium text-base-content/70">
+              {t('common:period')}
+            </label>
+            <div className="join">
+              <button
+                type="button"
+                onClick={() => setSelectedPeriod('AM')}
+                className={cn(
+                  'btn join-item',
+                  selectedPeriod === 'AM' ? 'btn-primary' : 'btn-ghost',
+                )}
+              >
+                AM
+              </button>
+              <button
+                type="button"
+                onClick={() => setSelectedPeriod('PM')}
+                className={cn(
+                  'btn join-item',
+                  selectedPeriod === 'PM' ? 'btn-primary' : 'btn-ghost',
+                )}
+              >
+                PM
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+    )
+
+    const pickerContent = (
+      <div>
+        <div role="tablist" className="tabs tabs-boxed mb-4">
+          <button
+            type="button"
+            role="tab"
+            onClick={() => setActiveTab('date')}
+            className={cn('tab gap-2', activeTab === 'date' && 'tab-active')}
+            aria-selected={activeTab === 'date'}
+          >
+            <Calendar size={16} />
+            {t('common:date')}
+          </button>
+          <button
+            type="button"
+            role="tab"
+            onClick={() => setActiveTab('time')}
+            className={cn('tab gap-2', activeTab === 'time' && 'tab-active')}
+            aria-selected={activeTab === 'time'}
+            disabled={!selectedDate}
+          >
+            <Clock size={16} />
+            {t('common:time')}
+          </button>
+        </div>
+
+        {activeTab === 'date' ? dateContent : timeContent}
+      </div>
     )
 
     return (
@@ -310,13 +473,13 @@ export const DateRangePicker = forwardRef<
             }}
             type="text"
             id={inputId}
-            value={formatDateRange(value)}
+            value={formatDateTime()}
             readOnly
             onClick={() => !disabled && handleOpen()}
             onKeyDown={handleKeyDown}
             disabled={disabled}
             required={required}
-            placeholder={placeholder || t('common:select_date_range')}
+            placeholder={placeholder || t('common:select_date_time')}
             aria-invalid={!!error}
             aria-describedby={
               error
@@ -332,7 +495,7 @@ export const DateRangePicker = forwardRef<
               'cursor-pointer',
               sizeClasses[size],
               'ps-10',
-              clearable && value?.from && 'pe-10',
+              clearable && value && 'pe-10',
               error &&
                 'input-error border-error focus:border-error focus:ring-error/20',
               disabled && 'opacity-50 cursor-not-allowed',
@@ -342,7 +505,7 @@ export const DateRangePicker = forwardRef<
             {...props}
           />
 
-          {clearable && value?.from && !disabled && (
+          {clearable && value && !disabled && (
             <span
               role="button"
               tabIndex={0}
@@ -396,7 +559,7 @@ export const DateRangePicker = forwardRef<
                 )}
                 role="dialog"
                 aria-modal="true"
-                aria-label={label || t('common:select_date_range')}
+                aria-label={label || t('common:select_date_time')}
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     handleClose()
@@ -420,7 +583,7 @@ export const DateRangePicker = forwardRef<
                   <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-3">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">
-                        {label || t('common:select_date_range')}
+                        {label || t('common:select_date_time')}
                       </h3>
                       <button
                         type="button"
@@ -433,26 +596,25 @@ export const DateRangePicker = forwardRef<
                     </div>
                   </div>
 
-                  <div className="p-4">{calendarContent}</div>
+                  <div className="p-4">{pickerContent}</div>
 
                   <div className="sticky bottom-0 z-10 bg-base-100 border-t border-base-300 px-4 py-3">
-                    <div className="flex gap-3">
-                      {clearable && (
-                        <button
-                          type="button"
-                          onClick={() => {
-                            onChange?.(undefined)
-                            handleClose()
-                          }}
-                          className="btn btn-ghost flex-1"
-                        >
-                          {t('common:clear')}
-                        </button>
-                      )}
+                    <div className="flex gap-2">
                       <button
                         type="button"
-                        onClick={handleClose}
-                        disabled={!value?.from || !value.to}
+                        onClick={() => {
+                          onChange?.(undefined)
+                          setSelectedDate(undefined)
+                          handleClose()
+                        }}
+                        className="btn btn-ghost flex-1"
+                      >
+                        {t('common:clear')}
+                      </button>
+                      <button
+                        type="button"
+                        onClick={handleApply}
+                        disabled={!selectedDate}
                         className="btn btn-primary flex-1"
                       >
                         {t('common:apply')}
@@ -469,39 +631,32 @@ export const DateRangePicker = forwardRef<
               id={popupId}
               role="dialog"
               aria-modal="false"
-              aria-label={label || t('common:select_date_range')}
+              aria-label={label || t('common:select_date_time')}
               className={cn(
-                'fixed z-[100] max-h-[90vh] overflow-auto',
-                'bg-base-100 rounded-box shadow-xl border border-base-300 p-4',
+                'absolute top-full mt-2 z-50',
+                'bg-base-100 rounded-box shadow-lg border border-base-300 p-4',
+                isRTL ? 'end-0' : 'start-0',
+                'min-w-[360px]',
               )}
-              style={{
-                top: containerRef.current
-                  ? `${containerRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`
-                  : '50%',
-                [isRTL ? 'right' : 'left']: containerRef.current
-                  ? `${containerRef.current.getBoundingClientRect()[isRTL ? 'right' : 'left']}px`
-                  : '50%',
-              }}
             >
-              {calendarContent}
-              <div className="flex gap-3 mt-4 pt-4 border-t border-base-300">
-                {clearable && (
-                  <button
-                    type="button"
-                    className="btn btn-sm btn-ghost flex-1"
-                    onClick={() => {
-                      onChange?.(undefined)
-                      handleClose()
-                    }}
-                  >
-                    {t('common:clear')}
-                  </button>
-                )}
+              {pickerContent}
+              <div className="flex gap-2 mt-4 pt-4 border-t border-base-300">
+                <button
+                  type="button"
+                  className="btn btn-sm btn-ghost flex-1"
+                  onClick={() => {
+                    onChange?.(undefined)
+                    setSelectedDate(undefined)
+                    handleClose()
+                  }}
+                >
+                  {t('common:clear')}
+                </button>
                 <button
                   type="button"
                   className="btn btn-sm btn-primary flex-1"
-                  onClick={handleClose}
-                  disabled={!value?.from || !value.to}
+                  onClick={handleApply}
+                  disabled={!selectedDate}
                 >
                   {t('common:apply')}
                 </button>
@@ -513,4 +668,4 @@ export const DateRangePicker = forwardRef<
   },
 )
 
-DateRangePicker.displayName = 'DateRangePicker'
+DateTimePicker.displayName = 'DateTimePicker'
