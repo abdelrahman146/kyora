@@ -201,6 +201,13 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		if len(customOrders) > 0 {
 			listExtra = append(listExtra, s.storage.products.WithOrderBy(customOrders))
 		}
+
+		// If stock filtering is also needed, add regular JOIN after LATERAL
+		if useInnerJoin {
+			baseScopes = append(baseScopes,
+				s.storage.products.WithJoins("INNER JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL"),
+			)
+		}
 	} else if needsVariantJoin {
 		joinType := "LEFT"
 		if useInnerJoin {
@@ -209,6 +216,29 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		baseScopes = append([]func(db *gorm.DB) *gorm.DB{
 			s.storage.products.WithJoins(fmt.Sprintf("%s JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL", joinType)),
 		}, baseScopes...)
+	}
+
+	// Add GROUP BY if we have variant joins to prevent duplicates
+	if needsVariantJoin || useInnerJoin {
+		// Build GROUP BY clause including aggregated columns if needed
+		groupByColumns := []string{"products.id"}
+
+		// Add aggregated columns to GROUP BY when sorting by them
+		if needsAggregation {
+			if needsVariantsCountSort {
+				groupByColumns = append(groupByColumns, "product_agg.variants_count")
+			}
+			if needsCostPriceSort {
+				groupByColumns = append(groupByColumns, "product_agg.avg_cost_price")
+			}
+			if needsStockSort {
+				groupByColumns = append(groupByColumns, "product_agg.total_stock")
+			}
+		}
+
+		listExtra = append(listExtra, func(db *gorm.DB) *gorm.DB {
+			return db.Group(strings.Join(groupByColumns, ", "))
+		})
 	}
 
 	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)

@@ -102,7 +102,7 @@ export function SortButton({
   }
 
   const defaultButtonText = buttonText || t('common:sort')
-  const isActive = currentSortBy && currentSortBy !== '-createdAt'
+  const isActive = !!currentSortBy
 
   const footer = (
     <div className="flex gap-2">
