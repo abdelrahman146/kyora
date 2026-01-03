@@ -4,10 +4,14 @@ import toast from 'react-hot-toast'
 import { useTranslation } from 'react-i18next'
 import { Edit, Eye, ShoppingCart, Trash2 } from 'lucide-react'
 import { z } from 'zod'
+import { useEffect } from 'react'
+import { format } from 'date-fns'
 
 import type { Order } from '@/api/order'
 import type { SortOption } from '@/components/organisms/SortButton'
 import type { TableColumn } from '@/components/organisms/Table'
+import type { DateRange } from 'react-day-picker'
+import type { SocialPlatform } from '@/api/customer'
 
 import { OrderCard } from '@/components'
 import { ResourceListLayout } from '@/components/templates/ResourceListLayout'
@@ -15,6 +19,7 @@ import { useKyoraForm } from '@/lib/form'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
 import { orderApi, orderQueries, useOrdersQuery } from '@/api/order'
+import { DateRangePicker } from '@/components/atoms/DateRangePicker'
 
 const OrdersSearchSchema = z.object({
   search: z.string().optional(),
@@ -26,6 +31,11 @@ const OrdersSearchSchema = z.object({
   sortOrder: z.enum(['asc', 'desc']).optional(),
   status: z.array(z.string()).optional(),
   paymentStatus: z.array(z.string()).optional(),
+  socialPlatforms: z
+    .array(
+      z.enum(['instagram', 'tiktok', 'facebook', 'x', 'snapchat', 'whatsapp']),
+    )
+    .optional(),
   customerId: z.string().optional(),
   from: z.string().optional(),
   to: z.string().optional(),
@@ -37,7 +47,6 @@ export const Route = createFileRoute('/business/$businessDescriptor/orders/')({
   validateSearch: (search) => OrdersSearchSchema.parse(search),
   loaderDeps: ({ search }) => search,
   loader: async ({ context, deps: search, params }) => {
-    // Access queryClient from context
     const { queryClient } = context as any
 
     const orderByArray = search.sortBy
@@ -100,6 +109,15 @@ function OrdersListPage() {
     defaultValues: {
       status: search.status || [],
       paymentStatus: search.paymentStatus || [],
+      socialPlatforms: (search.socialPlatforms || []) as Array<SocialPlatform>,
+      customerId: search.customerId || '',
+      dateRange:
+        search.from && search.to
+          ? ({
+              from: new Date(search.from),
+              to: new Date(search.to),
+            } as DateRange)
+          : undefined,
     },
     onSubmit: async ({ value }) => {
       await navigate({
@@ -108,11 +126,49 @@ function OrdersListPage() {
           status: value.status.length > 0 ? value.status : undefined,
           paymentStatus:
             value.paymentStatus.length > 0 ? value.paymentStatus : undefined,
+          socialPlatforms:
+            value.socialPlatforms.length > 0
+              ? value.socialPlatforms
+              : undefined,
+          customerId: value.customerId || undefined,
+          from: value.dateRange?.from
+            ? format(value.dateRange.from, 'yyyy-MM-dd')
+            : undefined,
+          to: value.dateRange?.to
+            ? format(value.dateRange.to, 'yyyy-MM-dd')
+            : undefined,
           page: 1,
         }),
       })
     },
   })
+
+  // Sync form with URL search params
+  useEffect(() => {
+    form.setFieldValue('status', search.status || [])
+    form.setFieldValue('paymentStatus', search.paymentStatus || [])
+    form.setFieldValue(
+      'socialPlatforms',
+      (search.socialPlatforms || []) as Array<SocialPlatform>,
+    )
+    form.setFieldValue('customerId', search.customerId || '')
+    form.setFieldValue(
+      'dateRange',
+      search.from && search.to
+        ? ({
+            from: new Date(search.from),
+            to: new Date(search.to),
+          } as DateRange)
+        : undefined,
+    )
+  }, [
+    search.status,
+    search.paymentStatus,
+    search.socialPlatforms,
+    search.customerId,
+    search.from,
+    search.to,
+  ])
 
   const handleSearchChange = (value: string) => {
     navigate({
@@ -349,110 +405,131 @@ function OrdersListPage() {
         ...prev,
         status: undefined,
         paymentStatus: undefined,
+        socialPlatforms: undefined,
+        customerId: undefined,
+        from: undefined,
+        to: undefined,
         page: 1,
       }),
     })
   }
 
   const activeFilterCount =
-    (search.status?.length || 0) + (search.paymentStatus?.length || 0)
+    (search.status?.length || 0) +
+    (search.paymentStatus?.length || 0) +
+    (search.socialPlatforms?.length || 0) +
+    (search.customerId ? 1 : 0) +
+    (search.from && search.to ? 1 : 0)
 
   const filterContent = (
     <form.AppForm>
-      <form.FormRoot className="space-y-4">
-        <div>
-          <h3 className="font-medium mb-3">{t('orders:filter_by_status')}</h3>
-          <form.AppField name="status">
-            {(field) => (
-              <div className="space-y-2">
-                {[
-                  { value: 'pending', label: t('orders:status_pending') },
-                  { value: 'placed', label: t('orders:status_placed') },
-                  {
-                    value: 'ready_for_shipment',
-                    label: t('orders:status_ready_for_shipment'),
-                  },
-                  { value: 'shipped', label: t('orders:status_shipped') },
-                  { value: 'fulfilled', label: t('orders:status_fulfilled') },
-                  { value: 'cancelled', label: t('orders:status_cancelled') },
-                  { value: 'returned', label: t('orders:status_returned') },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={field.state.value.includes(option.value)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          field.handleChange([
-                            ...field.state.value,
-                            option.value,
-                          ])
-                        } else {
-                          field.handleChange(
-                            field.state.value.filter((v) => v !== option.value),
-                          )
-                        }
-                      }}
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </form.AppField>
-        </div>
+      <form.FormRoot className="space-y-6 p-4">
+        {/* Customer Filter with Autocomplete */}
+        <form.AppField name="customerId">
+          {(field) => (
+            <field.CustomerSelectField
+              label={t('orders:filter_by_customer')}
+              businessDescriptor={businessDescriptor}
+              placeholder={t('orders:search_customer_placeholder')}
+            />
+          )}
+        </form.AppField>
 
-        <div>
-          <h3 className="font-medium mb-3">
-            {t('orders:filter_by_payment_status')}
-          </h3>
-          <form.AppField name="paymentStatus">
-            {(field) => (
-              <div className="space-y-2">
-                {[
-                  {
-                    value: 'pending',
-                    label: t('orders:payment_status_pending'),
-                  },
-                  { value: 'paid', label: t('orders:payment_status_paid') },
-                  { value: 'failed', label: t('orders:payment_status_failed') },
-                  {
-                    value: 'refunded',
-                    label: t('orders:payment_status_refunded'),
-                  },
-                ].map((option) => (
-                  <label
-                    key={option.value}
-                    className="flex items-center gap-2 cursor-pointer"
-                  >
-                    <input
-                      type="checkbox"
-                      className="checkbox checkbox-sm"
-                      checked={field.state.value.includes(option.value)}
-                      onChange={(e) => {
-                        if (e.target.checked) {
-                          field.handleChange([
-                            ...field.state.value,
-                            option.value,
-                          ])
-                        } else {
-                          field.handleChange(
-                            field.state.value.filter((v) => v !== option.value),
-                          )
-                        }
-                      }}
-                    />
-                    <span className="text-sm">{option.label}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </form.AppField>
-        </div>
+        {/* Date Range Filter */}
+        <form.AppField name="dateRange">
+          {(field) => (
+            <div className="form-control">
+              <label className="label pb-2">
+                <span className="label-text font-medium">
+                  {t('orders:filter_by_date_range')}
+                </span>
+              </label>
+              <DateRangePicker
+                value={field.state.value}
+                onChange={(range) => field.handleChange(range)}
+                placeholder={t('orders:select_date_range')}
+              />
+            </div>
+          )}
+        </form.AppField>
+
+        {/* Order Status Filter */}
+        <form.AppField name="status">
+          {(field) => (
+            <field.CheckboxGroupField
+              label={t('orders:filter_by_status')}
+              options={[
+                { value: 'pending', label: t('orders:status_pending') },
+                { value: 'placed', label: t('orders:status_placed') },
+                {
+                  value: 'ready_for_shipment',
+                  label: t('orders:status_ready_for_shipment'),
+                },
+                { value: 'shipped', label: t('orders:status_shipped') },
+                { value: 'fulfilled', label: t('orders:status_fulfilled') },
+                { value: 'cancelled', label: t('orders:status_cancelled') },
+                { value: 'returned', label: t('orders:status_returned') },
+              ]}
+            />
+          )}
+        </form.AppField>
+
+        {/* Payment Status Filter */}
+        <form.AppField name="paymentStatus">
+          {(field) => (
+            <field.CheckboxGroupField
+              label={t('orders:filter_by_payment_status')}
+              options={[
+                {
+                  value: 'pending',
+                  label: t('orders:payment_status_pending'),
+                },
+                { value: 'paid', label: t('orders:payment_status_paid') },
+                { value: 'failed', label: t('orders:payment_status_failed') },
+                {
+                  value: 'refunded',
+                  label: t('orders:payment_status_refunded'),
+                },
+              ]}
+            />
+          )}
+        </form.AppField>
+
+        {/* Platform Filter (UI Only - Backend not supported yet) */}
+        <form.AppField name="socialPlatforms">
+          {(field) => (
+            <field.CheckboxGroupField
+              label={t('orders:filter_by_platform')}
+              description={t('orders:filter_by_platform_desc')}
+              options={[
+                {
+                  value: 'instagram' as const,
+                  label: t('orders:platform_instagram'),
+                },
+                {
+                  value: 'tiktok' as const,
+                  label: t('orders:platform_tiktok'),
+                },
+                {
+                  value: 'facebook' as const,
+                  label: t('orders:platform_facebook'),
+                },
+                {
+                  value: 'x' as const,
+                  label: t('orders:platform_x'),
+                },
+                {
+                  value: 'snapchat' as const,
+                  label: t('orders:platform_snapchat'),
+                },
+                {
+                  value: 'whatsapp' as const,
+                  label: t('orders:platform_whatsapp'),
+                },
+              ]}
+            />
+          )}
+        </form.AppField>
       </form.FormRoot>
     </form.AppForm>
   )

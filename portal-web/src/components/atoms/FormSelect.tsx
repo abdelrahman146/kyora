@@ -62,6 +62,10 @@ export interface FormSelectProps<T = string> {
   placeholder?: string
   clearable?: boolean
   maxHeight?: number
+  /** Controlled search value (for external control) */
+  searchValue?: string
+  /** Callback when search value changes (for external control) */
+  onSearchChange?: (value: string) => void
   id?: string
   disabled?: boolean
   required?: boolean
@@ -72,6 +76,8 @@ export interface FormSelectProps<T = string> {
   onOpen?: () => void
   /** Callback when dropdown closes */
   onClose?: () => void
+  /** Callback when clear button is clicked */
+  onClear?: () => void
 }
 
 export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
@@ -98,6 +104,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       mobileTitle,
       onOpen,
       onClose,
+      onClear,
+      searchValue: externalSearchValue,
+      onSearchChange: externalOnSearchChange,
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
@@ -123,11 +132,19 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     })()
 
     // Search management
-    const { searchQuery, setSearchQuery, filteredOptions, clearSearch } =
-      useSelectSearch({
-        options,
-        searchable,
-      })
+    const {
+      searchQuery: internalSearchQuery,
+      setSearchQuery: setInternalSearchQuery,
+      filteredOptions,
+      clearSearch,
+    } = useSelectSearch({
+      options,
+      searchable,
+    })
+
+    // Use external search if provided, otherwise use internal
+    const searchQuery = externalSearchValue ?? internalSearchQuery
+    const setSearchQuery = externalOnSearchChange ?? setInternalSearchQuery
 
     // Close handler with animation
     const handleClose = useCallback(() => {
@@ -237,13 +254,17 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     const handleClear = useCallback(
       (e: React.MouseEvent) => {
         e.stopPropagation()
-        onChange?.(
-          multiSelect
-            ? ([] as T | Array<T>)
-            : (null as unknown as T | Array<T>),
-        )
+        if (onClear) {
+          onClear()
+        } else {
+          onChange?.(
+            multiSelect
+              ? ([] as T | Array<T>)
+              : (null as unknown as T | Array<T>),
+          )
+        }
       },
-      [multiSelect, onChange],
+      [multiSelect, onChange, onClear],
     )
 
     // Remove chip handler
@@ -402,14 +423,21 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
 
             <div className="flex items-center gap-1 shrink-0">
               {clearable && selectedValues.length > 0 && !disabled && (
-                <button
-                  type="button"
+                <span
+                  role="button"
+                  tabIndex={0}
                   onClick={handleClear}
-                  className="p-1 hover:bg-base-200 rounded-md transition-colors"
+                  onKeyDown={(e) => {
+                    if (e.key === 'Enter' || e.key === ' ') {
+                      e.preventDefault()
+                      handleClear(e as unknown as React.MouseEvent)
+                    }
+                  }}
+                  className="p-1 hover:bg-base-200 rounded-md transition-colors cursor-pointer"
                   aria-label={t('common.clear_selection')}
                 >
                   <X className="w-4 h-4" />
-                </button>
+                </span>
               )}
               <ChevronDown
                 className={cn(

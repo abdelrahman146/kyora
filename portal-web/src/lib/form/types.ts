@@ -122,6 +122,16 @@ export interface CheckboxGroupFieldProps<
 }
 
 /**
+ * Customer select field specific props
+ */
+export interface CustomerSelectFieldProps extends BaseFieldProps {
+  /** Business descriptor for fetching customers */
+  businessDescriptor: string
+  /** Placeholder text for the select */
+  placeholder?: string
+}
+
+/**
  * Textarea specific props
  */
 export interface TextareaFieldProps extends BaseFieldProps {
