@@ -12,10 +12,12 @@
  */
 
 import { useTranslation } from 'react-i18next'
-import { DollarSign, Phone, ShoppingBag } from 'lucide-react'
+import { DollarSign, MapPin, Phone, ShoppingBag, Calendar } from 'lucide-react'
 
 import { Avatar } from '../atoms/Avatar'
 import type { Customer } from '@/api/customer'
+import { getMetadata } from '@/stores/metadataStore'
+import { formatDateShort } from '@/lib/formatDate'
 
 export interface CustomerCardProps {
   customer: Customer
@@ -58,6 +60,12 @@ export function CustomerCard({
     }).format(amount)
   }
 
+  const metadata = getMetadata()
+  const country = metadata.countries.find(
+    (c) =>
+      c.code === customer.countryCode || c.iso_code === customer.countryCode,
+  )
+
   return (
     <div
       className={`card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow ${
@@ -92,6 +100,13 @@ export function CustomerCard({
                 <span className="truncate">{formatPhone()}</span>
               </div>
             )}
+            {country && (
+              <div className="flex items-center gap-1 text-sm text-base-content/70">
+                <MapPin size={14} />
+                {country.flag && <span>{country.flag}</span>}
+                <span className="truncate">{country.name}</span>
+              </div>
+            )}
           </div>
         </div>
 
@@ -124,6 +139,12 @@ export function CustomerCard({
               </div>
             </div>
           </div>
+        </div>
+
+        {/* Date Added */}
+        <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300">
+          <Calendar size={14} />
+          <span>{formatDateShort(customer.joinedAt)}</span>
         </div>
       </div>
     </div>

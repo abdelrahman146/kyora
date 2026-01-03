@@ -317,12 +317,72 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		}
 	}
 
+	// Check if sorting by aggregated fields (ordersCount, totalSpent)
+	needsAggregatedSort := false
+	for _, ob := range req.OrderBy() {
+		if ob == "ordersCount" || ob == "-ordersCount" || ob == "totalSpent" || ob == "-totalSpent" {
+			needsAggregatedSort = true
+			break
+		}
+	}
+
+	// If sorting by aggregated fields, we need to join orders for sorting
+	if needsAggregatedSort {
+		// Add left join with orders aggregation
+		scopes = append([]func(*gorm.DB) *gorm.DB{
+			s.storage.customer.WithJoins(`
+				LEFT JOIN LATERAL (
+					SELECT 
+						COUNT(DISTINCT orders.id)::int as orders_count,
+						COALESCE(SUM(orders.total), 0)::numeric as total_spent
+					FROM orders
+					WHERE orders.customer_id = customers.id 
+						AND orders.deleted_at IS NULL
+						AND orders.status NOT IN ('cancelled', 'returned', 'failed')
+				) AS customer_agg ON true
+			`),
+		}, scopes...)
+
+		// Parse custom ordering for aggregated fields
+		customOrders := []string{}
+		for _, ob := range req.OrderBy() {
+			switch ob {
+			case "ordersCount":
+				customOrders = append(customOrders, "customer_agg.orders_count ASC")
+			case "-ordersCount":
+				customOrders = append(customOrders, "customer_agg.orders_count DESC")
+			case "totalSpent":
+				customOrders = append(customOrders, "customer_agg.total_spent ASC")
+			case "-totalSpent":
+				customOrders = append(customOrders, "customer_agg.total_spent DESC")
+			default:
+				// Parse normal schema fields and extract the column
+				field, desc, found := list.ParseOrderField(ob, CustomerSchema)
+				if found {
+					direction := "ASC"
+					if desc {
+						direction = "DESC"
+					}
+					customOrders = append(customOrders, field.Column()+" "+direction)
+				}
+			}
+		}
+
+		if len(customOrders) > 0 {
+			listOpts = append(listOpts, s.storage.customer.WithOrderBy(customOrders))
+		}
+	}
+
 	findOpts := append([]func(*gorm.DB) *gorm.DB{}, scopes...)
 	findOpts = append(findOpts, listOpts...)
 	findOpts = append(findOpts,
 		s.storage.customer.WithPagination(req.Offset(), req.Limit()),
-		s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)),
 	)
+
+	// Only add parsed order by if we're not doing custom aggregated sort
+	if !needsAggregatedSort {
+		findOpts = append(findOpts, s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)))
+	}
 
 	// Fetch customers using repository
 	customers, err := s.storage.customer.FindMany(ctx, findOpts...)

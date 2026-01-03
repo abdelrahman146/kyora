@@ -173,7 +173,6 @@
   "customers": {
     "title": "Customers",
     "subtitle": "Manage your customers and track purchase history",
-    "customers": "Customers",
     "add_customer": "Add Customer",
     "add_first_customer": "Add First Customer",
     "create_title": "Add Customer",
@@ -187,8 +186,11 @@
     "get_started_message": "Start adding your customers to track orders and sales",
     "name": "Name",
     "phone": "Phone",
+    "country": "Country",
     "orders_count": "Orders",
     "total_spent": "Total Spent",
+    "joined_date": "Joined Date",
+    "sort_customers": "Sort Customers",
     "form": {
       "name": "Name",
       "name_placeholder": "Customer name",

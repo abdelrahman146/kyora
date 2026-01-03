@@ -173,7 +173,6 @@
   "customers": {
     "title": "العملاء",
     "subtitle": "إدارة عملائك وتتبع سجل المشتريات",
-    "customers": "العملاء",
     "add_customer": "إضافة عميل",
     "add_first_customer": "إضافة أول عميل",
     "create_title": "إضافة عميل",
@@ -187,8 +186,11 @@
     "get_started_message": "ابدأ بإضافة عملائك لتتبع الطلبات والمبيعات",
     "name": "الاسم",
     "phone": "الهاتف",
+    "country": "الدولة",
     "orders_count": "الطلبات",
     "total_spent": "إجمالي الإنفاق",
+    "joined_date": "تاريخ الانضمام",
+    "sort_customers": "ترتيب العملاء",
     "form": {
       "name": "الاسم",
       "name_placeholder": "اسم العميل",

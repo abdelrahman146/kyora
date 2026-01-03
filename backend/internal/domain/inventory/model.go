@@ -4,6 +4,7 @@ import (
 	"database/sql/driver"
 	"encoding/json"
 	"errors"
+	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
@@ -75,7 +76,6 @@ const (
 )
 
 type Product struct {
-	gorm.Model
 	ID          string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID  string             `gorm:"column:business_id;type:text;not null;index" json:"businessId"`
 	Business    *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
@@ -85,6 +85,9 @@ type Product struct {
 	CategoryID  string             `gorm:"column:category_id;type:text;index" json:"categoryId"`
 	Category    *Category          `gorm:"foreignKey:CategoryID;references:ID" json:"category,omitempty"`
 	Variants    []*Variant         `gorm:"foreignKey:ProductID;references:ID;constraint:OnDelete:CASCADE;" json:"variants,omitempty"`
+	CreatedAt   time.Time          `gorm:"column:created_at;type:timestamp;autoCreateTime" json:"createdAt"`
+	UpdatedAt   time.Time          `gorm:"column:updated_at;type:timestamp;autoUpdateTime" json:"updatedAt"`
+	DeletedAt   gorm.DeletedAt     `gorm:"column:deleted_at;type:timestamp;index" json:"deletedAt,omitempty"`
 }
 
 func (m *Product) BeforeCreate(tx *gorm.DB) (err error) {
@@ -125,6 +128,9 @@ var ProductSchema = struct {
 	Description: schema.NewField("description", "description"),
 	Photos:      schema.NewField("photos", "photos"),
 	CategoryID:  schema.NewField("category_id", "categoryId"),
+	CreatedAt:   schema.NewField("created_at", "createdAt"),
+	UpdatedAt:   schema.NewField("updated_at", "updatedAt"),
+	DeletedAt:   schema.NewField("deleted_at", "deletedAt"),
 }
 
 func CreateProductSKU(businessDescriptor, productName, variantCode string) string {
@@ -146,7 +152,6 @@ const (
 )
 
 type Variant struct {
-	gorm.Model
 	ID                 string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID         string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:sku_business_idx" json:"businessId"`
 	Business           *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
@@ -161,6 +166,9 @@ type Variant struct {
 	Photos             AssetReferenceList `gorm:"column:photos;type:jsonb;not null;default:'[]'" json:"photos"`
 	StockQuantity      int                `gorm:"column:stock_quantity;type:int;not null;default:0" json:"stockQuantity"`
 	StockQuantityAlert int                `gorm:"column:stock_alert;type:int;not null;default:0" json:"stockQuantityAlert"`
+	CreatedAt          time.Time          `gorm:"column:created_at;type:timestamp;autoCreateTime" json:"createdAt"`
+	UpdatedAt          time.Time          `gorm:"column:updated_at;type:timestamp;autoUpdateTime" json:"updatedAt"`
+	DeletedAt          gorm.DeletedAt     `gorm:"column:deleted_at;type:timestamp;index" json:"deletedAt,omitempty"`
 }
 
 func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
@@ -236,12 +244,14 @@ const (
 )
 
 type Category struct {
-	gorm.Model
 	ID         string             `gorm:"column:id;primaryKey;type:text" json:"id"`
 	BusinessID string             `gorm:"column:business_id;type:text;not null;index;uniqueIndex:descriptor_business_idx" json:"businessId"`
 	Business   *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	Name       string             `gorm:"column:name;type:text;not null" json:"name"`
 	Descriptor string             `gorm:"column:descriptor;type:text;not null;uniqueIndex:descriptor_business_idx" json:"descriptor"`
+	CreatedAt  time.Time          `gorm:"column:created_at;type:timestamp;autoCreateTime" json:"createdAt"`
+	UpdatedAt  time.Time          `gorm:"column:updated_at;type:timestamp;autoUpdateTime" json:"updatedAt"`
+	DeletedAt  gorm.DeletedAt     `gorm:"column:deleted_at;type:timestamp;index" json:"deletedAt,omitempty"`
 }
 
 func (m *Category) BeforeCreate(tx *gorm.DB) (err error) {

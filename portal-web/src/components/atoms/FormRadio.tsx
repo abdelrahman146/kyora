@@ -115,7 +115,8 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                 key={option.value}
                 htmlFor={optionId}
                 className={cn(
-                  'label cursor-pointer justify-start gap-3',
+                  'flex items-center gap-3 p-3 rounded-lg border border-base-300 cursor-pointer hover:border-primary transition-colors',
+                  isChecked && 'border-primary bg-primary/5',
                   (option.disabled ?? props.disabled) &&
                     'opacity-60 cursor-not-allowed',
                 )}
@@ -139,7 +140,7 @@ export const FormRadio = forwardRef<HTMLInputElement, FormRadioProps>(
                   {...props}
                 />
 
-                <div className="flex flex-col gap-1">
+                <div className="flex flex-col gap-1 flex-1">
                   <span className="label-text text-base-content font-medium">
                     {option.label}
                   </span>

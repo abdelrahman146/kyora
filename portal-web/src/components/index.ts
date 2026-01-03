@@ -101,6 +101,11 @@ export { Header } from './organisms/Header'
 export { BottomNav, type BottomNavProps } from './organisms/BottomNav'
 export { LoginForm } from './organisms/LoginForm'
 export { FilterButton, type FilterButtonProps } from './organisms/FilterButton'
+export {
+  SortButton,
+  type SortButtonProps,
+  type SortOption,
+} from './organisms/SortButton'
 export { Table, type TableProps, type TableColumn } from './organisms/Table'
 
 // Customer Organisms

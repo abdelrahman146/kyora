@@ -170,6 +170,7 @@ export const inventory = {
       stockStatus?: string
       page?: number
       limit?: number
+      orderBy?: Array<string>
     },
   ) => [...inventory.lists(), businessDescriptor, filters] as const,
   details: () => [...inventory.all, 'detail'] as const,

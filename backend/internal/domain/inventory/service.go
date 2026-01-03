@@ -71,6 +71,24 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 	needsVariantJoin := false
 	useInnerJoin := false // INNER JOIN only if stock filter requires it
 
+	// Check if sorting requires aggregation from variants
+	needsVariantsCountSort := false
+	needsCostPriceSort := false
+	needsStockSort := false
+	for _, ob := range req.OrderBy() {
+		switch {
+		case ob == "variantsCount" || ob == "-variantsCount":
+			needsVariantsCountSort = true
+			needsVariantJoin = true
+		case ob == "costPrice" || ob == "-costPrice":
+			needsCostPriceSort = true
+			needsVariantJoin = true
+		case ob == "stock" || ob == "-stock":
+			needsStockSort = true
+			needsVariantJoin = true
+		}
+	}
+
 	if filters != nil {
 		if filters.CategoryID != "" {
 			baseScopes = append(baseScopes, s.storage.products.ScopeEquals(ProductSchema.CategoryID, filters.CategoryID))
@@ -123,7 +141,67 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		}
 	}
 
-	if needsVariantJoin {
+	// If sorting by aggregated fields, add appropriate aggregations
+	needsAggregation := needsVariantsCountSort || needsCostPriceSort || needsStockSort
+	if needsAggregation {
+		// Build aggregation SQL with all needed fields
+		var aggFields []string
+		if needsVariantsCountSort {
+			aggFields = append(aggFields, "COUNT(*)::int as variants_count")
+		}
+		if needsCostPriceSort {
+			aggFields = append(aggFields, "AVG(cost_price)::numeric as avg_cost_price")
+		}
+		if needsStockSort {
+			aggFields = append(aggFields, "SUM(stock_quantity)::int as total_stock")
+		}
+
+		joinSQL := fmt.Sprintf(`
+			LEFT JOIN LATERAL (
+				SELECT %s
+				FROM variants
+				WHERE variants.product_id = products.id 
+					AND variants.deleted_at IS NULL
+			) AS product_agg ON true
+		`, strings.Join(aggFields, ", "))
+
+		baseScopes = append([]func(db *gorm.DB) *gorm.DB{
+			s.storage.products.WithJoins(joinSQL),
+		}, baseScopes...)
+
+		// Parse custom ordering for aggregated fields
+		customOrders := []string{}
+		for _, ob := range req.OrderBy() {
+			switch ob {
+			case "variantsCount":
+				customOrders = append(customOrders, "product_agg.variants_count ASC")
+			case "-variantsCount":
+				customOrders = append(customOrders, "product_agg.variants_count DESC")
+			case "costPrice":
+				customOrders = append(customOrders, "product_agg.avg_cost_price ASC")
+			case "-costPrice":
+				customOrders = append(customOrders, "product_agg.avg_cost_price DESC")
+			case "stock":
+				customOrders = append(customOrders, "product_agg.total_stock ASC")
+			case "-stock":
+				customOrders = append(customOrders, "product_agg.total_stock DESC")
+			default:
+				// Parse normal schema fields
+				field, desc, found := list.ParseOrderField(ob, ProductSchema)
+				if found {
+					direction := "ASC"
+					if desc {
+						direction = "DESC"
+					}
+					customOrders = append(customOrders, field.Column()+" "+direction)
+				}
+			}
+		}
+
+		if len(customOrders) > 0 {
+			listExtra = append(listExtra, s.storage.products.WithOrderBy(customOrders))
+		}
+	} else if needsVariantJoin {
 		joinType := "LEFT"
 		if useInnerJoin {
 			joinType = "INNER"
@@ -137,9 +215,14 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 	findOpts = append(findOpts, listExtra...)
 	findOpts = append(findOpts,
 		s.storage.products.WithPagination(req.Offset(), req.Limit()),
-		s.storage.products.WithOrderBy(req.ParsedOrderBy(ProductSchema)),
-		s.storage.products.WithPreload("Variants"),
 	)
+
+	// Only add parsed order by if we're not doing custom aggregation sort
+	if !needsAggregation {
+		findOpts = append(findOpts, s.storage.products.WithOrderBy(req.ParsedOrderBy(ProductSchema)))
+	}
+
+	findOpts = append(findOpts, s.storage.products.WithPreload("Variants"))
 
 	items, err := s.storage.products.FindMany(ctx, findOpts...)
 	if err != nil {

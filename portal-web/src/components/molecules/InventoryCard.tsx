@@ -14,6 +14,7 @@
  */
 
 import { useTranslation } from 'react-i18next'
+import { Layers, Calendar } from 'lucide-react'
 
 import { Avatar } from '../atoms/Avatar'
 import { Tooltip } from '../atoms/Tooltip'
@@ -24,6 +25,7 @@ import {
   getPriceRange,
   hasLowStock,
 } from '@/lib/inventoryUtils'
+import { formatDateShort } from '@/lib/formatDate'
 
 export interface InventoryCardProps {
   product: Product
@@ -43,6 +45,7 @@ export function InventoryCard({
   const totalStock = calculateTotalStock(product.variants)
   const isLowStock = hasLowStock(product.variants)
   const isOutOfStock = totalStock === 0
+  const variantsCount = product.variants?.length ?? 0
   const costPriceRange = getPriceRange(product.variants, 'costPrice')
   const salePriceRange = getPriceRange(product.variants, 'salePrice')
   const category = categories.find((c) => c.id === product.categoryId)
@@ -122,6 +125,23 @@ export function InventoryCard({
             {formatPriceDisplay(salePriceRange)}
           </span>
         </div>
+        <div className="flex items-baseline justify-between">
+          <span className="text-sm text-base-content/60">
+            {t('variants', { ns: 'inventory' })}
+          </span>
+          {variantsCount > 1 ? (
+            <div className="flex items-center gap-1">
+              <Layers size={16} className="text-primary" />
+              <span className="text-base font-semibold text-base-content">
+                {variantsCount}
+              </span>
+            </div>
+          ) : (
+            <span className="text-base font-semibold text-base-content/60">
+              {variantsCount}
+            </span>
+          )}
+        </div>
       </div>
 
       {/* Stock Status */}
@@ -140,6 +160,12 @@ export function InventoryCard({
             {totalStock}
           </span>
         )}
+      </div>
+
+      {/* Date Added */}
+      <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2">
+        <Calendar size={14} />
+        <span>{formatDateShort(product.createdAt)}</span>
       </div>
     </div>
   )

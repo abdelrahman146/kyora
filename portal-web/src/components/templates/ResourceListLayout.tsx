@@ -58,9 +58,11 @@ import { Plus } from 'lucide-react'
 import { Pagination } from '../molecules/Pagination'
 import { SearchInput } from '../molecules/SearchInput'
 import { FilterButton } from '../organisms/FilterButton'
+import { SortButton } from '../organisms/SortButton'
 import { Table } from '../organisms/Table'
 import type { ReactNode } from 'react'
 import type { TableColumn } from '../organisms/Table'
+import type { SortOption } from '../organisms/SortButton'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 export interface ResourceListLayoutProps<T> {
@@ -96,6 +98,14 @@ export interface ResourceListLayoutProps<T> {
   applyLabel?: string
   /** Reset button label */
   resetLabel?: string
+  /** Sort sheet title */
+  sortTitle?: string
+  /** Sort button text */
+  sortButtonText?: string
+  /** Available sort options */
+  sortOptions?: Array<SortOption>
+  /** Callback when sort is applied */
+  onSortApply?: (sortBy: string, sortOrder: 'asc' | 'desc') => void
   /** Empty state icon */
   emptyIcon: ReactNode
   /** Empty state title */
@@ -167,6 +177,10 @@ export function ResourceListLayout<T>({
   onResetFilters,
   applyLabel,
   resetLabel,
+  sortTitle,
+  sortButtonText,
+  sortOptions,
+  onSortApply,
   emptyIcon,
   emptyTitle,
   emptyMessage,
@@ -232,18 +246,35 @@ export function ResourceListLayout<T>({
             placeholder={searchPlaceholder}
           />
         </div>
-        <FilterButton
-          title={filterTitle}
-          buttonText={filterButtonText}
-          activeCount={activeFilterCount}
-          onApply={onApplyFilters}
-          onReset={onResetFilters}
-          applyLabel={applyLabel}
-          resetLabel={resetLabel}
-        >
-          {filterButton}
-        </FilterButton>
-        {toolbarExtra}
+        <div className="flex gap-2">
+          {/* Sort Button (Mobile Only) */}
+          {isMobile && sortOptions && sortOptions.length > 0 && onSortApply && (
+            <div className="flex-1">
+              <SortButton
+                title={sortTitle || 'Sort'}
+                buttonText={sortButtonText}
+                sortOptions={sortOptions}
+                currentSortBy={tableSortBy}
+                currentSortOrder={tableSortOrder}
+                onApply={onSortApply}
+              />
+            </div>
+          )}
+          <div className="flex-1">
+            <FilterButton
+              title={filterTitle}
+              buttonText={filterButtonText}
+              activeCount={activeFilterCount}
+              onApply={onApplyFilters}
+              onReset={onResetFilters}
+              applyLabel={applyLabel}
+              resetLabel={resetLabel}
+            >
+              {filterButton}
+            </FilterButton>
+          </div>
+          {toolbarExtra}
+        </div>
       </div>
 
       {/* Empty State (No Items) */}

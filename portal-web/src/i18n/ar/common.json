@@ -65,6 +65,10 @@
   "privacy": "سياسة الخصوصية",
   "terms": "شروط الخدمة",
   "support": "الدعم",
+  "sort_by": "الترتيب حسب",
+  "sort_order": "ترتيب الفرز",
+  "ascending": "تصاعدي",
+  "descending": "تنازلي",
   "customer": {
     "customers": "العملاء",
     "customer": "عميل",

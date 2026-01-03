@@ -169,3 +169,24 @@ func ParseArrayToSchema(arr []string, schemaDef any) (fields []schema.Field) {
 	// Return the (potentially empty) slice of found fields
 	return
 }
+
+// ParseOrderField parses a single orderBy string (e.g., "name" or "-createdAt")
+// and returns the corresponding schema.Field and whether it's descending.
+// Returns (field, descending, found). If found is false, the field was not found in the schema.
+func ParseOrderField(orderBy string, schemaDef any) (field schema.Field, desc bool, found bool) {
+	// Check for descending order prefix
+	desc = false
+	if len(orderBy) > 0 && orderBy[0] == '-' {
+		desc = true
+		orderBy = orderBy[1:]
+	}
+
+	// Look up the field in the schema
+	fields := ParseArrayToSchema([]string{orderBy}, schemaDef)
+	if len(fields) == 0 {
+		return schema.Field{}, false, false
+	}
+
+	// Return the first matched field
+	return fields[0], desc, true
+}

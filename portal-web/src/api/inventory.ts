@@ -36,9 +36,9 @@ export interface Product {
   categoryId: string
   category?: Category
   variants?: Array<Variant>
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export interface Variant {
@@ -55,9 +55,9 @@ export interface Variant {
   stockQuantity: number
   stockQuantityAlert: number
   product?: Product
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  createdAt: string
+  updatedAt: string
+  deletedAt: string | null
 }
 
 export interface ListResponse<T> {
@@ -416,6 +416,7 @@ export const inventoryQueries = {
         limit: params?.pageSize,
         categoryId: params?.categoryId,
         stockStatus: params?.stockStatus,
+        orderBy: params?.orderBy,
       }),
       queryFn: () => inventoryApi.listProducts(businessDescriptor, params),
       staleTime: STALE_TIME.ONE_MINUTE,

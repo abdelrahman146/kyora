@@ -2,12 +2,13 @@ import { createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Suspense, useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { Edit, Package, Trash2 } from 'lucide-react'
+import { Edit, Layers, Package, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 
 import type { TableColumn } from '@/components/organisms/Table'
 import type { Product } from '@/api/inventory'
+import type { SortOption } from '@/components/organisms/SortButton'
 import {
   Avatar,
   Dialog,
@@ -35,6 +36,7 @@ import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form/useKyoraForm'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
+import { formatDateShort } from '@/lib/formatDate'
 
 /**
  * Search schema for inventory list
@@ -177,16 +179,7 @@ function InventoryListPage() {
 
   const categoriesResponse = useCategoriesQuery(businessDescriptor)
 
-  // Clear previous data when filters change to fix the bug
-  const products = useMemo(() => {
-    if (productsResponse.isFetching && productsResponse.data) {
-      // If we're fetching new data and the query key has changed, return empty array
-      // to prevent showing stale data
-      return []
-    }
-    return productsResponse.data?.items ?? []
-  }, [productsResponse.data, productsResponse.isFetching])
-
+  const products = productsResponse.data?.items ?? []
   const totalItems = productsResponse.data?.total_count ?? 0
   const totalPages = productsResponse.data?.total_pages ?? 0
   const categories = categoriesResponse.data ?? []
@@ -207,6 +200,17 @@ function InventoryListPage() {
 
   const activeFilterCount =
     (search.categoryId ? 1 : 0) + (search.stockStatus ? 1 : 0)
+
+  const sortOptions = useMemo<Array<SortOption>>(
+    () => [
+      { value: 'name', label: t('product_name', { ns: 'inventory' }) },
+      { value: 'variantsCount', label: t('variants', { ns: 'inventory' }) },
+      { value: 'stock', label: t('stock_quantity', { ns: 'inventory' }) },
+      { value: 'costPrice', label: t('cost_price', { ns: 'inventory' }) },
+      { value: 'createdAt', label: t('date_added', { ns: 'inventory' }) },
+    ],
+    [t],
+  )
 
   const handleSearch = (value: string) => {
     void navigate({
@@ -310,7 +314,7 @@ function InventoryListPage() {
       },
     },
     {
-      key: 'cost_price',
+      key: 'costPrice',
       label: t('cost_price', { ns: 'inventory' }),
       sortable: true,
       render: (product: Product) => {
@@ -343,8 +347,27 @@ function InventoryListPage() {
       },
     },
     {
+      key: 'variantsCount',
+      label: t('variants', { ns: 'inventory' }),
+      sortable: true,
+      align: 'center',
+      render: (product: Product) => {
+        const variantsCount = product.variants?.length ?? 0
+        if (variantsCount > 1) {
+          return (
+            <div className="flex items-center justify-center gap-1">
+              <Layers size={16} className="text-primary" />
+              <span className="font-medium">{variantsCount}</span>
+            </div>
+          )
+        }
+        return <span className="text-base-content/60">{variantsCount}</span>
+      },
+    },
+    {
       key: 'stock',
       label: t('stock_quantity', { ns: 'inventory' }),
+      sortable: true,
       render: (product: Product) => {
         const totalStock = calculateTotalStock(product.variants)
         const isLowStock = hasLowStock(product.variants)
@@ -371,6 +394,16 @@ function InventoryListPage() {
 
         return <span>{totalStock}</span>
       },
+    },
+    {
+      key: 'createdAt',
+      label: t('date_added', { ns: 'inventory' }),
+      sortable: true,
+      render: (product: Product) => (
+        <span className="text-sm text-base-content/70">
+          {formatDateShort(product.createdAt)}
+        </span>
+      ),
     },
     {
       key: 'actions',
@@ -414,6 +447,18 @@ function InventoryListPage() {
         sortBy: key,
         sortOrder:
           search.sortBy === key && search.sortOrder === 'asc' ? 'desc' : 'asc',
+        page: 1,
+      },
+    })
+  }
+
+  const handleSortApply = (sortBy: string, sortOrder: 'asc' | 'desc') => {
+    void navigate({
+      to: '.',
+      search: {
+        ...search,
+        sortBy,
+        sortOrder,
         page: 1,
       },
     })
@@ -465,6 +510,9 @@ function InventoryListPage() {
         onResetFilters={handleResetFilters}
         applyLabel={t('common.apply')}
         resetLabel={t('common.reset')}
+        sortTitle={t('sort_products', { ns: 'inventory' })}
+        sortOptions={sortOptions}
+        onSortApply={handleSortApply}
         emptyIcon={<Package size={48} />}
         emptyTitle={
           search.search

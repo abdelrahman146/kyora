@@ -173,6 +173,7 @@ export function FilterButton({
           btn
           min-h-[50px]
           gap-2
+          w-full
           border-base-300
           bg-base-100
           hover:border-primary

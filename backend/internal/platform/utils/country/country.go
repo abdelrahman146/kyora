@@ -19,6 +19,7 @@ type Country struct {
 
 var countries = []Country{
 	{Name: "United States", NameAr: "الولايات المتحدة", Code: "US", IsoCode: "USA", Flag: "🇺🇸", PhonePrefix: "+1", CurrencyCode: "USD", CurrencyLabel: "USD — $", CurrencySymbol: "$"},
+	{Name: "United Kingdom", NameAr: "المملكة المتحدة", Code: "GB", IsoCode: "GBR", Flag: "🇬🇧", PhonePrefix: "+44", CurrencyCode: "GBP", CurrencyLabel: "GBP — £", CurrencySymbol: "£"},
 	{Name: "Japan", NameAr: "اليابان", Code: "JP", IsoCode: "JPN", Flag: "🇯🇵", PhonePrefix: "+81", CurrencyCode: "JPY", CurrencyLabel: "JPY — ¥", CurrencySymbol: "¥"},
 	{Name: "China", NameAr: "الصين", Code: "CN", IsoCode: "CHN", Flag: "🇨🇳", PhonePrefix: "+86", CurrencyCode: "CNY", CurrencyLabel: "CNY — ¥", CurrencySymbol: "¥"},
 	{Name: "Australia", NameAr: "أستراليا", Code: "AU", IsoCode: "AUS", Flag: "🇦🇺", PhonePrefix: "+61", CurrencyCode: "AUD", CurrencyLabel: "AUD — A$", CurrencySymbol: "A$"},

@@ -7,6 +7,7 @@ import type { MouseEvent } from 'react'
 
 import type { Customer, SocialPlatform } from '@/api/customer'
 import type { TableColumn } from '@/components/organisms/Table'
+import type { SortOption } from '@/components/organisms/SortButton'
 import {
   customerQueries,
   useCustomersQuery,
@@ -26,6 +27,8 @@ import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form/useKyoraForm'
 import { CountrySelect } from '@/components/molecules/CountrySelect'
+import { getMetadata } from '@/stores/metadataStore'
+import { formatDateShort } from '@/lib/formatDate'
 
 /**
  * Customers List Route Search Params Schema
@@ -74,12 +77,12 @@ export const Route = createFileRoute(
     // Parse search params from location
     const searchParams = CustomersSearchSchema.parse(location.search)
 
-    // Build orderBy from sortBy/sortOrder (default to -createdAt if not specified)
+    // Build orderBy from sortBy/sortOrder (default to -joinedAt if not specified)
     const orderBy = searchParams.sortBy
       ? [
           `${searchParams.sortOrder === 'desc' ? '-' : ''}${searchParams.sortBy}`,
         ]
-      : ['-createdAt']
+      : ['-joinedAt']
 
     // Prefetch customer list (non-blocking, uses cache if available)
     await queryClient.prefetchQuery(
@@ -121,7 +124,7 @@ function CustomersListPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
 
   const orderBy = useMemo<Array<string>>(() => {
-    if (!search.sortBy) return ['-createdAt']
+    if (!search.sortBy) return ['-joinedAt']
     return [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
   }, [search.sortBy, search.sortOrder])
 
@@ -245,6 +248,18 @@ function CustomersListPage() {
     })
   }
 
+  const handleSortApply = (sortBy: string, sortOrder: 'asc' | 'desc') => {
+    void navigate({
+      to: '.',
+      search: {
+        ...search,
+        sortBy,
+        sortOrder,
+        page: 1,
+      },
+    })
+  }
+
   const handleCustomerClick = (customer: Customer) => {
     void navigate({
       to: '/business/$businessDescriptor/customers/$customerId',
@@ -281,6 +296,17 @@ function CustomersListPage() {
   const businessCountryCode = selectedBusiness?.countryCode ?? 'AE'
   const currency = selectedBusiness?.currency ?? 'AED'
 
+  const sortOptions = useMemo<Array<SortOption>>(
+    () => [
+      { value: 'name', label: t('customers.name') },
+      { value: 'countryCode', label: t('customers.country') },
+      { value: 'ordersCount', label: t('customers.orders_count') },
+      { value: 'totalSpent', label: t('customers.total_spent') },
+      { value: 'joinedAt', label: t('customers.joined_date') },
+    ],
+    [t],
+  )
+
   const tableColumns = useMemo<Array<TableColumn<Customer>>>(
     () => [
       {
@@ -315,6 +341,28 @@ function CustomersListPage() {
         },
       },
       {
+        key: 'countryCode',
+        label: t('customers.country'),
+        sortable: true,
+        render: (customer) => {
+          const metadata = getMetadata()
+          const country = metadata.countries.find(
+            (c) =>
+              c.code === customer.countryCode ||
+              c.iso_code === customer.countryCode,
+          )
+          if (!country) {
+            return <span className="text-base-content/40">—</span>
+          }
+          return (
+            <div className="flex items-center gap-2">
+              {country.flag && <span className="text-lg">{country.flag}</span>}
+              <span className="text-sm">{country.name}</span>
+            </div>
+          )
+        },
+      },
+      {
         key: 'ordersCount',
         label: t('customers.orders_count'),
         sortable: true,
@@ -338,6 +386,16 @@ function CustomersListPage() {
             </span>
           )
         },
+      },
+      {
+        key: 'joinedAt',
+        label: t('customers.joined_date'),
+        sortable: true,
+        render: (customer) => (
+          <span className="text-sm text-base-content/70">
+            {formatDateShort(customer.joinedAt)}
+          </span>
+        ),
       },
       {
         key: 'actions',
@@ -470,6 +528,9 @@ function CustomersListPage() {
           filterForm.handleSubmit()
         }}
         onResetFilters={handleResetFilters}
+        sortTitle={t('customers.sort_customers')}
+        sortOptions={sortOptions}
+        onSortApply={handleSortApply}
         emptyIcon={<Users size={48} />}
         emptyTitle={
           search.search
