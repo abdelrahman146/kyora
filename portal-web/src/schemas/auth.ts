@@ -52,15 +52,18 @@ export const createForgotPasswordValidators = () => ({
 /**
  * Reset Password Form Validation Schema
  */
-export const ResetPasswordSchema = z
-  .object({
-    password: z.string().min(8, 'validation.password_min_length'),
-    confirmPassword: z.string().min(1, 'validation.required'),
-  })
-  .refine((data) => data.password === data.confirmPassword, {
+const ResetPasswordBaseSchema = z.object({
+  password: z.string().min(8, 'validation.password_min_length'),
+  confirmPassword: z.string().min(1, 'validation.required'),
+})
+
+export const ResetPasswordSchema = ResetPasswordBaseSchema.refine(
+  (data) => data.password === data.confirmPassword,
+  {
     message: 'validation.passwords_must_match',
     path: ['confirmPassword'],
-  })
+  },
+)
 
 export type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>
 
@@ -72,7 +75,7 @@ export type ResetPasswordFormData = z.infer<typeof ResetPasswordSchema>
  */
 export const createResetPasswordValidators = () => ({
   password: {
-    onBlur: ResetPasswordSchema.shape.password,
+    onBlur: ResetPasswordBaseSchema.shape.password,
     // Optional: Add onChange for real-time password strength feedback
     onChange: ({ value }: { value: string }) => {
       if (value.length === 0) return undefined
@@ -81,7 +84,7 @@ export const createResetPasswordValidators = () => ({
     },
   },
   confirmPassword: {
-    onBlur: ResetPasswordSchema.shape.confirmPassword,
+    onBlur: ResetPasswordBaseSchema.shape.confirmPassword,
     // Listen to password field changes for real-time matching validation
     onChangeListenTo: ['password'],
     onChange: ({ value, fieldApi }: { value: string; fieldApi: any }) => {

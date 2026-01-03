@@ -15,7 +15,7 @@ const NullableStringSchema = z
     String: z.string().optional(),
     Valid: z.boolean().optional(),
   })
-  .loose()
+  .passthrough()
 
 const WorkspaceSchema = z
   .object({
@@ -34,13 +34,13 @@ const WorkspaceSchema = z
     stripeCustomerId: NullableStringSchema.optional(),
     stripePaymentMethodId: NullableStringSchema.optional(),
   })
-  .loose()
+  .passthrough()
 
 export const UserSchema = z
   .object({
     // backend returns ids like "usr..." not UUIDs
     id: z.string().min(1),
-    email: z.email(),
+    email: z.string().email(),
     firstName: z.string(),
     lastName: z.string(),
     isEmailVerified: z.boolean(),
@@ -62,14 +62,14 @@ export const UserSchema = z
     // gorm also returns these, ignore them
     ID: z.number().optional(),
   })
-  .loose()
+  .passthrough()
 
 export type User = z.infer<typeof UserSchema>
 
 // Login Schemas - POST /v1/auth/login
 
 export const LoginRequestSchema = z.object({
-  email: z.email({ message: 'Invalid email address' }),
+  email: z.string().email('Invalid email address'),
   password: z.string().min(1, 'Password is required'),
 })
 
@@ -134,7 +134,7 @@ export type ProblemDetails = z.infer<typeof ProblemDetailsSchema>
 // Forgot Password Schemas - POST /v1/auth/forgot-password
 
 export const ForgotPasswordRequestSchema = z.object({
-  email: z.email({ message: 'Invalid email address' }),
+  email: z.string().email('Invalid email address'),
 })
 
 export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>
@@ -165,7 +165,7 @@ export type GoogleLoginRequest = z.infer<typeof GoogleLoginRequestSchema>
 // Email Verification Schemas
 
 export const RequestEmailVerificationSchema = z.object({
-  email: z.email({ message: 'Invalid email address' }),
+  email: z.string().email('Invalid email address'),
 })
 
 export type RequestEmailVerification = z.infer<

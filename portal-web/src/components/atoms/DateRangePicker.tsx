@@ -35,7 +35,7 @@ import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
 import { format } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Calendar, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { InputHTMLAttributes } from 'react'
 import type { DateRange } from 'react-day-picker'
@@ -97,13 +97,29 @@ export const DateRangePicker = forwardRef<
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
+    const [dropdownWidth, setDropdownWidth] = useState<number | undefined>()
+    const [displayMonth, setDisplayMonth] = useState<Date>(
+      value?.from || new Date(),
+    )
     const containerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
     const popupRef = useRef<HTMLDivElement>(null)
     const isMobile = useMediaQuery('(max-width: 768px)')
 
     const locale = isRTL ? ar : enUS
-    const monthCount = numberOfMonths ?? (isMobile ? 1 : 2)
+    const monthCount = numberOfMonths ?? 1
+
+    const currentYear = displayMonth.getFullYear()
+    const currentMonth = displayMonth.getMonth()
+
+    const years = Array.from({ length: 100 }, (_, i) => currentYear - 50 + i)
+    const months = Array.from({ length: 12 }, (_, i) => {
+      const date = new Date(2000, i, 1)
+      return {
+        value: i,
+        label: format(date, 'MMMM', { locale }),
+      }
+    })
 
     const sizeClasses = {
       sm: 'h-[44px] text-sm',
@@ -123,9 +139,8 @@ export const DateRangePicker = forwardRef<
 
     const handleDateSelect = (range: DateRange | undefined) => {
       onChange?.(range)
-      if (range?.from && range.to) {
-        handleClose()
-      }
+      // Don't auto-close - let user manually click Apply to confirm selection
+      // This provides better UX especially on mobile where user picks both dates in one session
     }
 
     const handleClear = (e: React.MouseEvent) => {
@@ -135,6 +150,9 @@ export const DateRangePicker = forwardRef<
     }
 
     const handleOpen = useCallback(() => {
+      if (containerRef.current) {
+        setDropdownWidth(containerRef.current.offsetWidth)
+      }
       setIsOpen(true)
       setIsAnimating(true)
     }, [])
@@ -210,74 +228,161 @@ export const DateRangePicker = forwardRef<
       return !!(isBeforeMin || isAfterMax || isInDisabledList)
     }
 
+    const handleMonthChange = (month: number) => {
+      setDisplayMonth(new Date(currentYear, month, 1))
+    }
+
+    const handleYearChange = (year: number) => {
+      setDisplayMonth(new Date(year, currentMonth, 1))
+    }
+
+    const MonthYearSelector = () => (
+      <div className="flex items-center justify-center gap-3 mb-4 px-1">
+        <div className="relative flex-1">
+          <select
+            value={currentMonth}
+            onChange={(e) => handleMonthChange(Number(e.target.value))}
+            className={cn(
+              'w-full appearance-none cursor-pointer transition-all duration-200',
+              'bg-base-100 text-base-content border border-base-300 rounded-lg',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'hover:border-base-400',
+              isMobile
+                ? 'h-[44px] text-base px-3 pe-8'
+                : 'h-[38px] text-sm px-3 pe-8',
+            )}
+            aria-label={t('common:select_month', {
+              defaultValue: 'Select month',
+            })}
+          >
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 end-0 flex items-center pe-2 pointer-events-none text-base-content/50">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+        <div
+          className="relative"
+          style={{ width: isMobile ? '110px' : '100px' }}
+        >
+          <select
+            value={currentYear}
+            onChange={(e) => handleYearChange(Number(e.target.value))}
+            className={cn(
+              'w-full appearance-none cursor-pointer transition-all duration-200',
+              'bg-base-100 text-base-content border border-base-300 rounded-lg',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'hover:border-base-400',
+              isMobile
+                ? 'h-[44px] text-base px-3 pe-8'
+                : 'h-[38px] text-sm px-3 pe-8',
+            )}
+            aria-label={t('common:select_year', {
+              defaultValue: 'Select year',
+            })}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 end-0 flex items-center pe-2 pointer-events-none text-base-content/50">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
+
     const calendarContent = (
-      <DayPicker
-        mode="range"
-        selected={value}
-        onSelect={handleDateSelect}
-        disabled={disabledMatcher}
-        numberOfMonths={monthCount}
-        locale={locale}
-        dir={isRTL ? 'rtl' : 'ltr'}
-        className="kyora-datepicker"
-        classNames={{
-          months: cn(
-            'flex gap-4',
-            isMobile ? 'flex-col' : 'flex-col sm:flex-row',
-          ),
-          month: 'space-y-4 w-full',
-          month_caption:
-            'flex justify-center relative items-center h-10 w-full mb-2',
-          caption_label: 'text-base font-semibold text-base-content',
-          nav: 'flex items-center gap-1',
-          button_previous: cn(
-            'btn btn-ghost btn-sm btn-circle absolute',
-            'hover:bg-base-200 transition-colors',
-            isRTL ? 'end-0' : 'start-0',
-          ),
-          button_next: cn(
-            'btn btn-ghost btn-sm btn-circle absolute',
-            'hover:bg-base-200 transition-colors',
-            isRTL ? 'start-0' : 'end-0',
-          ),
-          month_grid: 'w-full border-collapse',
-          weekdays: 'flex',
-          weekday: cn(
-            'text-base-content/60 rounded-md w-10 h-10',
-            'font-medium text-sm flex items-center justify-center',
-          ),
-          week: 'flex w-full mt-2',
-          day: cn(
-            'relative p-0 text-center text-sm',
-            'h-10 w-10 flex items-center justify-center',
-            'font-normal transition-colors',
-          ),
-          day_button: cn(
-            'btn btn-ghost btn-sm h-10 w-10 p-0 font-normal',
-            'hover:bg-base-200 transition-colors',
-          ),
-          selected: 'bg-primary text-primary-content hover:bg-primary/90',
-          range_start:
-            'bg-primary text-primary-content hover:bg-primary/90 rounded-s-lg',
-          range_end:
-            'bg-primary text-primary-content hover:bg-primary/90 rounded-e-lg',
-          range_middle:
-            'bg-primary/20 text-base-content hover:bg-primary/30 rounded-none',
-          today: 'border-2 border-primary',
-          outside: 'text-base-content/30 opacity-50',
-          disabled:
-            'text-base-content/30 opacity-50 cursor-not-allowed hover:bg-transparent',
-          hidden: 'invisible',
-        }}
-        components={{
-          Chevron: ({ orientation }) =>
-            orientation === 'left' ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
+      <div className="w-full">
+        <MonthYearSelector />
+        <DayPicker
+          mode="range"
+          selected={value}
+          onSelect={handleDateSelect}
+          disabled={disabledMatcher}
+          month={displayMonth}
+          onMonthChange={setDisplayMonth}
+          numberOfMonths={monthCount}
+          locale={locale}
+          dir={isRTL ? 'rtl' : 'ltr'}
+          className="kyora-datepicker w-full"
+          classNames={{
+            months: cn(
+              'flex gap-4 w-full',
+              isMobile ? 'flex-col' : 'flex-col sm:flex-row',
             ),
-        }}
-      />
+            month: 'space-y-3 w-full',
+            month_caption: 'hidden',
+            caption_label: 'hidden',
+            nav: 'hidden',
+            button_previous: 'hidden',
+            button_next: 'hidden',
+            month_grid: 'w-full border-collapse',
+            weekdays: 'flex w-full',
+            weekday: cn(
+              'text-base-content/60 flex-1',
+              'font-semibold flex items-center justify-center',
+              'text-sm h-10',
+            ),
+            week: 'flex w-full mt-1',
+            day: cn(
+              'relative p-0 text-center flex-1',
+              'flex items-center justify-center',
+              'font-medium transition-colors',
+              'h-10',
+            ),
+            day_button: cn(
+              'w-full h-full p-0 font-normal rounded-lg',
+              'hover:bg-base-200 transition-colors',
+              'text-sm',
+            ),
+            selected: 'bg-primary text-primary-content hover:bg-primary/90',
+            range_start:
+              'bg-primary text-primary-content hover:bg-primary/90 rounded-s-lg',
+            range_end:
+              'bg-primary text-primary-content hover:bg-primary/90 rounded-e-lg',
+            range_middle:
+              'bg-primary/20 text-base-content hover:bg-primary/30 rounded-none',
+            today: 'border-2 border-primary',
+            outside: 'text-base-content/20 opacity-40',
+            disabled:
+              'text-base-content/20 opacity-40 cursor-not-allowed hover:bg-transparent',
+            hidden: 'invisible',
+          }}
+        />
+      </div>
     )
 
     return (
@@ -330,6 +435,7 @@ export const DateRangePicker = forwardRef<
             className={cn(
               'input input-bordered relative z-0 w-full transition-all duration-200',
               'cursor-pointer',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
               sizeClasses[size],
               'ps-10',
               clearable && value?.from && 'pe-10',
@@ -471,17 +577,12 @@ export const DateRangePicker = forwardRef<
               aria-modal="false"
               aria-label={label || t('common:select_date_range')}
               className={cn(
-                'fixed z-[100] max-h-[90vh] overflow-auto',
+                'absolute top-full mt-2 z-50',
                 'bg-base-100 rounded-box shadow-xl border border-base-300 p-4',
+                'max-h-[70vh] overflow-auto',
+                isRTL ? 'end-0' : 'start-0',
               )}
-              style={{
-                top: containerRef.current
-                  ? `${containerRef.current.getBoundingClientRect().bottom + window.scrollY + 8}px`
-                  : '50%',
-                [isRTL ? 'right' : 'left']: containerRef.current
-                  ? `${containerRef.current.getBoundingClientRect()[isRTL ? 'right' : 'left']}px`
-                  : '50%',
-              }}
+              style={{ width: dropdownWidth ? `${dropdownWidth}px` : '100%' }}
             >
               {calendarContent}
               <div className="flex gap-3 mt-4 pt-4 border-t border-base-300">

@@ -85,6 +85,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
+    const [dropdownWidth, setDropdownWidth] = useState<number | undefined>()
     const [selectedHour, setSelectedHour] = useState<number>(12)
     const [selectedMinute, setSelectedMinute] = useState<number>(0)
     const [selectedPeriod, setSelectedPeriod] = useState<'AM' | 'PM'>('AM')
@@ -179,6 +180,9 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
     }
 
     const handleOpen = useCallback(() => {
+      if (containerRef.current) {
+        setDropdownWidth(containerRef.current.offsetWidth)
+      }
       setIsOpen(true)
       setIsAnimating(true)
     }, [])
@@ -515,6 +519,9 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                 isRTL ? 'end-0' : 'start-0',
                 'min-w-[320px]',
               )}
+              style={{
+                width: dropdownWidth ? `${dropdownWidth}px` : undefined,
+              }}
             >
               {timePickerContent}
               <div className="flex gap-2 mt-4 pt-4 border-t border-base-300">

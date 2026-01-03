@@ -31,6 +31,8 @@
   "clear": "مسح",
   "apply": "تطبيق",
   "select_date_range": "اختر النطاق الزمني",
+  "select_month": "اختر الشهر",
+  "select_year": "اختر السنة",
   "export": "تصدير",
   "import": "استيراد",
   "download": "تحميل",

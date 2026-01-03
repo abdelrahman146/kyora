@@ -37,7 +37,7 @@ import { createPortal } from 'react-dom'
 import { DayPicker } from 'react-day-picker'
 import { format, isValid, parse } from 'date-fns'
 import { ar, enUS } from 'date-fns/locale'
-import { Calendar, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { Calendar, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import type { InputHTMLAttributes } from 'react'
 import { cn } from '@/lib/utils'
@@ -95,6 +95,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     const { t } = useTranslation()
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
+    const [displayMonth, setDisplayMonth] = useState<Date>(value || new Date())
     const [inputValue, setInputValue] = useState('')
     const containerRef = useRef<HTMLDivElement>(null)
     const inputRef = useRef<HTMLInputElement>(null)
@@ -226,63 +227,173 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       return !!(isBeforeMin || isAfterMax || isInDisabledList || isWeekend)
     }
 
+    const currentMonth = displayMonth.getMonth()
+    const currentYear = displayMonth.getFullYear()
+
+    const months: Array<{ value: number; label: string }> = Array.from(
+      { length: 12 },
+      (_, monthIndex) => ({
+        value: monthIndex,
+        label: format(new Date(2020, monthIndex, 1), 'MMMM', { locale }),
+      }),
+    )
+
+    const startYear = minDate ? minDate.getFullYear() : currentYear - 100
+    const endYear = maxDate ? maxDate.getFullYear() : currentYear + 20
+    const years: Array<number> = []
+    for (
+      let year = Math.min(startYear, endYear);
+      year <= Math.max(startYear, endYear);
+      year++
+    ) {
+      years.push(year)
+    }
+
+    const handleMonthChange = (month: number) => {
+      setDisplayMonth(new Date(currentYear, month, 1))
+    }
+
+    const handleYearChange = (year: number) => {
+      setDisplayMonth(new Date(year, currentMonth, 1))
+    }
+
+    const MonthYearSelector = () => (
+      <div className="flex items-center justify-center gap-3 mb-4 px-1">
+        <div className="relative flex-1">
+          <select
+            value={currentMonth}
+            onChange={(e) => handleMonthChange(Number(e.target.value))}
+            className={cn(
+              'w-full appearance-none cursor-pointer transition-all duration-200',
+              'bg-base-100 text-base-content border border-base-300 rounded-lg',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'hover:border-base-400',
+              isMobile
+                ? 'h-[44px] text-base px-3 pe-8'
+                : 'h-[38px] text-sm px-3 pe-8',
+            )}
+            aria-label={t('common:select_month', {
+              defaultValue: 'Select month',
+            })}
+          >
+            {months.map((month) => (
+              <option key={month.value} value={month.value}>
+                {month.label}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 end-0 flex items-center pe-2 pointer-events-none text-base-content/50">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+        <div
+          className="relative"
+          style={{ width: isMobile ? '110px' : '100px' }}
+        >
+          <select
+            value={currentYear}
+            onChange={(e) => handleYearChange(Number(e.target.value))}
+            className={cn(
+              'w-full appearance-none cursor-pointer transition-all duration-200',
+              'bg-base-100 text-base-content border border-base-300 rounded-lg',
+              'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
+              'hover:border-base-400',
+              isMobile
+                ? 'h-[44px] text-base px-3 pe-8'
+                : 'h-[38px] text-sm px-3 pe-8',
+            )}
+            aria-label={t('common:select_year', {
+              defaultValue: 'Select year',
+            })}
+          >
+            {years.map((year) => (
+              <option key={year} value={year}>
+                {year}
+              </option>
+            ))}
+          </select>
+          <div className="absolute inset-y-0 end-0 flex items-center pe-2 pointer-events-none text-base-content/50">
+            <svg
+              className="h-4 w-4"
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </div>
+        </div>
+      </div>
+    )
+
     const calendarContent = (
-      <DayPicker
-        mode="single"
-        selected={value}
-        onSelect={handleDateSelect}
-        disabled={disabledMatcher}
-        locale={locale}
-        dir={isRTL ? 'rtl' : 'ltr'}
-        className="kyora-datepicker"
-        classNames={{
-          months: 'flex flex-col gap-4',
-          month: 'space-y-4',
-          month_caption: 'flex justify-center pt-1 relative items-center h-10',
-          caption_label: 'text-base font-semibold text-base-content',
-          nav: 'flex items-center gap-1',
-          button_previous: cn(
-            'btn btn-ghost btn-sm btn-circle absolute',
-            'hover:bg-base-200 transition-colors',
-            isRTL ? 'end-0' : 'start-0',
-          ),
-          button_next: cn(
-            'btn btn-ghost btn-sm btn-circle absolute',
-            'hover:bg-base-200 transition-colors',
-            isRTL ? 'start-0' : 'end-0',
-          ),
-          month_grid: 'w-full border-collapse',
-          weekdays: 'flex',
-          weekday: cn(
-            'text-base-content/60 rounded-md w-10 h-10',
-            'font-medium text-sm flex items-center justify-center',
-          ),
-          week: 'flex w-full mt-2',
-          day: cn(
-            'relative p-0 text-center text-sm',
-            'h-10 w-10 flex items-center justify-center',
-            'font-normal transition-colors',
-          ),
-          day_button: cn(
-            'btn btn-ghost btn-sm h-10 w-10 p-0 font-normal',
-            'hover:bg-base-200 transition-colors',
-          ),
-          selected: 'bg-primary text-primary-content hover:bg-primary/90',
-          today: 'border-2 border-primary',
-          outside: 'text-base-content/30 opacity-50',
-          disabled:
-            'text-base-content/30 opacity-50 cursor-not-allowed hover:bg-transparent',
-          hidden: 'invisible',
-        }}
-        components={{
-          Chevron: ({ orientation }) =>
-            orientation === 'left' ? (
-              <ChevronLeft className="h-4 w-4" />
-            ) : (
-              <ChevronRight className="h-4 w-4" />
+      <div className="w-full">
+        <MonthYearSelector />
+        <DayPicker
+          mode="single"
+          selected={value}
+          onSelect={handleDateSelect}
+          disabled={disabledMatcher}
+          month={displayMonth}
+          onMonthChange={setDisplayMonth}
+          locale={locale}
+          dir={isRTL ? 'rtl' : 'ltr'}
+          className="kyora-datepicker w-full"
+          classNames={{
+            months: 'flex flex-col gap-4 w-full',
+            month: 'space-y-3 w-full',
+            month_caption: 'hidden',
+            caption_label: 'hidden',
+            nav: 'hidden',
+            button_previous: 'hidden',
+            button_next: 'hidden',
+            month_grid: 'w-full border-collapse',
+            weekdays: 'flex w-full',
+            weekday: cn(
+              'text-base-content/60 flex-1',
+              'font-semibold flex items-center justify-center',
+              'text-sm h-10',
             ),
-        }}
-      />
+            week: 'flex w-full mt-1',
+            day: cn(
+              'relative p-0 text-center flex-1',
+              'flex items-center justify-center',
+              'font-normal transition-colors',
+              'h-10',
+            ),
+            day_button: cn(
+              'w-full h-full p-0 font-normal rounded-lg',
+              'hover:bg-base-200 transition-colors',
+              'text-sm',
+            ),
+            selected: 'bg-primary text-primary-content hover:bg-primary/90',
+            today: 'border-2 border-primary',
+            outside: 'text-base-content/20 opacity-40',
+            disabled:
+              'text-base-content/20 opacity-40 cursor-not-allowed hover:bg-transparent',
+            hidden: 'invisible',
+          }}
+        />
+      </div>
     )
 
     return (
