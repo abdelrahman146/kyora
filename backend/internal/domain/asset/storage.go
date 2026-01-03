@@ -10,6 +10,7 @@ import (
 // Storage provides data access for assets.
 type Storage struct {
 	cache *cache.Cache
+	db    *database.Database
 	asset *database.Repository[Asset]
 }
 
@@ -17,6 +18,7 @@ type Storage struct {
 func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 	return &Storage{
 		cache: cache,
+		db:    db,
 		asset: database.NewRepository[Asset](db),
 	}
 }
@@ -55,4 +57,12 @@ func (s *Storage) FindByID(ctx context.Context, assetID string) (*Asset, error) 
 func (s *Storage) MarkUploadComplete(ctx context.Context, assetID string) error {
 	// For now, just return nil - this will be implemented in the GC rewrite
 	return nil
+}
+
+// UpdateSize updates the SizeBytes field for an asset.
+// Used for thumbnails and client-generated content where size is unknown at creation time.
+func (s *Storage) UpdateSize(ctx context.Context, assetID string, sizeBytes int64) error {
+	return s.db.Conn(ctx).Model(&Asset{}).
+		Where("id = ?", assetID).
+		Update("size_bytes", sizeBytes).Error
 }

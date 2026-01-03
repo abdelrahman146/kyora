@@ -538,6 +538,97 @@ func (s *AssetUploadSuite) TestGenerateUploadURLs_CDNUrls() {
 	}
 }
 
+// TestLocalUploadWithThumbnail tests the complete local upload flow including thumbnail upload
+// This test simulates what the frontend does: request URLs, upload main file, upload thumbnail
+func (s *AssetUploadSuite) TestLocalUploadWithThumbnail() {
+	ctx := context.Background()
+
+	_, ws, token, err := s.helper.CreateTestUser(ctx, "upload@example.com", "Password123!", "Test", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.createSubscription(ctx, ws.ID)
+	s.createBusiness(ctx, ws.ID, "test-biz")
+
+	// Step 1: Request upload URLs for an image
+	reqBody := asset.GenerateUploadURLsRequest{
+		Files: []asset.FileUploadRequest{
+			{FileName: "product-image.jpg", ContentType: "image/jpeg", SizeBytes: 500_000},
+		},
+	}
+	body, _ := json.Marshal(reqBody)
+
+	req, err := http.NewRequest("POST", fmt.Sprintf("%s/v1/businesses/test-biz/assets/uploads", e2eBaseURL), bytes.NewReader(body))
+	s.NoError(err)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("Content-Type", "application/json")
+
+	resp, err := http.DefaultClient.Do(req)
+	s.NoError(err)
+	defer resp.Body.Close()
+
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var result asset.GenerateUploadURLsResponse
+	s.NoError(json.NewDecoder(resp.Body).Decode(&result))
+
+	s.Len(result.Uploads, 1)
+	upload := result.Uploads[0]
+	s.NotNil(upload.Thumbnail, "Image should have thumbnail descriptor")
+
+	// Step 2: Upload main image (simulate with 500KB of data)
+	mainFileData := bytes.Repeat([]byte("A"), 500_000)
+	mainUploadReq, err := http.NewRequest("POST", upload.URL, bytes.NewReader(mainFileData))
+	s.NoError(err)
+	mainUploadReq.Header.Set("Content-Type", "image/jpeg")
+
+	mainUploadResp, err := http.DefaultClient.Do(mainUploadReq)
+	s.NoError(err)
+	defer mainUploadResp.Body.Close()
+
+	s.Equal(http.StatusOK, mainUploadResp.StatusCode, "Main file upload should succeed")
+
+	// Step 3: Upload thumbnail (client generates smaller thumbnail, e.g., 10KB)
+	// This simulates the frontend generating a thumbnail after resizing/compressing the image
+	thumbnailData := bytes.Repeat([]byte("T"), 10_000) // 10KB thumbnail
+	thumbUploadReq, err := http.NewRequest("POST", upload.Thumbnail.URL, bytes.NewReader(thumbnailData))
+	s.NoError(err)
+	thumbUploadReq.Header.Set("Content-Type", "image/jpeg")
+
+	thumbUploadResp, err := http.DefaultClient.Do(thumbUploadReq)
+	s.NoError(err)
+	defer thumbUploadResp.Body.Close()
+
+	// This is the key test: thumbnail upload should succeed even though we created it with SizeBytes: 0
+	s.Equal(http.StatusOK, thumbUploadResp.StatusCode, "Thumbnail upload should succeed")
+
+	// Step 4: Verify both assets are accessible and have correct sizes
+	assetRepo := database.NewRepository[asset.Asset](testEnv.Database)
+
+	// Verify main asset
+	mainAsset, err := assetRepo.FindByID(ctx, upload.AssetID)
+	s.NoError(err)
+	s.Equal(int64(500_000), mainAsset.SizeBytes, "Main asset should have original size")
+
+	// Verify thumbnail asset - should have updated size
+	thumbAsset, err := assetRepo.FindByID(ctx, upload.Thumbnail.AssetID)
+	s.NoError(err)
+	s.Equal(int64(10_000), thumbAsset.SizeBytes, "Thumbnail asset should have actual uploaded size")
+
+	// Step 5: Verify files can be retrieved via public URL
+	getMainReq, err := http.NewRequest("GET", mainAsset.PublicURL, nil)
+	s.NoError(err)
+	getMainResp, err := http.DefaultClient.Do(getMainReq)
+	s.NoError(err)
+	defer getMainResp.Body.Close()
+	s.Equal(http.StatusOK, getMainResp.StatusCode)
+
+	getThumbReq, err := http.NewRequest("GET", thumbAsset.PublicURL, nil)
+	s.NoError(err)
+	getThumbResp, err := http.DefaultClient.Do(getThumbReq)
+	s.NoError(err)
+	defer getThumbResp.Body.Close()
+	s.Equal(http.StatusOK, getThumbResp.StatusCode)
+}
+
 func TestAssetUploadSuite(t *testing.T) {
 	suite.Run(t, new(AssetUploadSuite))
 }

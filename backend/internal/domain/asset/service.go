@@ -361,13 +361,24 @@ func (s *Service) StoreLocalContent(ctx context.Context, assetID string, content
 		return problem.InternalError().WithError(err)
 	}
 
-	// Verify size matches
-	if written != asset.SizeBytes {
-		// Clean up partial file
-		_ = os.Remove(asset.LocalFilePath)
-		return problem.BadRequest("size mismatch").
-			With("expected", asset.SizeBytes).
-			With("actual", written)
+	// Handle size validation based on whether size was known at asset creation time
+	if asset.SizeBytes == 0 {
+		// For thumbnails or client-generated content where size is unknown upfront,
+		// accept the uploaded size and update the asset record
+		if err := s.storage.UpdateSize(ctx, asset.ID, written); err != nil {
+			// Clean up file on DB update failure
+			_ = os.Remove(asset.LocalFilePath)
+			return err
+		}
+	} else {
+		// For pre-known sizes, enforce strict validation
+		if written != asset.SizeBytes {
+			// Clean up partial file
+			_ = os.Remove(asset.LocalFilePath)
+			return problem.BadRequest("size mismatch").
+				With("expected", asset.SizeBytes).
+				With("actual", written)
+		}
 	}
 
 	return nil
