@@ -52,7 +52,7 @@ export function AddProductSheet({
           <button
             type="button"
             onClick={() => setMode('selection')}
-            className="flex items-center gap-2 px-4 py-3 w-full text-start hover:bg-base-200/50 transition-colors"
+            className="flex items-center gap-2 px-4 py-3 w-full text-start hover:bg-base-200/50 transition-colors cursor-pointer"
           >
             <ArrowLeft
               size={18}
@@ -74,7 +74,7 @@ export function AddProductSheet({
           <button
             type="button"
             onClick={() => setMode('single')}
-            className="flex items-start gap-4 p-6 rounded-xl border-2 border-base-300 hover:border-primary hover:bg-primary/5 transition-all text-start"
+            className="flex items-start gap-4 p-6 rounded-xl border-2 border-base-300 hover:border-primary hover:bg-primary/5 transition-all text-start cursor-pointer"
           >
             <div className="p-3 rounded-lg bg-primary/10">
               <Package className="w-6 h-6 text-primary" />
@@ -92,7 +92,7 @@ export function AddProductSheet({
           <button
             type="button"
             onClick={() => setMode('multiple')}
-            className="flex items-start gap-4 p-6 rounded-xl border-2 border-base-300 hover:border-primary hover:bg-primary/5 transition-all text-start"
+            className="flex items-start gap-4 p-6 rounded-xl border-2 border-base-300 hover:border-primary hover:bg-primary/5 transition-all text-start cursor-pointer"
           >
             <div className="p-3 rounded-lg bg-secondary/10">
               <Layers className="w-6 h-6 text-secondary" />

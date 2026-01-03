@@ -91,6 +91,8 @@
   "product_deleted": "Product deleted successfully",
   "variant_deleted": "Variant deleted successfully",
   "variant_marked_for_deletion": "Variant will be deleted when you save the form",
+  "category_created": "Category {{name}} created",
+  "create_category_option": "Create \"{{name}}\"",
   
   "delete_confirm_title": "Delete Product",
   "delete_confirm_message": "Are you sure you want to delete {{name}}? This will also delete all variants permanently.",

@@ -10,12 +10,10 @@ import type {
 import { useKyoraForm } from '@/lib/form'
 import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { singleVariantProductSchema } from '@/schemas/inventory'
-import {
-  useCategoriesQuery,
-  useCreateProductWithVariantsMutation,
-} from '@/api/inventory'
+import { useCreateProductWithVariantsMutation } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
+import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface SingleVariantProductFormProps {
   onSuccess: () => void
@@ -29,9 +27,8 @@ export function SingleVariantProductForm({
   const { t } = useTranslation()
   const { businessDescriptor } = useParams({ strict: false })
   const queryClient = useQueryClient()
-
-  const categoriesQuery = useCategoriesQuery(businessDescriptor!)
-  const categories = categoriesQuery.data ?? []
+  const selectedBusiness = getSelectedBusiness()
+  const currencyCode = selectedBusiness?.currency ?? 'USD'
 
   const createMutation = useCreateProductWithVariantsMutation(
     businessDescriptor!,
@@ -91,11 +88,6 @@ export function SingleVariantProductForm({
     },
   })
 
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name,
-  }))
-
   return (
     <BusinessContext.Provider
       value={{ businessDescriptor: businessDescriptor! }}
@@ -142,10 +134,10 @@ export function SingleVariantProductForm({
                 }}
               >
                 {(field) => (
-                  <field.SelectField
+                  <field.CategorySelectField
+                    businessDescriptor={businessDescriptor!}
                     label={t('category', { ns: 'inventory' })}
                     placeholder={t('select_category', { ns: 'inventory' })}
-                    options={categoryOptions}
                     required
                   />
                 )}
@@ -181,10 +173,10 @@ export function SingleVariantProductForm({
                   }}
                 >
                   {(field) => (
-                    <field.TextField
-                      type="text"
+                    <field.PriceField
                       label={t('cost_price', { ns: 'inventory' })}
                       placeholder="0.00"
+                      currencyCode={currencyCode}
                       required
                     />
                   )}
@@ -197,10 +189,10 @@ export function SingleVariantProductForm({
                   }}
                 >
                   {(field) => (
-                    <field.TextField
-                      type="text"
+                    <field.PriceField
                       label={t('sale_price', { ns: 'inventory' })}
                       placeholder="0.00"
+                      currencyCode={currencyCode}
                       required
                     />
                   )}

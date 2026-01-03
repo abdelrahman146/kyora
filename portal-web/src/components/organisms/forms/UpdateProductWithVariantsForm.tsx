@@ -1,27 +1,38 @@
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import { Plus, Trash2 } from 'lucide-react'
-import { useState } from 'react'
 
-import type { Product } from '@/api/inventory'
+import type { AssetReference, Product } from '@/api/inventory'
 import { useKyoraForm } from '@/lib/form'
 import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { multiVariantProductSchema } from '@/schemas/inventory'
 import {
   inventoryApi,
-  useCategoriesQuery,
   useCreateVariantMutation,
   useUpdateProductMutation,
 } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
+import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface UpdateProductWithVariantsFormProps {
   product: Product
   businessDescriptor: string
   onSuccess: () => void
   onCancel: () => void
+}
+
+type VariantFormValue = {
+  id?: string
+  code: string
+  sku?: string
+  photos: Array<AssetReference>
+  costPrice: string
+  salePrice: string
+  stockQuantity: number | string
+  stockQuantityAlert: number | string
 }
 
 export function UpdateProductWithVariantsForm({
@@ -32,10 +43,9 @@ export function UpdateProductWithVariantsForm({
 }: UpdateProductWithVariantsFormProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const selectedBusiness = getSelectedBusiness()
+  const currencyCode = selectedBusiness?.currency ?? 'USD'
   const [variantsToDelete, setVariantsToDelete] = useState<Array<string>>([])
-
-  const categoriesQuery = useCategoriesQuery(businessDescriptor)
-  const categories = categoriesQuery.data ?? []
 
   const updateProductMutation = useUpdateProductMutation(
     businessDescriptor,
@@ -59,29 +69,35 @@ export function UpdateProductWithVariantsForm({
     },
   )
 
-  // Deletion happens on form submit, not immediately
-
   const form = useKyoraForm({
     defaultValues: {
       name: product.name || '',
       description: product.description || '',
       photos: product.photos,
       categoryId: product.categoryId || '',
-      variants:
-        product.variants?.map((v) => ({
-          id: v.id,
-          code: v.code || '',
-          sku: v.sku || '',
-          photos: v.photos,
-          costPrice: v.costPrice || '',
-          salePrice: v.salePrice || '',
-          stockQuantity: v.stockQuantity || 0,
-          stockQuantityAlert: v.stockQuantityAlert || 0,
-        })) || [],
+      variants: product.variants?.map((v) => ({
+        id: v.id,
+        code: v.code || '',
+        sku: v.sku || '',
+        photos: v.photos,
+        costPrice: v.costPrice || '',
+        salePrice: v.salePrice || '',
+        stockQuantity: v.stockQuantity || 0,
+        stockQuantityAlert: v.stockQuantityAlert || 0,
+      })) || [
+        {
+          code: '',
+          sku: '',
+          photos: [] as Array<AssetReference>,
+          costPrice: '',
+          salePrice: '',
+          stockQuantity: 0,
+          stockQuantityAlert: 0,
+        },
+      ],
     },
     onSubmit: async ({ value }) => {
       try {
-        // First, update the product
         await updateProductMutation.mutateAsync({
           name: value.name,
           description: value.description || undefined,
@@ -89,32 +105,33 @@ export function UpdateProductWithVariantsForm({
           categoryId: value.categoryId,
         })
 
-        // Then handle variants
-        const existingVariants = value.variants.filter((v) => 'id' in v && v.id)
-        const newVariants = value.variants.filter((v) => !('id' in v) || !v.id)
+        const variants = value.variants as Array<VariantFormValue>
 
-        // Update existing variants using inventoryApi directly
+        const existingVariants = variants.filter(
+          (variant): variant is VariantFormValue & { id: string } =>
+            Boolean(variant.id),
+        )
+
+        const newVariants = variants.filter((variant) => !variant.id)
+
         for (const variant of existingVariants) {
-          if ('id' in variant && variant.id) {
-            await inventoryApi.updateVariant(businessDescriptor, variant.id, {
-              code: variant.code,
-              sku: variant.sku || undefined,
-              photos: variant.photos,
-              costPrice: variant.costPrice,
-              salePrice: variant.salePrice,
-              stockQuantity:
-                typeof variant.stockQuantity === 'string'
-                  ? parseInt(variant.stockQuantity, 10)
-                  : variant.stockQuantity,
-              stockQuantityAlert:
-                typeof variant.stockQuantityAlert === 'string'
-                  ? parseInt(variant.stockQuantityAlert, 10)
-                  : variant.stockQuantityAlert,
-            })
-          }
+          await inventoryApi.updateVariant(businessDescriptor, variant.id, {
+            code: variant.code,
+            sku: variant.sku || undefined,
+            photos: variant.photos,
+            costPrice: variant.costPrice,
+            salePrice: variant.salePrice,
+            stockQuantity:
+              typeof variant.stockQuantity === 'string'
+                ? parseInt(variant.stockQuantity, 10)
+                : variant.stockQuantity,
+            stockQuantityAlert:
+              typeof variant.stockQuantityAlert === 'string'
+                ? parseInt(variant.stockQuantityAlert, 10)
+                : variant.stockQuantityAlert,
+          })
         }
 
-        // Create new variants
         for (const variant of newVariants) {
           await createVariantMutation.mutateAsync({
             product_id: product.id,
@@ -134,7 +151,6 @@ export function UpdateProductWithVariantsForm({
           })
         }
 
-        // Delete variants marked for deletion
         for (const variantId of variantsToDelete) {
           await inventoryApi.deleteVariant(businessDescriptor, variantId)
         }
@@ -148,11 +164,6 @@ export function UpdateProductWithVariantsForm({
       }
     },
   })
-
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name,
-  }))
 
   const isLoading =
     updateProductMutation.isPending || createVariantMutation.isPending
@@ -222,10 +233,10 @@ export function UpdateProductWithVariantsForm({
                 }}
               >
                 {(field) => (
-                  <field.SelectField
+                  <field.CategorySelectField
+                    businessDescriptor={businessDescriptor}
                     label={t('category', { ns: 'inventory' })}
                     placeholder={t('select_category', { ns: 'inventory' })}
-                    options={categoryOptions}
                     required
                   />
                 )}
@@ -347,10 +358,10 @@ export function UpdateProductWithVariantsForm({
                             }}
                           >
                             {(priceField) => (
-                              <priceField.TextField
-                                type="text"
+                              <priceField.PriceField
                                 label={t('cost_price', { ns: 'inventory' })}
                                 placeholder="0.00"
+                                currencyCode={currencyCode}
                                 required
                               />
                             )}
@@ -365,10 +376,10 @@ export function UpdateProductWithVariantsForm({
                             }}
                           >
                             {(priceField) => (
-                              <priceField.TextField
-                                type="text"
+                              <priceField.PriceField
                                 label={t('sale_price', { ns: 'inventory' })}
                                 placeholder="0.00"
+                                currencyCode={currencyCode}
                                 required
                               />
                             )}

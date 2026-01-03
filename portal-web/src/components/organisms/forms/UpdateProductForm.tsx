@@ -7,12 +7,12 @@ import { useKyoraForm } from '@/lib/form'
 import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { singleVariantProductSchema } from '@/schemas/inventory'
 import {
-  useCategoriesQuery,
   useUpdateProductMutation,
   useUpdateVariantMutation,
 } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
+import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface UpdateProductFormProps {
   product: Product
@@ -29,9 +29,8 @@ export function UpdateProductForm({
 }: UpdateProductFormProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
-
-  const categoriesQuery = useCategoriesQuery(businessDescriptor)
-  const categories = categoriesQuery.data ?? []
+  const selectedBusiness = getSelectedBusiness()
+  const currencyCode = selectedBusiness?.currency ?? 'USD'
 
   const variant = product.variants?.[0]
 
@@ -101,11 +100,6 @@ export function UpdateProductForm({
     },
   })
 
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name,
-  }))
-
   const isLoading =
     updateProductMutation.isPending || updateVariantMutation.isPending
 
@@ -153,10 +147,10 @@ export function UpdateProductForm({
                 }}
               >
                 {(field) => (
-                  <field.SelectField
+                  <field.CategorySelectField
+                    businessDescriptor={businessDescriptor}
                     label={t('category', { ns: 'inventory' })}
                     placeholder={t('select_category', { ns: 'inventory' })}
-                    options={categoryOptions}
                     required
                   />
                 )}
@@ -192,10 +186,10 @@ export function UpdateProductForm({
                   }}
                 >
                   {(field) => (
-                    <field.TextField
-                      type="text"
+                    <field.PriceField
                       label={t('cost_price', { ns: 'inventory' })}
                       placeholder="0.00"
+                      currencyCode={currencyCode}
                       required
                     />
                   )}
@@ -208,10 +202,10 @@ export function UpdateProductForm({
                   }}
                 >
                   {(field) => (
-                    <field.TextField
-                      type="text"
+                    <field.PriceField
                       label={t('sale_price', { ns: 'inventory' })}
                       placeholder="0.00"
+                      currencyCode={currencyCode}
                       required
                     />
                   )}

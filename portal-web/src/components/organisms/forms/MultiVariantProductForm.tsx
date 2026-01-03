@@ -11,12 +11,10 @@ import type {
 import { useKyoraForm } from '@/lib/form'
 import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { multiVariantProductSchema } from '@/schemas/inventory'
-import {
-  useCategoriesQuery,
-  useCreateProductWithVariantsMutation,
-} from '@/api/inventory'
+import { useCreateProductWithVariantsMutation } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
+import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface MultiVariantProductFormProps {
   onSuccess: () => void
@@ -30,9 +28,8 @@ export function MultiVariantProductForm({
   const { t } = useTranslation()
   const { businessDescriptor } = useParams({ strict: false })
   const queryClient = useQueryClient()
-
-  const categoriesQuery = useCategoriesQuery(businessDescriptor!)
-  const categories = categoriesQuery.data ?? []
+  const selectedBusiness = getSelectedBusiness()
+  const currencyCode = selectedBusiness?.currency ?? 'USD'
 
   const createMutation = useCreateProductWithVariantsMutation(
     businessDescriptor!,
@@ -96,11 +93,6 @@ export function MultiVariantProductForm({
     },
   })
 
-  const categoryOptions = categories.map((cat) => ({
-    value: cat.id,
-    label: cat.name,
-  }))
-
   return (
     <BusinessContext.Provider
       value={{ businessDescriptor: businessDescriptor! }}
@@ -151,10 +143,10 @@ export function MultiVariantProductForm({
                 }}
               >
                 {(field) => (
-                  <field.SelectField
+                  <field.CategorySelectField
+                    businessDescriptor={businessDescriptor!}
                     label={t('category', { ns: 'inventory' })}
                     placeholder={t('select_category', { ns: 'inventory' })}
-                    options={categoryOptions}
                     required
                   />
                 )}
@@ -267,11 +259,11 @@ export function MultiVariantProductForm({
                                   .shape.costPrice,
                             }}
                           >
-                            {(priceField) => (
-                              <priceField.TextField
-                                type="text"
+                            {(costPriceField) => (
+                              <costPriceField.PriceField
                                 label={t('cost_price', { ns: 'inventory' })}
                                 placeholder="0.00"
+                                currencyCode={currencyCode}
                                 required
                               />
                             )}
@@ -285,11 +277,11 @@ export function MultiVariantProductForm({
                                   .shape.salePrice,
                             }}
                           >
-                            {(priceField) => (
-                              <priceField.TextField
-                                type="text"
+                            {(salePriceField) => (
+                              <salePriceField.PriceField
                                 label={t('sale_price', { ns: 'inventory' })}
                                 placeholder="0.00"
+                                currencyCode={currencyCode}
                                 required
                               />
                             )}
@@ -330,7 +322,8 @@ export function MultiVariantProductForm({
 
                     <button
                       type="button"
-                      onClick={() => {
+                      className="btn btn-outline w-full"
+                      onClick={() =>
                         field.handleChange([
                           ...field.state.value,
                           {
@@ -343,12 +336,12 @@ export function MultiVariantProductForm({
                             stockQuantityAlert: 0,
                           },
                         ])
-                      }}
-                      className="btn btn-outline btn-sm w-full"
-                      disabled={field.state.value.length >= 50}
+                      }
                     >
                       <Plus className="w-4 h-4" />
-                      {t('add_variant', { ns: 'inventory' })}
+                      <span className="ms-2">
+                        {t('add_variant', { ns: 'inventory' })}
+                      </span>
                     </button>
                   </div>
                 )}

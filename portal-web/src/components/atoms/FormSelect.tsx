@@ -27,7 +27,7 @@ import {
   useState,
 } from 'react'
 import { createPortal } from 'react-dom'
-import { Check, ChevronDown, Search, X } from 'lucide-react'
+import { Check, ChevronDown, Plus, Search, X } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
 import { cn } from '../../lib/utils'
 import { useMediaQuery } from '../../hooks/useMediaQuery'
@@ -66,6 +66,12 @@ export interface FormSelectProps<T = string> {
   searchValue?: string
   /** Callback when search value changes (for external control) */
   onSearchChange?: (value: string) => void
+  /** Callback to create an option from search input */
+  onCreateOption?: (label: string) => void | Promise<void>
+  /** Custom label for the create option action */
+  createOptionLabel?: (label: string) => string
+  /** Loading state while creating a new option */
+  isCreatingOption?: boolean
   id?: string
   disabled?: boolean
   required?: boolean
@@ -107,6 +113,9 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       onClear,
       searchValue: externalSearchValue,
       onSearchChange: externalOnSearchChange,
+      onCreateOption,
+      createOptionLabel,
+      isCreatingOption,
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
@@ -145,6 +154,25 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     // Use external search if provided, otherwise use internal
     const searchQuery = externalSearchValue ?? internalSearchQuery
     const setSearchQuery = externalOnSearchChange ?? setInternalSearchQuery
+
+    const normalizedSearchQuery = searchQuery.trim()
+    const hasExactOption = normalizedSearchQuery
+      ? options.some(
+          (opt) =>
+            opt.label.trim().toLowerCase() ===
+            normalizedSearchQuery.toLowerCase(),
+        )
+      : false
+    const canCreateOption = Boolean(
+      onCreateOption &&
+      normalizedSearchQuery.length > 0 &&
+      !hasExactOption &&
+      !disabled,
+    )
+
+    const createActionLabel = createOptionLabel
+      ? createOptionLabel(normalizedSearchQuery)
+      : t('common.create_option', { option: normalizedSearchQuery })
 
     // Close handler with animation
     const handleClose = useCallback(() => {
@@ -289,6 +317,26 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       },
       [handleRemoveChip],
     )
+
+    const handleCreateOption = useCallback(async () => {
+      if (!canCreateOption || !onCreateOption || isCreatingOption) return
+
+      await onCreateOption(normalizedSearchQuery)
+      setSearchQuery('')
+      setFocusedIndex(-1)
+      if (!multiSelect) {
+        handleClose()
+      }
+    }, [
+      canCreateOption,
+      onCreateOption,
+      isCreatingOption,
+      normalizedSearchQuery,
+      setSearchQuery,
+      setFocusedIndex,
+      multiSelect,
+      handleClose,
+    ])
 
     // Display text (for single-select trigger)
     const getDisplayText = () => {
@@ -522,6 +570,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                             setSearchQuery(e.target.value)
                             setFocusedIndex(-1)
                           }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' && canCreateOption) {
+                              e.preventDefault()
+                              handleCreateOption()
+                            }
+                          }}
                           placeholder={t('common.search_placeholder_generic')}
                           startIcon={<Search className="w-5 h-5" />}
                           size="lg"
@@ -538,7 +592,35 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                       aria-multiselectable={multiSelect}
                       className="overflow-y-auto flex-1 overscroll-contain"
                     >
-                      {filteredOptions.length === 0 ? (
+                      {canCreateOption && (
+                        <li
+                          role="option"
+                          aria-selected={false}
+                          onClick={handleCreateOption}
+                          className={cn(
+                            'flex items-center gap-3 px-4 py-4 cursor-pointer transition-colors',
+                            'min-h-[56px] border-b border-base-200',
+                            'hover:bg-base-200 active:bg-base-300',
+                          )}
+                        >
+                          <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                            <Plus className="w-5 h-5" />
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <div className="font-medium text-base">
+                              {createActionLabel}
+                            </div>
+                            <div className="text-sm text-base-content/60 mt-0.5">
+                              {t('common.create')}
+                            </div>
+                          </div>
+                          {isCreatingOption && (
+                            <span className="loading loading-spinner loading-sm text-primary" />
+                          )}
+                        </li>
+                      )}
+
+                      {filteredOptions.length === 0 && !canCreateOption ? (
                         <li className="p-6 text-center text-base-content/50">
                           {t('common.no_options_found')}
                         </li>
@@ -630,6 +712,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         setSearchQuery(e.target.value)
                         setFocusedIndex(-1)
                       }}
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter' && canCreateOption) {
+                          e.preventDefault()
+                          handleCreateOption()
+                        }
+                      }}
                       placeholder={t('common.search_placeholder_generic')}
                       startIcon={<Search className="w-4 h-4" />}
                       size="sm"
@@ -647,7 +735,35 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   className="overflow-y-auto"
                   style={{ maxHeight: maxHeight - (searchable ? 60 : 0) }}
                 >
-                  {filteredOptions.length === 0 ? (
+                  {canCreateOption && (
+                    <li
+                      role="option"
+                      aria-selected={false}
+                      onClick={handleCreateOption}
+                      className={cn(
+                        'flex items-center gap-3 px-4 py-3 cursor-pointer transition-colors',
+                        'min-h-[48px] border-b border-base-200',
+                        'hover:bg-base-200 focus:bg-base-200 focus:outline-none',
+                      )}
+                    >
+                      <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                        <Plus className="w-4 h-4" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <div className="font-medium truncate">
+                          {createActionLabel}
+                        </div>
+                        <div className="text-sm text-base-content/60 truncate">
+                          {t('common.create')}
+                        </div>
+                      </div>
+                      {isCreatingOption && (
+                        <span className="loading loading-spinner loading-xs text-primary" />
+                      )}
+                    </li>
+                  )}
+
+                  {filteredOptions.length === 0 && !canCreateOption ? (
                     <li className="p-4 text-center text-base-content/50">
                       {t('common.no_options_found')}
                     </li>

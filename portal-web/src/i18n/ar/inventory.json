@@ -91,6 +91,8 @@
   "product_deleted": "تم حذف المنتج بنجاح",
   "variant_deleted": "تم حذف المتغير بنجاح",
   "variant_marked_for_deletion": "سيتم حذف المتغير عند حفظ النموذج",
+  "category_created": "تم إنشاء الفئة {{name}}",
+  "create_category_option": "إنشاء \"{{name}}\"",
   
   "delete_confirm_title": "حذف المنتج",
   "delete_confirm_message": "هل أنت متأكد من حذف {{name}}؟ سيتم أيضاً حذف جميع المتغيرات بشكل نهائي.",

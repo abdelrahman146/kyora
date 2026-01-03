@@ -52,6 +52,7 @@
 import { createFormHook } from '@tanstack/react-form'
 import { fieldContext, formContext } from './contexts'
 import {
+  CategorySelectField,
   CheckboxField,
   CheckboxGroupField,
   CustomerSelectField,
@@ -63,6 +64,7 @@ import {
   FileUploadField,
   ImageUploadField,
   PasswordField,
+  PriceField,
   RadioField,
   SelectField,
   TextField,
@@ -83,6 +85,7 @@ const { useAppForm, withForm } = createFormHook({
 
   // Pre-bind field components for use in forms
   fieldComponents: {
+    CategorySelectField,
     TextField,
     PasswordField,
     TextareaField,
@@ -99,6 +102,7 @@ const { useAppForm, withForm } = createFormHook({
     FieldArray,
     FileUploadField,
     ImageUploadField,
+    PriceField,
     ErrorInfo,
   },
 

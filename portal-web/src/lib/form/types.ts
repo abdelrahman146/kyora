@@ -54,6 +54,16 @@ export interface TextFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Price input specific props
+ */
+export interface PriceFieldProps extends BaseFieldProps {
+  /** Currency code to display inside the field */
+  currencyCode?: string
+  /** Autocomplete attribute for browser autofill */
+  autoComplete?: string
+}
+
+/**
  * Password input specific props
  */
 export interface PasswordFieldProps extends BaseFieldProps {

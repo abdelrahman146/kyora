@@ -11,6 +11,12 @@ export interface FileUploadZoneProps {
   maxFiles?: number
   className?: string
   children?: React.ReactNode
+  /** When true, indicates the max file count has been reached */
+  isMaxReached?: boolean
+  /** Whether uploads are currently in progress */
+  isUploading?: boolean
+  /** Optional label to display while uploading */
+  uploadingLabel?: string
 }
 
 /**
@@ -40,15 +46,20 @@ export function FileUploadZone({
   maxFiles,
   className,
   children,
+  isMaxReached = false,
+  isUploading = false,
+  uploadingLabel,
 }: FileUploadZoneProps) {
   const [isDragActive, setIsDragActive] = useState(false)
   const fileInputRef = useRef<HTMLInputElement>(null)
   const { t } = useTranslation('upload')
+  const isMaxFilesReached = Boolean(maxFiles && isMaxReached)
+  const isZoneDisabled = disabled || isMaxFilesReached
 
   const handleDragEnter = (e: React.DragEvent) => {
     e.preventDefault()
     e.stopPropagation()
-    if (!disabled) {
+    if (!isZoneDisabled) {
       setIsDragActive(true)
     }
   }
@@ -69,7 +80,7 @@ export function FileUploadZone({
     e.stopPropagation()
     setIsDragActive(false)
 
-    if (disabled) return
+    if (isZoneDisabled) return
 
     const files = Array.from(e.dataTransfer.files)
     if (files.length > 0) {
@@ -78,19 +89,21 @@ export function FileUploadZone({
   }
 
   const handleClick = () => {
-    if (!disabled) {
+    if (!isZoneDisabled) {
       fileInputRef.current?.click()
     }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
-    if ((e.key === ' ' || e.key === 'Enter') && !disabled) {
+    if ((e.key === ' ' || e.key === 'Enter') && !isZoneDisabled) {
       e.preventDefault()
       handleClick()
     }
   }
 
   const handleFileInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (isZoneDisabled) return
+
     const files = Array.from(e.target.files || [])
     if (files.length > 0) {
       onFilesSelected(files)
@@ -99,33 +112,37 @@ export function FileUploadZone({
     e.target.value = ''
   }
 
-  const isMaxFilesReached = Boolean(maxFiles && disabled)
-
   return (
     <div
       role="button"
-      tabIndex={disabled ? -1 : 0}
+      tabIndex={isZoneDisabled ? -1 : 0}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       onDragEnter={handleDragEnter}
       onDragOver={handleDragOver}
       onDragLeave={handleDragLeave}
       onDrop={handleDrop}
-      aria-label={disabled ? 'Maximum files reached' : 'Upload files'}
-      aria-disabled={disabled}
+      aria-label={
+        isMaxFilesReached
+          ? t('maximumFilesReached')
+          : isUploading
+            ? (uploadingLabel ?? t('uploading'))
+            : t('selectFiles')
+      }
+      aria-disabled={isZoneDisabled}
       className={cn(
         'relative flex flex-col items-center justify-center',
         'min-h-[200px] p-8',
         'border-2 border-dashed rounded-lg',
         'transition-all duration-200',
-        'cursor-pointer',
+        !isZoneDisabled && 'cursor-pointer',
         isDragActive &&
-          !disabled &&
+          !isZoneDisabled &&
           'border-primary bg-primary/10 scale-[1.02]',
         !isDragActive &&
-          !disabled &&
+          !isZoneDisabled &&
           'border-base-300 hover:border-primary/50 hover:bg-base-200/50',
-        disabled &&
+        isZoneDisabled &&
           'border-base-300/50 bg-base-200/30 cursor-not-allowed opacity-60',
         className,
       )}
@@ -136,7 +153,7 @@ export function FileUploadZone({
         accept={accept}
         multiple={multiple}
         onChange={handleFileInputChange}
-        disabled={disabled}
+        disabled={isZoneDisabled}
         className="hidden"
         aria-hidden="true"
       />
@@ -158,6 +175,8 @@ export function FileUploadZone({
               t('dropFilesHere')
             ) : isMaxFilesReached ? (
               t('maximumFilesReached')
+            ) : isUploading ? (
+              (uploadingLabel ?? t('waitingForUploads'))
             ) : (
               <>
                 <span className="hidden md:inline">

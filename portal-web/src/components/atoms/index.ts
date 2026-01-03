@@ -39,6 +39,7 @@ export {
   type FormSelectProps,
   type FormSelectOption,
 } from './FormSelect'
+export { PriceInput, type PriceInputProps } from './PriceInput'
 export { PasswordInput, type PasswordInputProps } from './PasswordInput'
 export { DatePicker, type DatePickerProps } from './DatePicker'
 export { TimePicker, type TimePickerProps } from './TimePicker'

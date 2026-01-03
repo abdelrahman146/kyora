@@ -95,18 +95,19 @@ export function useFileUpload(
           },
         )
 
-        // Update success states
+        // Update success states with reliable file mapping
         result.success.forEach((ref, index) => {
-          const file = files.find(
-            (f) => f.name === ref.metadata?.altText || files[index],
-          )
-          if (file) {
-            updateState(file, {
-              status: 'success',
-              progress: 100,
-              assetReference: ref,
-            })
-          }
+          const fileFromIndex = files.at(index)
+          const mappedFile =
+            fileFromIndex ?? files.find((f) => f.name === ref.metadata?.altText)
+
+          if (!mappedFile) return
+
+          updateState(mappedFile, {
+            status: 'success',
+            progress: 100,
+            assetReference: ref,
+          })
         })
 
         // Update error states

@@ -193,13 +193,19 @@ export function FileUploadField(props: FileUploadFieldProps) {
     (files: Array<File>) => {
       if (disabled) return
 
+      const currentTotal =
+        existingReferences.length + newFiles.length + pendingFiles.length
+      const remainingSlots = maxFiles
+        ? Math.max(maxFiles - currentTotal, 0)
+        : undefined
+
+      if (remainingSlots === 0) return
+
       // Validate files
       const validationResults = validateFiles(files, {
         accept: accept?.split(','),
         maxSize,
-        maxFiles: maxFiles
-          ? maxFiles - existingReferences.length - newFiles.length
-          : undefined,
+        maxFiles: remainingSlots,
         checkDuplicates: true,
       })
 
@@ -229,9 +235,10 @@ export function FileUploadField(props: FileUploadFieldProps) {
       disabled,
       accept,
       maxSize,
-      maxFiles,
       existingReferences.length,
       newFiles.length,
+      maxFiles,
+      pendingFiles.length,
       upload,
     ],
   )
@@ -344,8 +351,14 @@ export function FileUploadField(props: FileUploadFieldProps) {
           <FileUploadZone
             accept={accept}
             multiple={multiple}
-            disabled={disabled || isUploading}
+            disabled={disabled || isUploading || isMaxReached}
             maxFiles={maxFiles}
+            isMaxReached={isMaxReached}
+            isUploading={isUploading}
+            uploadingLabel={t('filesUploading', {
+              count: pendingFiles.length || uploadStates.size || 1,
+              ns: 'upload',
+            })}
             onFilesSelected={handleFilesSelected}
           >
             {isMobile && accept?.includes('image') && (
