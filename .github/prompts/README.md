@@ -7,7 +7,14 @@ Reusable prompt files for common development tasks in the Kyora monorepo.
 ### Feature Development
 
 - **`/add-backend-feature`** - Add new feature to backend (Go API)
+- **`/improve-backend-feature`** - Improve an existing feature in the backend (Go API)
 - **`/add-portal-feature`** - Add new feature to portal-web (React dashboard)
+- **`/improve-portal-feature`** - Improve an existing feature in portal-web (React dashboard)
+
+### Cross-Project
+
+- **`/cross-project-enhancement`** - Enhancement spanning backend + portal-web
+- **`/cross-project-refactor`** - Refactor spanning backend + portal-web
 
 ### Project Scaffolding
 
@@ -19,6 +26,13 @@ Reusable prompt files for common development tasks in the Kyora monorepo.
 - **`/debug-backend`** - Debug and fix backend issues
 - **`/debug-portal-web`** - Debug and fix portal-web issues
 - **`/fix-ui-ux`** - Fix UI/UX issues in portal-web
+
+### Refactoring
+
+- **`/refactor-backend-feature`** - Refactor a single backend feature/domain
+- **`/refactor-backend-project`** - Project-wide refactor in the backend
+- **`/refactor-portal-feature`** - Refactor a single portal-web feature
+- **`/refactor-portal-project`** - Project-wide refactor in portal-web
 
 ## Usage
 
@@ -95,26 +109,176 @@ Prompts reference these instruction files (SSOT):
 
 ## Examples
 
-### Add Backend Feature
+Below are **small, complete** examples for every prompt.
+
+Tip: you can run a prompt by typing `/prompt-name` in chat, then filling in the requested inputs. If a prompt has **Constraints**, they are optional and should be written as hard rules.
+
+### Feature Development
+
+#### `/add-backend-feature`
+
+When asked for **Feature Requirements**:
 
 ```
-/add-backend-feature Add webhook endpoint for Stripe payment success events
+Add an endpoint to export orders as CSV for a business.
+Include filters: date range + status.
 ```
 
-### Fix UI Issue
+#### `/improve-backend-feature`
+
+When asked:
 
 ```
-/fix-ui-ux Form fields overlapping on mobile screens in Arabic mode
+Improvement Brief:
+Reduce N+1 queries on the orders list endpoint.
+
+Constraints (optional):
+No DB migrations. No endpoint changes. No response shape changes.
 ```
 
-### Debug Backend
+#### `/add-portal-feature`
+
+When asked for **Feature Requirements**:
 
 ```
-/debug-backend Getting 500 error when creating order with multiple line items
+Add order filtering by status with date range to the orders list.
+Must work for both Arabic and English.
 ```
 
-### Create New Module
+#### `/improve-portal-feature`
+
+When asked:
 
 ```
-/create-backend-project Create subscription domain for managing recurring billing
+Improvement Brief:
+Improve inventory adjustment UX on mobile: clearer errors + better loading states.
+
+Constraints (optional):
+No new routes. No backend changes. Keep existing layout.
+```
+
+### Cross-Project
+
+#### `/cross-project-enhancement`
+
+When asked:
+
+```
+Enhancement Brief:
+Add a new computed field to the order API response (profit) and display it in the order details page.
+
+Constraints (optional):
+No DB migrations. Keep existing endpoints; only extend the response.
+```
+
+#### `/cross-project-refactor`
+
+When asked:
+
+```
+Refactor Brief:
+Unify backend problem error codes for order create/update and update portal form error mapping accordingly.
+
+Constraints (optional):
+No behavior changes. Portal UI should look the same.
+```
+
+### Project Scaffolding
+
+#### `/create-backend-project`
+
+When asked for **Project Requirements**:
+
+```
+subscription
+```
+
+#### `/create-frontend-project`
+
+When asked for **Project Requirements**:
+
+```
+subscriptions management
+```
+
+### Debugging
+
+#### `/debug-backend`
+
+When asked for **Issue Description**:
+
+```
+Getting 500 when creating an order with multiple line items; error occurs after inventory is updated.
+```
+
+#### `/debug-portal-web`
+
+When asked for **Issue Description**:
+
+```
+Order create form submits, but the UI stays loading forever and no error is shown.
+```
+
+#### `/fix-ui-ux`
+
+When asked for **Issue Description**:
+
+```
+Button alignment is broken in RTL mode on mobile in the orders list toolbar.
+```
+
+### Refactoring
+
+#### `/refactor-portal-feature`
+
+When asked:
+
+```
+Refactor Brief:
+Extract reusable OrderForm fields into shared components and unify Zod schema reuse.
+
+Feature/Area:
+orders
+
+Constraints (optional):
+No UI changes. No backend changes.
+```
+
+#### `/refactor-portal-project`
+
+When asked:
+
+```
+Refactor Brief:
+Convert POST/PUT/DELETE requests to TanStack Query mutations across the app.
+
+Constraints (optional):
+No UI changes. No route changes. No new dependencies.
+```
+
+#### `/refactor-backend-feature`
+
+When asked:
+
+```
+Refactor Brief:
+Standardize RFC 7807 problems for inventory adjustments and remove duplicated validation code.
+
+Domain/Area:
+inventory
+
+Constraints (optional):
+No endpoint changes. No DB migrations. No behavior changes.
+```
+
+#### `/refactor-backend-project`
+
+When asked:
+
+```
+Refactor Brief:
+Standardize request validation + problem errors across handlers.
+
+Constraints (optional):
+No endpoint changes. No DB migrations. Must be mechanical and low-risk.
 ```
