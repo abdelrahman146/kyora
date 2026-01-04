@@ -1,4 +1,4 @@
-import { useState } from 'react'
+import { useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import {
@@ -31,10 +31,15 @@ export function OrderQuickActions({
 }: OrderQuickActionsProps) {
   const { t } = useTranslation()
   const queryClient = useQueryClient()
+  const formId = useId()
   const [showStatusSheet, setShowStatusSheet] = useState(false)
   const [showPaymentSheet, setShowPaymentSheet] = useState(false)
   const [showAddressSheet, setShowAddressSheet] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+
+  const statusFormId = `order-status-form-${formId}`
+  const paymentFormId = `order-payment-form-${formId}`
+  const addressFormId = `order-address-form-${formId}`
 
   const statusForm = useKyoraForm({
     defaultValues: {
@@ -277,22 +282,23 @@ export function OrderQuickActions({
         </ul>
       </div>
 
-      <BottomSheet
-        isOpen={showStatusSheet}
-        onClose={() => setShowStatusSheet(false)}
-        title={t('orders:update_status')}
-        footer={
-          <statusForm.SubmitButton
-            variant="primary"
-            disabled={isUpdating}
-            className="w-full"
-          >
-            {isUpdating ? t('common:loading') : t('common:update')}
-          </statusForm.SubmitButton>
-        }
-      >
-        <statusForm.AppForm>
-          <statusForm.FormRoot className="space-y-4">
+      <statusForm.AppForm>
+        <BottomSheet
+          isOpen={showStatusSheet}
+          onClose={() => setShowStatusSheet(false)}
+          title={t('orders:update_status')}
+          footer={
+            <statusForm.SubmitButton
+              form={statusFormId}
+              variant="primary"
+              disabled={isUpdating}
+              className="w-full"
+            >
+              {isUpdating ? t('common:loading') : t('common:update')}
+            </statusForm.SubmitButton>
+          }
+        >
+          <statusForm.FormRoot id={statusFormId} className="space-y-4">
             <statusForm.AppField name="status">
               {(field) => (
                 <field.RadioField
@@ -313,25 +319,26 @@ export function OrderQuickActions({
               )}
             </statusForm.AppField>
           </statusForm.FormRoot>
-        </statusForm.AppForm>
-      </BottomSheet>
+        </BottomSheet>
+      </statusForm.AppForm>
 
-      <BottomSheet
-        isOpen={showPaymentSheet}
-        onClose={() => setShowPaymentSheet(false)}
-        title={t('orders:update_payment')}
-        footer={
-          <paymentForm.SubmitButton
-            variant="primary"
-            disabled={isUpdating}
-            className="w-full"
-          >
-            {isUpdating ? t('common:loading') : t('common:update')}
-          </paymentForm.SubmitButton>
-        }
-      >
-        <paymentForm.AppForm>
-          <paymentForm.FormRoot className="space-y-4">
+      <paymentForm.AppForm>
+        <BottomSheet
+          isOpen={showPaymentSheet}
+          onClose={() => setShowPaymentSheet(false)}
+          title={t('orders:update_payment')}
+          footer={
+            <paymentForm.SubmitButton
+              form={paymentFormId}
+              variant="primary"
+              disabled={isUpdating}
+              className="w-full"
+            >
+              {isUpdating ? t('common:loading') : t('common:update')}
+            </paymentForm.SubmitButton>
+          }
+        >
+          <paymentForm.FormRoot id={paymentFormId} className="space-y-4">
             <paymentForm.AppField name="paymentStatus">
               {(field) => (
                 <field.RadioField
@@ -421,25 +428,26 @@ export function OrderQuickActions({
               </div>
             </div>
           </paymentForm.FormRoot>
-        </paymentForm.AppForm>
-      </BottomSheet>
+        </BottomSheet>
+      </paymentForm.AppForm>
 
-      <BottomSheet
-        isOpen={showAddressSheet}
-        onClose={() => setShowAddressSheet(false)}
-        title={t('orders:update_address')}
-        footer={
-          <addressForm.SubmitButton
-            variant="primary"
-            disabled={isUpdating}
-            className="w-full"
-          >
-            {isUpdating ? t('common:loading') : t('common:update')}
-          </addressForm.SubmitButton>
-        }
-      >
-        <addressForm.AppForm>
-          <addressForm.FormRoot className="space-y-4">
+      <addressForm.AppForm>
+        <BottomSheet
+          isOpen={showAddressSheet}
+          onClose={() => setShowAddressSheet(false)}
+          title={t('orders:update_address')}
+          footer={
+            <addressForm.SubmitButton
+              form={addressFormId}
+              variant="primary"
+              disabled={isUpdating}
+              className="w-full"
+            >
+              {isUpdating ? t('common:loading') : t('common:update')}
+            </addressForm.SubmitButton>
+          }
+        >
+          <addressForm.FormRoot id={addressFormId} className="space-y-4">
             <addressForm.AppField name="shippingAddressId">
               {(field) => (
                 <field.AddressSelectField
@@ -451,8 +459,8 @@ export function OrderQuickActions({
               )}
             </addressForm.AppField>
           </addressForm.FormRoot>
-        </addressForm.AppForm>
-      </BottomSheet>
+        </BottomSheet>
+      </addressForm.AppForm>
     </>
   )
 }
