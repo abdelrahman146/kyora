@@ -39,7 +39,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
           <AlertCircle className="w-16 h-16 text-error mb-4" />
 
           <h2 className="card-title text-error mb-2">
-            {t('errors.route_error_title')}
+            {t('errors:route:route_error_title')}
           </h2>
 
           <p className="text-base-content/70 mb-6">{errorMessage}</p>
@@ -51,7 +51,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
               className="btn btn-primary gap-2"
             >
               <RefreshCcw className="w-4 h-4" />
-              {t('errors.retry')}
+              {t('errors:route:retry')}
             </button>
 
             <button
@@ -59,7 +59,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
               onClick={handleGoHome}
               className="btn btn-ghost"
             >
-              {t('errors.go_home')}
+              {t('errors:route:go_home')}
             </button>
           </div>
         </div>

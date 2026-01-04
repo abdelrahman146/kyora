@@ -5,7 +5,6 @@ import { BottomSheet } from './BottomSheet'
 import type { Order } from '@/api/order'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
-import { useLanguage } from '@/hooks/useLanguage'
 
 export interface OrderReviewSheetProps {
   order: Order | null
@@ -19,7 +18,6 @@ export function OrderReviewSheet({
   onClose,
 }: OrderReviewSheetProps) {
   const { t } = useTranslation()
-  const { isRTL } = useLanguage()
 
   if (!order) return null
 

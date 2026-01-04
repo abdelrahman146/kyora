@@ -628,11 +628,15 @@ function OrdersListPage() {
         sortOptions={sortOptions}
         onSortApply={handleSortApply}
         emptyIcon={<ShoppingCart size={48} />}
-        emptyTitle={search.search ? t('no_results') : t('no_orders')}
-        emptyMessage={
-          search.search ? t('try_different_search') : t('get_started_message')
+        emptyTitle={
+          search.search ? t('orders:no_results') : t('orders:no_orders')
         }
-        emptyActionText={!search.search ? t('add_order') : undefined}
+        emptyMessage={
+          search.search
+            ? t('orders:try_different_search')
+            : t('orders:get_started_message')
+        }
+        emptyActionText={!search.search ? t('orders:add_order') : undefined}
         onEmptyAction={!search.search ? handleAddOrder : undefined}
         tableColumns={columns}
         tableData={data?.items || []}
