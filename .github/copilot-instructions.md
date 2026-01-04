@@ -79,7 +79,6 @@ kyora/
 
 - `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
 - `.github/instructions/ui-implementation.instructions.md` → Components, RTL rules, daisyUI usage
-- `.github/instructions/bestpractice.instructions.md` → Client-side architecture
 
 ## 5. Execution Standards (Non-Negotiable)
 
@@ -111,8 +110,8 @@ Does it modify backend/?
     NO → Continue
         ↓
 Does it modify portal-web/?
-    YES → Read portal-web.instructions.md → Check if forms/HTTP/UI → Read relevant instructions
-    NO → Continue-architecture.instructions.md → Check if forms/HTTP/UI/charts
+    YES → Read portal-web-architecture.instructions.md → Check if forms/HTTP/UI → Read relevant instructions
+    NO → Continue
         ↓
 Does it modify storefront-web/?
     YES → Read storefront-web/DESIGN_SYSTEM.md + design-tokens + ui-implementation
