@@ -180,12 +180,14 @@ Before working on any task, always refer to the relevant instruction files based
   - Always refer to `.github/instructions/portal-web.instructions.md` for architecture, patterns, and conventions
   - Refer to `.github/instructions/ky.instructions.md` when making HTTP requests
   - Refer to `.github/instructions/tanstack-form.instructions.md` when working with forms
-  - Refer to `.github/instructions/branding.instructions.md` for design system and styling guidelines
+  - Refer to `.github/instructions/design-tokens.instructions.md` for colors, typography, spacing (design tokens reference)
+  - Refer to `.github/instructions/ui-patterns.instructions.md` for components, RTL rules, accessibility (implementation patterns)
   - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
 
 - **When working on `storefront-web/` (Customer-facing storefront)**:
-  - Refer to `storefront-web/DESIGN_SYSTEM.md` for component and styling guidelines
-  - Refer to `.github/instructions/branding.instructions.md` for brand consistency
+  - Refer to `.github/instructions/design-tokens.instructions.md` for colors, typography, spacing (design tokens reference)
+  - Refer to `.github/instructions/ui-patterns.instructions.md` for components, RTL rules, accessibility (implementation patterns)
+  - Refer to `storefront-web/DESIGN_SYSTEM.md` for storefront-specific component guidelines
   - Refer to `.github/instructions/react-router.instructions.md` when working with routing
   - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
 
@@ -227,11 +229,12 @@ Before working on any task, always refer to the relevant instruction files based
 - Tech stack: React 19, TanStack Router v1, TanStack Query v5, TanStack Form v1, Tailwind CSS v4 (CSS-first), daisyUI v5, Ky, i18next.
 - Follow the rules in `.github/instructions/portal-web.instructions.md` for architecture, routing, forms, and state management.
 - Forms: Always use `useKyoraForm` composition layer - wrap in `<form.AppForm>`, use `<form.AppField>` with `{(field) => <field.ComponentName />}` pattern.
-- Styling rules: follow `.github/instructions/branding.instructions.md` for design tokens and brand guidelines.
+- Design system: follow `.github/instructions/design-tokens.instructions.md` (colors, typography, spacing) and `.github/instructions/ui-patterns.instructions.md` (components, RTL rules).
 - RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
 
 ### Storefront Web (React)
 
 - Tech stack: React 19, React Router v7, Tailwind CSS v4 (CSS-first), daisyUI v5, TanStack Query, Zustand, i18next.
-- Styling rules: follow `.github/instructions/branding.instructions.md`, `storefront-web/DESIGN_SYSTEM.md`, and the theme/tokens in `storefront-web/src/index.css`.
+- Design system: follow `.github/instructions/design-tokens.instructions.md` (colors, typography, spacing) and `.github/instructions/ui-patterns.instructions.md` (components, RTL rules).
+- Storefront-specific: `storefront-web/DESIGN_SYSTEM.md` and theme tokens in `storefront-web/src/index.css`.
 - RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
