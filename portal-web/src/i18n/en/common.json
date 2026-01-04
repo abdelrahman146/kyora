@@ -137,12 +137,17 @@
     "max_length": "Must not exceed {{max}} characters"
   },
   "date": {
+    "date": "Date",
     "selectDate": "Select date",
+    "selectDateTime": "Select date & time",
     "selectDateRange": "Select date range",
+    "selectTime": "Select time",
     "today": "Today",
+    "done": "Done",
     "hours": "Hours",
     "minutes": "Minutes",
     "period": "Period",
+    "time": "Time",
     "incrementHours": "Increment hours",
     "decrementHours": "Decrement hours",
     "incrementMinutes": "Increment minutes",

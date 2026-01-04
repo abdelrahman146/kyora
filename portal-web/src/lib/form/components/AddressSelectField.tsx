@@ -58,11 +58,12 @@ export interface AddressSelectFieldProps {
 
 export function AddressSelectField(props: AddressSelectFieldProps) {
   const field = useFieldContext<string>()
-  const { t } = useTranslation(['common', 'errors'])
+  const { t: tCommon } = useTranslation('common')
+  const { t: tErrors } = useTranslation('errors')
 
   const {
-    label = t('common:address'),
-    placeholder = t('common:select_address'),
+    label = tCommon('address'),
+    placeholder = tCommon('select_address'),
     businessDescriptor,
     customerId,
     disabled = false,
@@ -92,7 +93,7 @@ export function AddressSelectField(props: AddressSelectFieldProps) {
   const errorMessage = field.state.meta.errors[0]
   const translatedError =
     typeof errorMessage === 'string'
-      ? t(`errors:${errorMessage}`, { defaultValue: errorMessage })
+      ? tErrors(errorMessage, { defaultValue: errorMessage })
       : errorMessage?.message
 
   return (
@@ -107,7 +108,7 @@ export function AddressSelectField(props: AddressSelectFieldProps) {
         disabled={disabled || isLoading}
         required={required}
         searchable
-        helperText={isLoading ? t('common:loading') : undefined}
+        helperText={isLoading ? tCommon('loading') : undefined}
       />
     </div>
   )

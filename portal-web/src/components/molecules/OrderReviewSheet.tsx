@@ -17,7 +17,8 @@ export function OrderReviewSheet({
   isOpen,
   onClose,
 }: OrderReviewSheetProps) {
-  const { t } = useTranslation()
+  const { t: tOrders } = useTranslation('orders')
+  const { t: tCommon } = useTranslation('common')
 
   if (!order) return null
 
@@ -56,30 +57,30 @@ export function OrderReviewSheet({
     <BottomSheet
       isOpen={isOpen}
       onClose={onClose}
-      title={t('orders:quick_review')}
+      title={tOrders('quick_review')}
       size="lg"
     >
       <div className="space-y-6">
         <div className="bg-base-200 rounded-lg p-4 space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-sm text-base-content/70">
-              {t('orders:order_number')}
+              {tOrders('order_number')}
             </span>
             <span className="font-bold text-lg">{order.orderNumber}</span>
           </div>
           <div className="flex gap-2">
             <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-              {t(`orders:status_${order.status}`)}
+              {tOrders(`status_${order.status}`)}
             </span>
             <span
               className={`badge ${getPaymentStatusBadgeClass(order.paymentStatus)}`}
             >
-              {t(`orders:payment_status_${order.paymentStatus}`)}
+              {tOrders(`payment_status_${order.paymentStatus}`)}
             </span>
           </div>
           <div className="flex items-center justify-between text-sm">
             <span className="text-base-content/70">
-              {t('orders:last_updated')}
+              {tOrders('last_updated')}
             </span>
             <span>{formatDateShort(latestTimestamp)}</span>
           </div>
@@ -89,7 +90,7 @@ export function OrderReviewSheet({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <User size={18} className="text-base-content/70" />
-              <h3 className="font-semibold">{t('orders:customer')}</h3>
+              <h3 className="font-semibold">{tOrders('customer')}</h3>
             </div>
             <div className="bg-base-100 border border-base-300 rounded-lg p-3 space-y-2">
               <div className="font-medium">{order.customer.name}</div>
@@ -113,7 +114,7 @@ export function OrderReviewSheet({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <MapPin size={18} className="text-base-content/70" />
-              <h3 className="font-semibold">{t('orders:shipping_address')}</h3>
+              <h3 className="font-semibold">{tOrders('shipping_address')}</h3>
             </div>
             <div className="bg-base-100 border border-base-300 rounded-lg p-3 text-sm">
               {order.shippingAddress.street && (
@@ -141,7 +142,7 @@ export function OrderReviewSheet({
             <div className="flex items-center gap-2 mb-3">
               <Package size={18} className="text-base-content/70" />
               <h3 className="font-semibold">
-                {t('orders:items')} ({order.items.length})
+                {tOrders('items')} ({order.items.length})
               </h3>
             </div>
             <div className="space-y-2">
@@ -162,7 +163,7 @@ export function OrderReviewSheet({
                   )}
                   <div className="flex-1 min-w-0">
                     <div className="font-medium text-sm truncate">
-                      {item.product?.name || t('common:unknown')}
+                      {item.product?.name || tCommon('unknown')}
                     </div>
                     {item.variant && (
                       <div className="text-xs text-base-content/70">
@@ -170,7 +171,7 @@ export function OrderReviewSheet({
                       </div>
                     )}
                     <div className="text-xs text-base-content/60">
-                      {t('orders:quantity')}: {item.quantity}
+                      {tOrders('quantity')}: {item.quantity}
                     </div>
                   </div>
                   <div className="text-end">
@@ -196,16 +197,16 @@ export function OrderReviewSheet({
           <div className="bg-base-100 border border-base-300 rounded-lg p-3">
             <div className="flex justify-between text-sm">
               <span className="text-base-content/70">
-                {t('orders:payment_method')}
+                {tOrders('payment_method')}
               </span>
               <span className="font-medium">
-                {t(`orders:payment_method_${order.paymentMethod}`)}
+                {tOrders(`payment_method_${order.paymentMethod}`)}
               </span>
             </div>
             {order.paymentReference && (
               <div className="flex justify-between text-sm mt-2">
                 <span className="text-base-content/70">
-                  {t('orders:payment_reference')}
+                  {tOrders('payment_reference')}
                 </span>
                 <span className="font-medium font-mono text-xs">
                   {order.paymentReference}
@@ -219,7 +220,7 @@ export function OrderReviewSheet({
           <div>
             <div className="flex items-center gap-2 mb-3">
               <FileText size={18} className="text-base-content/70" />
-              <h3 className="font-semibold">{t('orders:notes')}</h3>
+              <h3 className="font-semibold">{tOrders('notes')}</h3>
             </div>
             <div className="space-y-2">
               {order.notes.map((note) => (
@@ -240,11 +241,11 @@ export function OrderReviewSheet({
         )}
 
         <div>
-          <h3 className="font-semibold mb-3">{t('orders:checkout_summary')}</h3>
+          <h3 className="font-semibold mb-3">{tOrders('checkout_summary')}</h3>
           <div className="bg-base-200 rounded-lg p-4 space-y-2">
             <div className="flex justify-between text-sm">
               <span className="text-base-content/70">
-                {t('orders:subtotal')}
+                {tOrders('subtotal')}
               </span>
               <span className="font-medium">
                 {formatCurrency(parseFloat(order.subtotal), order.currency)}
@@ -253,7 +254,7 @@ export function OrderReviewSheet({
             {parseFloat(order.shippingFee) > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-base-content/70">
-                  {t('orders:shipping_fee')}
+                  {tOrders('shipping_fee')}
                 </span>
                 <span className="font-medium">
                   {formatCurrency(
@@ -266,7 +267,7 @@ export function OrderReviewSheet({
             {parseFloat(order.discount) > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-base-content/70">
-                  {t('orders:discount')}
+                  {tOrders('discount')}
                 </span>
                 <span className="font-medium text-success">
                   -{formatCurrency(parseFloat(order.discount), order.currency)}
@@ -276,7 +277,7 @@ export function OrderReviewSheet({
             {parseFloat(order.vat) > 0 && (
               <div className="flex justify-between text-sm">
                 <span className="text-base-content/70">
-                  {t('orders:vat')} ({parseFloat(order.vatRate) * 100}%)
+                  {tOrders('vat')} ({parseFloat(order.vatRate) * 100}%)
                 </span>
                 <span className="font-medium">
                   {formatCurrency(parseFloat(order.vat), order.currency)}
@@ -286,7 +287,7 @@ export function OrderReviewSheet({
             <div className="divider my-2" />
             <div className="flex justify-between items-center">
               <span className="font-semibold text-base">
-                {t('orders:total')}
+                {tOrders('total')}
               </span>
               <span className="font-bold text-xl text-primary">
                 {formatCurrency(parseFloat(order.total), order.currency)}

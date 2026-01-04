@@ -82,7 +82,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
     const inputId = id ?? generatedId
     const popupId = `${inputId}-popup`
     const { isRTL } = useLanguage()
-    const { t } = useTranslation()
+    const { t } = useTranslation('common')
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
     const [dropdownWidth, setDropdownWidth] = useState<number | undefined>()
@@ -252,7 +252,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
       <div className="flex gap-2 justify-center items-center">
         <div className="flex flex-col items-center gap-2 min-w-[80px]">
           <label className="text-sm font-medium text-base-content/70">
-            {t('common:hour')}
+            {t('date.hours')}
           </label>
           <select
             value={selectedHour}
@@ -271,7 +271,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
 
         <div className="flex flex-col items-center gap-2 min-w-[80px]">
           <label className="text-sm font-medium text-base-content/70">
-            {t('common:minute')}
+            {t('date.minutes')}
           </label>
           <select
             value={selectedMinute}
@@ -289,7 +289,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
         {format === 12 && (
           <div className="flex flex-col items-center gap-2 min-w-[80px]">
             <label className="text-sm font-medium text-base-content/70">
-              {t('common:period')}
+              {t('date.period')}
             </label>
             <div className="join">
               <button
@@ -400,7 +400,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                 }
               }}
               className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50 hover:text-base-content transition-colors cursor-pointer"
-              aria-label={t('common:clear')}
+              aria-label={t('clear')}
             >
               <X size={18} aria-hidden="true" />
             </span>
@@ -442,7 +442,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                 )}
                 role="dialog"
                 aria-modal="true"
-                aria-label={label || t('common:select_time')}
+                aria-label={label || t('date.selectTime')}
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     handleClose()
@@ -466,13 +466,13 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                   <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-3">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">
-                        {label || t('common:select_time')}
+                        {label || t('date.selectTime')}
                       </h3>
                       <button
                         type="button"
                         onClick={handleClose}
                         className="btn btn-ghost btn-sm btn-circle"
-                        aria-label={t('common:close')}
+                        aria-label={t('close')}
                       >
                         <X size={20} />
                       </button>
@@ -491,14 +491,14 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                         }}
                         className="btn btn-ghost flex-1"
                       >
-                        {t('common:clear')}
+                        {t('clear')}
                       </button>
                       <button
                         type="button"
                         onClick={handleApply}
                         className="btn btn-primary flex-1"
                       >
-                        {t('common:apply')}
+                        {t('apply')}
                       </button>
                     </div>
                   </div>
@@ -512,7 +512,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
               id={popupId}
               role="dialog"
               aria-modal="false"
-              aria-label={label || t('common:select_time')}
+              aria-label={label || t('date.selectTime')}
               className={cn(
                 'absolute top-full mt-2 z-50',
                 'bg-base-100 rounded-box shadow-lg border border-base-300 p-4',
@@ -533,14 +533,14 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                     handleClose()
                   }}
                 >
-                  {t('common:clear')}
+                  {t('clear')}
                 </button>
                 <button
                   type="button"
                   className="btn btn-sm btn-primary flex-1"
                   onClick={handleApply}
                 >
-                  {t('common:apply')}
+                  {t('apply')}
                 </button>
               </div>
             </div>

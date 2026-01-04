@@ -63,6 +63,7 @@ function BusinessSetupPage() {
   const { t: tOnboarding, i18n } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
   const { t: tTranslation } = useTranslation('translation')
+  const { t: tErrors } = useTranslation('errors')
   const navigate = useNavigate()
   const { session } = Route.useLoaderData()
   const { session: sessionToken } = Route.useSearch()
@@ -308,7 +309,7 @@ function BusinessSetupPage() {
                 {isCountriesError && (
                   <div className="alert alert-error">
                     <span className="text-sm">
-                      {tTranslation('errors:generic.unexpected')}
+                      {tErrors('generic.unexpected')}
                     </span>
                   </div>
                 )}

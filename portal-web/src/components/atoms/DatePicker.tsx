@@ -92,7 +92,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
     const inputId = id ?? generatedId
     const popupId = `${inputId}-popup`
     const { isRTL } = useLanguage()
-    const { t } = useTranslation()
+    const { t } = useTranslation('common')
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
     const [displayMonth, setDisplayMonth] = useState<Date>(value || new Date())
@@ -272,7 +272,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                 ? 'h-[44px] text-base px-3 pe-8'
                 : 'h-[38px] text-sm px-3 pe-8',
             )}
-            aria-label={t('common:select_month', {
+            aria-label={t('select_month', {
               defaultValue: 'Select month',
             })}
           >
@@ -315,7 +315,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                 ? 'h-[44px] text-base px-3 pe-8'
                 : 'h-[38px] text-sm px-3 pe-8',
             )}
-            aria-label={t('common:select_year', {
+            aria-label={t('select_year', {
               defaultValue: 'Select year',
             })}
           >
@@ -471,7 +471,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                 }
               }}
               className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50 hover:text-base-content transition-colors cursor-pointer"
-              aria-label={t('common:clear')}
+              aria-label={t('clear')}
             >
               <X size={18} aria-hidden="true" />
             </span>
@@ -513,7 +513,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                 )}
                 role="dialog"
                 aria-modal="true"
-                aria-label={label || t('common:select_date')}
+                aria-label={label || t('date.selectDate')}
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     handleClose()
@@ -537,13 +537,13 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-3">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">
-                        {label || t('common:select_date')}
+                        {label || t('date.selectDate')}
                       </h3>
                       <button
                         type="button"
                         onClick={handleClose}
                         className="btn btn-ghost btn-sm btn-circle"
-                        aria-label={t('common:close')}
+                        aria-label={t('close')}
                       >
                         <X size={20} />
                       </button>
@@ -558,7 +558,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                       onClick={handleClose}
                       className="btn btn-primary w-full"
                     >
-                      {t('common:done')}
+                      {t('date.done')}
                     </button>
                   </div>
                 </div>
@@ -571,7 +571,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
               id={popupId}
               role="dialog"
               aria-modal="false"
-              aria-label={label || t('common:select_date')}
+              aria-label={label || t('date.selectDate')}
               className={cn(
                 'absolute top-full mt-2 z-50',
                 'bg-base-100 rounded-box shadow-lg border border-base-300 p-4',

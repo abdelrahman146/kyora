@@ -94,7 +94,7 @@ export const DateRangePicker = forwardRef<
     const inputId = id ?? generatedId
     const popupId = `${inputId}-popup`
     const { isRTL } = useLanguage()
-    const { t } = useTranslation()
+    const { t } = useTranslation('common')
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
     const [dropdownWidth, setDropdownWidth] = useState<number | undefined>()
@@ -251,7 +251,7 @@ export const DateRangePicker = forwardRef<
                 ? 'h-[44px] text-base px-3 pe-8'
                 : 'h-[38px] text-sm px-3 pe-8',
             )}
-            aria-label={t('common:select_month', {
+            aria-label={t('select_month', {
               defaultValue: 'Select month',
             })}
           >
@@ -294,7 +294,7 @@ export const DateRangePicker = forwardRef<
                 ? 'h-[44px] text-base px-3 pe-8'
                 : 'h-[38px] text-sm px-3 pe-8',
             )}
-            aria-label={t('common:select_year', {
+            aria-label={t('select_year', {
               defaultValue: 'Select year',
             })}
           >
@@ -421,7 +421,7 @@ export const DateRangePicker = forwardRef<
             onKeyDown={handleKeyDown}
             disabled={disabled}
             required={required}
-            placeholder={placeholder || t('common:select_date_range')}
+            placeholder={placeholder || t('date.selectDateRange')}
             aria-invalid={!!error}
             aria-describedby={
               error
@@ -460,7 +460,7 @@ export const DateRangePicker = forwardRef<
                 }
               }}
               className="absolute inset-y-0 end-0 z-10 flex items-center pe-3 text-base-content/50 hover:text-base-content transition-colors cursor-pointer"
-              aria-label={t('common:clear')}
+              aria-label={t('clear')}
             >
               <X size={18} aria-hidden="true" />
             </span>
@@ -502,7 +502,7 @@ export const DateRangePicker = forwardRef<
                 )}
                 role="dialog"
                 aria-modal="true"
-                aria-label={label || t('common:select_date_range')}
+                aria-label={label || t('date.selectDateRange')}
                 onClick={(e) => {
                   if (e.target === e.currentTarget) {
                     handleClose()
@@ -526,13 +526,13 @@ export const DateRangePicker = forwardRef<
                   <div className="sticky top-0 z-10 bg-base-100 border-b border-base-300 px-4 py-3">
                     <div className="flex justify-between items-center">
                       <h3 className="text-lg font-semibold">
-                        {label || t('common:select_date_range')}
+                        {label || t('date.selectDateRange')}
                       </h3>
                       <button
                         type="button"
                         onClick={handleClose}
                         className="btn btn-ghost btn-sm btn-circle"
-                        aria-label={t('common:close')}
+                        aria-label={t('close')}
                       >
                         <X size={20} />
                       </button>
@@ -552,7 +552,7 @@ export const DateRangePicker = forwardRef<
                           }}
                           className="btn btn-ghost flex-1"
                         >
-                          {t('common:clear')}
+                          {t('clear')}
                         </button>
                       )}
                       <button
@@ -561,7 +561,7 @@ export const DateRangePicker = forwardRef<
                         disabled={!value?.from || !value.to}
                         className="btn btn-primary flex-1"
                       >
-                        {t('common:apply')}
+                        {t('apply')}
                       </button>
                     </div>
                   </div>
@@ -575,7 +575,7 @@ export const DateRangePicker = forwardRef<
               id={popupId}
               role="dialog"
               aria-modal="false"
-              aria-label={label || t('common:select_date_range')}
+              aria-label={label || t('date.selectDateRange')}
               className={cn(
                 'absolute top-full mt-2 z-50',
                 'bg-base-100 rounded-box shadow-xl border border-base-300 p-4',
@@ -595,7 +595,7 @@ export const DateRangePicker = forwardRef<
                       handleClose()
                     }}
                   >
-                    {t('common:clear')}
+                    {t('clear')}
                   </button>
                 )}
                 <button
@@ -604,7 +604,7 @@ export const DateRangePicker = forwardRef<
                   onClick={handleClose}
                   disabled={!value?.from || !value.to}
                 >
-                  {t('common:apply')}
+                  {t('apply')}
                 </button>
               </div>
             </div>

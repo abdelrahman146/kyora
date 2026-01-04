@@ -14,7 +14,7 @@ import { AlertCircle, RefreshCcw } from 'lucide-react'
 import type { ErrorComponentProps } from '@tanstack/react-router'
 
 export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
-  const { t } = useTranslation()
+  const { t: tErrors } = useTranslation('errors')
   const router = useRouter()
 
   const handleRetry = () => {
@@ -30,7 +30,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
 
   // Parse error message
   const errorMessage =
-    error instanceof Error ? error.message : t('errors.unknown_error')
+    error instanceof Error ? error.message : tErrors('route.unknown_error')
 
   return (
     <div className="flex min-h-[400px] items-center justify-center p-4">
@@ -39,7 +39,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
           <AlertCircle className="w-16 h-16 text-error mb-4" />
 
           <h2 className="card-title text-error mb-2">
-            {t('errors:route:route_error_title')}
+            {tErrors('route.route_error_title')}
           </h2>
 
           <p className="text-base-content/70 mb-6">{errorMessage}</p>
@@ -51,7 +51,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
               className="btn btn-primary gap-2"
             >
               <RefreshCcw className="w-4 h-4" />
-              {t('errors:route:retry')}
+              {tErrors('route.retry')}
             </button>
 
             <button
@@ -59,7 +59,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
               onClick={handleGoHome}
               className="btn btn-ghost"
             >
-              {t('errors:route:go_home')}
+              {tErrors('route.go_home')}
             </button>
           </div>
         </div>

@@ -141,12 +141,17 @@
     "max_length": "يجب أن لا يتجاوز {{max}} حرف"
   },
   "date": {
+    "date": "التاريخ",
     "selectDate": "اختر التاريخ",
+    "selectDateTime": "اختر التاريخ والوقت",
     "selectDateRange": "اختر نطاق التاريخ",
+    "selectTime": "اختر الوقت",
     "today": "اليوم",
+    "done": "تم",
     "hours": "الساعات",
     "minutes": "الدقائق",
     "period": "الفترة",
+    "time": "الوقت",
     "incrementHours": "زيادة الساعات",
     "decrementHours": "تقليل الساعات",
     "incrementMinutes": "زيادة الدقائق",

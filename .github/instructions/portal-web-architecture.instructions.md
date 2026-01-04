@@ -450,67 +450,79 @@ await navigate({ to: "/customers" });
 
 ---
 
-## 8. Internationalization
+## 8. Internationalization (i18next)
 
-### Configuration
+### Configuration (Source of Truth)
 
 **Location:** `src/i18n/init.ts`
 
-```typescript
-i18n.init({
-  resources: {
-    ar: {
-      /* Arabic translations */
-    },
-    en: {
-      /* English translations */
-    },
-  },
-  lng: "ar", // Default: Arabic
-  fallbackLng: "en", // Fallback: English
-  interpolation: {
-    escapeValue: false, // React escapes by default
-  },
-});
-```
+Kyora initializes i18next at module load time and:
 
-### Translation Files
+- Detects language from cookie `kyora_language`, then browser language, then falls back to `en`
+- Sets `document.documentElement.lang` + `document.documentElement.dir` before React renders
+- Updates `lang/dir` on `languageChanged`
 
-```
-src/i18n/
-├── ar/
-│   ├── common.json         # Shared labels
-│   ├── auth.json           # Auth pages
-│   ├── errors.json         # Error messages
-│   ├── validation.json     # Validation errors
-│   └── ...
-└── en/                     # English fallback
-```
+Key settings used by the app today:
 
-### Usage
+- `defaultNS: "translation"`
+- `fallbackLng: "en"`
+- Explicit namespaces list (`ns`) and explicit `resources` imports
 
-```typescript
-import { useTranslation } from "react-i18next";
+### Translation Files / Namespaces
 
-const { t, i18n } = useTranslation();
+Translations live in `src/i18n/<locale>/<namespace>.json` and are registered in `src/i18n/init.ts`.
 
-// Basic
-t("auth.login"); // "تسجيل الدخول" (Arabic)
+Current namespaces:
 
-// With variables
-t("customer.greeting", { name: "Ali" }); // "مرحباً Ali"
+- `translation` (default)
+- `common`
+- `errors`
+- `onboarding`
+- `upload`
+- `analytics`
+- `inventory`
+- `orders`
 
-// Change language
-i18n.changeLanguage("en");
+### Key Conventions (Match Existing Code)
 
-// RTL detection
-const { isRTL } = useLanguage();
-```
+There are two patterns in use; follow the pattern of the namespace you are editing:
 
-**Translation Key Convention:**
+1. `translation` namespace: dotted keys backed by nested objects
 
-- `namespace.key` (e.g., `auth.email`, `errors.invalid_email`)
-- Namespace = filename (e.g., `auth.json` → `auth` namespace)
+- Example key usage: `t("dashboard.title")`, `t("common.save")`
+- Example file shape: `src/i18n/en/translation.json` contains `{ "dashboard": { "title": "..." } }`
+
+2. Feature namespaces (e.g. `inventory`, `orders`): flat, snake_case keys
+
+- Example key usage:
+  - `const { t } = useTranslation("inventory"); t("product_deleted")`
+
+### Canonical Usage (Enforced)
+
+- UI components must bind a translator to a namespace and call keys without any `ns:` prefix:
+  - `const { t } = useTranslation("orders"); t("order_number")`
+  - `const { t: tErrors } = useTranslation("errors"); tErrors("generic.unexpected")`
+- Dotted keys are allowed/expected when the JSON uses nested objects (e.g. `errors.route.retry`, `common.date.selectDate`).
+
+### Forbidden Patterns
+
+- Do not use `t("ns:key")` anywhere (e.g. `t("orders:order_number")`).
+- Do not use multi-colon strings like `t("errors:route:retry")`.
+- Avoid `t(key, { ns: "..." })` in UI components; reserve it for shared utilities where the namespace is truly dynamic.
+
+### Adding / Updating Translations (Failure-Proof Checklist)
+
+- Add the key in **both** `ar` and `en` JSON files for the same namespace
+- If you add a **new namespace file**:
+  - Create `src/i18n/ar/<namespace>.json` and `src/i18n/en/<namespace>.json`
+  - Import both in `src/i18n/init.ts`
+  - Register them under `resources.{ar,en}`
+  - Add the namespace to the `ns` array
+
+### RTL/LTR
+
+- Do not hardcode layout direction.
+- Use `i18n.language.toLowerCase().startsWith("ar")` only when you need conditional logic.
 
 ---
 

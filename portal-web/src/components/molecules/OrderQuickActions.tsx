@@ -29,7 +29,8 @@ export function OrderQuickActions({
   businessDescriptor,
   onDeleteSuccess,
 }: OrderQuickActionsProps) {
-  const { t } = useTranslation()
+  const { t: tOrders } = useTranslation('orders')
+  const { t: tCommon } = useTranslation('common')
   const queryClient = useQueryClient()
   const formId = useId()
   const [showStatusSheet, setShowStatusSheet] = useState(false)
@@ -52,10 +53,10 @@ export function OrderQuickActions({
           status: value.status,
         })
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
-        toast.success(t('orders:status_updated'))
+        toast.success(tOrders('status_updated'))
         setShowStatusSheet(false)
       } catch {
-        toast.error(t('common:error_occurred'))
+        toast.error(tCommon('error_occurred'))
       } finally {
         setIsUpdating(false)
       }
@@ -88,10 +89,10 @@ export function OrderQuickActions({
           })
         }
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
-        toast.success(t('orders:payment_status_updated'))
+        toast.success(tOrders('payment_status_updated'))
         setShowPaymentSheet(false)
       } catch {
-        toast.error(t('common:error_occurred'))
+        toast.error(tCommon('error_occurred'))
       } finally {
         setIsUpdating(false)
       }
@@ -116,10 +117,10 @@ export function OrderQuickActions({
             })) || [],
         })
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
-        toast.success(t('orders:shipping_address_updated'))
+        toast.success(tOrders('shipping_address_updated'))
         setShowAddressSheet(false)
       } catch {
-        toast.error(t('common:error_occurred'))
+        toast.error(tCommon('error_occurred'))
       } finally {
         setIsUpdating(false)
       }
@@ -129,16 +130,16 @@ export function OrderQuickActions({
   const handleDelete = async () => {
     if (
       window.confirm(
-        t('orders:delete_confirm_message', { orderNumber: order.orderNumber }),
+        tOrders('delete_confirm_message', { orderNumber: order.orderNumber }),
       )
     ) {
       try {
         await orderApi.deleteOrder(businessDescriptor, order.id)
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
-        toast.success(t('orders:delete_success'))
+        toast.success(tOrders('delete_success'))
         onDeleteSuccess?.()
       } catch {
-        toast.error(t('common:error_occurred'))
+        toast.error(tCommon('error_occurred'))
       }
     }
   }
@@ -209,7 +210,7 @@ export function OrderQuickActions({
           tabIndex={0}
           role="button"
           className="btn btn-ghost btn-sm btn-square"
-          aria-label={t('actions')}
+          aria-label={tCommon('actions')}
         >
           <Zap size={18} />
         </button>
@@ -225,7 +226,7 @@ export function OrderQuickActions({
               }}
             >
               <Truck size={18} />
-              {t('orders:update_status')}
+              {tOrders('update_status')}
             </button>
           </li>
           <li>
@@ -236,7 +237,7 @@ export function OrderQuickActions({
               }}
             >
               <CreditCard size={18} />
-              {t('orders:update_payment')}
+              {tOrders('update_payment')}
             </button>
           </li>
           <li>
@@ -247,14 +248,14 @@ export function OrderQuickActions({
               }}
             >
               <MapPin size={18} />
-              {t('orders:update_address')}
+              {tOrders('update_address')}
             </button>
           </li>
           {whatsappUrl && (
             <li>
               <a href={whatsappUrl} target="_blank" rel="noopener noreferrer">
                 <MessageCircle size={18} />
-                {t('orders:open_whatsapp')}
+                {tOrders('open_whatsapp')}
               </a>
             </li>
           )}
@@ -262,7 +263,7 @@ export function OrderQuickActions({
             <li>
               <a href={platformUrl} target="_blank" rel="noopener noreferrer">
                 <ExternalLink size={18} />
-                {t('orders:view_on_platform', { platform: platformName })}
+                {tOrders('view_on_platform', { platform: platformName })}
               </a>
             </li>
           )}
@@ -276,7 +277,7 @@ export function OrderQuickActions({
               }}
             >
               <Trash2 size={18} />
-              {t('common:delete')}
+              {tCommon('delete')}
             </button>
           </li>
         </ul>
@@ -286,7 +287,7 @@ export function OrderQuickActions({
         <BottomSheet
           isOpen={showStatusSheet}
           onClose={() => setShowStatusSheet(false)}
-          title={t('orders:update_status')}
+          title={tOrders('update_status')}
           footer={
             <statusForm.SubmitButton
               form={statusFormId}
@@ -294,7 +295,7 @@ export function OrderQuickActions({
               disabled={isUpdating}
               className="w-full"
             >
-              {isUpdating ? t('common:loading') : t('common:update')}
+              {isUpdating ? tCommon('loading') : tCommon('update')}
             </statusForm.SubmitButton>
           }
         >
@@ -302,18 +303,18 @@ export function OrderQuickActions({
             <statusForm.AppField name="status">
               {(field) => (
                 <field.RadioField
-                  label={t('orders:status')}
+                  label={tOrders('status')}
                   options={[
-                    { value: 'pending', label: t('orders:status_pending') },
-                    { value: 'placed', label: t('orders:status_placed') },
+                    { value: 'pending', label: tOrders('status_pending') },
+                    { value: 'placed', label: tOrders('status_placed') },
                     {
                       value: 'ready_for_shipment',
-                      label: t('orders:status_ready_for_shipment'),
+                      label: tOrders('status_ready_for_shipment'),
                     },
-                    { value: 'shipped', label: t('orders:status_shipped') },
-                    { value: 'fulfilled', label: t('orders:status_fulfilled') },
-                    { value: 'cancelled', label: t('orders:status_cancelled') },
-                    { value: 'returned', label: t('orders:status_returned') },
+                    { value: 'shipped', label: tOrders('status_shipped') },
+                    { value: 'fulfilled', label: tOrders('status_fulfilled') },
+                    { value: 'cancelled', label: tOrders('status_cancelled') },
+                    { value: 'returned', label: tOrders('status_returned') },
                   ]}
                 />
               )}
@@ -326,7 +327,7 @@ export function OrderQuickActions({
         <BottomSheet
           isOpen={showPaymentSheet}
           onClose={() => setShowPaymentSheet(false)}
-          title={t('orders:update_payment')}
+          title={tOrders('update_payment')}
           footer={
             <paymentForm.SubmitButton
               form={paymentFormId}
@@ -334,7 +335,7 @@ export function OrderQuickActions({
               disabled={isUpdating}
               className="w-full"
             >
-              {isUpdating ? t('common:loading') : t('common:update')}
+              {isUpdating ? tCommon('loading') : tCommon('update')}
             </paymentForm.SubmitButton>
           }
         >
@@ -342,20 +343,20 @@ export function OrderQuickActions({
             <paymentForm.AppField name="paymentStatus">
               {(field) => (
                 <field.RadioField
-                  label={t('orders:payment_status')}
+                  label={tOrders('payment_status')}
                   options={[
                     {
                       value: 'pending',
-                      label: t('orders:payment_status_pending'),
+                      label: tOrders('payment_status_pending'),
                     },
-                    { value: 'paid', label: t('orders:payment_status_paid') },
+                    { value: 'paid', label: tOrders('payment_status_paid') },
                     {
                       value: 'failed',
-                      label: t('orders:payment_status_failed'),
+                      label: tOrders('payment_status_failed'),
                     },
                     {
                       value: 'refunded',
-                      label: t('orders:payment_status_refunded'),
+                      label: tOrders('payment_status_refunded'),
                     },
                   ]}
                 />
@@ -371,32 +372,32 @@ export function OrderQuickActions({
                     <paymentForm.AppField name="paymentMethod">
                       {(field) => (
                         <field.SelectField
-                          label={t('orders:payment_method')}
-                          placeholder={t('orders:select_payment_method')}
+                          label={tOrders('payment_method')}
+                          placeholder={tOrders('select_payment_method')}
                           options={[
                             {
                               value: 'cash_on_delivery',
-                              label: t('orders:payment_method_cod'),
+                              label: tOrders('payment_method_cod'),
                             },
                             {
                               value: 'bank_transfer',
-                              label: t('orders:payment_method_bank'),
+                              label: tOrders('payment_method_bank'),
                             },
                             {
                               value: 'credit_card',
-                              label: t('orders:payment_method_card'),
+                              label: tOrders('payment_method_card'),
                             },
                             {
                               value: 'paypal',
-                              label: t('orders:payment_method_paypal'),
+                              label: tOrders('payment_method_paypal'),
                             },
                             {
                               value: 'tamara',
-                              label: t('orders:payment_method_tamara'),
+                              label: tOrders('payment_method_tamara'),
                             },
                             {
                               value: 'tabby',
-                              label: t('orders:payment_method_tabby'),
+                              label: tOrders('payment_method_tabby'),
                             },
                           ]}
                         />
@@ -405,10 +406,8 @@ export function OrderQuickActions({
                     <paymentForm.AppField name="paymentReference">
                       {(field) => (
                         <field.TextField
-                          label={t('orders:payment_reference')}
-                          placeholder={t(
-                            'orders:payment_reference_placeholder',
-                          )}
+                          label={tOrders('payment_reference')}
+                          placeholder={tOrders('payment_reference_placeholder')}
                         />
                       )}
                     </paymentForm.AppField>
@@ -419,9 +418,7 @@ export function OrderQuickActions({
 
             <div className="bg-base-200 rounded-lg p-3 space-y-1">
               <div className="flex justify-between text-sm">
-                <span className="text-base-content/70">
-                  {t('orders:total')}
-                </span>
+                <span className="text-base-content/70">{tOrders('total')}</span>
                 <span className="font-semibold">
                   {formatCurrency(parseFloat(order.total), order.currency)}
                 </span>
@@ -435,7 +432,7 @@ export function OrderQuickActions({
         <BottomSheet
           isOpen={showAddressSheet}
           onClose={() => setShowAddressSheet(false)}
-          title={t('orders:update_address')}
+          title={tOrders('update_address')}
           footer={
             <addressForm.SubmitButton
               form={addressFormId}
@@ -443,7 +440,7 @@ export function OrderQuickActions({
               disabled={isUpdating}
               className="w-full"
             >
-              {isUpdating ? t('common:loading') : t('common:update')}
+              {isUpdating ? tCommon('loading') : tCommon('update')}
             </addressForm.SubmitButton>
           }
         >
@@ -451,10 +448,10 @@ export function OrderQuickActions({
             <addressForm.AppField name="shippingAddressId">
               {(field) => (
                 <field.AddressSelectField
-                  label={t('orders:shipping_address')}
+                  label={tOrders('shipping_address')}
                   businessDescriptor={businessDescriptor}
                   customerId={order.customerId}
-                  placeholder={t('orders:select_address')}
+                  placeholder={tOrders('select_address')}
                 />
               )}
             </addressForm.AppField>

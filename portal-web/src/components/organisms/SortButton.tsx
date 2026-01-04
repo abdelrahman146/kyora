@@ -78,7 +78,7 @@ export function SortButton({
   disabled = false,
   className = '',
 }: SortButtonProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('common')
   const [isOpen, setIsOpen] = useState(false)
 
   // Internal state for temporary selections before applying
@@ -101,7 +101,7 @@ export function SortButton({
     setIsOpen(false)
   }
 
-  const defaultButtonText = buttonText || t('common:sort')
+  const defaultButtonText = buttonText || t('sort')
   const isActive = !!currentSortBy
 
   const footer = (
@@ -113,14 +113,14 @@ export function SortButton({
         }}
         className="btn btn-ghost flex-1"
       >
-        {t('common.cancel')}
+        {t('cancel')}
       </button>
       <button
         type="button"
         onClick={handleApply}
         className="btn btn-primary flex-1"
       >
-        {t('common.apply')}
+        {t('apply')}
       </button>
     </div>
   )
@@ -178,9 +178,7 @@ export function SortButton({
           {/* Sort Field Selection */}
           <div className="form-control flex-1">
             <label className="label">
-              <span className="label-text font-semibold">
-                {t('common:sort_by')}
-              </span>
+              <span className="label-text font-semibold">{t('sort_by')}</span>
             </label>
             <div className="space-y-2">
               {sortOptions.map((option) => (
@@ -208,7 +206,7 @@ export function SortButton({
           <div className="form-control flex-1">
             <label className="label">
               <span className="label-text font-semibold">
-                {t('common:sort_order')}
+                {t('sort_order')}
               </span>
             </label>
             <div className="space-y-2">
@@ -223,7 +221,7 @@ export function SortButton({
                   }}
                   className="radio radio-primary"
                 />
-                <span className="flex-1">{t('common:ascending')}</span>
+                <span className="flex-1">{t('ascending')}</span>
               </label>
               <label className="flex items-center gap-3 p-3 rounded-lg border border-base-300 cursor-pointer hover:border-primary transition-colors">
                 <input
@@ -236,7 +234,7 @@ export function SortButton({
                   }}
                   className="radio radio-primary"
                 />
-                <span className="flex-1">{t('common:descending')}</span>
+                <span className="flex-1">{t('descending')}</span>
               </label>
             </div>
           </div>

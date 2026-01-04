@@ -257,46 +257,68 @@ function ProductsPage() {
 }
 ```
 
-#### 7. Add Translations
+#### 7. Add Translations (Match Existing i18next Setup)
 
-**Location:** `src/i18n/ar/product.json` + `src/i18n/en/product.json`
+Translations live in `src/i18n/<locale>/<namespace>.json`.
+
+Choose the right place based on existing patterns:
+
+- General UI text: add under `src/i18n/*/translation.json` (default namespace, dotted keys)
+- Feature-heavy screens: add to a feature namespace file (e.g. `src/i18n/*/inventory.json`) using flat snake_case keys
+- Validation and API error messages: `src/i18n/*/errors.json` (see forms.instructions.md for key prefixes)
+
+Example (default namespace):
 
 ```json
-// ar/product.json
+// src/i18n/en/translation.json
 {
-  "name": "اسم المنتج",
-  "price": "السعر",
-  "add": "إضافة منتج",
-  "created": "تم إنشاء المنتج بنجاح"
-}
-
-// en/product.json
-{
-  "name": "Product Name",
-  "price": "Price",
-  "add": "Add Product",
-  "created": "Product created successfully"
+  "inventory": {
+    "title": "Inventory"
+  }
 }
 ```
 
-#### 8. Register Translation Namespace
+Usage:
 
-**Location:** `src/i18n/init.ts`
+```tsx
+import { useTranslation } from "react-i18next";
 
-```typescript
-i18n.init({
-  resources: {
-    ar: {
-      product: arProduct,
-      // ...
-    },
-    en: {
-      product: enProduct,
-      // ...
-    },
-  },
-});
+const { t } = useTranslation();
+return <h1>{t("inventory.title")}</h1>;
 ```
+
+#### 8. Add a New Namespace (Only If Needed)
+
+If you create a new namespace file, you must register it in `src/i18n/init.ts`.
+
+Checklist:
+
+1. Create both files:
+
+- `src/i18n/ar/<namespace>.json`
+- `src/i18n/en/<namespace>.json`
+
+2. Import both JSON files in `src/i18n/init.ts`
+
+3. Add them to `resources.ar` and `resources.en`
+
+4. Add `<namespace>` to the `ns` array
+
+Usage patterns:
+
+```tsx
+const { t } = useTranslation("<namespace>");
+t("some_key");
+
+// default namespace (translation)
+const { t: tTranslation } = useTranslation();
+tTranslation("some.dotted_key");
+```
+
+Rules:
+
+- Do not use `t("ns:key")` (including multi-colon strings).
+- In UI components, do not use `t(key, { ns: "..." })`; bind `useTranslation("<namespace>")` instead.
 
 ---
 

@@ -79,7 +79,8 @@ export const Route = createFileRoute('/business/$businessDescriptor/orders/')({
 })
 
 function OrdersListPage() {
-  const { t } = useTranslation()
+  const { t: tOrders } = useTranslation('orders')
+  const { t: tCommon } = useTranslation('common')
   const { businessDescriptor } = Route.useParams()
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
@@ -200,7 +201,7 @@ function OrdersListPage() {
   const columns: Array<TableColumn<Order>> = [
     {
       key: 'orderNumber',
-      label: t('orders:order_number'),
+      label: tOrders('order_number'),
       sortable: true,
       render: (order: Order) => (
         <span className="font-medium">{order.orderNumber}</span>
@@ -208,7 +209,7 @@ function OrdersListPage() {
     },
     {
       key: 'customer',
-      label: t('orders:customer'),
+      label: tOrders('customer'),
       render: (order: Order) => {
         const getPlatformIcon = () => {
           if (order.customer?.instagramUsername)
@@ -284,7 +285,7 @@ function OrdersListPage() {
             </div>
             <div className="min-w-0">
               <div className="font-medium truncate">
-                {order.customer?.name || t('common:unknown')}
+                {order.customer?.name || tCommon('unknown')}
               </div>
               {platformHandle && (
                 <div className="flex items-center gap-1.5 text-xs text-base-content/60">
@@ -299,7 +300,7 @@ function OrdersListPage() {
     },
     {
       key: 'status',
-      label: t('orders:status'),
+      label: tOrders('status'),
       sortable: true,
       render: (order: Order) => {
         const statusMap: Record<
@@ -308,28 +309,28 @@ function OrdersListPage() {
         > = {
           pending: {
             class: 'badge-warning',
-            label: t('orders:status_pending'),
+            label: tOrders('status_pending'),
           },
-          placed: { class: 'badge-info', label: t('orders:status_placed') },
+          placed: { class: 'badge-info', label: tOrders('status_placed') },
           ready_for_shipment: {
             class: 'badge-info',
-            label: t('orders:status_ready_for_shipment'),
+            label: tOrders('status_ready_for_shipment'),
           },
           shipped: {
             class: 'badge-primary',
-            label: t('orders:status_shipped'),
+            label: tOrders('status_shipped'),
           },
           fulfilled: {
             class: 'badge-success',
-            label: t('orders:status_fulfilled'),
+            label: tOrders('status_fulfilled'),
           },
           cancelled: {
             class: 'badge-error',
-            label: t('orders:status_cancelled'),
+            label: tOrders('status_cancelled'),
           },
           returned: {
             class: 'badge-error',
-            label: t('orders:status_returned'),
+            label: tOrders('status_returned'),
           },
         }
 
@@ -339,19 +340,19 @@ function OrdersListPage() {
         > = {
           pending: {
             class: 'badge-warning',
-            label: t('orders:payment_status_pending'),
+            label: tOrders('payment_status_pending'),
           },
           paid: {
             class: 'badge-success',
-            label: t('orders:payment_status_paid'),
+            label: tOrders('payment_status_paid'),
           },
           failed: {
             class: 'badge-error',
-            label: t('orders:payment_status_failed'),
+            label: tOrders('payment_status_failed'),
           },
           refunded: {
             class: 'badge-ghost',
-            label: t('orders:payment_status_refunded'),
+            label: tOrders('payment_status_refunded'),
           },
         }
 
@@ -369,7 +370,7 @@ function OrdersListPage() {
             {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
             {order.paymentMethod && order.paymentStatus === 'paid' && (
               <span className="badge badge-sm badge-ghost">
-                {t(`orders:payment_method_${order.paymentMethod}`)}
+                {tOrders(`payment_method_${order.paymentMethod}`)}
               </span>
             )}
           </div>
@@ -378,7 +379,7 @@ function OrdersListPage() {
     },
     {
       key: 'total',
-      label: t('orders:total'),
+      label: tOrders('total'),
       sortable: true,
       render: (order: Order) => (
         <span className="font-medium">
@@ -388,7 +389,7 @@ function OrdersListPage() {
     },
     {
       key: 'orderedAt',
-      label: t('orders:ordered_date'),
+      label: tOrders('ordered_date'),
       sortable: true,
       render: (order: Order) => {
         const latestTimestamp =
@@ -430,14 +431,14 @@ function OrdersListPage() {
             type="button"
             className="btn btn-ghost btn-sm btn-square"
             onClick={() => handleViewClick(order)}
-            aria-label={t('orders:quick_review')}
+            aria-label={tOrders('quick_review')}
           >
             <Eye size={16} />
           </button>
           <OrderQuickActions
             order={order}
             businessDescriptor={businessDescriptor}
-            aria-label={t('orders:quick_review')}
+            aria-label={tOrders('quick_review')}
             onDeleteSuccess={() => {
               queryClient.invalidateQueries({ queryKey: orderQueries.all })
             }}
@@ -448,11 +449,11 @@ function OrdersListPage() {
   ]
 
   const sortOptions: Array<SortOption> = [
-    { value: 'orderNumber', label: t('orders:order_number') },
-    { value: 'total', label: t('orders:total') },
-    { value: 'status', label: t('orders:status') },
-    { value: 'paymentStatus', label: t('orders:payment_status') },
-    { value: 'orderedAt', label: t('orders:ordered_date') },
+    { value: 'orderNumber', label: tOrders('order_number') },
+    { value: 'total', label: tOrders('total') },
+    { value: 'status', label: tOrders('status') },
+    { value: 'paymentStatus', label: tOrders('payment_status') },
+    { value: 'orderedAt', label: tOrders('ordered_date') },
   ]
 
   const handleSortApply = (sortBy: string) => {
@@ -500,9 +501,9 @@ function OrdersListPage() {
         <form.AppField name="customerId">
           {(field) => (
             <field.CustomerSelectField
-              label={t('orders:filter_by_customer')}
+              label={tOrders('filter_by_customer')}
               businessDescriptor={businessDescriptor}
-              placeholder={t('orders:search_customer_placeholder')}
+              placeholder={tOrders('search_customer_placeholder')}
             />
           )}
         </form.AppField>
@@ -513,13 +514,13 @@ function OrdersListPage() {
             <div className="form-control">
               <label className="label pb-2">
                 <span className="label-text font-medium">
-                  {t('orders:filter_by_date_range')}
+                  {tOrders('filter_by_date_range')}
                 </span>
               </label>
               <DateRangePicker
                 value={field.state.value}
                 onChange={(range) => field.handleChange(range)}
-                placeholder={t('orders:select_date_range')}
+                placeholder={tOrders('select_date_range')}
               />
             </div>
           )}
@@ -529,18 +530,18 @@ function OrdersListPage() {
         <form.AppField name="status">
           {(field) => (
             <field.CheckboxGroupField
-              label={t('orders:filter_by_status')}
+              label={tOrders('filter_by_status')}
               options={[
-                { value: 'pending', label: t('orders:status_pending') },
-                { value: 'placed', label: t('orders:status_placed') },
+                { value: 'pending', label: tOrders('status_pending') },
+                { value: 'placed', label: tOrders('status_placed') },
                 {
                   value: 'ready_for_shipment',
-                  label: t('orders:status_ready_for_shipment'),
+                  label: tOrders('status_ready_for_shipment'),
                 },
-                { value: 'shipped', label: t('orders:status_shipped') },
-                { value: 'fulfilled', label: t('orders:status_fulfilled') },
-                { value: 'cancelled', label: t('orders:status_cancelled') },
-                { value: 'returned', label: t('orders:status_returned') },
+                { value: 'shipped', label: tOrders('status_shipped') },
+                { value: 'fulfilled', label: tOrders('status_fulfilled') },
+                { value: 'cancelled', label: tOrders('status_cancelled') },
+                { value: 'returned', label: tOrders('status_returned') },
               ]}
             />
           )}
@@ -550,17 +551,17 @@ function OrdersListPage() {
         <form.AppField name="paymentStatus">
           {(field) => (
             <field.CheckboxGroupField
-              label={t('orders:filter_by_payment_status')}
+              label={tOrders('filter_by_payment_status')}
               options={[
                 {
                   value: 'pending',
-                  label: t('orders:payment_status_pending'),
+                  label: tOrders('payment_status_pending'),
                 },
-                { value: 'paid', label: t('orders:payment_status_paid') },
-                { value: 'failed', label: t('orders:payment_status_failed') },
+                { value: 'paid', label: tOrders('payment_status_paid') },
+                { value: 'failed', label: tOrders('payment_status_failed') },
                 {
                   value: 'refunded',
-                  label: t('orders:payment_status_refunded'),
+                  label: tOrders('payment_status_refunded'),
                 },
               ]}
             />
@@ -571,32 +572,32 @@ function OrdersListPage() {
         <form.AppField name="socialPlatforms">
           {(field) => (
             <field.CheckboxGroupField
-              label={t('orders:filter_by_platform')}
-              description={t('orders:filter_by_platform_desc')}
+              label={tOrders('filter_by_platform')}
+              description={tOrders('filter_by_platform_desc')}
               options={[
                 {
                   value: 'instagram' as const,
-                  label: t('orders:platform_instagram'),
+                  label: tOrders('platform_instagram'),
                 },
                 {
                   value: 'tiktok' as const,
-                  label: t('orders:platform_tiktok'),
+                  label: tOrders('platform_tiktok'),
                 },
                 {
                   value: 'facebook' as const,
-                  label: t('orders:platform_facebook'),
+                  label: tOrders('platform_facebook'),
                 },
                 {
                   value: 'x' as const,
-                  label: t('orders:platform_x'),
+                  label: tOrders('platform_x'),
                 },
                 {
                   value: 'snapchat' as const,
-                  label: t('orders:platform_snapchat'),
+                  label: tOrders('platform_snapchat'),
                 },
                 {
                   value: 'whatsapp' as const,
-                  label: t('orders:platform_whatsapp'),
+                  label: tOrders('platform_whatsapp'),
                 },
               ]}
             />
@@ -609,34 +610,34 @@ function OrdersListPage() {
   return (
     <>
       <ResourceListLayout
-        title={t('orders:title')}
-        subtitle={t('orders:subtitle')}
-        addButtonText={t('orders:add_order')}
+        title={tOrders('title')}
+        subtitle={tOrders('subtitle')}
+        addButtonText={tOrders('add_order')}
         onAddClick={handleAddOrder}
-        searchPlaceholder={t('orders:search_placeholder')}
+        searchPlaceholder={tOrders('search_placeholder')}
         searchValue={search.search ?? ''}
         onSearchChange={handleSearchChange}
-        filterTitle={t('orders:filters')}
-        filterButtonText={t('common:filter')}
+        filterTitle={tOrders('filters')}
+        filterButtonText={tCommon('filter')}
         filterButton={filterContent}
         activeFilterCount={activeFilterCount}
         onApplyFilters={handleApplyFilters}
         onResetFilters={handleResetFilters}
-        applyLabel={t('common:apply')}
-        resetLabel={t('common:reset')}
-        sortTitle={t('orders:sort_orders')}
+        applyLabel={tCommon('apply')}
+        resetLabel={tCommon('reset')}
+        sortTitle={tOrders('sort_orders')}
         sortOptions={sortOptions}
         onSortApply={handleSortApply}
         emptyIcon={<ShoppingCart size={48} />}
         emptyTitle={
-          search.search ? t('orders:no_results') : t('orders:no_orders')
+          search.search ? tOrders('no_results') : tOrders('no_orders')
         }
         emptyMessage={
           search.search
-            ? t('orders:try_different_search')
-            : t('orders:get_started_message')
+            ? tOrders('try_different_search')
+            : tOrders('get_started_message')
         }
-        emptyActionText={!search.search ? t('orders:add_order') : undefined}
+        emptyActionText={!search.search ? tOrders('add_order') : undefined}
         onEmptyAction={!search.search ? handleAddOrder : undefined}
         tableColumns={columns}
         tableData={data?.items || []}
@@ -670,7 +671,7 @@ function OrdersListPage() {
             }),
           })
         }}
-        itemsName={t('orders:orders')}
+        itemsName={tOrders('orders')}
       />
 
       <OrderReviewSheet

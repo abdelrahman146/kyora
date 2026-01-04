@@ -79,9 +79,15 @@ validators={{
 z.string().min(8, "Password must be at least 8 characters");
 
 // ✅ CORRECT
-z.string().min(8, "password_too_short");
-// Translation: en/errors.json → "password_too_short": "Password must be..."
+z.string().min(8, "validation.password_min_length");
+// Translation: src/i18n/*/errors.json → { "validation": { "password_min_length": "..." } }
 ```
+
+**Important (Prevents Missing-Key Bugs):**
+
+- Validation keys must be prefixed with `validation.` (e.g. `validation.required`, `validation.invalid_email`).
+- The app translates these via `src/lib/translateValidationError.ts`.
+- Keys without the `validation.` prefix are treated as already-translated strings.
 
 ---
 

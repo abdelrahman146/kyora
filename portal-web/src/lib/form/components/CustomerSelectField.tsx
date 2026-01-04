@@ -44,7 +44,8 @@ import { FormSelect } from '@/components/atoms/FormSelect'
 
 export function CustomerSelectField(props: CustomerSelectFieldProps) {
   const field = useFieldContext<string>()
-  const { t } = useTranslation('errors')
+  const { t: tErrors } = useTranslation('errors')
+  const { t: tCommon } = useTranslation('common')
 
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState('')
@@ -111,7 +112,7 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
 
     const firstError = errors[0]
     if (typeof firstError === 'string') {
-      return t(firstError)
+      return tErrors(firstError)
     }
 
     if (
@@ -120,11 +121,11 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
       'message' in firstError
     ) {
       const errorObj = firstError as { message: string; code?: number }
-      return t(errorObj.message)
+      return tErrors(errorObj.message)
     }
 
     return undefined
-  }, [field.state.meta.errors, t])
+  }, [field.state.meta.errors, tErrors])
 
   // Show error only after field has been touched
   const showError = field.state.meta.isTouched && error
@@ -165,7 +166,7 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
         placeholder={
           selectedCustomer
             ? selectedCustomer.name
-            : props.placeholder || t('common:select')
+            : props.placeholder || tCommon('select')
         }
         clearable
         onClear={handleClear}

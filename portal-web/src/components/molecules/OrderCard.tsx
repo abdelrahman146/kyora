@@ -45,7 +45,7 @@ export function OrderCard({
   onReviewClick,
   onDeleteSuccess,
 }: OrderCardProps) {
-  const { t } = useTranslation()
+  const { t } = useTranslation('orders')
 
   const getStatusBadgeClass = (status: Order['status']) => {
     const statusMap: Record<Order['status'], string> = {
@@ -146,7 +146,7 @@ export function OrderCard({
         <div className="flex-1">
           <div className="flex items-center gap-1.5 text-xs text-base-content/60 mb-1">
             <Package size={14} />
-            <span>{t('orders:order_number')}</span>
+            <span>{t('order_number')}</span>
           </div>
           <h3 className="font-bold text-lg text-base-content">
             {order.orderNumber}
@@ -154,7 +154,7 @@ export function OrderCard({
         </div>
         <div className="text-end">
           <div className="text-xs text-base-content/60 mb-0.5">
-            {t('orders:total')}
+            {t('total')}
           </div>
           <div className="font-bold text-xl text-primary">
             {formatCurrency(parseFloat(order.total), order.currency)}
@@ -167,17 +167,17 @@ export function OrderCard({
         {/* Status Badges */}
         <div className="flex items-center gap-2 flex-wrap">
           <span className={`badge ${getStatusBadgeClass(order.status)}`}>
-            {t(`orders:status_${order.status}`)}
+            {t(`status_${order.status}`)}
           </span>
           <span
             className={`badge ${getPaymentStatusBadgeClass(order.paymentStatus)}`}
           >
-            {t(`orders:payment_status_${order.paymentStatus}`)}
+            {t(`payment_status_${order.paymentStatus}`)}
           </span>
           {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
           {order.paymentMethod && order.paymentStatus === 'paid' && (
             <span className="badge badge-ghost">
-              {t(`orders:payment_method_${order.paymentMethod}`)}
+              {t(`payment_method_${order.paymentMethod}`)}
             </span>
           )}
         </div>
@@ -230,7 +230,7 @@ export function OrderCard({
           type="button"
           className="btn btn-ghost btn-sm btn-square"
           onClick={() => onReviewClick?.(order)}
-          aria-label={t('orders:quick_review')}
+          aria-label={t('quick_review')}
         >
           <Eye size={18} />
         </button>
