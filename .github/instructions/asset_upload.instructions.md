@@ -3,6 +3,24 @@ description: Asset Upload (backend contract + frontend integration flow)
 applyTo: "backend/**,portal-web/**,storefront-web/**"
 ---
 
+# Asset Upload System
+
+**SSOT Hierarchy:**
+
+- Parent: copilot-instructions.md
+- Related Backend: backend.instructions.md
+- Related Frontend: forms.instructions.md (FileUploadField, ImageUploadField), ky.instructions.md (HTTP client)
+
+**When to Read:**
+
+- Implementing file uploads
+- Business logo updates
+- Product/variant photo management
+- Understanding asset GC flow
+- Backend asset API contract
+
+---
+
 ## Why this exists
 
 Kyora’s asset system is intentionally **simple and frontend-driven**:
@@ -349,7 +367,16 @@ This is **client state only**. Kyora intentionally does not have a server-side �
   - uploading thumbnail bytes with the thumbnail descriptor,
   - completing multipart if thumbnail upload is multipart.
 
-If you don’t store thumbnails in `AssetReference`, your UI will still work, but may load heavier media.
+## If you don’t store thumbnails in `AssetReference`, your UI will still work, but may load heavier media.
+
+## See Also
+
+- **forms.instructions.md** — FileUploadField and ImageUploadField components (high-level integration)
+- **ky.instructions.md** — HTTP client patterns for upload API calls
+- **backend.instructions.md** — Backend architecture for asset storage and GC
+- **ui-implementation.instructions.md** — Progress indicators, error states for uploads
+
+---
 
 ## Common integration pitfalls
 

@@ -56,16 +56,20 @@ kyora/
 ### Portal Web (React Dashboard)
 
 **When:** Modifying `portal-web/**` or building business dashboard features.
-**Read First:** `.github/instructions/portal-web.instructions.md`
+**Read First:**
+
+- `.github/instructions/portal-web-architecture.instructions.md` → Tech stack, auth, routing, state management
+- `.github/instructions/portal-web-development.instructions.md` → Development workflow, testing, deployment
+
 **Also Read (if relevant):**
 
+- `.github/instructions/forms.instructions.md` → Form system (TanStack Form + all field components)
+- `.github/instructions/ui-implementation.instructions.md` → Components, RTL rules, daisyUI usage
+- `.github/instructions/charts.instructions.md` → Chart.js visualizations, statistics
 - `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
-- `.github/instructions/ui-patterns.instructions.md` → Components, RTL rules, accessibility
-- `.github/instructions/daisyui.instructions.md` → Component library usage
-- `.github/instructions/tanstack-form.instructions.md` → Form handling
 - `.github/instructions/ky.instructions.md` → HTTP requests
-- `.github/instructions/stripe.instructions.md` → Billing UI
 - `.github/instructions/asset_upload.instructions.md` → File uploads (frontend flow)
+- `.github/instructions/stripe.instructions.md` → Billing UI
 
 ### Storefront Web (Customer Portal)
 
@@ -74,8 +78,7 @@ kyora/
 **Also Read (if relevant):**
 
 - `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
-- `.github/instructions/ui-patterns.instructions.md` → Components, RTL rules, accessibility
-- `.github/instructions/daisyui.instructions.md` → Component library usage
+- `.github/instructions/ui-implementation.instructions.md` → Components, RTL rules, daisyUI usage
 - `.github/instructions/bestpractice.instructions.md` → Client-side architecture
 
 ## 5. Execution Standards (Non-Negotiable)
@@ -109,10 +112,10 @@ Does it modify backend/?
         ↓
 Does it modify portal-web/?
     YES → Read portal-web.instructions.md → Check if forms/HTTP/UI → Read relevant instructions
-    NO → Continue
+    NO → Continue-architecture.instructions.md → Check if forms/HTTP/UI/charts
         ↓
 Does it modify storefront-web/?
-    YES → Read storefront-web/DESIGN_SYSTEM.md + design-tokens + ui-patterns
+    YES → Read storefront-web/DESIGN_SYSTEM.md + design-tokens + ui-implementation
     NO → Error: unknown target
         ↓
 Implement following SSOT rules
@@ -160,8 +163,8 @@ Done
 
 **Context Window Management:**
 
-- Specialized instructions are ~600-1700 lines each (pre-optimized)
-- Total instruction corpus: ~40K lines (~150K tokens)
+- Specialized instructions are ~400-800 lines each (pre-optimized)
+- Total instruction corpus: ~5,500 lines (~180K tokens)
 - **Budget Per Task:** ~80K tokens context (50K instructions + 30K code)
 - If nearing limit, prioritize: instruction file > domain models > handlers > tests
 

@@ -3,7 +3,23 @@ description: Ky HTTP Client Library - Production-Grade HTTP Requests
 applyTo: "portal-web/**"
 ---
 
-# Ky HTTP Client - Production-Grade HTTP Requests for Kyora Portal
+# Ky HTTP Client - Production-Grade HTTP Requests
+
+**SSOT Hierarchy:**
+
+- Parent: copilot-instructions.md
+- Peers: portal-web-architecture.instructions.md, asset_upload.instructions.md
+- Related: forms.instructions.md (form submission patterns)
+
+**When to Read:**
+
+- Making HTTP requests
+- API client configuration
+- Authentication/token refresh
+- Error handling patterns
+- File upload HTTP flows
+
+---
 
 Ky is a tiny, elegant HTTP client based on the Fetch API. This guide covers how to leverage its strengths for production-grade HTTP requests in the Kyora Portal Web App.
 
@@ -1095,6 +1111,15 @@ if (import.meta.env.DEV) {
   });
 }
 ```
+
+---
+
+## See Also
+
+- **asset_upload.instructions.md** — File upload HTTP flows (pre-signed URLs, multipart uploads, S3 integration)
+- **forms.instructions.md** — FileUploadField/ImageUploadField components (how forms trigger uploads)
+- **portal-web-architecture.instructions.md** — Overall portal architecture, authentication patterns
+- **design-tokens.instructions.md** — When displaying upload progress/error states
 
 ## Summary
 

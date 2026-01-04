@@ -1,0 +1,13 @@
+{
+  "name": "kyora-scripts",
+  "version": "1.0.0",
+  "type": "module",
+  "private": true,
+  "description": "Build scripts for Kyora monorepo",
+  "scripts": {
+    "generate-field-docs": "node generate-field-docs.js"
+  },
+  "dependencies": {
+    "typescript": "^5.7.3"
+  }
+}
