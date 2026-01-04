@@ -457,7 +457,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
                 <div
                   ref={popupRef}
                   className={cn(
-                    'relative bg-base-100 rounded-t-xl shadow-xl',
+                    'relative bg-base-100 rounded-t-xl',
                     'w-full',
                     'transition-transform duration-200',
                     isAnimating ? 'translate-y-0' : 'translate-y-full',
@@ -515,7 +515,7 @@ export const TimePicker = forwardRef<HTMLInputElement, TimePickerProps>(
               aria-label={label || t('date.selectTime')}
               className={cn(
                 'absolute top-full mt-2 z-50',
-                'bg-base-100 rounded-box shadow-lg border border-base-300 p-4',
+                'bg-base-100 rounded-box border border-base-300 p-4',
                 isRTL ? 'end-0' : 'start-0',
                 'min-w-[320px]',
               )}

@@ -171,7 +171,7 @@ export function Tooltip({
             ref={tooltipRef}
             id={tooltipId.current}
             role="tooltip"
-            className={`fixed z-50 px-3 py-2 text-sm text-base-100 bg-base-content rounded-md shadow-lg transition-opacity duration-200 opacity-100 ${className}`}
+            className={`fixed z-50 px-3 py-2 text-sm text-base-100 bg-base-content rounded-md transition-opacity duration-200 opacity-100 ${className}`}
             style={{
               top: `${position.top}px`,
               left: `${position.left}px`,

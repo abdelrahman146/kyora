@@ -44,7 +44,7 @@ function ForgotPasswordPage() {
     return (
       <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
         <div className="w-full max-w-md">
-          <div className="card bg-base-200 shadow-xl">
+          <div className="card bg-base-200">
             <div className="card-body items-center text-center">
               <div className="w-16 h-16 rounded-full bg-success/20 flex items-center justify-center mb-4">
                 <CheckCircle className="text-success" size={32} />
@@ -94,7 +94,7 @@ function ForgotPasswordPage() {
   return (
     <div className="min-h-screen bg-base-100 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <div className="card bg-base-200 shadow-xl">
+        <div className="card bg-base-200">
           <div className="card-body">
             <button
               type="button"

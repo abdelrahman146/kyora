@@ -254,7 +254,7 @@ function HomePage() {
                 <button
                   key={business.id}
                   onClick={() => handleBusinessSelect(business)}
-                  className="card border border-base-300 bg-base-100 text-start transition-all hover:border-primary hover:shadow-md hover:cursor-pointer"
+                  className="card border border-base-300 bg-base-100 text-start transition-all hover:border-primary  hover:cursor-pointer"
                 >
                   <div className="card-body p-4">
                     <div className="flex items-start gap-3">
@@ -295,7 +295,7 @@ function HomePage() {
               <button
                 key={link.key}
                 disabled={link.disabled}
-                className="card border border-base-300 bg-base-100 text-start transition-all hover:border-primary hover:shadow-md hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
+                className="card border border-base-300 bg-base-100 text-start transition-all hover:border-primary  hover:cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
               >
                 <div className="card-body p-4">
                   <div className="mb-2 flex items-center gap-3">
@@ -326,7 +326,7 @@ function HomePage() {
                 href={link.path}
                 target={link.external ? '_blank' : undefined}
                 rel={link.external ? 'noopener noreferrer' : undefined}
-                className="card border border-base-300 bg-base-100 transition-all hover:border-primary hover:shadow-md"
+                className="card border border-base-300 bg-base-100 transition-all hover:border-primary "
               >
                 <div className="card-body p-4">
                   <div className="flex items-center justify-between">

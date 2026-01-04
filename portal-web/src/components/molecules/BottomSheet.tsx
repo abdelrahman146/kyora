@@ -232,7 +232,7 @@ export function BottomSheet({
       {/* Drawer Container */}
       <div
         ref={drawerRef}
-        className={`fixed z-[70] bg-base-100 shadow-xl transition-transform duration-300 ease-in-out overflow-y-auto ${getDrawerClasses()} ${className}`}
+        className={`fixed z-[70] bg-base-100 transition-transform duration-300 ease-in-out overflow-y-auto ${getDrawerClasses()} ${className}`}
         role="dialog"
         aria-modal="true"
         aria-label={ariaLabel}

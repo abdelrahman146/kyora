@@ -573,7 +573,7 @@ function CustomersListPage() {
             <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               <button
                 type="button"
-                className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md"
+                className="btn btn-sm btn-circle btn-ghost bg-base-100"
                 onClick={(e) => {
                   handleEditClick(customer, e)
                 }}
@@ -583,7 +583,7 @@ function CustomersListPage() {
               </button>
               <button
                 type="button"
-                className="btn btn-sm btn-circle btn-ghost bg-base-100 shadow-md text-error"
+                className="btn btn-sm btn-circle btn-ghost bg-base-100 text-error"
                 onClick={(e) => {
                   handleDeleteClick(customer, e)
                 }}

@@ -129,7 +129,7 @@ function EmailEntryPage() {
       </div>
 
       {/* Email Form */}
-      <div className="card bg-base-100 border border-base-300 shadow-lg">
+      <div className="card bg-base-100 border border-base-300">
         <div className="card-body">
           <form.AppForm>
             <form.FormRoot className="space-y-6">

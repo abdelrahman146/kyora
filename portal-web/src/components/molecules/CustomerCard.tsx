@@ -68,7 +68,7 @@ export function CustomerCard({
 
   return (
     <div
-      className={`card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow ${
+      className={`card bg-base-100 border border-base-300  transition-shadow ${
         onClick ? 'cursor-pointer' : ''
       }`}
       onClick={() => onClick?.(customer)}

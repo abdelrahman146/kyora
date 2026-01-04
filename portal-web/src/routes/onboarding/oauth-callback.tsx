@@ -33,7 +33,7 @@ export const Route = createFileRoute('/onboarding/oauth-callback')({
     const { t } = useTranslation('translation')
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+        <div className="card bg-base-100 border border-base-300 max-w-md">
           <div className="card-body">
             <h2 className="card-title text-error">{t('error.title')}</h2>
             <p className="text-base-content/70">
@@ -129,7 +129,7 @@ function OAuthCallbackPage() {
 
   return (
     <div className="flex min-h-[60vh] items-center justify-center">
-      <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+      <div className="card bg-base-100 border border-base-300 max-w-md">
         <div className="card-body">
           <div className="text-center">
             {hasError ? (

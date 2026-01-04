@@ -185,7 +185,7 @@ export function Modal({
       <div
         ref={modalRef}
         className={cn(
-          'relative w-full bg-base-100 rounded-t-2xl md:rounded-2xl shadow-2xl',
+          'relative w-full bg-base-100 rounded-t-2xl md:rounded-2xl',
           'transform transition-transform duration-300 ease-out',
           'max-h-[90vh] md:max-h-[85vh]',
           'animate-in slide-in-from-bottom md:slide-in-from-bottom-0 md:fade-in',

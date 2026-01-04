@@ -88,7 +88,7 @@ export function Sidebar(_props: SidebarProps) {
         isDesktop && sidebarCollapsed && 'w-20',
         // Mobile: Drawer from start with slide animation
         !isDesktop &&
-          'start-0 w-64 shadow-2xl transition-transform duration-300',
+          'start-0 w-64 transition-transform duration-300',
         // Mobile animation states
         !isDesktop && !isRTL && !sidebarOpen && '-translate-x-full',
         !isDesktop && isRTL && !sidebarOpen && 'translate-x-full',

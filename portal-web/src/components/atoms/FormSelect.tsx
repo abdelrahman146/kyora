@@ -529,7 +529,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     ref={mobileContentRef}
                     className={cn(
                       'relative w-full max-h-[85vh]',
-                      'bg-base-100 rounded-t-xl shadow-2xl',
+                      'bg-base-100 rounded-t-xl',
                       'overflow-hidden flex flex-col',
                       'transition-transform duration-200 ease-out',
                       isAnimating ? 'translate-y-0' : 'translate-y-full',
@@ -692,7 +692,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
               <div
                 className={cn(
                   'absolute z-50 mt-2 w-full',
-                  'bg-base-100 border border-base-300 rounded-lg shadow-xl',
+                  'bg-base-100 border border-base-300 rounded-lg',
                   'overflow-hidden',
                   'transition-all duration-200 origin-top',
                   isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95',

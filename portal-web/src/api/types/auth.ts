@@ -69,8 +69,8 @@ export type User = z.infer<typeof UserSchema>
 // Login Schemas - POST /v1/auth/login
 
 export const LoginRequestSchema = z.object({
-  email: z.string().email('Invalid email address'),
-  password: z.string().min(1, 'Password is required'),
+  email: z.string().email('validation.invalid_email'),
+  password: z.string().min(1, 'validation.required'),
 })
 
 export type LoginRequest = z.infer<typeof LoginRequestSchema>
@@ -86,7 +86,7 @@ export type LoginResponse = z.infer<typeof LoginResponseSchema>
 // Refresh Token Schemas - POST /v1/auth/refresh
 
 export const RefreshRequestSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, 'validation.required'),
 })
 
 export type RefreshRequest = z.infer<typeof RefreshRequestSchema>
@@ -101,7 +101,7 @@ export type RefreshResponse = z.infer<typeof RefreshResponseSchema>
 // Logout Schemas - POST /v1/auth/logout
 
 export const LogoutRequestSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, 'validation.required'),
 })
 
 export type LogoutRequest = z.infer<typeof LogoutRequestSchema>
@@ -111,7 +111,7 @@ export type LogoutRequest = z.infer<typeof LogoutRequestSchema>
 // Logout All Devices Schemas - POST /v1/auth/logout-all
 
 export const LogoutAllRequestSchema = z.object({
-  refreshToken: z.string().min(1, 'Refresh token is required'),
+  refreshToken: z.string().min(1, 'validation.required'),
 })
 
 export type LogoutAllRequest = z.infer<typeof LogoutAllRequestSchema>
@@ -134,7 +134,7 @@ export type ProblemDetails = z.infer<typeof ProblemDetailsSchema>
 // Forgot Password Schemas - POST /v1/auth/forgot-password
 
 export const ForgotPasswordRequestSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('validation.invalid_email'),
 })
 
 export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>
@@ -144,8 +144,8 @@ export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>
 // Reset Password Schemas - POST /v1/auth/reset-password
 
 export const ResetPasswordRequestSchema = z.object({
-  token: z.string().min(1, 'Reset token is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  token: z.string().min(1, 'validation.required'),
+  password: z.string().min(8, 'validation.password_min_length'),
 })
 
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>
@@ -155,7 +155,7 @@ export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>
 // Google OAuth Schemas - POST /v1/auth/google/login
 
 export const GoogleLoginRequestSchema = z.object({
-  code: z.string().min(1, 'Google OAuth code is required'),
+  code: z.string().min(1, 'validation.required'),
 })
 
 export type GoogleLoginRequest = z.infer<typeof GoogleLoginRequestSchema>
@@ -165,7 +165,7 @@ export type GoogleLoginRequest = z.infer<typeof GoogleLoginRequestSchema>
 // Email Verification Schemas
 
 export const RequestEmailVerificationSchema = z.object({
-  email: z.string().email('Invalid email address'),
+  email: z.string().email('validation.invalid_email'),
 })
 
 export type RequestEmailVerification = z.infer<
@@ -173,7 +173,7 @@ export type RequestEmailVerification = z.infer<
 >
 
 export const VerifyEmailRequestSchema = z.object({
-  token: z.string().min(1, 'Verification token is required'),
+  token: z.string().min(1, 'validation.required'),
 })
 
 export type VerifyEmailRequest = z.infer<typeof VerifyEmailRequestSchema>

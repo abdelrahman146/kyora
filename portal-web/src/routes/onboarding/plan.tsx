@@ -30,7 +30,7 @@ export const Route = createFileRoute('/onboarding/plan')({
     const { t } = useTranslation('translation')
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+        <div className="card bg-base-100 border border-base-300 max-w-md">
           <div className="card-body">
             <h2 className="card-title text-error">{t('error.title')}</h2>
             <p className="text-base-content/70">{error.message || t('error.generic')}</p>
@@ -141,9 +141,9 @@ function PlanSelectionPage() {
                 onClick={() => {
                   handleSelectPlan(plan)
                 }}
-                className={`card bg-base-100 border-2 cursor-pointer transition-all hover:shadow-xl relative ${
+                className={`card bg-base-100 border-2 cursor-pointer transition-all  relative ${
                   isSelected
-                    ? 'border-primary shadow-lg scale-105'
+                    ? 'border-primary scale-105'
                     : 'border-base-300 hover:border-primary/50'
                 } ${isRecommended ? 'ring-2 ring-secondary ring-offset-2' : ''}`}
               >

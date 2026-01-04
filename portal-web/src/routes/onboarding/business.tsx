@@ -62,7 +62,6 @@ export const Route = createFileRoute('/onboarding/business')({
 function BusinessSetupPage() {
   const { t: tOnboarding, i18n } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
-  const { t: tTranslation } = useTranslation('translation')
   const { t: tErrors } = useTranslation('errors')
   const navigate = useNavigate()
   const { session } = Route.useLoaderData()
@@ -215,7 +214,7 @@ function BusinessSetupPage() {
   return (
     <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
-        <div className="card bg-base-100 border border-base-300 shadow-xl">
+        <div className="card bg-base-100 border border-base-300">
           <div className="card-body">
             {/* Header */}
             <div className="text-center mb-6">

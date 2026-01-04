@@ -48,7 +48,7 @@ export const ComplexStatCard = ({
   return (
     <div
       className={cn(
-        'card rounded-box shadow-sm border transition-all hover:shadow-md',
+        'card rounded-box border transition-all ',
         variantClasses[variant],
         className,
       )}

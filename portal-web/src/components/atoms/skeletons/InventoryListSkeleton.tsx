@@ -31,7 +31,7 @@ export function InventoryListSkeleton() {
 
       {/* Desktop Table Skeleton */}
       {!isMobile && (
-        <div className="card bg-base-100 border border-base-300 shadow-sm overflow-hidden">
+        <div className="card bg-base-100 border border-base-300 overflow-hidden">
           <div className="overflow-x-auto">
             <table className="table">
               {/* Header */}
@@ -108,7 +108,7 @@ export function InventoryListSkeleton() {
           {Array.from({ length: 5 }).map((_, i) => (
             <div
               key={i}
-              className="card bg-base-100 border border-base-300 shadow-sm"
+              className="card bg-base-100 border border-base-300"
             >
               <div className="card-body p-4">
                 <div className="flex items-center gap-3 mb-3">

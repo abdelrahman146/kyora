@@ -34,7 +34,7 @@ export function RouteErrorFallback({ error, reset }: ErrorComponentProps) {
 
   return (
     <div className="flex min-h-[400px] items-center justify-center p-4">
-      <div className="card bg-base-100 shadow-lg max-w-md w-full">
+      <div className="card bg-base-100 max-w-md w-full">
         <div className="card-body items-center text-center">
           <AlertCircle className="w-16 h-16 text-error mb-4" />
 

@@ -75,7 +75,7 @@ export function InventoryCard({
 
   return (
     <div
-      className={`bg-base-100 border border-base-300 rounded-xl p-4 hover:shadow-md transition-shadow ${
+      className={`bg-base-100 border border-base-300 rounded-xl p-4  transition-shadow ${
         onClick ? 'cursor-pointer active:scale-[0.98]' : ''
       }`}
       onClick={() => onClick?.(product)}

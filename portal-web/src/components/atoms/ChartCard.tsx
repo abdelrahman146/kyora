@@ -38,7 +38,7 @@ export const ChartCard = ({
   return (
     <div
       className={cn(
-        'card rounded-box bg-base-100 shadow-sm border border-base-300',
+        'card rounded-box bg-base-100 border border-base-300',
         className,
       )}
     >

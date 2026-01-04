@@ -102,8 +102,7 @@ function SortableItem<T>({
       style={style}
       className={cn(
         'group relative rounded-lg border border-base-300 bg-base-100 transition-all duration-200',
-        (isDragging || isSortableDragging) &&
-          'shadow-lg ring-2 ring-primary/20',
+        (isDragging || isSortableDragging) && 'ring-2 ring-primary/20',
         'animate-in fade-in slide-in-from-top-2 duration-300',
       )}
       role="listitem"
@@ -355,7 +354,7 @@ export function FieldArray<T = any>(props: FieldArrayProps<T>) {
           {/* Drag Overlay */}
           <DragOverlay>
             {activeItem && activeId ? (
-              <div className="rounded-lg border-2 border-primary bg-base-100 shadow-xl opacity-90">
+              <div className="rounded-lg border-2 border-primary bg-base-100 opacity-90">
                 <div className="flex items-start gap-3 p-4">
                   <div className="flex-1 min-w-0">
                     {render(

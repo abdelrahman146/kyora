@@ -139,7 +139,7 @@ export function ProductDetailsSheet({
                 return (
                   <div
                     key={variant.id}
-                    className="bg-base-100 border border-base-300 rounded-xl p-4 hover:shadow-md transition-shadow"
+                    className="bg-base-100 border border-base-300 rounded-xl p-4  transition-shadow"
                   >
                     {/* Header: Photo + Code + SKU */}
                     <div className="flex items-start gap-3 mb-4">

@@ -12,7 +12,7 @@ export const StatCardSkeleton = ({
   return (
     <div
       className={cn(
-        'card rounded-box bg-base-100 shadow-sm border border-base-300 animate-pulse',
+        'card rounded-box bg-base-100 border border-base-300 animate-pulse',
         className,
       )}
       role="status"

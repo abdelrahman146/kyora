@@ -216,7 +216,7 @@ export function OrderQuickActions({
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content menu bg-base-100 rounded-box z-[100] w-64 p-2 shadow-lg border border-base-300 mt-2"
+          className="dropdown-content menu bg-base-100 rounded-box z-[100] w-64 p-2 border border-base-300 mt-2"
         >
           <li>
             <button

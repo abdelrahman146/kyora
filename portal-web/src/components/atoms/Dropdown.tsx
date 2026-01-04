@@ -284,7 +284,7 @@ export function Dropdown({
           ref={modalContentRef}
           className={cn(
             'relative w-full max-h-[85vh]',
-            'bg-base-100 rounded-t-xl shadow-xl',
+            'bg-base-100 rounded-t-xl',
             'overflow-hidden flex flex-col',
             'transition-transform duration-200 ease-out',
             isAnimating
@@ -351,7 +351,7 @@ export function Dropdown({
       <div
         className={cn(
           'absolute top-full mt-2 z-50',
-          'bg-base-100 rounded-lg shadow-lg border border-base-300',
+          'bg-base-100 rounded-lg border border-base-300',
           'transition-all duration-200 origin-top',
           isAnimating
             ? 'opacity-100 scale-100'

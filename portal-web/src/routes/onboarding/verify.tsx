@@ -235,7 +235,7 @@ function VerifyEmailPage() {
     <OnboardingLayout>
       <div className="max-w-lg mx-auto">
         {step === 'otp' ? (
-          <div className="card bg-base-100 border border-base-300 shadow-xl">
+          <div className="card bg-base-100 border border-base-300">
             <div className="card-body">
               <div className="text-center mb-6">
                 <div className="flex justify-center mb-4">
@@ -342,7 +342,7 @@ function VerifyEmailPage() {
             </div>
           </div>
         ) : (
-          <div className="card bg-base-100 border border-base-300 shadow-xl">
+          <div className="card bg-base-100 border border-base-300">
             <div className="card-body">
               <div className="text-center mb-6">
                 <div className="flex justify-center mb-4">

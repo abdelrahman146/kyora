@@ -72,7 +72,7 @@ export function LanguageSwitcher({
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content menu bg-base-200 rounded-box z-50 mt-2 w-52 p-2 shadow-lg"
+          className="dropdown-content menu bg-base-200 rounded-box z-50 mt-2 w-52 p-2"
         >
           {languages.map((lang) => (
             <li key={lang.code}>
@@ -122,7 +122,7 @@ export function LanguageSwitcher({
         </button>
         <ul
           tabIndex={0}
-          className="dropdown-content menu bg-base-200 rounded-box z-50 mt-2 w-48 p-2 shadow-lg"
+          className="dropdown-content menu bg-base-200 rounded-box z-50 mt-2 w-48 p-2"
         >
           {languages.map((lang) => (
             <li key={lang.code}>
@@ -172,7 +172,7 @@ export function LanguageSwitcher({
       </button>
       <ul
         tabIndex={0}
-        className="dropdown-content menu bg-base-200 rounded-box z-50 mt-3 w-64 p-2 shadow-xl"
+        className="dropdown-content menu bg-base-200 rounded-box z-50 mt-3 w-64 p-2"
       >
         <li className="menu-title px-4 py-2">
           <span className="text-base-content/70 text-sm font-semibold">

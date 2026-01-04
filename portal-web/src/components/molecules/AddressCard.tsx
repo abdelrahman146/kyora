@@ -53,7 +53,7 @@ export function AddressCard({
       : null
 
   return (
-    <div className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow">
+    <div className="card bg-base-100 border border-base-300  transition-shadow">
       <div className="card-body p-4">
         <div className="flex items-start justify-between gap-3">
           {/* Address Icon */}

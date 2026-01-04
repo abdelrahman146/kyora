@@ -1,5 +1,10 @@
 import { useState } from 'react'
-import { Link, createFileRoute, useNavigate, useSearch } from '@tanstack/react-router'
+import {
+  Link,
+  createFileRoute,
+  useNavigate,
+  useSearch,
+} from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import { useTranslation } from 'react-i18next'
 import type { LoginFormData } from '@/schemas/auth'
@@ -28,7 +33,8 @@ function LoginPage() {
 
   // Don't show loading spinner during login - LoginForm handles its own loading state
   // Only show loading when initializing auth on page load
-  const isInitializing = authState.isLoading && !authState.user && !authState.isAuthenticated
+  const isInitializing =
+    authState.isLoading && !authState.user && !authState.isAuthenticated
 
   if (isInitializing) {
     return (
@@ -74,7 +80,7 @@ function LoginPage() {
   return (
     <div className="min-h-screen bg-base-100 flex flex-col lg:flex-row">
       {/* Left Side - Branding (Hidden on mobile) */}
-      <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-primary to-primary-focus items-center justify-center p-12">
+      <div className="hidden lg:flex lg:w-1/2 bg-primary items-center justify-center p-12">
         <div className="max-w-md text-center">
           <h1 className="text-5xl font-bold text-primary-content mb-6">
             Kyora

@@ -326,7 +326,7 @@ function CustomerDetailPage() {
         </div>
 
         {/* Header Card with Avatar */}
-        <div className="card bg-base-100 border border-base-300 shadow-sm">
+        <div className="card bg-base-100 border border-base-300">
           <div className="card-body">
             <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
               <Avatar
@@ -400,7 +400,7 @@ function CustomerDetailPage() {
             {/* Details Grid */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
               {/* Basic Information */}
-              <div className="card bg-base-100 border border-base-300 shadow-sm">
+              <div className="card bg-base-100 border border-base-300">
                 <div className="card-body">
                   <h3 className="card-title text-lg">
                     {t('customers.details.basic_info')}
@@ -440,7 +440,7 @@ function CustomerDetailPage() {
               </div>
 
               {/* Addresses */}
-              <div className="card bg-base-100 border border-base-300 shadow-sm">
+              <div className="card bg-base-100 border border-base-300">
                 <div className="card-body">
                   <div className="flex items-center justify-between mb-4">
                     <h3 className="card-title text-lg">
@@ -501,7 +501,7 @@ function CustomerDetailPage() {
 
             {/* Notes Section */}
             {customer.notes && customer.notes.length > 0 && (
-              <div className="card bg-base-100 border border-base-300 shadow-sm mt-6">
+              <div className="card bg-base-100 border border-base-300 mt-6">
                 <div className="card-body">
                   <h3 className="card-title text-lg">
                     {t('customers.details.notes')}

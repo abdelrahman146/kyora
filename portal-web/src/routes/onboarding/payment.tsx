@@ -84,7 +84,7 @@ export const Route = createFileRoute('/onboarding/payment')({
     const { t } = useTranslation('translation')
     return (
       <div className="flex min-h-[60vh] items-center justify-center">
-        <div className="card bg-base-100 border border-base-300 shadow-xl max-w-md">
+        <div className="card bg-base-100 border border-base-300 max-w-md">
           <div className="card-body">
             <h2 className="card-title text-error">{t('error.title')}</h2>
             <p className="text-base-content/70">{error.message || t('error.generic')}</p>
@@ -167,7 +167,7 @@ function PaymentPage() {
         </div>
 
         {selectedPlan && (
-          <div className="card bg-base-100 border border-base-300 shadow-xl">
+          <div className="card bg-base-100 border border-base-300">
             <div className="card-body">
               <h2 className="card-title text-2xl mb-4">
                 {tOnboarding('payment.title')}
@@ -231,7 +231,7 @@ function PaymentPage() {
     <OnboardingLayout>
       <div className="max-w-2xl mx-auto">
         {selectedPlan && (
-        <div className="card bg-base-100 border border-base-300 shadow-xl">
+        <div className="card bg-base-100 border border-base-300">
           <div className="card-body">
             <h2 className="card-title text-2xl mb-4">
               {tOnboarding('payment.title')}
