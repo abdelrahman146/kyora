@@ -259,6 +259,20 @@ function ProductsPage() {
 
 #### 7. Add Translations (Match Existing i18next Setup)
 
+**Rule:** Never hardcode user-facing strings (Arabic-first). Use `t("...")` keys.
+
+For example, update UI labels in the route/component examples:
+
+```tsx
+const { t } = useTranslation()
+
+<h1 className="text-2xl font-bold">{t("products.title")}</h1>
+
+<button onClick={() => setIsAddOpen(true)} className="btn btn-primary">
+  {t("products.add")}
+</button>
+```
+
 Translations live in `src/i18n/<locale>/<namespace>.json`.
 
 Choose the right place based on existing patterns:

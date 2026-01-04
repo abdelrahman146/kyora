@@ -18,6 +18,7 @@ Read relevant architecture rules first:
 
 - [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md) for tech stack patterns
 - [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md) for workflow
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) for portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 
 ## Debugging Workflow
 

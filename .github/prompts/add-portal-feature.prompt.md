@@ -18,6 +18,7 @@ Before implementing, read the frontend architecture rules:
 
 - Read [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md) for tech stack, routing, state management
 - Read [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md) for development workflow
+- Read [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) for portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - If feature involves forms: [forms.instructions.md](../instructions/forms.instructions.md)
 - If feature involves HTTP requests: [ky.instructions.md](../instructions/ky.instructions.md)
 - If feature involves UI components: [ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md)
@@ -36,7 +37,7 @@ Before implementing, read the frontend architecture rules:
    - Read `businessDescriptor` via `Route.useParams()` and pass it into API/query hooks
 4. **Forms**: Use Kyora form system (`useKyoraForm` + `<form.AppField>` pattern). Follow `forms.instructions.md`
 5. **HTTP**: Ky client with proper error handling
-6. **UI**: daisyUI components, RTL-first, responsive design
+6. **UI (Portal SSOT)**: Follow `portal-web-ui-guidelines.instructions.md` (mobile-first, Arabic/RTL-first, minimal: no shadows, no gradients)
 7. **i18n**: All text strings must support Arabic + English
 8. **Accessibility**: Proper ARIA labels, keyboard navigation
 9. **Type Safety**: Zod schemas for validation + TypeScript types

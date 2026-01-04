@@ -162,19 +162,70 @@ function LoginForm() {
 
 ## Field Components Reference
 
+## Mobile Keyboard UX (Required)
+
+Kyora Portal is mobile-first. Field configuration must produce the correct keyboard and behave well in Arabic/RTL.
+
+### Defaults
+
+- Use `autoComplete` whenever possible (helps speed and reduces errors).
+- Prefer `enterKeyHint="next"` for multi-field forms and `enterKeyHint="done"` for the last field.
+- For identifiers/numbers (phone, order id, IBAN, codes): set `dir="ltr"` and use an appropriate `inputMode`.
+- Avoid `type="number"` for currency; use `<field.PriceField />` (it uses `inputMode="decimal"` and `dir="ltr"`).
+
+### Common Patterns
+
+```tsx
+// Email
+<field.TextField
+  type="email"
+  autoComplete="email"
+  inputMode="email"
+  autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+  enterKeyHint="next"
+/>
+
+// Phone (keep LTR even in Arabic UI)
+<field.TextField
+  type="tel"
+  autoComplete="tel"
+  inputMode="tel"
+  dir="ltr"
+  enterKeyHint="next"
+/>
+
+// Quantity / numeric code (use text + inputMode, not type=number)
+<field.TextField
+  type="text"
+  inputMode="numeric"
+  pattern="[0-9]*"
+  dir="ltr"
+  autoCapitalize="none"
+  autoCorrect="off"
+  spellCheck={false}
+  enterKeyHint="done"
+/>
+```
+
 ### TextField
 
-Standard text input (email, tel, text, number).
+Standard text input (email, tel, text, url, search).
 
 ```tsx
 <form.AppField name="email" validators={{ onBlur: z.string().email() }}>
   {(field) => (
     <field.TextField
-      type="email" // text | email | tel | number
-      label="Email"
-      placeholder="user@example.com"
+      type="email" // text | email | url | tel | search
+      label={t("auth.email")}
+      placeholder={t("auth.email_placeholder")}
       autoComplete="email"
-      inputMode="email" // Mobile keyboard
+      inputMode="email"
+      autoCapitalize="none"
+      autoCorrect="off"
+      spellCheck={false}
+      enterKeyHint="next"
       required // Visual indicator
       disabled // Disable input
     />
@@ -194,7 +245,7 @@ Password with visibility toggle.
 <form.AppField name="password" validators={{ onBlur: z.string().min(8) }}>
   {(field) => (
     <field.PasswordField
-      label="Password"
+      label={t("auth.password")}
       autoComplete="current-password"
       required
     />
@@ -214,7 +265,7 @@ Multi-line text with character counter.
 <form.AppField name="description" validators={{ onBlur: z.string().max(500) }}>
   {(field) => (
     <field.TextareaField
-      label="Description"
+      label={t("common.description")}
       rows={4}
       maxLength={500}
       showCount // Show "45/500"
@@ -236,10 +287,10 @@ Dropdown with search and multi-select chip UI.
 <form.AppField name="country" validators={{ onBlur: z.string().min(1) }}>
   {(field) => (
     <field.SelectField
-      label="Country"
+      label={t("common.country")}
       options={[
-        { value: "us", label: "United States" },
-        { value: "uk", label: "United Kingdom" },
+        { value: "ae", label: t("countries.ae") },
+        { value: "sa", label: t("countries.sa") },
       ]}
       searchable
       clearable

@@ -87,6 +87,7 @@ Senior Arabic frontend architect, brilliant UI/UX designer. Expert in mobile-fir
 
 - `.github/instructions/portal-web-architecture.instructions.md` — Architecture, auth, routing
 - `.github/instructions/portal-web-development.instructions.md` — Development workflow
+- `.github/instructions/portal-web-ui-guidelines.instructions.md` — Portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - `.github/instructions/forms.instructions.md` — Form system (TanStack Form + all fields)
 - `.github/instructions/ui-implementation.instructions.md` — Components, RTL, daisyUI
 - `.github/instructions/charts.instructions.md` — Chart.js patterns
@@ -111,6 +112,7 @@ Senior Arabic frontend architect, brilliant UI/UX designer. Expert in mobile-fir
 
 - **Mobile-First**: Design for phone, one-hand use, bright sunlight legibility
 - **RTL-Ready**: Use logical properties (`ms-` not `ml-`), test both directions
+- **Minimal Visual Language**: No shadows, no gradients; separation via borders + spacing + typography
 - **Accessibility**: Contrast ratios, ARIA labels, keyboard navigation
 - **Visual Hierarchy**: Spacing, typography weights, color guide user's eye
 - **Interactive Feedback**: Hover, active, focus, disabled, loading states

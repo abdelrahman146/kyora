@@ -11,23 +11,31 @@ applyTo: "portal-web/**,storefront-web/**"
 
 ---
 
+## Portal Web Visual Language (Minimal)
+
+Kyora Portal UI should feel **calm, minimal, and effortless**.
+
+- **No gradients. No shadows.**
+- Separation comes from **spacing + typography + borders**.
+- Use **daisyUI semantic tokens** (Primary/Secondary/Base) instead of ad-hoc colors.
+
 ## Colors
 
 ### Semantic Palette
 
-| Token       | Value                  | daisyUI Class      | Usage                           |
-| ----------- | ---------------------- | ------------------ | ------------------------------- |
-| Primary     | `#0D9488` (Teal)       | `bg-primary`       | Brand, main actions, links      |
-| Secondary   | `#EAB308` (Gold)       | `bg-secondary`     | Secondary CTAs, accents         |
-| Accent      | `#FACC15` (Yellow)     | `bg-accent`        | Attention, badges               |
-| Success     | `#10B981` (Green)      | `bg-success`       | Completed, paid, active         |
-| Error       | `#EF4444` (Red)        | `bg-error`         | Failed, invalid, critical       |
-| Warning     | `#F59E0B` (Orange)     | `bg-warning`       | Low stock, caution              |
-| Info        | `oklch(60% 0.12 192)`  | `bg-info`          | Informational                   |
-| Base-100    | `#FFFFFF`              | `bg-base-100`      | Main backgrounds, cards         |
-| Base-200    | `#F8FAFC`              | `bg-base-200`      | App background                  |
-| Base-300    | `#E2E8F0`              | `bg-base-300`      | Borders, dividers               |
-| Base-Content| `#0F172A`              | `text-base-content`| Primary text                    |
+| Token        | Value                 | daisyUI Class       | Usage                      |
+| ------------ | --------------------- | ------------------- | -------------------------- |
+| Primary      | `#0D9488` (Teal)      | `bg-primary`        | Brand, main actions, links |
+| Secondary    | `#EAB308` (Gold)      | `bg-secondary`      | Secondary CTAs, accents    |
+| Accent       | `#FACC15` (Yellow)    | `bg-accent`         | Attention, badges          |
+| Success      | `#10B981` (Green)     | `bg-success`        | Completed, paid, active    |
+| Error        | `#EF4444` (Red)       | `bg-error`          | Failed, invalid, critical  |
+| Warning      | `#F59E0B` (Orange)    | `bg-warning`        | Low stock, caution         |
+| Info         | `oklch(60% 0.12 192)` | `bg-info`           | Informational              |
+| Base-100     | `#FFFFFF`             | `bg-base-100`       | Main backgrounds, cards    |
+| Base-200     | `#F8FAFC`             | `bg-base-200`       | App background             |
+| Base-300     | `#E2E8F0`             | `bg-base-300`       | Borders, dividers          |
+| Base-Content | `#0F172A`             | `text-base-content` | Primary text               |
 
 ### Text Opacity Scale
 
@@ -47,16 +55,16 @@ text-base-content/30    (subtle decorative)
 **Font**: `IBM Plex Sans Arabic`
 **Fallback**: `Almarai, -apple-system, sans-serif`
 
-| Scale    | Size | Weight   | Usage                        | Tailwind Class |
-| -------- | ---- | -------- | ---------------------------- | -------------- |
-| Display  | 32px | Bold     | Marketing headers            | `text-[32px]`  |
-| H1       | 24px | Bold     | Page titles                  | `text-2xl`     |
-| H2       | 20px | SemiBold | Section headers              | `text-xl`      |
-| H3       | 18px | Medium   | Card titles                  | `text-lg`      |
-| Body-L   | 16px | Regular  | Default text                 | `text-base`    |
-| Body-M   | 14px | Regular  | Secondary text               | `text-sm`      |
-| Caption  | 12px | Medium   | Labels, timestamps           | `text-xs`      |
-| Micro    | 10px | Bold     | Small badges                 | `text-[10px]`  |
+| Scale   | Size | Weight   | Usage              | Tailwind Class |
+| ------- | ---- | -------- | ------------------ | -------------- |
+| Display | 32px | Bold     | Marketing headers  | `text-[32px]`  |
+| H1      | 24px | Bold     | Page titles        | `text-2xl`     |
+| H2      | 20px | SemiBold | Section headers    | `text-xl`      |
+| H3      | 18px | Medium   | Card titles        | `text-lg`      |
+| Body-L  | 16px | Regular  | Default text       | `text-base`    |
+| Body-M  | 14px | Regular  | Secondary text     | `text-sm`      |
+| Caption | 12px | Medium   | Labels, timestamps | `text-xs`      |
+| Micro   | 10px | Bold     | Small badges       | `text-[10px]`  |
 
 **Line Heights**: Headings `1.2-1.3`, Body `1.5-1.6`
 
@@ -87,15 +95,10 @@ rounded-full → pills, avatars, circular buttons
 
 ---
 
-## Shadows
+## Shadows (No Shadows)
 
-```
-shadow-sm  → Subtle card elevation
-shadow     → Standard cards
-shadow-md  → Elevated elements
-shadow-lg  → Floating elements, dropdowns
-shadow-xl  → Modals, important overlays
-```
+- Do not use shadow utilities for elevation.
+- Do not introduce “elevation” via `shadow-*` or `drop-shadow-*`.
 
 ---
 
@@ -116,7 +119,6 @@ Width:   1px (default)
 Standard: transition-all duration-200
 Colors:   transition-colors duration-200
 Opacity:  transition-opacity duration-200
-Shadow:   transition-shadow duration-200
 ```
 
 ---
@@ -136,10 +138,11 @@ xl: 1280px (large desktops)
 
 ## Touch Targets
 
-**Minimum**: 44-50px height
-- Buttons: `h-[52px]` (default)
-- Inputs: `h-[50px]`
-- Icon buttons: `min-w-[44px] min-h-[44px]`
+**Minimum**: 44×44px (prefer 48px+)
+
+- Avoid hardcoded pixel heights.
+- Prefer Tailwind scale (`min-h-12`, `min-w-12`) and daisyUI sizing (`btn-lg`) to keep UI consistent.
+- Mobile primary CTA should typically be `btn btn-primary btn-lg w-full`.
 
 ---
 
@@ -149,7 +152,7 @@ xl: 1280px (large desktops)
 Pulse (skeletons):    animate-pulse
 Spin (loaders):       animate-spin
 Press (buttons):      active:scale-95
-Hover (cards):        hover:shadow-md transition-shadow
+Hover (interactive):  transition-colors duration-200
 ```
 
 ---
@@ -164,6 +167,7 @@ Empty states:         size={48} to size={64}
 ```
 
 **Icon Colors**:
+
 ```
 Default:     text-base-content/50
 Hover:       group-hover:text-primary

@@ -16,6 +16,7 @@ ${input:issue:Describe the UI/UX problem (e.g., "Button alignment broken in RTL"
 
 Read design system rules first:
 
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) for portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - [design-tokens.instructions.md](../instructions/design-tokens.instructions.md) for colors, spacing, typography
 - [ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md) for RTL, daisyUI, icons, accessibility
 
@@ -27,6 +28,7 @@ Read design system rules first:
 4. **Consistency**: Use design tokens (colors, spacing, typography)
 5. **daisyUI**: Use semantic component classes, not arbitrary Tailwind
 6. **Icons**: Lucide React icons with proper sizing
+7. **Minimal**: No shadows, no gradients; use borders + spacing for separation
 
 ## Common UI/UX Issues
 

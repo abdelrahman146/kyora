@@ -77,6 +77,7 @@ World-Class UI/UX Design Systems Architect, Senior Frontend Stylist. Expert in t
 
 ## Key References
 
+- `.github/instructions/portal-web-ui-guidelines.instructions.md` — Portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - `.github/instructions/design-tokens.instructions.md` — Colors, typography, spacing (SSOT)
 - `.github/instructions/ui-implementation.instructions.md` — Components, RTL rules, daisyUI usage
 - `.github/instructions/charts.instructions.md` — Data visualization patterns
@@ -103,6 +104,8 @@ World-Class UI/UX Design Systems Architect, Senior Frontend Stylist. Expert in t
 **RTL/LTR**: Test both. Use logical properties. Icons/text direction adapt automatically.
 
 **Mobile Touch Targets**: Minimum 44x44px. Thumb-reachable zones prioritized.
+
+**Minimal Visual Language (Portal Web)**: No shadows. No gradients. Elevation is expressed with borders, spacing, and typography.
 
 **Color System**:
 

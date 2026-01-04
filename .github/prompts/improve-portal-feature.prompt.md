@@ -22,6 +22,7 @@ Before implementing, read the portal-web rules:
 
 - Read [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md) for tech stack, routing, state management
 - Read [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md) for development workflow
+- Read [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) for portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 
 If relevant to the improvement:
 
@@ -44,7 +45,7 @@ If relevant to the improvement:
    - Read `businessDescriptor` via `Route.useParams()` and pass it into API/query hooks
 5. **Forms**: Use Kyora form system (`useKyoraForm` + `<form.AppField>` pattern)
 6. **HTTP**: Use Ky client with proper error handling
-7. **UI**: daisyUI components, RTL-first, responsive
+7. **UI (Portal SSOT)**: Follow `portal-web-ui-guidelines.instructions.md` (mobile-first, Arabic/RTL-first, minimal: no shadows, no gradients)
 8. **i18n**: All user-visible strings must support Arabic + English
 9. **Accessibility**: Keyboard navigation + appropriate ARIA
 10. **Type safety**: Zod schemas + TypeScript types

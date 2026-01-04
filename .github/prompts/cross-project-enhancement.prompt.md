@@ -33,6 +33,7 @@ Read the relevant instruction files before making changes:
 
 - [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
 - [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md)
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) (portal UX/UI SSOT)
 - If forms/HTTP/UI/charts are involved: [forms.instructions.md](../instructions/forms.instructions.md), [ky.instructions.md](../instructions/ky.instructions.md), [ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md), [charts.instructions.md](../instructions/charts.instructions.md), [design-tokens.instructions.md](../instructions/design-tokens.instructions.md)
 
 ## Cross-Project Standards

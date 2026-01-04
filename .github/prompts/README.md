@@ -88,6 +88,7 @@ Prompts reference these instruction files (SSOT):
 - `backend-testing.instructions.md` - Backend testing
 - `portal-web-architecture.instructions.md` - Frontend architecture
 - `portal-web-development.instructions.md` - Frontend workflow
+- `portal-web-ui-guidelines.instructions.md` - Portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - `forms.instructions.md` - Form system
 - `ui-implementation.instructions.md` - UI patterns
 - `design-tokens.instructions.md` - Design tokens

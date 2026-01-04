@@ -49,6 +49,35 @@ export interface TextFieldProps extends BaseFieldProps {
   endIcon?: React.ReactNode
   /** Autocomplete attribute for browser autofill */
   autoComplete?: string
+  /** Hint for which keyboard to show on mobile */
+  inputMode?:
+    | 'none'
+    | 'text'
+    | 'tel'
+    | 'url'
+    | 'email'
+    | 'numeric'
+    | 'decimal'
+    | 'search'
+  /** Mobile keyboard action button label */
+  enterKeyHint?:
+    | 'enter'
+    | 'done'
+    | 'go'
+    | 'next'
+    | 'previous'
+    | 'search'
+    | 'send'
+  /** Control mobile/browser auto-capitalization */
+  autoCapitalize?: 'none' | 'sentences' | 'words' | 'characters'
+  /** Control browser autocorrect */
+  autoCorrect?: 'on' | 'off'
+  /** Control spellcheck */
+  spellCheck?: boolean
+  /** Force direction for mixed RTL/LTR fields (e.g., phone/order id) */
+  dir?: 'ltr' | 'rtl' | 'auto'
+  /** Optional pattern for numeric/codes (use with inputMode) */
+  pattern?: string
   /** Maximum character length */
   maxLength?: number
 }

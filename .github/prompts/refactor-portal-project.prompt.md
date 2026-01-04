@@ -22,6 +22,7 @@ Read portal-web SSOT first:
 
 - [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
 - [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md)
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) (if any UI is involved)
 
 If relevant:
 

@@ -27,6 +27,7 @@ ${input:constraints:List constraints (optional) (e.g., "No behavior changes", "N
 
 - [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
 - [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md)
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) (if any UI is involved)
 - If forms/HTTP/UI are affected: [forms.instructions.md](../instructions/forms.instructions.md), [ky.instructions.md](../instructions/ky.instructions.md), [ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md), [design-tokens.instructions.md](../instructions/design-tokens.instructions.md)
 
 ## Refactor Standards

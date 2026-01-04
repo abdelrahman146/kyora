@@ -19,6 +19,8 @@ applyTo: "portal-web/**,storefront-web/**"
 - Accessibility requirements
 - daisyUI component selection
 
+**Portal Web UX/UI SSOT:** `.github/instructions/portal-web-ui-guidelines.instructions.md`
+
 ---
 
 ## 1. RTL-First Rules (NON-NEGOTIABLE)
@@ -126,7 +128,7 @@ Sizes: `btn-xs`, `btn-sm`, default, `btn-lg`
 **Cards:**
 
 ```tsx
-<div className="card bg-base-100 border border-base-300 shadow-sm">
+<div className="card bg-base-100 border border-base-300">
   <div className="card-body">{/* Content */}</div>
 </div>
 ```
@@ -335,15 +337,11 @@ className =
 
 ### Touch Targets
 
-**Minimum 50px height** for all interactive elements:
+**Minimum**: 44×44px (prefer 48px+) for all interactive elements.
 
-```tsx
-// ✅ CORRECT
-<button className="h-[50px]">Click</button>
-
-// ❌ TOO SMALL
-<button className="h-8">Click</button>  // Only 32px!
-```
+- Avoid hardcoded pixel heights.
+- Prefer Tailwind scale (`min-h-12`, `min-w-12`) and daisyUI sizing (`btn-lg`).
+- Mobile primary actions should usually be full-width: `w-full`.
 
 ---
 
@@ -368,7 +366,7 @@ className =
   {items.map((item) => (
     <div
       key={item.id}
-      className="card bg-base-100 border border-base-300 shadow-sm hover:shadow-md transition-shadow cursor-pointer"
+      className="card bg-base-100 border border-base-300 cursor-pointer"
       onClick={() => navigate(`/items/${item.id}`)}
     >
       <div className="card-body p-4">
@@ -485,6 +483,11 @@ xl:  1280px (Large desktops)
 | Date picker  | Full-screen              | Popover           |
 | Navigation   | Bottom bar               | Sidebar           |
 | Form buttons | Full width (`w-full`)    | Auto width        |
+
+### Portal Web Style Constraints
+
+- **No shadows. No gradients.** Prefer borders + spacing for separation.
+- Use daisyUI semantic classes for components; Tailwind utilities for layout/spacing only.
 
 ### Example
 

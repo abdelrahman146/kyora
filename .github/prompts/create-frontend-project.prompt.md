@@ -18,6 +18,7 @@ Read frontend architecture rules:
 
 - [portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md) for complete architecture
 - [portal-web-development.instructions.md](../instructions/portal-web-development.instructions.md) for workflow
+- [portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md) for portal UX/UI SSOT (mobile-first, Arabic/RTL-first, minimal)
 - [forms.instructions.md](../instructions/forms.instructions.md) for form patterns
 - [ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md) for UI patterns
 
@@ -87,7 +88,7 @@ portal-web/src/
 - **State**: TanStack Query for server state; TanStack Store for client state (no Redux, no Zustand)
 - **Forms**: TanStack Form + Zod validation
 - **HTTP**: Ky client with proper error handling
-- **UI**: daisyUI components, RTL-first, responsive
+- **UI (Portal SSOT)**: Follow `portal-web-ui-guidelines.instructions.md` (mobile-first, Arabic/RTL-first, minimal: no shadows, no gradients)
 - **i18n**: All text must have translation keys
 
 ## Example Reference
