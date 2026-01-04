@@ -1,240 +1,183 @@
-Kyora — AI coding agent quickstart
+# Kyora — Agent Orchestration Layer
 
-### **1. Executive Summary: What is Kyora?**
+## 1. Domain Context (30-Second Brief)
 
-**Kyora** is a specialized business management assistant (SaaS) designed for **solo social media entrepreneurs** and small teams in the **Middle East**. It acts as a "silent business partner," automating complex back-office tasks (accounting, inventory, revenue recognition) so creators can focus on selling.
+**Product:** B2B SaaS for Middle East social commerce entrepreneurs. Automates accounting, inventory, and revenue recognition.
+**Tech:** Go monolith (backend), React + TanStack (portal-web), React (storefront-web).
+**User:** Non-technical business owners selling via Instagram/WhatsApp/TikTok DMs.
+**Philosophy:** "Professional tools that feel effortless" — zero accounting knowledge required.
+**Architecture:** Workspace-based multi-tenancy. RBAC: admin/member. Billing via Stripe.
 
-- **The Problem:** Social sellers are skilled at creating/selling on Instagram/TikTok but suffer from "financial blindness" (unknown profits, cash flow mystery, inventory chaos).
-- **The Solution:** An automated, mobile-first platform that translates complex financial data into simple, plain-language insights (e.g., "You made $X profit today").
+## 2. Business Logic (What To Build)
 
-### **2. Brand Philosophy & Values (The "Soul")**
+**Core Pain Solved:** "Financial blindness" — users don't know profit vs revenue, inventory levels, or cash position.
 
-The brand is built on the concept of "Professional tools that feel effortless."
+**Key Flows:**
 
-- **Tamkeen (Empowerment):** Transforming "hustlers" into professional business owners.
-- **Basata (Simplicity):** The supreme rule. If it requires accounting knowledge, it is too complex.
-- **Thiqah (Trust):** The platform handles money and data; it must look and feel stable, secure, and professional.
+- Onboarding → workspace setup → add first order in <60s
+- Order entry (DM source) → auto revenue recognition → inventory update → profit calculation
+- Dashboard → plain-language insights ("You made $X profit this month", "Top seller: Y")
 
-### **3. Target Audience**
+**Multi-Tenancy Rule:** All data scoped to `workspaceId`. No cross-workspace leaks.
 
-- **Primary Region:** Middle East (Arabic First Culture).
-- **Demographics:** Solo entrepreneurs, "Side Hustlers," Home-based makers (artisans, bakers, fashion), and micro-teams (2-5 people).
-- **Tech Literacy:** Low to Moderate. They are intimidated by Excel and complex ERPs.
-- **Channels:** They sell primarily via Direct Messages (DMs) on Instagram, WhatsApp, TikTok, and Facebook.
+**Avoid:** Accounting jargon (EBITDA, ledgers, accruals). Use: "Profit", "Cash in hand", "Best seller".
 
-### **4. Value Proposition & Brand Promise**
-
-- **The Promise:** "Sleep well knowing your business finances are tracked and you are actually making a profit."
-- **The Hook:** "Zero Accounting Knowledge Required."
-- **The Shift:** From "Order Chaos" (orders scattered in DMs) → to "Business Clarity" (One dashboard).
-
-### **5. Visual Identity & Design System (KDS)**
-
-For Graphic Design and UI/UX tasks, strictly adhere to these tokens:
-
-#### **Color Palette**
-
-- **Primary (Brand Identity):** **Teal** (`#0D9488`). Represents stability, professionalism, and the Kyora brand.
-- **Secondary (Action/High Value):** **Gold** (`#EAB308`). Used for profitability, success states, and premium actions.
-- **Backgrounds:** Clean White (`#FFFFFF`) and Slate-Gray surfaces (`#F8FAFC`). High contrast is mandatory.
-
-#### **Typography**
-
-- **Font Family:** `IBM Plex Sans Arabic`.
-- **Style:** Modern, legible, and friendly.
-
-#### **Design Direction (RTL-First)**
-
-- **Orientation:** All designs must be **Right-to-Left (RTL)** first.
-- **Mirroring:** Arrows, chevrons, and progress bars must flow from Right to Left.
-- **Logical Properties:** Use `start` (right) and `end` (left) instead of left/right.
-
-#### **UI/UX Standards (Mobile-First)**
-
-- **Touch Targets:** Minimum **50px** height for all inputs and buttons (thumb-friendly).
-- **Layout:** Bottom sheets for actions (mobile) vs. Modals (desktop).
-- **Simplicity:** Minimal clutter. "plain English" (or Arabic) insights over complex charts.
-
-### **6. Voice, Tone & Content Strategy**
-
-For Copywriting and Marketing tasks:
-
-- **Language:** **Modern Standard Arabic (MSA)**. It should sound approachable but strictly professional (not slang).
-- **Tone:**
-- **Direct:** Get to the point.
-- **Warm/Encouraging:** Celebrate their sales.
-- **Respectful:** Treat them like CEOs, not just hobbyists.
-
-- **Key Messaging Strategy:**
-- _Avoid:_ Accounting jargon (EBITDA, General Ledger, accruals).
-- _Use:_ "Profit," "Cash in hand," "Best seller," "Money made."
-
-### **7. Directives for AI Tasks**
-
-- **If generating UI Mockups:** Prioritize mobile views. Place navigation at the bottom. Ensure the "Add Order" button is prominent and easily accessible by a thumb. Use Teal for the main interface and Gold to highlight "Profit" numbers.
-- **If writing Marketing Copy:** Focus on the pain point of "anxiety" (not knowing where the money is going) and the solution of "peace of mind." Use the phrase "Silent Partner."
-- **If designing Logos/Graphics:** Combine the concepts of "Growth/Commerce" (Charts, coins, bags) with "Simplicity/Flow." The aesthetic should be clean, modern, and Arab-centric without being stereotypical.
-- **If creating Onboarding Flows:** Emphasize speed. "Sign up and add your first order in seconds."
-
-### The Problem Kyora Solves
-
-Social media business owners face a unique challenge: they're passionate about their products and skilled at selling on platforms like Instagram, Facebook, TikTok, and WhatsApp, but they struggle with:
-
-- **Financial Confusion**: Not knowing if they're actually making profit or just generating revenue
-- **Order Chaos**: Tracking orders scattered across DMs, comments, and multiple platforms
-- **Inventory Blindness**: Not knowing what's in stock, what's selling, or when to reorder
-- **Cash Flow Mystery**: Unclear about their actual financial position and available cash
-- **Tax Anxiety**: Worried about missing important financial records for tax time
-- **Growth Paralysis**: Unable to make data-driven decisions because they lack proper business insights
-
-Kyora becomes their silent business partner that handles all this complexity automatically, without requiring them to become accounting experts or spend hours on administrative tasks.
-
-### Core Value Proposition
-
-**Simplicity First**: Every feature is designed to be intuitive and require zero accounting knowledge. Complex financial concepts are translated into simple, actionable insights.
-
-**Automatic Heavy Lifting**: Kyora automatically tracks revenue recognition, calculates profitability, monitors inventory levels, and maintains complete financial records without manual bookkeeping.
-
-**Social Media Native**: Understanding that orders come through DMs, comments, and chat apps, Kyora makes it easy to quickly log orders from any source and keep everything organized in one place.
-
-**Peace of Mind**: Owners can sleep well knowing their business finances are properly tracked, they have records for tax purposes, and they truly understand their financial position.
-
-### Key Features
-
-- **Simple Order Management**: Quickly add orders from any social media platform, track their status from payment to delivery, and automatically recognize revenue.
-- **Effortless Customer Tracking**: Automatically build a customer database from orders, see purchase history, and identify your best customers without manual data entry.
-- **Intelligent Inventory**: Know what's in stock, get alerts when items are running low, and understand which products are your best sellers.
-- **Clear Financial Picture**: See your actual profit (not just revenue), understand your cash flow, and get simple reports that show how your business is really doing.
-- **Automated Accounting**: Revenue recognition, expense tracking, and financial reporting happen automatically in the background.
-- **Business Insights in Plain English**: No confusing charts or accounting jargon—just clear answers like "You made $X profit this month" and "Your best-selling product is Y."
-
-### Multi-Tenancy Model
-
-Kyora uses a workspace-based multi-tenancy architecture where:
-
-- Each **workspace** represents one business owner or small team with their own subscription, users, and data.
-- **Users** belong to a single workspace and have role-based permissions (admin/member for team collaboration).
-- All data is strictly isolated by workspace to ensure complete privacy and security.
-- Billing and subscriptions are managed at the workspace level, with affordable pricing tiers designed for solo entrepreneurs and small teams.
-
-### Target Users
-
-- **Solo social media sellers**: Individuals selling handmade goods, fashion, beauty products, food, or services through Instagram, Facebook, TikTok, WhatsApp, etc.
-- **Small social commerce teams**: 2-5 person teams managing a social media-based business together
-- **Side hustlers**: People running a business alongside their day job who need dead-simple management tools
-- **Product creators**: Artisans, designers, bakers, makers who want to focus on creation, not administration
-- **Non-technical entrepreneurs**: Business owners who are intimidated by complex software and just want something that works
-
-### Key Business Flows
-
-1. **Quick Onboarding**: Sign up with email or Google, verify email, name your workspace, and start adding orders immediately—no complex setup required.
-2. **Simple Order Entry**: Add an order in seconds (customer name, product, price, payment received) → Kyora automatically tracks it through delivery → automatically recognizes revenue and updates inventory.
-3. **Automatic Financial Tracking**: As orders are added → revenue is recognized → inventory is adjusted → profit is calculated → financial position is updated in real-time.
-4. **Instant Business Insights**: Open the dashboard → see profit this month, total revenue, best customers, top products—all in plain language with simple visuals.
-5. **Team Collaboration (Optional)**: Invite a helper or partner → assign them as admin or member → they can help manage orders while you focus on production.
-6. **Subscription Management**: Start with a free or basic plan → as business grows, upgrade to handle more orders → billing happens automatically through Stripe.
-
-Big picture
-
-## Monorepo Structure
-
-Kyora is organized as a **monorepo** to support multiple projects (backend, frontend, mobile, etc.):
+## 3. Monorepo Structure (Where To Work)
 
 ```
 kyora/
-├── backend/              # Go backend API server (current focus)
-│   ├── cmd/             # CLI commands
-│   ├── internal/        # Internal packages
-│   ├── main.go          # Entry point
-│   ├── go.mod           # Go dependencies
-│   ├── .air.toml        # Hot reload config
-│   └── .kyora.yaml      # Backend configuration
-├── storefront-web/       # Customer-facing storefront (React)
-│   ├── src/             # App code
-│   ├── public/
-│   ├── package.json
-│   └── DESIGN_SYSTEM.md
-├── Makefile             # Root-level build commands
-├── README.md            # Monorepo overview
-└── STRUCTURE.md         # Monorepo guidelines
+├── backend/          # Go API (source of truth for business logic)
+├── portal-web/       # React dashboard (TanStack stack)
+├── storefront-web/   # Customer storefront (React)
+└── .github/
+    └── instructions/ # Specialized agent rules (SSOT)
 ```
 
-**Important**:
+**Path Prefix Rule:** Always include project prefix (`backend/`, `portal-web/`, `storefront-web/`).
 
-- All Go backend code is in the `backend/` directory. When referencing files or paths, always include the `backend/` prefix.
-- All storefront web code is in the `storefront-web/` directory. When referencing files or paths, always include the `storefront-web/` prefix.
-- All portal web code is in the `portal-web/` directory. When referencing files or paths, always include the `portal-web/` prefix.
+## 4. Instruction File Hierarchy (Which Rules Apply)
 
-**Project-Specific Reference Instructions**
+**Priority Order (resolve conflicts top-down):**
 
-Before working on any task, always refer to the relevant instruction files based on the project you're working on:
-
-- **When working on `backend/` (Go API)**:
-
-  - Always refer to `.github/instructions/backend.instructions.md` for architecture, patterns, and conventions
-  - Refer to `.github/instructions/resend.instructions.md` when working with email functionality
-  - Refer to `.github/instructions/stripe.instructions.md` when working with billing/payments
-
-- **When working on `portal-web/` (React business dashboard)**:
-
-  - Always refer to `.github/instructions/portal-web.instructions.md` for architecture, patterns, and conventions
-  - Refer to `.github/instructions/ky.instructions.md` when making HTTP requests
-  - Refer to `.github/instructions/tanstack-form.instructions.md` when working with forms
-  - Refer to `.github/instructions/design-tokens.instructions.md` for colors, typography, spacing (design tokens reference)
-  - Refer to `.github/instructions/ui-patterns.instructions.md` for components, RTL rules, accessibility (implementation patterns)
-  - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
-
-- **When working on `storefront-web/` (Customer-facing storefront)**:
-  - Refer to `.github/instructions/design-tokens.instructions.md` for colors, typography, spacing (design tokens reference)
-  - Refer to `.github/instructions/ui-patterns.instructions.md` for components, RTL rules, accessibility (implementation patterns)
-  - Refer to `storefront-web/DESIGN_SYSTEM.md` for storefront-specific component guidelines
-  - Refer to `.github/instructions/react-router.instructions.md` when working with routing
-  - Refer to `.github/instructions/daisyui.instructions.md` when working with UI components
-
-**General Instructions**
-
-- the code is maintained by a single developer so we should always aim for simplicity and clarity in the code we write.
-- the code is still under heavy development so we should always write code that is flexible and easy to change as requirements evolve and we can do breaking changes as needed.
-- **never leave any TODOs or FIXMEs in the code**, we should always address them before finalizing the code.
-- **never leave deprecated code in the codebase**, we should always remove it immediately to keep the code clean and maintainable. When creating a replacement for existing functionality, delete the old deprecated code completely - don't just mark it as deprecated.
-- we should always follow the SOLID principles and best practices when writing code.
-- we should always follow the existing code style and conventions used in the project to maintain consistency across the codebase.
-- we should always write clear and concise comments and documentation for the code we write to ensure that it's easy to understand for other developers.
-- we should always consider performance implications when writing code and optimize for efficiency where necessary.
-- we should always consider security implications when writing code and ensure that the code is secure and follows best security practices.
-- we should always consider scalability implications when writing code and ensure that the code can handle increased load and scale as needed.
-- we should always consider maintainability implications when writing code and ensure that the code is easy to maintain and extend in the future
-- the code should be clear and human maintainable and concise and follow best practices.
-- when we have a generic sharable functionality we should add it in utils package either in helpers package or create its own package if its big enough.
-- whenever you find inefficient or duplicate code across domains we should refactor it into a shared utility function in the utils package or helpers package.
-- whenever you find a code that doesn't follow best practices or has potential bugs we should fix it to follow best practices and avoid potential issues in the future.
-- the code output should be always secure, robust, and production-ready and follows best practices and standards and should be 100% complete.
-- we should alwasys look for smart simple and elegant solutions to complex problems leaving the code clean and maintainble and very easy to fix and extend in the future.
-- everytime we write code we should always think about the future and how this code will be used and maintained in the future and we should always write code that is easy to understand and maintain in the future.
-- whenever we introduce new design pattern or archiectural changes we need to make sure it aligns with the overall architecture and design principles of the project and we should document the changes properly to explain the reasoning behind them.
-- always do cleanups for no longer needed code or functions.
-- never ever brief any implementation. always provide complete and thorough implementations.
-- never ever settle on examples or partial implementations. always provide complete and thorough implementations.
-- always aim for high-quality code that is secure, robust, maintainable, and production-ready
-
-## Project-specific notes
+1. **Project-Specific Instructions** → Most authoritative for that domain
+2. **Shared Technical Instructions** → Cross-cutting concerns (design, forms, HTTP)
+3. **This File** → Meta-orchestration only
 
 ### Backend (Go)
 
-- Follow the rules in `.github/instructions/backend.instructions.md` for architecture, patterns, and multi-tenancy scoping.
-- Prefer domain services for business logic and keep HTTP handlers thin.
+**When:** Modifying `backend/**` or adding API endpoints.
+**Read First:** `.github/instructions/backend.instructions.md`
+**Also Read (if relevant):**
 
-### Portal Web (React)
+- `.github/instructions/resend.instructions.md` → Email functionality
+- `.github/instructions/stripe.instructions.md` → Billing/payments
+- `.github/instructions/asset_upload.instructions.md` → File uploads (backend contract)
 
-- Tech stack: React 19, TanStack Router v1, TanStack Query v5, TanStack Form v1, Tailwind CSS v4 (CSS-first), daisyUI v5, Ky, i18next.
-- Follow the rules in `.github/instructions/portal-web.instructions.md` for architecture, routing, forms, and state management.
-- Forms: Always use `useKyoraForm` composition layer - wrap in `<form.AppForm>`, use `<form.AppField>` with `{(field) => <field.ComponentName />}` pattern.
-- Design system: follow `.github/instructions/design-tokens.instructions.md` (colors, typography, spacing) and `.github/instructions/ui-patterns.instructions.md` (components, RTL rules).
-- RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
+### Portal Web (React Dashboard)
 
-### Storefront Web (React)
+**When:** Modifying `portal-web/**` or building business dashboard features.
+**Read First:** `.github/instructions/portal-web.instructions.md`
+**Also Read (if relevant):**
 
-- Tech stack: React 19, React Router v7, Tailwind CSS v4 (CSS-first), daisyUI v5, TanStack Query, Zustand, i18next.
-- Design system: follow `.github/instructions/design-tokens.instructions.md` (colors, typography, spacing) and `.github/instructions/ui-patterns.instructions.md` (components, RTL rules).
-- Storefront-specific: `storefront-web/DESIGN_SYSTEM.md` and theme tokens in `storefront-web/src/index.css`.
-- RTL-first: never assume left/right; prefer logical properties and Tailwind `start-*` / `end-*` utilities.
+- `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
+- `.github/instructions/ui-patterns.instructions.md` → Components, RTL rules, accessibility
+- `.github/instructions/daisyui.instructions.md` → Component library usage
+- `.github/instructions/tanstack-form.instructions.md` → Form handling
+- `.github/instructions/ky.instructions.md` → HTTP requests
+- `.github/instructions/stripe.instructions.md` → Billing UI
+- `.github/instructions/asset_upload.instructions.md` → File uploads (frontend flow)
+
+### Storefront Web (Customer Portal)
+
+**When:** Modifying `storefront-web/**` or building customer-facing features.
+**Read First:** `storefront-web/DESIGN_SYSTEM.md` (storefront-specific patterns)
+**Also Read (if relevant):**
+
+- `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
+- `.github/instructions/ui-patterns.instructions.md` → Components, RTL rules, accessibility
+- `.github/instructions/daisyui.instructions.md` → Component library usage
+- `.github/instructions/bestpractice.instructions.md` → Client-side architecture
+
+## 5. Execution Standards (Non-Negotiable)
+
+**Code Quality Pillars:**
+
+- **Robust:** Production-ready, handles edge cases, defensive coding
+- **Secure:** No SQL injection, XSS, CSRF; validate all inputs
+- **Maintainable:** Self-documenting code, clear naming, no TODOs/FIXMEs
+- **Scalable:** Efficient queries, proper indexing, connection pooling
+
+**Development Rules:**
+
+- ✅ Complete implementations (never partial/example code)
+- ✅ Delete deprecated code immediately (no "marked as deprecated")
+- ✅ Refactor duplicates into shared utilities (`backend/internal/platform/utils/` or `portal-web/src/lib/`)
+- ✅ Fix inefficiencies and anti-patterns when encountered
+- ❌ No TODOs, FIXMEs, or placeholder comments
+- ❌ No "brief implementations" or "scaffold for later"
+
+**Breaking Changes:** Allowed (project under heavy development). Prioritize simplicity over backward compatibility.
+
+## 6. Agent Decision Tree (How To Proceed)
+
+```
+Task received
+    ↓
+Does it modify backend/?
+    YES → Read backend.instructions.md → Check if email/billing/assets → Read relevant instructions
+    NO → Continue
+        ↓
+Does it modify portal-web/?
+    YES → Read portal-web.instructions.md → Check if forms/HTTP/UI → Read relevant instructions
+    NO → Continue
+        ↓
+Does it modify storefront-web/?
+    YES → Read storefront-web/DESIGN_SYSTEM.md + design-tokens + ui-patterns
+    NO → Error: unknown target
+        ↓
+Implement following SSOT rules
+    ↓
+Verify no TODOs, no duplication, production-ready
+    ↓
+Done
+```
+
+## 7. Anti-Patterns (Never Do This)
+
+- ❌ **Cross-Domain References:** Don't copy-paste rules from one instruction file to another. Link to SSOT.
+- ❌ **Vague Directives:** "Consider performance" is useless. Specify: "Use bulk inserts for >100 rows."
+- ❌ **Conflicting Rules:** If backend says "use service pattern" and frontend says "inline logic," escalate.
+- ❌ **Hallucinated Requirements:** If user says "add feature X" but X isn't in domain context, ask for clarification.
+- ❌ **Token Waste:** Verbose explanations ("Now I will proceed to..."). Just execute.
+- ❌ **Design Assumptions:** Never assume left/right (RTL-first). Never assume English labels (i18n required).
+
+## 8. Conflict Resolution Protocol
+
+**If instructions conflict:**
+
+1. **Same-Level Conflict** (e.g., two instruction files disagree):
+
+   - Prefer project-specific file (backend.instructions.md > asset_upload.instructions.md)
+   - If still ambiguous, ask user
+
+2. **Cross-Project Conflict** (e.g., backend pattern vs frontend pattern):
+
+   - No conflict — each domain has its own rules
+   - Backend is source of truth for API contracts
+   - Frontend is source of truth for UI/UX patterns
+
+3. **Legacy Code vs Instructions:**
+   - Instructions win (refactor legacy code to match)
+   - Exception: If refactor breaks production, ask user
+
+## 9. Token Budget Guidance
+
+**File Reading Strategy:**
+
+- Read instruction files in full (they are optimized)
+- Read source code selectively (use grep/semantic search first)
+- Avoid reading entire `node_modules/` or `vendor/` directories
+
+**Context Window Management:**
+
+- Specialized instructions are ~600-1700 lines each (pre-optimized)
+- Total instruction corpus: ~40K lines (~150K tokens)
+- **Budget Per Task:** ~80K tokens context (50K instructions + 30K code)
+- If nearing limit, prioritize: instruction file > domain models > handlers > tests
+
+## 10. Meta-Instructions (For This File)
+
+**Purpose:** Orchestrate agent behavior, not duplicate specialized rules.
+**Scope:** What to build (domain), where to work (structure), which rules apply (hierarchy).
+**Maintenance:** Update only when:
+
+- New instruction file added
+- Monorepo structure changes
+- Conflict resolution rules change
+- Business domain fundamentally shifts
+
+**Never Add Here:**
+
+- Code patterns (belongs in project-specific instructions)
+- Tech stack details (belongs in project README or instructions)
+- Color palettes, typography, components (belongs in design-tokens/ui-patterns)
