@@ -41,6 +41,12 @@ export interface OrderCustomer {
   phoneCode: string | null
   phoneNumber: string | null
   avatarUrl?: string
+  whatsappNumber?: string | null
+  instagramUsername?: string | null
+  facebookUsername?: string | null
+  tiktokUsername?: string | null
+  xUsername?: string | null
+  snapchatUsername?: string | null
 }
 
 export interface OrderAddress {
@@ -177,6 +183,7 @@ export interface CreateOrderRequest {
 }
 
 export interface UpdateOrderRequest {
+  shippingAddressId?: string
   shippingZoneId?: string
   shippingFee?: string
   channel?: string

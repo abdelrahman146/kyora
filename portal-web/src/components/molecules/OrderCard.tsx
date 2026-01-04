@@ -1,212 +1,244 @@
 /**
  * OrderCard Component
  *
- * A card component displaying order information for mobile list view.
- * Designed for social commerce entrepreneurs to quickly understand order status.
+ * Mobile-first card component for order list display.
+ * Shows all essential order information with explicit action buttons.
  *
  * Features:
- * - Clean layout with order number, customer, and total at top
- * - Order and payment status badges with color coding
- * - Item count and channel information
- * - Date ordered displayed
+ * - Order number, customer, platform info
+ * - Status badges with color coding
+ * - Payment status and method
+ * - Order timestamps (ordered + latest update)
+ * - Explicit "Quick Review" and "Actions" buttons
  * - RTL-compatible with logical properties
- * - Mobile-optimized (min 44px touch target)
+ * - Mobile-optimized touch targets
+ * - Professional card layout with clear visual hierarchy
  */
 
 import { useTranslation } from 'react-i18next'
-import { Calendar, Package, ShoppingBag, User } from 'lucide-react'
+import { Link } from '@tanstack/react-router'
+import { Calendar, Clock, Eye, Package, User } from 'lucide-react'
+import {
+  FaFacebook,
+  FaInstagram,
+  FaSnapchat,
+  FaTiktok,
+  FaWhatsapp,
+} from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 
-import { Avatar } from '../atoms/Avatar'
+import { OrderQuickActions } from './OrderQuickActions'
 import type { Order } from '@/api/order'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
 
 export interface OrderCardProps {
   order: Order
-  onClick?: (order: Order) => void
+  businessDescriptor: string
+  onReviewClick?: (order: Order) => void
+  onDeleteSuccess?: () => void
 }
 
-export function OrderCard({ order, onClick }: OrderCardProps) {
+export function OrderCard({
+  order,
+  businessDescriptor,
+  onReviewClick,
+  onDeleteSuccess,
+}: OrderCardProps) {
   const { t } = useTranslation()
 
-  const getOrderStatusBadge = (status: Order['status']) => {
-    const statusMap: Record<Order['status'], { class: string; label: string }> =
-      {
-        pending: { class: 'badge-warning', label: 'pending' },
-        placed: { class: 'badge-info', label: 'placed' },
-        ready_for_shipment: {
-          class: 'badge-info',
-          label: 'ready_for_shipment',
-        },
-        shipped: { class: 'badge-primary', label: 'shipped' },
-        fulfilled: { class: 'badge-success', label: 'fulfilled' },
-        cancelled: { class: 'badge-error', label: 'cancelled' },
-        returned: { class: 'badge-error', label: 'returned' },
-      }
-    const config = statusMap[status]
-    return (
-      <span className={`badge badge-sm ${config.class}`}>
-        {t(`orders:status_${config.label}`)}
-      </span>
-    )
-  }
-
-  const getPaymentStatusBadge = (status: Order['paymentStatus']) => {
-    const statusMap: Record<
-      Order['paymentStatus'],
-      { class: string; label: string }
-    > = {
-      pending: { class: 'badge-warning', label: 'pending' },
-      paid: { class: 'badge-success', label: 'paid' },
-      failed: { class: 'badge-error', label: 'failed' },
-      refunded: { class: 'badge-ghost', label: 'refunded' },
+  const getStatusBadgeClass = (status: Order['status']) => {
+    const statusMap: Record<Order['status'], string> = {
+      pending: 'badge-warning',
+      placed: 'badge-info',
+      ready_for_shipment: 'badge-info',
+      shipped: 'badge-primary',
+      fulfilled: 'badge-success',
+      cancelled: 'badge-error',
+      returned: 'badge-error',
     }
-    const config = statusMap[status]
-    return (
-      <span className={`badge badge-sm ${config.class}`}>
-        {t(`orders:payment_status_${config.label}`)}
-      </span>
-    )
+    return statusMap[status]
   }
 
-  const getCustomerInitials = (name: string): string => {
-    return name
-      .split(' ')
-      .map((word) => word[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2)
+  const getPaymentStatusBadgeClass = (status: Order['paymentStatus']) => {
+    const statusMap: Record<Order['paymentStatus'], string> = {
+      pending: 'badge-warning',
+      paid: 'badge-success',
+      failed: 'badge-error',
+      refunded: 'badge-ghost',
+    }
+    return statusMap[status]
   }
 
-  const itemsCount = order.items?.length ?? 0
+  const getPlatformIcon = (
+    instagramUsername: string | null,
+    tiktokUsername: string | null,
+    facebookUsername: string | null,
+    xUsername: string | null,
+    snapchatUsername: string | null,
+    whatsappNumber: string | null,
+  ) => {
+    if (instagramUsername)
+      return <FaInstagram size={16} className="text-pink-600" />
+    if (tiktokUsername) return <FaTiktok size={16} className="text-black" />
+    if (facebookUsername)
+      return <FaFacebook size={16} className="text-blue-600" />
+    if (xUsername) return <FaXTwitter size={16} className="text-black" />
+    if (snapchatUsername)
+      return <FaSnapchat size={16} className="text-yellow-400" />
+    if (whatsappNumber)
+      return <FaWhatsapp size={16} className="text-green-600" />
+    return null
+  }
+
+  const getPlatformHandle = (
+    instagramUsername: string | null,
+    tiktokUsername: string | null,
+    facebookUsername: string | null,
+    xUsername: string | null,
+    snapchatUsername: string | null,
+  ) => {
+    if (instagramUsername) return `@${instagramUsername}`
+    if (tiktokUsername) return `@${tiktokUsername}`
+    if (facebookUsername) return `@${facebookUsername}`
+    if (xUsername) return `@${xUsername}`
+    if (snapchatUsername) return `@${snapchatUsername}`
+    return null
+  }
+
+  const latestTimestamp =
+    order.fulfilledAt ||
+    order.shippedAt ||
+    order.readyForShipmentAt ||
+    order.placedAt ||
+    order.paidAt ||
+    order.failedAt ||
+    order.refundedAt ||
+    order.cancelledAt ||
+    order.returnedAt ||
+    order.updatedAt
+
+  const platformIcon = order.customer
+    ? getPlatformIcon(
+        order.customer.instagramUsername ?? null,
+        order.customer.tiktokUsername ?? null,
+        order.customer.facebookUsername ?? null,
+        order.customer.xUsername ?? null,
+        order.customer.snapchatUsername ?? null,
+        order.customer.whatsappNumber ?? null,
+      )
+    : null
+
+  const platformHandle = order.customer
+    ? getPlatformHandle(
+        order.customer.instagramUsername ?? null,
+        order.customer.tiktokUsername ?? null,
+        order.customer.facebookUsername ?? null,
+        order.customer.xUsername ?? null,
+        order.customer.snapchatUsername ?? null,
+      )
+    : null
 
   return (
-    <div
-      className={`bg-base-100 border border-base-300 rounded-xl p-4 hover:shadow-md transition-shadow ${
-        onClick ? 'cursor-pointer active:scale-[0.98]' : ''
-      }`}
-      onClick={() => onClick?.(order)}
-      role={onClick ? 'button' : undefined}
-      tabIndex={onClick ? 0 : undefined}
-      onKeyDown={(e) => {
-        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
-          e.preventDefault()
-          onClick(order)
-        }
-      }}
-    >
+    <div className="bg-base-100 border border-base-300 rounded-xl">
       {/* Header: Order Number + Total */}
-      <div className="flex items-start justify-between gap-3 mb-3">
-        <div className="flex-1 min-w-0">
-          <h3 className="font-bold text-base text-base-content truncate mb-1">
+      <div className="flex items-center justify-between gap-4 px-4 py-3 border-b border-base-300">
+        <div className="flex-1">
+          <div className="flex items-center gap-1.5 text-xs text-base-content/60 mb-1">
+            <Package size={14} />
+            <span>{t('orders:order_number')}</span>
+          </div>
+          <h3 className="font-bold text-lg text-base-content">
             {order.orderNumber}
           </h3>
-          <div className="flex items-center gap-2 flex-wrap">
-            {getOrderStatusBadge(order.status)}
-            {getPaymentStatusBadge(order.paymentStatus)}
-          </div>
         </div>
         <div className="text-end">
-          <div className="text-xs text-base-content/60 mb-1">
+          <div className="text-xs text-base-content/60 mb-0.5">
             {t('orders:total')}
           </div>
-          <div className="font-bold text-lg text-primary">
+          <div className="font-bold text-xl text-primary">
             {formatCurrency(parseFloat(order.total), order.currency)}
           </div>
         </div>
       </div>
 
-      {/* Customer Info */}
-      {order.customer && (
-        <div className="flex items-center gap-2 mb-3 p-2 bg-base-200 rounded-lg">
-          <Avatar
-            src={order.customer.avatarUrl}
-            alt={order.customer.name}
-            fallback={getCustomerInitials(order.customer.name)}
-            size="sm"
-          />
-          <div className="flex-1 min-w-0">
-            <div className="flex items-center gap-1 text-sm text-base-content/70">
-              <User size={14} />
-              <span className="truncate font-medium">
-                {order.customer.name}
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Order Details Grid */}
-      <div className="grid grid-cols-2 gap-3 mb-3">
-        {/* Items Count */}
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-primary/10 rounded-lg">
-            <Package size={16} className="text-primary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-base-content/60">
-              {t('orders:items')}
-            </div>
-            <div className="font-semibold text-sm">{itemsCount}</div>
-          </div>
-        </div>
-
-        {/* Channel */}
-        <div className="flex items-center gap-2">
-          <div className="p-1.5 bg-secondary/10 rounded-lg">
-            <ShoppingBag size={16} className="text-secondary" />
-          </div>
-          <div className="flex-1 min-w-0">
-            <div className="text-xs text-base-content/60">
-              {t('orders:channel')}
-            </div>
-            <div className="font-semibold text-sm truncate">
-              {order.channel}
-            </div>
-          </div>
-        </div>
-      </div>
-
-      {/* Pricing Details */}
-      <div className="space-y-1 mb-3 p-2 bg-base-200 rounded-lg">
-        <div className="flex items-baseline justify-between text-sm">
-          <span className="text-base-content/60">{t('orders:subtotal')}</span>
-          <span className="font-medium">
-            {formatCurrency(parseFloat(order.subtotal), order.currency)}
+      {/* Content */}
+      <div className="px-4 py-3 space-y-3">
+        {/* Status Badges */}
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className={`badge ${getStatusBadgeClass(order.status)}`}>
+            {t(`orders:status_${order.status}`)}
           </span>
+          <span
+            className={`badge ${getPaymentStatusBadgeClass(order.paymentStatus)}`}
+          >
+            {t(`orders:payment_status_${order.paymentStatus}`)}
+          </span>
+          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+          {order.paymentMethod && order.paymentStatus === 'paid' && (
+            <span className="badge badge-ghost">
+              {t(`orders:payment_method_${order.paymentMethod}`)}
+            </span>
+          )}
         </div>
-        {parseFloat(order.shippingFee) > 0 && (
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="text-base-content/60">
-              {t('orders:shipping_fee')}
-            </span>
-            <span className="font-medium">
-              {formatCurrency(parseFloat(order.shippingFee), order.currency)}
-            </span>
-          </div>
+
+        {/* Customer Info */}
+        {order.customer && (
+          <Link
+            to="/business/$businessDescriptor/customers/$customerId"
+            params={{
+              businessDescriptor,
+              customerId: order.customer.id,
+            }}
+            className="flex items-center gap-2.5 cursor-pointer hover:bg-base-200 rounded-lg p-2 -mx-2 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <User size={16} className="text-primary" />
+            </div>
+            <div className="flex-1 min-w-0">
+              <div className="font-medium text-sm text-base-content truncate">
+                {order.customer.name}
+              </div>
+              {platformHandle && (
+                <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+                  {platformIcon}
+                  <span className="truncate">{platformHandle}</span>
+                </div>
+              )}
+            </div>
+          </Link>
         )}
-        {parseFloat(order.discount) > 0 && (
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="text-base-content/60">{t('orders:discount')}</span>
-            <span className="font-medium text-success">
-              -{formatCurrency(parseFloat(order.discount), order.currency)}
-            </span>
+
+        {/* Timestamps */}
+        <div className="flex items-center justify-between text-xs text-base-content/60">
+          <div className="flex items-center gap-1.5">
+            <Calendar size={14} className="flex-shrink-0" />
+            <span>{formatDateShort(order.orderedAt)}</span>
           </div>
-        )}
-        {parseFloat(order.vat) > 0 && (
-          <div className="flex items-baseline justify-between text-sm">
-            <span className="text-base-content/60">{t('orders:vat')}</span>
-            <span className="font-medium">
-              {formatCurrency(parseFloat(order.vat), order.currency)}
-            </span>
-          </div>
-        )}
+          {latestTimestamp !== order.orderedAt && (
+            <div className="flex items-center gap-1.5">
+              <Clock size={14} className="flex-shrink-0" />
+              <span>{formatDateShort(latestTimestamp)}</span>
+            </div>
+          )}
+        </div>
       </div>
 
-      {/* Date Ordered */}
-      <div className="flex items-center gap-2 text-sm text-base-content/60 pt-2 border-t border-base-300">
-        <Calendar size={14} />
-        <span>{formatDateShort(order.orderedAt)}</span>
+      {/* Actions Footer */}
+      <div className="flex items-center justify-end gap-2 px-4 py-3 bg-base-200/50 border-t border-base-300 rounded-b-xl">
+        <button
+          type="button"
+          className="btn btn-ghost btn-sm btn-square"
+          onClick={() => onReviewClick?.(order)}
+          aria-label={t('orders:quick_review')}
+        >
+          <Eye size={18} />
+        </button>
+        <OrderQuickActions
+          order={order}
+          businessDescriptor={businessDescriptor}
+          onDeleteSuccess={onDeleteSuccess}
+        />
       </div>
     </div>
   )

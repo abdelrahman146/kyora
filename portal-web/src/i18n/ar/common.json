@@ -72,6 +72,9 @@
   "sort_order": "ترتيب الفرز",
   "ascending": "تصاعدي",
   "descending": "تنازلي",
+  "address": "العنوان",
+  "select_address": "اختر العنوان",
+  "error_occurred": "حدث خطأ ما",
   "customer": {
     "customers": "العملاء",
     "customer": "عميل",
@@ -121,6 +124,7 @@
   },
   "actions": {
     "actions": "الإجراءات",
+    "more_actions": "المزيد من الإجراءات",
     "view": "عرض",
     "edit": "تعديل",
     "delete": "حذف",

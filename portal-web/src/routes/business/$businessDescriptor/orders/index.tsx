@@ -1,10 +1,17 @@
-import { createFileRoute } from '@tanstack/react-router'
-import { useMutation, useQueryClient } from '@tanstack/react-query'
-import toast from 'react-hot-toast'
+import { Link, createFileRoute } from '@tanstack/react-router'
+import { useQueryClient } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
-import { Edit, Eye, ShoppingCart, Trash2 } from 'lucide-react'
+import { Calendar, Clock, Eye, ShoppingCart, User } from 'lucide-react'
+import {
+  FaFacebook,
+  FaInstagram,
+  FaSnapchat,
+  FaTiktok,
+  FaWhatsapp,
+} from 'react-icons/fa'
+import { FaXTwitter } from 'react-icons/fa6'
 import { z } from 'zod'
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { format } from 'date-fns'
 
 import type { Order } from '@/api/order'
@@ -13,12 +20,12 @@ import type { TableColumn } from '@/components/organisms/Table'
 import type { DateRange } from 'react-day-picker'
 import type { SocialPlatform } from '@/api/customer'
 
-import { OrderCard } from '@/components'
+import { OrderCard, OrderQuickActions, OrderReviewSheet } from '@/components'
 import { ResourceListLayout } from '@/components/templates/ResourceListLayout'
 import { useKyoraForm } from '@/lib/form'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
-import { orderApi, orderQueries, useOrdersQuery } from '@/api/order'
+import { orderQueries, useOrdersQuery } from '@/api/order'
 import { DateRangePicker } from '@/components/atoms/DateRangePicker'
 
 const OrdersSearchSchema = z.object({
@@ -77,6 +84,7 @@ function OrdersListPage() {
   const search = Route.useSearch()
   const navigate = Route.useNavigate()
   const queryClient = useQueryClient()
+  const [reviewOrder, setReviewOrder] = useState<Order | null>(null)
 
   const orderByArray = search.sortBy
     ? [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
@@ -93,18 +101,6 @@ function OrdersListPage() {
     customerId: search.customerId,
     from: search.from,
     to: search.to,
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (params: { businessDescriptor: string; orderId: string }) =>
-      orderApi.deleteOrder(params.businessDescriptor, params.orderId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: orderQueries.all })
-      toast.success(t('orders:delete_success'))
-    },
-    onError: () => {
-      toast.error(t('common:error_occurred'))
-    },
   })
 
   const form = useKyoraForm({
@@ -198,24 +194,7 @@ function OrdersListPage() {
   }
 
   const handleViewClick = (order: Order) => {
-    console.log('TODO: Navigate to order details', order.id)
-  }
-
-  const handleEditClick = (order: Order) => {
-    console.log('TODO: Open edit order sheet', order.id)
-  }
-
-  const handleDelete = async (order: Order) => {
-    if (
-      window.confirm(
-        t('orders:delete_confirm_message', { orderNumber: order.orderNumber }),
-      )
-    ) {
-      await deleteMutation.mutateAsync({
-        businessDescriptor,
-        orderId: order.id,
-      })
-    }
+    setReviewOrder(order)
   }
 
   const columns: Array<TableColumn<Order>> = [
@@ -230,27 +209,93 @@ function OrdersListPage() {
     {
       key: 'customer',
       label: t('orders:customer'),
-      render: (order: Order) => (
-        <div className="flex items-center gap-3">
-          <div className="avatar placeholder">
-            <div className="w-10 rounded-full bg-primary/10 text-primary">
-              <span className="text-sm">
-                {order.customer?.name.charAt(0).toUpperCase() || '?'}
-              </span>
+      render: (order: Order) => {
+        const getPlatformIcon = () => {
+          if (order.customer?.instagramUsername)
+            return (
+              <FaInstagram
+                size={14}
+                className="text-pink-600"
+                aria-label="Instagram"
+              />
+            )
+          if (order.customer?.tiktokUsername)
+            return (
+              <FaTiktok size={14} className="text-black" aria-label="TikTok" />
+            )
+          if (order.customer?.facebookUsername)
+            return (
+              <FaFacebook
+                size={14}
+                className="text-blue-600"
+                aria-label="Facebook"
+              />
+            )
+          if (order.customer?.xUsername)
+            return (
+              <FaXTwitter size={14} className="text-black" aria-label="X" />
+            )
+          if (order.customer?.snapchatUsername)
+            return (
+              <FaSnapchat
+                size={14}
+                className="text-yellow-400"
+                aria-label="Snapchat"
+              />
+            )
+          if (order.customer?.whatsappNumber)
+            return (
+              <FaWhatsapp
+                size={14}
+                className="text-green-600"
+                aria-label="WhatsApp"
+              />
+            )
+          return null
+        }
+
+        const getPlatformHandle = () => {
+          if (order.customer?.instagramUsername)
+            return `@${order.customer.instagramUsername}`
+          if (order.customer?.tiktokUsername)
+            return `@${order.customer.tiktokUsername}`
+          if (order.customer?.facebookUsername)
+            return `@${order.customer.facebookUsername}`
+          if (order.customer?.xUsername) return `@${order.customer.xUsername}`
+          if (order.customer?.snapchatUsername)
+            return `@${order.customer.snapchatUsername}`
+          return null
+        }
+
+        const platformIcon = getPlatformIcon()
+        const platformHandle = getPlatformHandle()
+
+        return (
+          <Link
+            to="/business/$businessDescriptor/customers/$customerId"
+            params={{
+              businessDescriptor,
+              customerId: order.customer?.id || '',
+            }}
+            className="flex cursor-pointer items-center gap-3 hover:bg-base-200 rounded-lg p-2 -m-2 transition-colors"
+          >
+            <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
+              <User size={14} className="text-primary" />
             </div>
-          </div>
-          <div>
-            <div className="font-medium">
-              {order.customer?.name || t('common:unknown')}
-            </div>
-            {order.customer?.phoneNumber && (
-              <div className="text-sm text-base-content/70" dir="ltr">
-                {order.customer.phoneCode} {order.customer.phoneNumber}
+            <div className="min-w-0">
+              <div className="font-medium truncate">
+                {order.customer?.name || t('common:unknown')}
               </div>
-            )}
-          </div>
-        </div>
-      ),
+              {platformHandle && (
+                <div className="flex items-center gap-1.5 text-xs text-base-content/60">
+                  {platformIcon}
+                  <span className="truncate">{platformHandle}</span>
+                </div>
+              )}
+            </div>
+          </Link>
+        )
+      },
     },
     {
       key: 'status',
@@ -288,16 +333,7 @@ function OrdersListPage() {
           },
         }
 
-        const config = statusMap[order.status]
-        return <span className={`badge ${config.class}`}>{config.label}</span>
-      },
-    },
-    {
-      key: 'paymentStatus',
-      label: t('orders:payment_status'),
-      sortable: true,
-      render: (order: Order) => {
-        const statusMap: Record<
+        const paymentStatusMap: Record<
           Order['paymentStatus'],
           { class: string; label: string }
         > = {
@@ -319,8 +355,25 @@ function OrdersListPage() {
           },
         }
 
-        const config = statusMap[order.paymentStatus]
-        return <span className={`badge ${config.class}`}>{config.label}</span>
+        const statusConfig = statusMap[order.status]
+        const paymentConfig = paymentStatusMap[order.paymentStatus]
+
+        return (
+          <div className="flex flex-col gap-1.5">
+            <span className={`badge badge-sm ${statusConfig.class}`}>
+              {statusConfig.label}
+            </span>
+            <span className={`badge badge-sm ${paymentConfig.class}`}>
+              {paymentConfig.label}
+            </span>
+            {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+            {order.paymentMethod && order.paymentStatus === 'paid' && (
+              <span className="badge badge-sm badge-ghost">
+                {t(`orders:payment_method_${order.paymentMethod}`)}
+              </span>
+            )}
+          </div>
+        )
       },
     },
     {
@@ -337,41 +390,58 @@ function OrdersListPage() {
       key: 'orderedAt',
       label: t('orders:ordered_date'),
       sortable: true,
-      render: (order: Order) => (
-        <span className="text-sm">{formatDateShort(order.orderedAt)}</span>
-      ),
+      render: (order: Order) => {
+        const latestTimestamp =
+          order.fulfilledAt ||
+          order.shippedAt ||
+          order.readyForShipmentAt ||
+          order.placedAt ||
+          order.paidAt ||
+          order.failedAt ||
+          order.refundedAt ||
+          order.cancelledAt ||
+          order.returnedAt ||
+          order.updatedAt
+
+        return (
+          <div className="flex flex-col gap-1 text-xs">
+            <div className="flex items-center gap-1.5 text-base-content/70">
+              <Calendar size={12} />
+              <span>{formatDateShort(order.orderedAt)}</span>
+            </div>
+            {latestTimestamp !== order.orderedAt && (
+              <div className="flex items-center gap-1.5 text-base-content/60">
+                <Clock size={12} />
+                <span>{formatDateShort(latestTimestamp)}</span>
+              </div>
+            )}
+          </div>
+        )
+      },
     },
     {
       key: 'actions',
-      label: t('common.actions'),
+      label: '',
       align: 'center',
-      width: '120px',
+      width: '200px',
       render: (order: Order) => (
-        <div className="flex gap-2 justify-end">
+        <div className="flex items-center gap-2 justify-end">
           <button
             type="button"
             className="btn btn-ghost btn-sm btn-square"
             onClick={() => handleViewClick(order)}
-            aria-label={t('common:view')}
+            aria-label={t('orders:quick_review')}
           >
-            <Eye size={18} />
+            <Eye size={16} />
           </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square"
-            onClick={() => handleEditClick(order)}
-            aria-label={t('common:edit')}
-          >
-            <Edit size={18} />
-          </button>
-          <button
-            type="button"
-            className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
-            onClick={() => handleDelete(order)}
-            aria-label={t('common:delete')}
-          >
-            <Trash2 size={18} />
-          </button>
+          <OrderQuickActions
+            order={order}
+            businessDescriptor={businessDescriptor}
+            aria-label={t('orders:quick_review')}
+            onDeleteSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: orderQueries.all })
+            }}
+          />
         </div>
       ),
     },
@@ -537,85 +607,73 @@ function OrdersListPage() {
   )
 
   return (
-    <ResourceListLayout
-      title={t('orders:title')}
-      subtitle={t('orders:subtitle')}
-      addButtonText={t('orders:add_order')}
-      onAddClick={handleAddOrder}
-      searchPlaceholder={t('orders:search_placeholder')}
-      searchValue={search.search ?? ''}
-      onSearchChange={handleSearchChange}
-      filterTitle={t('orders:filters')}
-      filterButtonText={t('common:filter')}
-      filterButton={filterContent}
-      activeFilterCount={activeFilterCount}
-      onApplyFilters={handleApplyFilters}
-      onResetFilters={handleResetFilters}
-      applyLabel={t('common:apply')}
-      resetLabel={t('common:reset')}
-      sortTitle={t('orders:sort_orders')}
-      sortOptions={sortOptions}
-      onSortApply={handleSortApply}
-      emptyIcon={<ShoppingCart size={48} />}
-      emptyTitle={search.search ? t('no_results') : t('no_orders')}
-      emptyMessage={
-        search.search ? t('try_different_search') : t('get_started_message')
-      }
-      emptyActionText={!search.search ? t('add_order') : undefined}
-      onEmptyAction={!search.search ? handleAddOrder : undefined}
-      tableColumns={columns}
-      tableData={data?.items || []}
-      tableKeyExtractor={(order) => order.id}
-      tableSortBy={search.sortBy}
-      tableSortOrder={search.sortOrder}
-      onTableSort={(column: string) =>
-        handleSortChange(column as OrdersSearch['sortBy'])
-      }
-      onTableRowClick={handleViewClick}
-      mobileCard={(order: Order) => (
-        <div className="relative group">
-          <OrderCard order={order} onClick={() => handleViewClick(order)} />
-          <div className="absolute top-2 end-2 flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-            <button
-              type="button"
-              className="btn btn-sm btn-circle btn-ghost bg-base-100"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleEditClick(order)
-              }}
-              aria-label={t('common:edit')}
-            >
-              <Edit size={16} />
-            </button>
-            <button
-              type="button"
-              className="btn btn-sm btn-circle btn-ghost bg-base-100 text-error"
-              onClick={(e) => {
-                e.stopPropagation()
-                handleDelete(order)
-              }}
-              aria-label={t('common:delete')}
-            >
-              <Trash2 size={16} />
-            </button>
-          </div>
-        </div>
-      )}
-      isLoading={isLoading}
-      hasSearchQuery={!!search.search}
-      currentPage={search.page || 1}
-      totalPages={data?.totalPages || 1}
-      pageSize={search.pageSize || 20}
-      totalItems={data?.totalCount || 0}
-      onPageChange={(page: number) => {
-        navigate({
-          search: (prev) => ({
-            ...prev,
-            page,
-          }),
-        })
-      }}
-      itemsName={t('orders:orders')}
-    />
+    <>
+      <ResourceListLayout
+        title={t('orders:title')}
+        subtitle={t('orders:subtitle')}
+        addButtonText={t('orders:add_order')}
+        onAddClick={handleAddOrder}
+        searchPlaceholder={t('orders:search_placeholder')}
+        searchValue={search.search ?? ''}
+        onSearchChange={handleSearchChange}
+        filterTitle={t('orders:filters')}
+        filterButtonText={t('common:filter')}
+        filterButton={filterContent}
+        activeFilterCount={activeFilterCount}
+        onApplyFilters={handleApplyFilters}
+        onResetFilters={handleResetFilters}
+        applyLabel={t('common:apply')}
+        resetLabel={t('common:reset')}
+        sortTitle={t('orders:sort_orders')}
+        sortOptions={sortOptions}
+        onSortApply={handleSortApply}
+        emptyIcon={<ShoppingCart size={48} />}
+        emptyTitle={search.search ? t('no_results') : t('no_orders')}
+        emptyMessage={
+          search.search ? t('try_different_search') : t('get_started_message')
+        }
+        emptyActionText={!search.search ? t('add_order') : undefined}
+        onEmptyAction={!search.search ? handleAddOrder : undefined}
+        tableColumns={columns}
+        tableData={data?.items || []}
+        tableKeyExtractor={(order) => order.id}
+        tableSortBy={search.sortBy}
+        tableSortOrder={search.sortOrder}
+        onTableSort={(column: string) =>
+          handleSortChange(column as OrdersSearch['sortBy'])
+        }
+        mobileCard={(order: Order) => (
+          <OrderCard
+            order={order}
+            businessDescriptor={businessDescriptor}
+            onReviewClick={setReviewOrder}
+            onDeleteSuccess={() => {
+              queryClient.invalidateQueries({ queryKey: orderQueries.all })
+            }}
+          />
+        )}
+        isLoading={isLoading}
+        hasSearchQuery={!!search.search}
+        currentPage={search.page || 1}
+        totalPages={data?.totalPages || 1}
+        pageSize={search.pageSize || 20}
+        totalItems={data?.totalCount || 0}
+        onPageChange={(page: number) => {
+          navigate({
+            search: (prev) => ({
+              ...prev,
+              page,
+            }),
+          })
+        }}
+        itemsName={t('orders:orders')}
+      />
+
+      <OrderReviewSheet
+        order={reviewOrder}
+        isOpen={reviewOrder !== null}
+        onClose={() => setReviewOrder(null)}
+      />
+    </>
   )
 }

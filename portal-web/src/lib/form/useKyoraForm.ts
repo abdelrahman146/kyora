@@ -52,6 +52,7 @@
 import { createFormHook } from '@tanstack/react-form'
 import { fieldContext, formContext } from './contexts'
 import {
+  AddressSelectField,
   CategorySelectField,
   CheckboxField,
   CheckboxGroupField,
@@ -85,6 +86,7 @@ const { useAppForm, withForm } = createFormHook({
 
   // Pre-bind field components for use in forms
   fieldComponents: {
+    AddressSelectField,
     CategorySelectField,
     TextField,
     PasswordField,

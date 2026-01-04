@@ -139,7 +139,7 @@ export function Table<T>({
             data.map((item) => (
               <tr
                 key={keyExtractor(item)}
-                className={`hover:bg-base-200 ${onRowClick ? 'cursor-pointer' : ''}`}
+                className={`${onRowClick ? 'hover:bg-base-200 cursor-pointer' : ''}`}
                 onClick={() => {
                   onRowClick?.(item)
                 }}
