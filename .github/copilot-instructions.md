@@ -46,7 +46,11 @@ kyora/
 ### Backend (Go)
 
 **When:** Modifying `backend/**` or adding API endpoints.
-**Read First:** `.github/instructions/backend.instructions.md`
+**Read First:**
+
+- `.github/instructions/backend-core.instructions.md` → Architecture, patterns, conventions
+- `.github/instructions/backend-testing.instructions.md` → Testing (E2E, unit, coverage) — only when writing tests
+
 **Also Read (if relevant):**
 
 - `.github/instructions/resend.instructions.md` → Email functionality
@@ -106,11 +110,16 @@ kyora/
 Task received
     ↓
 Does it modify backend/?
-    YES → Read backend.instructions.md → Check if email/billing/assets → Read relevant instructions
+    YES → Read backend-core.instructions.md
+        ↓
+        Writing tests? → Read backend-testing.instructions.md
+        Email/billing/assets? → Read resend/stripe/asset_upload instructions
     NO → Continue
         ↓
 Does it modify portal-web/?
-    YES → Read portal-web-architecture.instructions.md → Check if forms/HTTP/UI → Read relevant instructions
+    YES → Read portal-web-architecture.instructions.md
+        ↓
+        Forms/HTTP/UI? → Read forms/ky/ui-implementation instructions
     NO → Continue
         ↓
 Does it modify storefront-web/?
@@ -135,11 +144,12 @@ Done
 
 ## 8. Conflict Resolution Protocol
 
+-core
 **If instructions conflict:**
 
 1. **Same-Level Conflict** (e.g., two instruction files disagree):
 
-   - Prefer project-specific file (backend.instructions.md > asset_upload.instructions.md)
+   - Prefer project-specific file (backend-core.instructions.md > asset_upload.instructions.md)
    - If still ambiguous, ask user
 
 2. **Cross-Project Conflict** (e.g., backend pattern vs frontend pattern):
@@ -162,9 +172,10 @@ Done
 
 **Context Window Management:**
 
-- Specialized instructions are ~400-800 lines each (pre-optimized)
-- Total instruction corpus: ~5,500 lines (~180K tokens)
-- **Budget Per Task:** ~80K tokens context (50K instructions + 30K code)
+- Core instructions: ~300-400 lines each (token-optimized)
+- Testing instructions: ~250 lines (loaded only when needed)
+- Total instruction corpus: ~5,000 lines (~160K tokens after optimization)
+- **Budget Per Task:** ~80K tokens context (40K instructions + 40K code)
 - If nearing limit, prioritize: instruction file > domain models > handlers > tests
 
 ## 10. Meta-Instructions (For This File)

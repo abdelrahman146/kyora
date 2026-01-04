@@ -66,7 +66,8 @@ Senior backend architect with extensive Go experience. Expert in clean architect
 
 ## Key References
 
-- `.github/instructions/backend.instructions.md` — Complete backend rules
+- `.github/instructions/backend-core.instructions.md` — Architecture, patterns, conventions
+- `.github/instructions/backend-testing.instructions.md` — Testing guidelines (E2E, unit, coverage)
 - `.github/instructions/stripe.instructions.md` — Stripe API patterns
 - `.github/instructions/resend.instructions.md` — Resend email API
 - `.github/instructions/asset_upload.instructions.md` — File upload backend contract

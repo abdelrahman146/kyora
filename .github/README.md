@@ -62,9 +62,9 @@ VS Code Copilot custom agents for specialized development tasks in the Kyora mon
 **AI Architect**
 
 ```
-@ai-architect Optimize backend.instructions.md for token efficiency
 @ai-architect Review instruction file consistency
 @ai-architect Refactor agent decision tree
+@ai-architect Optimize instruction files for token efficiency
 ```
 
 ## Agent Structure

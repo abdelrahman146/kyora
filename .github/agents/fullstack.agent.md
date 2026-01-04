@@ -69,7 +69,8 @@ Senior fullstack architect with extensive Go backend and React frontend experien
 
 ### Backend
 
-- `.github/instructions/backend.instructions.md` — Backend rules
+- `.github/instructions/backend-core.instructions.md` — Architecture, patterns, conventions
+- `.github/instructions/backend-testing.instructions.md` — Testing (when writing tests)
 - `.github/instructions/stripe.instructions.md` — Billing/payments
 - `.github/instructions/resend.instructions.md` — Email functionality
 

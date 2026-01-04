@@ -8,7 +8,7 @@ applyTo: "backend/**,portal-web/**,storefront-web/**"
 **SSOT Hierarchy:**
 
 - Parent: copilot-instructions.md
-- Related Backend: backend.instructions.md
+- Related Backend: backend-core.instructions.md (architecture), backend-testing.instructions.md (testing)
 - Related Frontend: forms.instructions.md (FileUploadField, ImageUploadField), ky.instructions.md (HTTP client)
 
 **When to Read:**
@@ -373,7 +373,7 @@ This is **client state only**. Kyora intentionally does not have a server-side �
 
 - **forms.instructions.md** — FileUploadField and ImageUploadField components (high-level integration)
 - **ky.instructions.md** — HTTP client patterns for upload API calls
-- **backend.instructions.md** — Backend architecture for asset storage and GC
+- **backend-core.instructions.md** — Backend architecture for asset storage and GC
 - **ui-implementation.instructions.md** — Progress indicators, error states for uploads
 
 ---

@@ -76,7 +76,8 @@ World-Class AI Prompt Engineering Expert, Senior DevOps Architect, Codebase Opti
 
 ### Instructions (All Files)
 
-- `.github/instructions/backend.instructions.md` — Backend rules
+- `.github/instructions/backend-core.instructions.md` — Backend architecture
+- `.github/instructions/backend-testing.instructions.md` — Backend testing
 - `.github/instructions/portal-web-architecture.instructions.md` — Frontend architecture
 - `.github/instructions/portal-web-development.instructions.md` — Frontend development
 - `.github/instructions/forms.instructions.md` — Form system
@@ -149,7 +150,8 @@ World-Class AI Prompt Engineering Expert, Senior DevOps Architect, Codebase Opti
 
 ### Instructions (All Files)
 
-- `.github/instructions/backend.instructions.md` — Backend rules
+- `.github/instructions/backend-core.instructions.md` — Backend architecture
+- `.github/instructions/backend-testing.instructions.md` — Backend testing
 - `.github/instructions/portal-web-architecture.instructions.md` — Frontend architecture
 - `.github/instructions/portal-web-development.instructions.md` — Frontend development
 - `.github/instructions/forms.instructions.md` — Form system

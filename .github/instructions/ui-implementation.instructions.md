@@ -529,7 +529,7 @@ Before completing UI task:
 - **Design Tokens:** `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing
 - **Forms:** `.github/instructions/forms.instructions.md` → Form components, validation
 - **Charts:** `.github/instructions/charts.instructions.md` → Data visualization
-- **Backend:** `.github/instructions/backend.instructions.md` → API contracts
+- **Backend:** `.github/instructions/backend-core.instructions.md` → API contracts
 
 ---
 
