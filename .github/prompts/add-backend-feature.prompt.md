@@ -2,7 +2,6 @@
 description: Add a new feature to the backend (Go API)
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Add Backend Feature
@@ -25,13 +24,15 @@ Before implementing, read the backend architecture rules:
 
 ## Implementation Standards
 
-1. **Architecture**: Follow service-storage-handler pattern that is already implemented in the codebase with proper seperation of concerns for each layer.
-2. **Multi-Tenancy**: All queries must filter by `workspaceID` for workspace scoped resources and `workspaceID / businessID` for business scoped resources.
-3. **Validation**: Validate all inputs at handler level
-4. **Error Handling**: Return proper HTTP status codes and error messages
-5. **Testing**: Include integration tests in `*_test.go` files inside `internal/tests/e2e/` following patterns from backend-testing.instructions.md
+1. **Architecture**: Follow the domain conventions from `backend-core.instructions.md` (model/storage/service/errors/handler_http).
+2. **Multi-Tenancy**: Kyora is two-layer scoped: workspace → businesses.
+   - Workspace-scoped resources: scope by `WorkspaceID`.
+   - Business-owned resources (inventory/accounting/orders/assets/analytics/customers/storefront): scope by `BusinessID`.
+3. **Validation**: Use `request.ValidBody(c, &req)` for JSON binding + validation.
+4. **Error Handling**: Return RFC 7807 via `response.Error(c, err)` (domain errors via `problem.*`).
+5. **Testing**: Add tests following `backend-testing.instructions.md` (E2E suites under `backend/internal/tests/e2e/`; unit tests live next to code in the domain/platform folders).
 6. **Security**: Prevent SQL injection, validate permissions, sanitize inputs, ensure BOLA compliance and abuse prevention
-7. **Database**: Use proper indexing, connection pooling, transactions where needed using the `atomic` processor we already have.
+7. **Database**: Use the repository pattern and `AtomicProcess.Exec` for multi-step writes.
 8. **Documentation**: Update Swagger docs if adding/modifying endpoints by generating new docs using `swag init`
 
 ## Workflow
@@ -39,9 +40,10 @@ Before implementing, read the backend architecture rules:
 1. Search for similar features to understand patterns
 2. Create/modify domain models in `backend/internal/domain/{domain}/`
 3. Implement service logic with business rules
-4. Create storage methods for database access incase new queries are needed otherwise use the storage defined methods that were implemented already by applying the repository struct.
+4. Use storage repositories + scopes; add new storage helpers only when repository/scopes are insufficient.
 5. Add HTTP handlers with proper validation
 6. Register routes in `backend/internal/server/routes.go`
+   - If business-scoped: add under `registerBusinessScopedRoutes` (`/v1/businesses/:businessDescriptor/...`) and apply `business.EnforceBusinessValidity`.
 7. Write tests covering success and error cases
 8. Update Swagger documentation
 9. Test by running `cd backend && go test ./...`.

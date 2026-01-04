@@ -27,7 +27,7 @@ applyTo: "portal-web/**"
 ```bash
 cd portal-web
 npm install
-npm run dev  # Start dev server (http://localhost:5173)
+npm run dev  # Start dev server (http://localhost:3000)
 ```
 
 ### Dev Server Features
@@ -35,12 +35,12 @@ npm run dev  # Start dev server (http://localhost:5173)
 - **HMR:** Hot Module Replacement (instant updates)
 - **TypeScript:** Type checking in IDE (not during dev server)
 - **TanStack Devtools:** Route/Query debugging overlays
-- **Port:** 5173 (Vite default)
+- **Port:** 3000 (see `portal-web/package.json` dev script)
 
 ### Type Checking
 
 ```bash
-npm run typecheck  # Run TypeScript compiler
+npm run type-check  # Run TypeScript compiler
 ```
 
 **CI Integration:** Type check runs in GitHub Actions before merge.
@@ -694,7 +694,7 @@ onSuccess: () => {
 **Steps:**
 
 1. Install dependencies
-2. Type check (`npm run typecheck`)
+2. Type check (`npm run type-check`)
 3. Lint (`npm run lint`)
 4. Test (`npm run test`)
 5. Build (`npm run build`)

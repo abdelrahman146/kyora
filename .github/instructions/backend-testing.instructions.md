@@ -298,7 +298,7 @@ func (s *LoginSuite) TestLogin_InputValidation() {
 
 - **Authentication**: Missing/invalid/expired tokens
 - **Authorization**: Permission boundaries (admin vs member)
-- **Workspace Isolation**: Users can't access other workspace data
+- **Workspace & Business Isolation**: Users can't access other workspace data; business-owned resources are isolated per business
 - **Input Validation**: SQL injection, XSS, malformed input
 - **Rate Limiting**: Token reuse, expired tokens, multiple requests
 - **CSRF Protection**: State tokens in OAuth flows
@@ -307,21 +307,25 @@ func (s *LoginSuite) TestLogin_InputValidation() {
 Example:
 
 ```go
-func (s *OrderSuite) TestCreateOrder_WorkspaceIsolation() {
+func (s *OrderSuite) TestCreateOrder_BusinessIsolation() {
     // Create two workspaces
     workspace1 := s.createTestWorkspace()
     workspace2 := s.createTestWorkspace()
 
-    // User1 creates order in workspace1
+    // Create a business in each workspace
+    biz1 := s.createTestBusiness(workspace1.ID, "biz1")
+    _ = s.createTestBusiness(workspace2.ID, "biz2")
+
+    // User1 creates order in biz1
     user1Token := s.loginUser(workspace1.AdminEmail)
     orderPayload := map[string]interface{}{"total": 100}
-    resp1, _ := s.client.Post("/v1/workspaces/"+workspace1.ID+"/orders", orderPayload,
+    resp1, _ := s.client.Post("/v1/businesses/"+biz1.Descriptor+"/orders", orderPayload,
         testutils.WithAuth(user1Token))
     s.Equal(http.StatusCreated, resp1.StatusCode)
 
-    // User2 tries to access order from workspace1 (should fail)
+    // User2 tries to access biz1 (should fail)
     user2Token := s.loginUser(workspace2.AdminEmail)
-    resp2, _ := s.client.Get("/v1/workspaces/"+workspace1.ID+"/orders",
+    resp2, _ := s.client.Get("/v1/businesses/"+biz1.Descriptor+"/orders",
         testutils.WithAuth(user2Token))
     s.Equal(http.StatusForbidden, resp2.StatusCode)
 }
@@ -465,7 +469,7 @@ import (
     "github.com/abdelrahman146/kyora/internal/domain/account"
 )
 
-// CreateOrderSuite tests POST /v1/workspaces/{workspaceId}/orders
+// CreateOrderSuite tests POST /v1/businesses/{businessDescriptor}/orders
 type CreateOrderSuite struct {
     suite.Suite
     client         *testutils.HTTPClient
@@ -493,9 +497,13 @@ func (s *CreateOrderSuite) TearDownTest() {
 func (s *CreateOrderSuite) TestCreateOrder_Success() {
     ctx := context.Background()
 
-    // Create workspace and user using helper
+    // Create user using helper
     user := s.accountHelper.CreateTestUser("admin@example.com", "Pass123!")
     token := s.accountHelper.LoginUser("admin@example.com", "Pass123!")
+
+    // Create a business in the user's workspace (business-scoped APIs require businessDescriptor)
+    // Implement this via API (`POST /v1/businesses`) or a helper that uses `business.NewStorage`.
+    biz := s.createTestBusiness(user.WorkspaceID, "demo")
 
     // Prepare order payload
     payload := map[string]interface{}{
@@ -508,7 +516,7 @@ func (s *CreateOrderSuite) TestCreateOrder_Success() {
     }
 
     // Make request
-    url := fmt.Sprintf("/v1/workspaces/%s/orders", user.WorkspaceID)
+    url := fmt.Sprintf("/v1/businesses/%s/orders", biz.Descriptor)
     resp, err := s.client.Post(url, payload, testutils.WithAuth(token))
     s.NoError(err)
     defer resp.Body.Close()
@@ -538,7 +546,8 @@ func (s *CreateOrderSuite) TestCreateOrder_Success() {
     s.Len(items, 1)
 
     // Verify database state
-    orders, _ := s.orderStorage.FindMany(ctx, s.orderStorage.ScopeWorkspaceID(user.WorkspaceID))
+    // Verify database state (business-owned resources are scoped by business_id)
+    orders, _ := s.orderStorage.FindMany(ctx, s.orderStorage.ScopeBusinessID(biz.ID))
     s.Len(orders, 1)
     s.Equal("100.50", orders[0].Total.String())
 }
@@ -578,7 +587,7 @@ func (s *CreateOrderSuite) TestCreateOrder_ValidationErrors() {
             token := s.accountHelper.LoginUser(email, "Pass123!")
 
             // Make request
-            url := fmt.Sprintf("/v1/workspaces/%s/orders", user.WorkspaceID)
+            url := fmt.Sprintf("/v1/businesses/%s/orders", biz.Descriptor)
             resp, err := s.client.Post(url, tt.payload, testutils.WithAuth(token))
             s.NoError(err)
             defer resp.Body.Close()
@@ -604,22 +613,23 @@ func (s *CreateOrderSuite) TestCreateOrder_ValidationErrors() {
     }
 }
 
-func (s *CreateOrderSuite) TestCreateOrder_WorkspaceIsolation() {
-    // Create two workspaces
+func (s *CreateOrderSuite) TestCreateOrder_BusinessIsolation() {
+    // Business-owned resources must not be accessible across workspaces.
     user1 := s.accountHelper.CreateTestUser("user1@example.com", "Pass123!")
     token1 := s.accountHelper.LoginUser("user1@example.com", "Pass123!")
+    biz1 := s.createTestBusiness(user1.WorkspaceID, "biz1")
 
     user2 := s.accountHelper.CreateTestUser("user2@example.com", "Pass123!")
     token2 := s.accountHelper.LoginUser("user2@example.com", "Pass123!")
 
-    // User1 creates order
+    // User1 creates order in biz1
     payload := map[string]interface{}{"total": 100, "currency": "USD"}
-    url1 := fmt.Sprintf("/v1/workspaces/%s/orders", user1.WorkspaceID)
+    url1 := fmt.Sprintf("/v1/businesses/%s/orders", biz1.Descriptor)
     resp1, _ := s.client.Post(url1, payload, testutils.WithAuth(token1))
     s.Equal(http.StatusCreated, resp1.StatusCode)
 
-    // User2 tries to access user1's workspace (should fail)
-    url2 := fmt.Sprintf("/v1/workspaces/%s/orders", user1.WorkspaceID)
+    // User2 tries to access biz1 (should fail)
+    url2 := fmt.Sprintf("/v1/businesses/%s/orders", biz1.Descriptor)
     resp2, _ := s.client.Get(url2, testutils.WithAuth(token2))
     s.Equal(http.StatusForbidden, resp2.StatusCode)
 }

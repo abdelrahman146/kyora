@@ -2,7 +2,6 @@
 description: Add a new feature to portal-web (React dashboard)
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Add Portal Web Feature
@@ -29,14 +28,18 @@ Before implementing, read the frontend architecture rules:
 
 ## Implementation Standards
 
-1. **Architecture**: TanStack Router + TanStack Query + Zustand for state
+1. **Architecture**: TanStack Router + TanStack Query + TanStack Store (no Redux, no Zustand)
 2. **Routing**: File-based routing in `portal-web/src/routes/`
-3. **Forms**: TanStack Form with field components from `portal-web/src/components/forms/fields/`
-4. **HTTP**: Ky client with proper error handling
-5. **UI**: daisyUI components, RTL-first, responsive design
-6. **i18n**: All text strings must support Arabic + English
-7. **Accessibility**: Proper ARIA labels, keyboard navigation
-8. **Type Safety**: Zod schemas for validation + TypeScript types
+3. **Tenancy & Scoping (SSOT)**: Business-owned features must be scoped by `businessDescriptor`
+   - UI routes under `/business/$businessDescriptor/...`
+   - API calls to `v1/businesses/${businessDescriptor}/...`
+   - Read `businessDescriptor` via `Route.useParams()` and pass it into API/query hooks
+4. **Forms**: Use Kyora form system (`useKyoraForm` + `<form.AppField>` pattern). Follow `forms.instructions.md`
+5. **HTTP**: Ky client with proper error handling
+6. **UI**: daisyUI components, RTL-first, responsive design
+7. **i18n**: All text strings must support Arabic + English
+8. **Accessibility**: Proper ARIA labels, keyboard navigation
+9. **Type Safety**: Zod schemas for validation + TypeScript types
 
 ## Workflow
 

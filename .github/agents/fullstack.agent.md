@@ -114,5 +114,5 @@ Senior fullstack architect with extensive Go backend and React frontend experien
 - **Error Handling**: Backend returns structured errors, frontend displays user-friendly messages
 - **Loading States**: Frontend shows loading/error/success states for all async operations
 - **Validation**: Backend validates all inputs, frontend provides immediate feedback
-- **Multi-Tenancy**: Backend enforces `workspaceId` scoping, frontend never sends cross-workspace requests
+- **Multi-Tenancy**: Workspace → businesses. Backend enforces workspace membership + business validity; frontend scopes business-owned features by `businessDescriptor` (UI `/business/$businessDescriptor/...`, API `v1/businesses/${businessDescriptor}/...`) and never triggers cross-business access
 - **Plain Language**: UI uses "Profit" not "EBITDA", "Cash in hand" not "Liquidity"

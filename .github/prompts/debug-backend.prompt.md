@@ -2,7 +2,6 @@
 description: Debug and fix issues in the backend (Go API)
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Debug Backend Issue

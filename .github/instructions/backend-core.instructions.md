@@ -62,7 +62,7 @@ func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
 
 **Scopes** (chainable filters):
 
-- Workspace: `ScopeWorkspaceID(id)`, `ScopeBusinessID(id)` (legacy)
+- Tenant: `ScopeWorkspaceID(id)` (workspace-scoped), `ScopeBusinessID(id)` (business-scoped)
 - ID: `ScopeID(id)`, `ScopeIDs(ids...)`
 - Comparison: `ScopeEquals(field, val)`, `ScopeIn(field, vals)`, `ScopeNotIn`, `ScopeGreaterThan`, `ScopeLessThan`, `ScopeBetween`
 - Time: `ScopeTime(field, from, to)`, `ScopeCreatedAt(from, to)`
@@ -108,18 +108,20 @@ err := s.db.AtomicProcess.Exec(ctx, func(tctx context.Context) error {
 
 ## HTTP Layer
 
-**Auth Middleware Chain** (workspace-based):
+**Auth Middleware Chain** (workspace + optional business scope):
 
 1. `auth.EnforceAuthentication` — JWT from `Authorization: Bearer <token>`, sets claims
 2. `account.EnforceValidActor(svc)` — loads user, sets `ActorKey`, enriches logger
 3. `account.EnforceWorkspaceMembership(svc)` — validates `workspaceId` param, sets `WorkspaceKey`
 4. `account.EnforceActorPermissions(action, resource)` — RBAC check
-5. Optional: `billing.EnforceActiveSubscription(svc)`, `billing.EnforcePlanWorkspaceLimits(limit, counterFunc)`
+5. For business-scoped routes: `business.EnforceBusinessValidity(svc)` — validates `businessDescriptor`, loads business for actor's workspace, sets `BusinessKey`
+6. Optional: `billing.EnforceActiveSubscription(svc)`, `billing.EnforcePlanWorkspaceLimits(limit, counterFunc)`
 
 **Extract Context**:
 
 - User: `account.ActorFromContext(c)`
 - Workspace: `account.WorkspaceFromContext(c)`
+- Business: `business.BusinessFromContext(c)` (only after `business.EnforceBusinessValidity`)
 - Claims: `auth.ClaimsFromContext(c)`
 - JWT Token: `auth.JwtFromContext(c)` — extracts from Authorization header ONLY (no cookies)
 
@@ -163,8 +165,11 @@ err := s.db.AtomicProcess.Exec(ctx, func(tctx context.Context) error {
 
 **service.go**:
 
-- Signature: `(ctx context.Context, actor *account.User, workspace *account.Workspace, ...)`
-- **Multi-tenancy**: ALWAYS scope by `WorkspaceID`: `s.storage.order.FindMany(ctx, s.storage.order.ScopeWorkspaceID(workspace.ID), ...)`
+- Workspace-scoped signature: `(ctx context.Context, actor *account.User, workspace *account.Workspace, ...)`
+- Business-scoped signature: `(ctx context.Context, actor *account.User, biz *business.Business, ...)`
+- **Multi-tenancy**:
+  - Workspace-scoped data MUST be scoped by `workspace.ID`
+  - Business-owned data MUST be scoped by `biz.ID` (and business middleware guarantees the business belongs to the actor's workspace)
 - Use `AtomicProcess.Exec` for multi-entity ops
 - Pattern: Validate → Load related → Calculate → Persist → Return
 - Updates: Load with locking → Validate transitions → Update → Persist
@@ -251,13 +256,18 @@ err := s.db.AtomicProcess.Exec(ctx, func(tctx context.Context) error {
 
 ## Multi-Tenancy
 
-- **Workspace**: Groups users under single subscription
-- **User**: Belongs to one workspace (`WorkspaceID`), has role
-- **Business**: Legacy (transitioning to workspace; some code uses `BusinessID`)
-- **Scoping**: ALWAYS filter by `WorkspaceID` for data isolation
+- **Workspace**: Top-level tenant. Groups users, billing/subscription, and multiple businesses.
+- **User**: Belongs to one workspace (`WorkspaceID`), has role.
+- **Business**: Second-level scope. A workspace can have many businesses; each business has its own inventory, accounting, orders, assets, analytics, customers, and storefront.
+- **Scoping**:
+  - Workspace-scoped resources MUST filter by `WorkspaceID`.
+  - Business-owned resources MUST filter by `BusinessID`.
+- **Routing**:
+  - Workspace-scoped: typically `/v1/...` with `workspaceId` enforced by `account.EnforceWorkspaceMembership`.
+  - Business-scoped: `/v1/businesses/:businessDescriptor/...` enforced by `business.EnforceBusinessValidity`.
 - **Invitations**: Users invited with role (admin/member)
 - **Permissions**: `internal/platform/types/role` (actions: view/manage, resources: account/billing/orders)
-- **Middleware**: `EnforceWorkspaceMembership` validates user belongs to workspace in URL param
+- **Middleware**: `account.EnforceWorkspaceMembership` (workspace) and `business.EnforceBusinessValidity` (business)
 
 ## Routes & Permissions
 
@@ -291,7 +301,9 @@ err := s.db.AtomicProcess.Exec(ctx, func(tctx context.Context) error {
 
 **Security**:
 
-- ALWAYS scope by `WorkspaceID` (or legacy `BusinessID`) — no cross-workspace leaks
+- Always enforce tenancy boundaries — no cross-workspace or cross-business leaks
+- Workspace-scoped data: scope by `WorkspaceID`
+- Business-owned data: scope by `BusinessID` (loaded via `business.EnforceBusinessValidity`)
 - Use config constants from `internal/platform/config/config.go` — never hardcode
 - JWT from Authorization header ONLY (format: `Bearer <token>`) — no cookies
 - Treat `refreshToken` like password (log/redact carefully) — store only hashes

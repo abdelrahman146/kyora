@@ -6,7 +6,7 @@
 **Tech:** Go monolith (backend), React + TanStack (portal-web), React (storefront-web).
 **User:** Non-technical business owners selling via Instagram/WhatsApp/TikTok DMs.
 **Philosophy:** "Professional tools that feel effortless" — zero accounting knowledge required.
-**Architecture:** Workspace-based multi-tenancy. RBAC: admin/member. Billing via Stripe.
+**Architecture:** Workspace-based multi-tenancy with multiple businesses per workspace. RBAC: admin/member. Billing via Stripe.
 
 ## 2. Business Logic (What To Build)
 
@@ -18,7 +18,7 @@
 - Order entry (DM source) → auto revenue recognition → inventory update → profit calculation
 - Dashboard → plain-language insights ("You made $X profit this month", "Top seller: Y")
 
-**Multi-Tenancy Rule:** All data scoped to `workspaceId`. No cross-workspace leaks.
+**Multi-Tenancy Rule:** Workspace is the top-level tenant. Business is the second-level scope for business-owned data. No cross-workspace or cross-business leaks.
 
 **Avoid:** Accounting jargon (EBITDA, ledgers, accruals). Use: "Profit", "Cash in hand", "Best seller".
 

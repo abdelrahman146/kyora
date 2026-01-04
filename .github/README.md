@@ -6,11 +6,11 @@ VS Code Copilot custom agents for specialized development tasks in the Kyora mon
 
 | Agent                  | File                    | Purpose                                                                    | Tools (Key)                            | Target |
 | ---------------------- | ----------------------- | -------------------------------------------------------------------------- | -------------------------------------- | ------ |
-| **AI Architect**       | `ai-architect.agent.md` | Meta-layer optimization, agent/prompt management, instruction optimization | readFile, editFiles, textSearch, fetch | vscode |
-| **Backend Engineer**   | `backend.agent.md`      | Go API development, clean architecture, database design                    | + runInTerminal, runTests              | vscode |
-| **Frontend Engineer**  | `frontend.agent.md`     | React TanStack, mobile-first UI, RTL support                               | + openSimpleBrowser                    | vscode |
-| **Fullstack Engineer** | `fullstack.agent.md`    | End-to-end features, API contract alignment                                | All tools (full stack)                 | vscode |
-| **UI Designer**        | `ui-designer.agent.md`  | Design system, RTL/accessibility, visual language                          | readFile, editFiles (no terminal)      | vscode |
+| **AI Architect**       | `ai-architect.agent.md` | Meta-layer optimization, agent/prompt management, instruction optimization | read, edit, search                      | vscode |
+| **Backend Engineer**   | `backend.agent.md`      | Go API development, clean architecture, database design                    | read, edit, search, execute, todo       | vscode |
+| **Frontend Engineer**  | `frontend.agent.md`     | React TanStack, mobile-first UI, RTL support                               | read, edit, search, execute, web, todo  | vscode |
+| **Fullstack Engineer** | `fullstack.agent.md`    | End-to-end features, API contract alignment                                | read, edit, search, execute, web, todo  | vscode |
+| **UI Designer**        | `ui-designer.agent.md`  | Design system, RTL/accessibility, visual language                          | read, edit, search                      | vscode |
 
 ## Usage
 
@@ -158,8 +158,8 @@ Rules specific to this agent's domain
 
 ## Related Documentation
 
-- [`.github/copilot-instructions.md`](../copilot-instructions.md) — Agent orchestration layer
-- [`.github/instructions/`](../instructions/) — Specialized instruction files
+- [`.github/copilot-instructions.md`](copilot-instructions.md) — Agent orchestration layer
+- [`.github/instructions/`](instructions/) — Specialized instruction files
 - [VS Code Custom Agents Docs](https://code.visualstudio.com/docs/copilot/customization/custom-agents)
 - [VS Code Chat Tools Docs](https://code.visualstudio.com/docs/copilot/chat/chat-tools)
 - [GitHub Copilot Agents Docs](https://docs.github.com/en/copilot/how-tos/use-copilot-agents/coding-agent/create-custom-agents)

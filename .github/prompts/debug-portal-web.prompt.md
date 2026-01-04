@@ -2,7 +2,6 @@
 description: Debug and fix issues in portal-web (React dashboard)
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Debug Portal Web Issue
@@ -35,6 +34,7 @@ Read relevant architecture rules first:
    - Verify TanStack Query cache invalidation
    - Check form validation (Zod schema)
    - Review HTTP requests (network tab)
+   - Verify business scoping: business-owned requests must include the correct `businessDescriptor` in both UI route params and API paths (`v1/businesses/${businessDescriptor}/...`)
    - Check i18n keys exist for both locales
 
 3. **Implement Fix**
@@ -47,7 +47,9 @@ Read relevant architecture rules first:
 
 4. **Test the Fix**
 
-   - Run tests: `cd portal-web && npm test`
+   - Run tests: `cd portal-web && npm run test`
+   - Run type check: `cd portal-web && npm run type-check`
+   - Run lint: `cd portal-web && npm run lint`
    - Test manually: `npm run dev`
    - Test in both LTR (English) and RTL (Arabic)
    - Test responsive design (mobile/tablet/desktop)
@@ -62,9 +64,9 @@ Read relevant architecture rules first:
 - **API Errors**: Check Ky client setup, auth tokens, request/response types
 - **Form Issues**: Check Zod validation, field components, form state
 - **Routing Issues**: Check TanStack Router config, route parameters
-- **State Issues**: Check Zustand store, TanStack Query cache
+- **State Issues**: Check TanStack Store (auth/business/metadata/onboarding), TanStack Query cache
 - **UI Issues**: Check daisyUI classes, RTL support, responsive classes
-- **i18n Issues**: Check translation keys exist in both `en.json` and `ar.json`
+- **i18n Issues**: Check translation keys exist in both `src/i18n/en/**` and `src/i18n/ar/**`
 - **Type Errors**: Check Zod schema matches API response
 
 ## Done

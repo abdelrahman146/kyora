@@ -60,6 +60,14 @@ Senior Arabic frontend architect, brilliant UI/UX designer. Expert in mobile-fir
 
 **Philosophy**: "Professional tools that feel effortless" — avoid accounting jargon, use plain language.
 
+**Tenancy & Scoping (SSOT):**
+
+- Workspace can contain multiple businesses.
+- Business-owned data must always be scoped by `businessDescriptor` (UI routes `/business/$businessDescriptor/...`, API routes `v1/businesses/${businessDescriptor}/...`).
+- Never trigger cross-business reads/writes.
+
+**Business-owned domains:** Orders, Inventory, Customers, Analytics, Accounting, Assets, Storefront, Onboarding (business).
+
 ## Monorepo Context
 
 - `portal-web/` — Your primary workspace

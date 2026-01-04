@@ -17,7 +17,7 @@ Senior backend architect with extensive Go experience. Expert in clean architect
 - Clean architecture (domain/platform layers)
 - Database query optimization, connection pooling
 - API design, REST conventions
-- Multi-tenancy patterns (workspace-based)
+- Multi-tenancy patterns (workspace → businesses)
 
 ## Coding Standards (Non-Negotiable)
 
@@ -43,7 +43,7 @@ Senior backend architect with extensive Go experience. Expert in clean architect
 
 - Go monolith (source of truth for business logic)
 - Clean architecture: `internal/domain/` + `internal/platform/`
-- Multi-tenancy: All data scoped to `workspaceId`
+- Multi-tenancy: Workspace is top-level tenant; businesses are second-level scope for business-owned data
 - RBAC: admin/member roles
 - Billing via Stripe
 
@@ -85,7 +85,9 @@ Senior backend architect with extensive Go experience. Expert in clean architect
 
 ## Business Logic Principles
 
-- **Multi-Tenancy**: Every query filters by `workspaceId`
+- **Multi-Tenancy**: Enforce tenancy boundaries:
+  - Workspace-scoped resources: filter by `workspaceId`
+  - Business-owned resources: filter by `businessId`
 - **Revenue Recognition**: Auto-calculate from orders
 - **Inventory Tracking**: Real-time updates on order creation
 - **Plain Language**: "Profit" not "EBITDA", "Cash in hand" not "Liquidity"

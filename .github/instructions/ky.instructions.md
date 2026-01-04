@@ -37,6 +37,13 @@ Ky is a tiny, elegant HTTP client based on the Fetch API. This guide covers how 
 
 ## Core Setup
 
+## Kyora API Conventions (SSOT)
+
+- **Base prefix:** Kyora backend routes are rooted at `v1/...` (not `api/v1/...`).
+- **Business-owned APIs:** Must be called under `v1/businesses/${businessDescriptor}/...`.
+  - Do **not** rely on custom headers (e.g., `X-Business-ID`) for scoping.
+  - In portal-web, `businessDescriptor` comes from the route params (`/business/$businessDescriptor/...`) and/or `businessStore.selectedBusinessDescriptor`.
+
 ### Basic API Client Structure
 
 Create a centralized API client in `src/api/client.ts`:
@@ -131,7 +138,7 @@ async function refreshAccessToken(): Promise<string> {
   }
 
   const response = await ky
-    .post("/api/v1/auth/refresh", {
+    .post("/v1/auth/refresh", {
       json: { refresh_token: refresh },
     })
     .json<{ access_token: string; refresh_token: string }>();
@@ -281,11 +288,9 @@ export const apiClient = ky.create({
         // Add request ID for tracing
         request.headers.set("X-Request-ID", crypto.randomUUID());
 
-        // Add business ID from context (if available)
-        const businessId = getCurrentBusinessId();
-        if (businessId) {
-          request.headers.set("X-Business-ID", businessId);
-        }
+        // Kyora scoping rule:
+        // Business scoping is expressed in the URL path via businessDescriptor.
+        // Keep headers focused on auth + tracing.
 
         // Log only on initial request, not retries
         if (retryCount === 0) {
@@ -744,14 +749,10 @@ const api = ky.create({
   hooks: {
     beforeRequest: [
       (request, options) => {
-        const { skipAuth, businessId } = options.context;
+        const { skipAuth } = options.context;
 
         if (!skipAuth) {
           request.headers.set("Authorization", `Bearer ${getToken()}`);
-        }
-
-        if (businessId) {
-          request.headers.set("X-Business-ID", businessId);
         }
       },
     ],
@@ -762,7 +763,6 @@ const api = ky.create({
 await api
   .get("api/v1/data", {
     context: {
-      businessId: "123",
       skipAuth: false,
     },
   })

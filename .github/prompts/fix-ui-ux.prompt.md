@@ -2,7 +2,6 @@
 description: Fix UI/UX issues in portal-web
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Fix UI/UX Issue
@@ -55,9 +54,9 @@ Read design system rules first:
 
 ### Spacing Issues
 
-- Use design token spacing: `space-xs`, `space-sm`, `space-md`, `space-lg`, `space-xl`
-- Consistent padding/margin throughout app
-- Use gap utilities for flexbox/grid spacing
+- Use the design-tokens 4px grid via Tailwind spacing utilities (`gap-*`, `p-*`, `px-*`, `py-*`, `m-*`)
+- Prefer `gap-4` (16px) as a default, and mobile-safe `px-4 py-4` for page padding
+- Keep spacing consistent; use layout utilities for spacing, not ad-hoc overrides of daisyUI components
 
 ### Color Issues
 

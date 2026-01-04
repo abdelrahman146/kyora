@@ -2,7 +2,6 @@
 description: Create a new backend project structure (Go domain module)
 agent: agent
 tools: ["vscode", "execute", "read", "edit", "search", "web", "agent", "todo"]
-model: Claude Opus 4.5 (copilot)
 ---
 
 # Create Backend Project
@@ -26,47 +25,47 @@ Create the following structure in `backend/internal/domain/${domain}/`:
 
 ```
 backend/internal/domain/${domain}/
-├── domain.go           # Domain models and types
-├── service.go          # Business logic
-├── storage.go          # Database access layer
-├── handler_http.go     # HTTP handlers
+├── model.go            # GORM model(s) + schema mapping
+├── storage.go          # Typed repositories + cache (repo pattern)
+├── service.go          # Business logic (workspace-scoped)
+├── errors.go           # Domain problems (RFC 7807)
+├── handler_http.go     # HTTP handlers (request.ValidBody + response.Success/Error)
 ```
 
 ## Implementation Workflow
 
-1. **Domain Models** (`domain.go`)
+1. **Models** (`model.go`)
 
-   - Define struct types with proper tags (json, db)
-   - Include validation rules
-   - Add workspace_id for multi-tenancy
+   - Follow `backend-core.instructions.md` model conventions (ID generation, schema mapping, gorm tags)
+   - Decide scope first:
+     - Workspace-scoped domain (e.g., account/billing/workspace): include `WorkspaceID` where applicable
+     - Business-owned domain (most commerce domains): include `BusinessID` and enforce business scoping
 
 2. **Storage** (`storage.go`)
 
-   - Database repository.go implementation
-   - Use gorm for query execution and create methods there only if repository.go methods are not sufficient.
-   - Proper error handling
+   - Use `database.Repository[T]` and scopes (especially `ScopeWorkspaceID`)
+   - Keep caching (if any) in storage only
 
 3. **Service** (`service.go`)
 
    - Business logic implementation
    - Validation rules
-   - Transaction handling where needed
+   - Multi-entity writes must use `AtomicProcess.Exec`
    - No direct DB calls
    - Proper error messages
 
-4. **Handler** (`handler.go`)
+4. **HTTP Handler** (`handler_http.go`)
 
-   - HTTP request parsing and validation
+   - Extract actor/workspace from context
+   - Parse + validate via `request.ValidBody`
    - Call service methods
-   - Return proper HTTP responses
-   - Error handling with status codes
+   - Return via `response.Success*` / `response.Error`
 
 5. **Tests**
 
-   - Integration tests to lock in the new service features properly and cover all the features with all options.
-   - proper assertions to verify correctness.
-   - similar structure to existing tests in `internal/tests/e2e/`
-   - Cover success and error cases
+   - If you add/modify endpoints: add E2E suite(s) under `backend/internal/tests/e2e/` per `backend-testing.instructions.md`
+   - If you add service-only logic: add unit tests next to the code (e.g., `service_test.go`)
+   - Cover success + error cases; keep tests isolated
 
 6. **Routes** (`backend/internal/server/routes.go`)
 
@@ -76,11 +75,11 @@ backend/internal/domain/${domain}/
 
 ## Architecture Patterns
 
-- **Service-Repository Pattern**: Separate business logic from data access
-- **Multi-Tenancy**: All data scoped to workspace_id
-- **Error Handling**: Return domain-specific errors, handle at handler level
-- **Validation**: Validate at handler, enforce business rules in service
-- **Testing**: Unit tests for all layers
+- **Service + Storage**: Business logic in service; persistence + cache in storage
+- **Multi-Tenancy**: Two-layer scoped: workspace → businesses. Scope data by the correct key(s).
+- **Errors**: Domain problems in `errors.go`, emitted via `response.Error`
+- **Validation**: Handler validates request; service enforces business rules
+- **Testing**: Follow `backend-testing.instructions.md` patterns
 
 ## Example Reference
 
@@ -93,7 +92,7 @@ Look at existing domains for patterns:
 ## Done
 
 - Complete domain module structure created
-- All layers implemented (models, repository, service, handler)
+- All layers implemented (model, storage, service, handler)
 - Routes registered
 - Tests written and passing
 - Multi-tenancy enforced

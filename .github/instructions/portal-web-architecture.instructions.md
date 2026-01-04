@@ -31,8 +31,30 @@ applyTo: "portal-web/**"
 - Mobile-first, RTL-native
 - Arabic primary, English fallback
 - Middle East social commerce focus (Instagram/WhatsApp/TikTok sellers)
-- Workspace-based multi-tenancy
+- Workspace-based multi-tenancy with business sub-scope (workspace can have multiple businesses)
 - RBAC: admin/member roles
+
+**Tenancy & Scoping (SSOT):**
+
+- **Workspace-scoped domains** (global to the workspace; not tied to a single business):
+  - Account/auth/session, workspace membership & RBAC
+  - Billing/subscription (Stripe)
+  - Workspace-level settings/metadata
+- **Business-owned domains** (must always be scoped to the current business):
+  - Orders
+  - Inventory
+  - Customers
+  - Analytics
+  - Accounting
+  - Assets
+  - Storefront
+  - Onboarding (when creating/configuring the business)
+
+**Frontend scoping rule:**
+
+- Business-owned API calls must include `businessDescriptor` in the URL: `v1/businesses/${businessDescriptor}/...`.
+- Business-owned UI routes must be nested under `/business/$businessDescriptor/...`.
+- Never fetch or mutate business-owned data without an explicit `businessDescriptor`.
 
 ---
 
@@ -318,9 +340,9 @@ await invalidateCustomerQueries(customerId);
 
 2. **businessStore** (`src/stores/businessStore.ts`)
 
-   - Current workspace selection
-   - Sidebar state
-   - Persisted to `sessionStorage`
+- Business list + selected business (`selectedBusinessDescriptor`)
+- Sidebar UI state
+- Persists preferences to `localStorage` via `createPersistencePlugin`
 
 3. **metadataStore** (`src/stores/metadataStore.ts`)
 
@@ -368,12 +390,12 @@ src/routes/
 ├── _auth/                  → Auth layout group (requireGuest)
 │   ├── login.tsx           → /auth/login
 │   └── register.tsx        → /auth/register
-└── _app/                   → App layout group (requireAuth)
-    ├── dashboard.tsx       → /dashboard
-    ├── customers/
-    │   ├── index.tsx       → /customers
-    │   └── $id.tsx         → /customers/:id
-    └── settings.tsx        → /settings
+└── business/                → Business-scoped routes
+  └── $businessDescriptor/ → /business/:businessDescriptor (requireAuth)
+    ├── index.tsx        → Business home
+    ├── orders/          → /business/:businessDescriptor/orders
+    ├── customers/       → /business/:businessDescriptor/customers
+    └── inventory/       → /business/:businessDescriptor/inventory
 ```
 
 ### Route Patterns
