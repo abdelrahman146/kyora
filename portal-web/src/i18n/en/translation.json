@@ -282,7 +282,14 @@
       "update_success": "Address updated successfully",
       "delete_success": "Address deleted successfully",
       "delete_confirm_title": "Delete Address",
-      "delete_confirm_message": "Are you sure you want to delete this address?"
+      "delete_confirm_message": "Are you sure you want to delete this address?",
+      "shipping_zone": "Shipping Zone",
+      "select_shipping_zone": "Select shipping zone",
+      "countries": "{{count}} country",
+      "countries_plural": "{{count}} countries",
+      "no_zones_message": "No shipping zones configured yet.",
+      "configure_zones_link": "Configure shipping zones",
+      "filtered_by_zone": "Countries filtered by selected shipping zone"
     }
   },
   "pagination": {

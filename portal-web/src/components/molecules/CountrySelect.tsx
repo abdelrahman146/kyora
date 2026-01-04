@@ -14,6 +14,7 @@ export interface CountrySelectProps {
   required?: boolean
   placeholder?: string
   searchable?: boolean
+  availableCountries?: Array<Country> // Optional filter: only show these countries
 }
 
 /**
@@ -21,6 +22,7 @@ export interface CountrySelectProps {
  * Uses FormSelect with country metadata from store
  * Displays country flag and localized name
  * Supports search functionality
+ * Can be filtered to show only specific countries via availableCountries prop
  */
 export function CountrySelect({
   value,
@@ -30,6 +32,7 @@ export function CountrySelect({
   required,
   placeholder,
   searchable = true,
+  availableCountries,
 }: CountrySelectProps) {
   const { t, i18n } = useTranslation()
   const countries = useStore(metadataStore, (state) => state.countries)
@@ -46,11 +49,13 @@ export function CountrySelect({
   }, [countriesStatus])
 
   const countryOptions: Array<FormSelectOption> = useMemo(() => {
-    return countries.map((c: Country) => {
+    // Use filtered list if provided, otherwise use all countries
+    const countriesToShow = availableCountries ?? countries
+    return countriesToShow.map((c: Country) => {
       const label = `${c.flag ? `${c.flag} ` : ''}${isArabic ? c.nameAr : c.name}`
       return { value: c.code, label }
     })
-  }, [countries, isArabic])
+  }, [countries, availableCountries, isArabic])
 
   return (
     <FormSelect<string>

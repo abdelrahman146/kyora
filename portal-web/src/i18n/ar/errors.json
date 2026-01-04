@@ -57,7 +57,19 @@
     "date_cannot_be_past": "لا يمكن أن يكون التاريخ في الماضي.",
     "must_be_18_or_older": "يجب أن يكون عمرك 18 عاماً على الأقل.",
     "end_date_must_be_after_start_date": "يجب أن يكون تاريخ الانتهاء بعد تاريخ البدء.",
-    "outside_business_hours": "يجب أن يكون الوقت ضمن ساعات العمل (9 صباحاً - 5 مساءً)."
+    "outside_business_hours": "يجب أن يكون الوقت ضمن ساعات العمل (9 صباحاً - 5 مساءً).",
+    "positive_number": "يجب أن يكون رقماً موجباً.",
+    "min_zero": "يجب أن يكون صفراً أو أكثر.",
+    "integer": "يجب أن يكون رقماً صحيحاً.",
+    "max_photos": "الحد الأقصى 10 صور مسموح.",
+    "at_least_one_variant": "مطلوب نوع واحد على الأقل.",
+    "max_variants": "الحد الأقصى 50 نوعاً مسموح.",
+    "shipping_zone_required": "يرجى اختيار منطقة الشحن.",
+    "country_required": "يرجى اختيار الدولة.",
+    "state_required": "المنطقة مطلوبة.",
+    "city_required": "المدينة مطلوبة.",
+    "phone_required": "رقم الهاتف مطلوب.",
+    "phone_code_required": "رمز الهاتف مطلوب."
   },
   "form": {
     "minItemsRequired": "مطلوب {{min}} عنصر على الأقل.",

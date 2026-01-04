@@ -82,6 +82,29 @@ export const UpdateBusinessRequestSchema = z.object({
 export type UpdateBusinessRequest = z.infer<typeof UpdateBusinessRequestSchema>
 
 /**
+ * Shipping Zone Types
+ */
+export const ShippingZoneSchema = z.object({
+  id: z.string(),
+  businessId: z.string(),
+  name: z.string(),
+  countries: z.array(z.string()),
+  currency: z.string(),
+  shippingCost: z.string(),
+  freeShippingThreshold: z.string(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type ShippingZone = z.infer<typeof ShippingZoneSchema>
+
+export const ListShippingZonesResponseSchema = z.array(ShippingZoneSchema)
+
+export type ListShippingZonesResponse = z.infer<
+  typeof ListShippingZonesResponseSchema
+>
+
+/**
  * Business API Client
  */
 export const businessApi = {
@@ -135,6 +158,18 @@ export const businessApi = {
   async deleteBusiness(descriptor: string): Promise<void> {
     await del<void>(`v1/businesses/${descriptor}`)
   },
+
+  /**
+   * List shipping zones for a business
+   */
+  async listShippingZones(
+    businessDescriptor: string,
+  ): Promise<Array<ShippingZone>> {
+    const response = await get<unknown>(
+      `v1/businesses/${businessDescriptor}/shipping-zones`,
+    )
+    return ListShippingZonesResponseSchema.parse(response)
+  },
 }
 
 /**
@@ -165,6 +200,18 @@ export const businessQueries = {
       staleTime: STALE_TIME.FIVE_MINUTES,
       enabled: !!descriptor,
     }),
+
+  /**
+   * Query options for fetching shipping zones
+   * @param businessDescriptor - Business descriptor/slug
+   */
+  shippingZones: (businessDescriptor: string) =>
+    queryOptions({
+      queryKey: queryKeys.businesses.shippingZones(businessDescriptor),
+      queryFn: () => businessApi.listShippingZones(businessDescriptor),
+      staleTime: STALE_TIME.FIVE_MINUTES,
+      enabled: !!businessDescriptor,
+    }),
 }
 
 /**
@@ -179,6 +226,26 @@ export const businessQueries = {
 export function useBusinessesQuery() {
   return useQuery(businessQueries.list())
 }
+
+/**
+ * Query to fetch shipping zones for a business
+ *
+ * StaleTime: 5 minutes (semi-static, changes when zones are updated)
+ * @param businessDescriptor - Business descriptor/slug
+ * @param enabled - Whether to enable the query (default: true)
+ */
+export function useShippingZonesQuery(
+  businessDescriptor: string,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    ...businessQueries.shippingZones(businessDescriptor),
+    enabled: enabled && !!businessDescriptor,
+  })
+}
+
+/**
+ * 
 
 /**
  * Query to fetch a specific business

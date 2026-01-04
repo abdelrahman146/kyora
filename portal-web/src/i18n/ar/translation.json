@@ -282,7 +282,14 @@
       "update_success": "تم تحديث العنوان بنجاح",
       "delete_success": "تم حذف العنوان بنجاح",
       "delete_confirm_title": "حذف العنوان",
-      "delete_confirm_message": "هل أنت متأكد من حذف هذا العنوان؟"
+      "delete_confirm_message": "هل أنت متأكد من حذف هذا العنوان؟",
+      "shipping_zone": "منطقة الشحن",
+      "select_shipping_zone": "اختر منطقة الشحن",
+      "countries": "{{count}} دولة",
+      "countries_plural": "{{count}} دول",
+      "no_zones_message": "لم يتم تكوين مناطق الشحن بعد.",
+      "configure_zones_link": "تكوين مناطق الشحن",
+      "filtered_by_zone": "الدول المُرشحة حسب منطقة الشحن المحددة"
     }
   },
   "pagination": {

@@ -20,6 +20,7 @@ import { showErrorToast, showSuccessToast } from '@/lib/toast'
 
 // Request types
 export interface CreateAddressRequest {
+  shippingZoneId: string
   countryCode: string
   state: string
   city: string
@@ -30,6 +31,7 @@ export interface CreateAddressRequest {
 }
 
 export interface UpdateAddressRequest {
+  shippingZoneId?: string
   street?: string
   city?: string
   state?: string

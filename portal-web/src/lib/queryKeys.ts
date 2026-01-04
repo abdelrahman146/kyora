@@ -73,6 +73,8 @@ export const businesses = {
   list: () => [...businesses.all, 'list'] as const,
   detail: (descriptor: string) =>
     [...businesses.all, 'detail', descriptor] as const,
+  shippingZones: (descriptor: string) =>
+    [...businesses.all, 'shipping-zones', descriptor] as const,
 } as const
 
 // Legacy export for backwards compatibility

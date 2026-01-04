@@ -19,7 +19,11 @@ import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress, CustomerGender } from '@/api/customer'
 import type { RouterContext } from '@/router'
 import { addressApi, addressQueries } from '@/api/address'
-import { customerQueries, useCustomerQuery, useDeleteCustomerMutation } from '@/api/customer'
+import {
+  customerQueries,
+  useCustomerQuery,
+  useDeleteCustomerMutation,
+} from '@/api/customer'
 import { metadataQueries, useCountriesQuery } from '@/api/metadata'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/atoms/Dialog'
@@ -103,8 +107,7 @@ function CustomerDetailPage() {
     null,
   )
   const [isDeletingAddress, setIsDeletingAddress] = useState(false)
-  const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] =
-    useState(false)
+  const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] = useState(false)
 
   const {
     data: customer,
@@ -137,7 +140,10 @@ function CustomerDetailPage() {
     const fetchAddresses = async () => {
       try {
         setIsLoadingAddresses(true)
-        const data = await addressApi.listAddresses(businessDescriptor, customerId)
+        const data = await addressApi.listAddresses(
+          businessDescriptor,
+          customerId,
+        )
         if (!mounted) return
         setAddresses(data)
       } catch (err) {
@@ -256,7 +262,9 @@ function CustomerDetailPage() {
         editingAddress.id,
         data as UpdateAddressRequest,
       )
-      setAddresses((prev) => prev.map((a) => (a.id === updated.id ? updated : a)))
+      setAddresses((prev) =>
+        prev.map((a) => (a.id === updated.id ? updated : a)),
+      )
       return updated
     }
 
@@ -299,7 +307,9 @@ function CustomerDetailPage() {
             <span className="hidden sm:inline">{t('common.back')}</span>
           </button>
 
-          <h1 className="text-2xl font-bold flex-1 truncate">{customer.name}</h1>
+          <h1 className="text-2xl font-bold flex-1 truncate">
+            {customer.name}
+          </h1>
 
           <div className="flex gap-2">
             <button
@@ -420,7 +430,10 @@ function CustomerDetailPage() {
                     </div>
 
                     <div className="flex items-start gap-3">
-                      <Globe size={18} className="text-base-content/60 mt-0.5" />
+                      <Globe
+                        size={18}
+                        className="text-base-content/60 mt-0.5"
+                      />
                       <div className="flex-1">
                         <div className="text-xs text-base-content/60">
                           {t('customers.form.country')}
@@ -431,7 +444,9 @@ function CustomerDetailPage() {
                               {getCountryInfo(customer.countryCode).flag}
                             </span>
                           )}
-                          <span>{getCountryInfo(customer.countryCode).name}</span>
+                          <span>
+                            {getCountryInfo(customer.countryCode).name}
+                          </span>
                         </div>
                       </div>
                     </div>
@@ -476,7 +491,8 @@ function CustomerDetailPage() {
                             handleDeleteAddressClick(address.id)
                           }}
                           isDeleting={
-                            isDeletingAddress && deletingAddressId === address.id
+                            isDeletingAddress &&
+                            deletingAddressId === address.id
                           }
                         />
                       ))}
@@ -484,7 +500,9 @@ function CustomerDetailPage() {
                   ) : (
                     <div className="text-center py-8 text-base-content/60">
                       <MapPin size={32} className="mx-auto mb-2 opacity-40" />
-                      <p className="mb-3">{t('customers.details.no_addresses')}</p>
+                      <p className="mb-3">
+                        {t('customers.details.no_addresses')}
+                      </p>
                       <button
                         type="button"
                         className="btn btn-outline btn-sm gap-2"
@@ -542,7 +560,10 @@ function CustomerDetailPage() {
             queryKey: queryKeys.customers.list(businessDescriptor),
           })
           void queryClient.invalidateQueries({
-            queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
+            queryKey: queryKeys.customers.detail(
+              businessDescriptor,
+              customerId,
+            ),
           })
           setIsEditOpen(false)
         }}
@@ -575,7 +596,9 @@ function CustomerDetailPage() {
               }}
               disabled={isDeleting}
             >
-              {isDeleting && <span className="loading loading-spinner loading-sm" />}
+              {isDeleting && (
+                <span className="loading loading-spinner loading-sm" />
+              )}
               {t('common.delete')}
             </button>
           </div>
@@ -592,6 +615,7 @@ function CustomerDetailPage() {
         }}
         onSubmit={handleAddressSubmit}
         address={editingAddress}
+        businessDescriptor={businessDescriptor}
       />
 
       <Dialog

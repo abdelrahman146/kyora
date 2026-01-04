@@ -63,7 +63,13 @@
     "integer": "Must be a whole number.",
     "max_photos": "Maximum 10 photos allowed.",
     "at_least_one_variant": "At least one variant is required.",
-    "max_variants": "Maximum 50 variants allowed."
+    "max_variants": "Maximum 50 variants allowed.",
+    "shipping_zone_required": "Please select a shipping zone.",
+    "country_required": "Please select a country.",
+    "state_required": "State is required.",
+    "city_required": "City is required.",
+    "phone_required": "Phone number is required.",
+    "phone_code_required": "Phone code is required."
   },
   "form": {
     "minItemsRequired": "At least {{min}} item(s) required.",

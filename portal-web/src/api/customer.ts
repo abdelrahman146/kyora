@@ -33,6 +33,7 @@ export interface ListCustomersFilters {
 export interface CustomerAddress {
   id: string
   customerId: string
+  shippingZoneId: string | null
   street: string | null
   city: string
   state: string
