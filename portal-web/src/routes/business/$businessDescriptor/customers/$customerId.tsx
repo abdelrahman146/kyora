@@ -1,9 +1,10 @@
-import { createFileRoute, useNavigate } from '@tanstack/react-router'
+import { Link, createFileRoute, useNavigate } from '@tanstack/react-router'
 import { Suspense, useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   ArrowLeft,
+  Calendar,
   Edit,
   Globe,
   Mail,
@@ -14,18 +15,23 @@ import {
   Trash2,
   User,
 } from 'lucide-react'
+import { FaWhatsapp } from 'react-icons/fa'
 
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress, CustomerGender } from '@/api/customer'
+import type { Order } from '@/api/order'
 import type { RouterContext } from '@/router'
 import { addressApi, addressQueries } from '@/api/address'
 import {
   customerQueries,
+  useCreateCustomerNoteMutation,
   useCustomerQuery,
   useDeleteCustomerMutation,
 } from '@/api/customer'
+import { orderApi } from '@/api/order'
 import { metadataQueries, useCountriesQuery } from '@/api/metadata'
 import { Avatar } from '@/components/atoms/Avatar'
+import { StatCard } from '@/components/atoms/StatCard'
 import { Dialog } from '@/components/atoms/Dialog'
 import { CustomerDetailSkeleton } from '@/components/atoms/skeletons/CustomerDetailSkeleton'
 import { AddressCard } from '@/components/molecules/AddressCard'
@@ -33,9 +39,12 @@ import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { SocialMediaHandles } from '@/components/molecules/SocialMediaHandles'
 import { AddressSheet } from '@/components/organisms/customers/AddressSheet'
 import { EditCustomerSheet } from '@/components/organisms/customers'
+import { CustomerNotes } from '@/components/organisms/customers/CustomerNotes'
 import { queryKeys } from '@/lib/queryKeys'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
+import { formatCurrency } from '@/lib/formatCurrency'
+import { formatDateShort } from '@/lib/formatDate'
 
 /**
  * Customer Detail Route
@@ -80,6 +89,7 @@ export const Route = createFileRoute(
 
 function CustomerDetailPage() {
   const { t, i18n } = useTranslation()
+  const { t: tOrders } = useTranslation('orders')
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
   const { businessDescriptor, customerId } = Route.useParams()
@@ -109,6 +119,13 @@ function CustomerDetailPage() {
   const [isDeletingAddress, setIsDeletingAddress] = useState(false)
   const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] = useState(false)
 
+  // Recent orders state
+  const [recentOrders, setRecentOrders] = useState<Array<Order>>([])
+  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
+
+  // Customer notes state
+  const [isAddingNote, setIsAddingNote] = useState(false)
+
   const {
     data: customer,
     isLoading,
@@ -134,6 +151,23 @@ function CustomerDetailPage() {
     },
   })
 
+  const createNoteMutation = useCreateCustomerNoteMutation(
+    businessDescriptor,
+    customerId,
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
+        })
+        showSuccessToast(t('customers.details.note_added'))
+      },
+      onError: (err) => {
+        void showErrorFromException(err, t)
+      },
+    },
+  )
+
+  // Load addresses
   useEffect(() => {
     let mounted = true
 
@@ -162,6 +196,38 @@ function CustomerDetailPage() {
       mounted = false
     }
   }, [businessDescriptor, customerId, i18n.language, t])
+
+  // Load recent orders
+  useEffect(() => {
+    let mounted = true
+
+    const fetchOrders = async () => {
+      try {
+        setIsLoadingOrders(true)
+        const data = await orderApi.listOrders(businessDescriptor, {
+          customerId,
+          page: 1,
+          pageSize: 5,
+          orderBy: ['-orderedAt'],
+        })
+        if (!mounted) return
+        setRecentOrders(data.items)
+      } catch (err) {
+        if (!mounted) return
+        // Silent fail for orders - not critical
+      } finally {
+        if (mounted) {
+          setIsLoadingOrders(false)
+        }
+      }
+    }
+
+    void fetchOrders()
+
+    return () => {
+      mounted = false
+    }
+  }, [businessDescriptor, customerId])
 
   const getInitials = (name: string): string => {
     return name
@@ -252,6 +318,15 @@ function CustomerDetailPage() {
     }
   }
 
+  const handleAddNote = async (content: string) => {
+    try {
+      setIsAddingNote(true)
+      await createNoteMutation.mutateAsync(content)
+    } finally {
+      setIsAddingNote(false)
+    }
+  }
+
   const handleAddressSubmit = async (
     data: CreateAddressRequest | UpdateAddressRequest,
   ): Promise<CustomerAddress> => {
@@ -277,6 +352,25 @@ function CustomerDetailPage() {
     return created
   }
 
+  const handleWhatsAppClick = () => {
+    if (!customer?.whatsappNumber) return
+    const cleanNumber = customer.whatsappNumber.replace(/[^\d+]/g, '')
+    window.open(`https://wa.me/${cleanNumber}`, '_blank', 'noopener,noreferrer')
+  }
+
+  const getOrderStatusBadgeClass = (status: Order['status']): string => {
+    const statusMap: Record<Order['status'], string> = {
+      pending: 'badge-warning',
+      placed: 'badge-info',
+      ready_for_shipment: 'badge-info',
+      shipped: 'badge-primary',
+      fulfilled: 'badge-success',
+      cancelled: 'badge-error',
+      returned: 'badge-error',
+    }
+    return statusMap[status] || 'badge-ghost'
+  }
+
   if (isLoading) {
     return <CustomerDetailSkeleton />
   }
@@ -294,8 +388,8 @@ function CustomerDetailPage() {
 
   return (
     <>
-      <div className="space-y-4">
-        {/* Header */}
+      <div className="space-y-6">
+        {/* Header with Back Button */}
         <div className="flex items-center gap-4">
           <button
             type="button"
@@ -310,249 +404,354 @@ function CustomerDetailPage() {
           <h1 className="text-2xl font-bold flex-1 truncate">
             {customer.name}
           </h1>
+        </div>
 
-          <div className="flex gap-2">
-            <button
-              type="button"
-              className="btn btn-outline btn-sm gap-2"
-              onClick={() => {
-                setIsEditOpen(true)
-              }}
-            >
-              <Edit size={16} />
-              <span className="hidden sm:inline">{t('common.edit')}</span>
-            </button>
-            <button
-              type="button"
-              className="btn btn-error btn-outline btn-sm gap-2"
-              onClick={() => {
-                setIsDeleteDialogOpen(true)
-              }}
-            >
-              <Trash2 size={16} />
-              <span className="hidden sm:inline">{t('common.delete')}</span>
-            </button>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <StatCard
+            label={t('customers.orders_count')}
+            value={customer.ordersCount ?? 0}
+            icon={<ShoppingBag size={24} className="text-success" />}
+            variant="success"
+          />
+          <StatCard
+            label={t('customers.total_spent')}
+            value={formatCurrency(customer.totalSpent ?? 0, currency)}
+            icon={<ShoppingBag size={24} className="text-primary" />}
+            variant="default"
+          />
+        </div>
+
+        {/* Quick Actions */}
+        <div className="card bg-base-100 border border-base-300">
+          <div className="card-body p-4">
+            <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
+              {t('dashboard.quick_actions')}
+            </h3>
+            <div className="flex flex-col sm:flex-row gap-2">
+              <button
+                type="button"
+                className="btn btn-primary btn-sm sm:flex-1 gap-2"
+                onClick={() => setIsEditOpen(true)}
+              >
+                <Edit size={16} />
+                <span>{t('common.edit')}</span>
+              </button>
+              {customer.whatsappNumber && (
+                <button
+                  type="button"
+                  className="btn btn-success btn-outline btn-sm sm:flex-1 gap-2"
+                  onClick={handleWhatsAppClick}
+                >
+                  <FaWhatsapp size={16} />
+                  <span>{t('customers.talk_on_whatsapp')}</span>
+                </button>
+              )}
+              <button
+                type="button"
+                className="btn btn-error btn-outline btn-sm sm:flex-1 gap-2"
+                onClick={() => setIsDeleteDialogOpen(true)}
+              >
+                <Trash2 size={16} />
+                <span>{t('common.delete')}</span>
+              </button>
+            </div>
           </div>
         </div>
 
-        {/* Header Card with Avatar */}
-        <div className="card bg-base-100 border border-base-300">
-          <div className="card-body">
-            <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4">
-              <Avatar
-                src={customer.avatarUrl}
-                alt={customer.name}
-                fallback={getInitials(customer.name)}
-                size="xl"
-              />
+        {/* Desktop: 2-column layout, Mobile: stacked */}
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+          {/* Left Column */}
+          <div className="space-y-6">
+            {/* Customer Details Card */}
+            <div className="card bg-base-100 border border-base-300">
+              <div className="card-body p-4">
+                <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-4">
+                  {t('customers.details.title')}
+                </h3>
 
-              <div className="flex-1 text-center sm:text-start">
-                <h2 className="text-2xl font-bold">{customer.name}</h2>
-
-                {customer.email && (
-                  <div className="flex items-center gap-2 justify-center sm:justify-start mt-2 text-base-content/70">
-                    <Mail size={16} />
-                    <span>{customer.email}</span>
-                  </div>
-                )}
-
-                {formatPhone() && (
-                  <div className="flex items-center gap-2 justify-center sm:justify-start mt-1 text-base-content/70">
-                    <Phone size={16} />
-                    <span dir="ltr">{formatPhone()}</span>
-                  </div>
-                )}
-
-                {/* Stats */}
-                <div className="grid grid-cols-2 gap-4 mt-6">
-                  <div className="stat bg-base-200 rounded-box p-4">
-                    <div className="stat-figure text-success">
-                      <ShoppingBag size={28} />
-                    </div>
-                    <div className="stat-title text-sm">
-                      {t('customers.orders_count')}
-                    </div>
-                    <div className="text-2xl font-bold text-success">
-                      {customer.ordersCount ?? 0}
-                    </div>
-                  </div>
-                  <div className="stat bg-base-200 rounded-box p-4">
-                    <div className="stat-title text-sm">
-                      {t('customers.total_spent')}
-                    </div>
-                    <div className="text-2xl font-bold text-primary">
-                      {currency}{' '}
-                      {(customer.totalSpent ?? 0).toLocaleString(
-                        isArabic ? 'ar-AE' : 'en-US',
-                        {
-                          minimumFractionDigits: 2,
-                          maximumFractionDigits: 2,
-                        },
-                      )}
+                {/* Avatar + Basic Info */}
+                <div className="flex items-start gap-2 mb-6 pb-6 border-b border-base-300">
+                  <Avatar
+                    src={customer.avatarUrl}
+                    alt={customer.name}
+                    fallback={getInitials(customer.name)}
+                    size="md"
+                  />
+                  <div className="flex-1 min-w-0">
+                    <h2 className="text-xl font-bold truncate mb-1">
+                      {customer.name}
+                    </h2>
+                    <div className="flex items-center gap-1 text-xs text-base-content/60">
+                      <Calendar size={14} />
+                      <span>
+                        {t('customers.details.joined')}{' '}
+                        {formatDateShort(customer.joinedAt)}
+                      </span>
                     </div>
                   </div>
                 </div>
-              </div>
-            </div>
 
-            {/* Social Media Handles */}
-            <div className="mt-6">
-              <SocialMediaHandles
-                instagramUsername={customer.instagramUsername}
-                facebookUsername={customer.facebookUsername}
-                tiktokUsername={customer.tiktokUsername}
-                snapchatUsername={customer.snapchatUsername}
-                xUsername={customer.xUsername}
-                whatsappNumber={customer.whatsappNumber}
-              />
-            </div>
-
-            {/* Details Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mt-6">
-              {/* Basic Information */}
-              <div className="card bg-base-100 border border-base-300">
-                <div className="card-body">
-                  <h3 className="card-title text-lg">
-                    {t('customers.details.basic_info')}
-                  </h3>
-
-                  <div className="space-y-3 mt-4">
+                {/* Contact Details */}
+                <div className="space-y-4">
+                  {customer.email && (
                     <div className="flex items-start gap-3">
-                      <User size={18} className="text-base-content/60 mt-0.5" />
-                      <div className="flex-1">
-                        <div className="text-xs text-base-content/60">
-                          {t('customers.form.gender')}
-                        </div>
-                        <div className="font-medium">
-                          {getGenderLabel(customer.gender)}
-                        </div>
-                      </div>
-                    </div>
-
-                    <div className="flex items-start gap-3">
-                      <Globe
+                      <Mail
                         size={18}
-                        className="text-base-content/60 mt-0.5"
+                        className="text-base-content/40 mt-0.5 flex-shrink-0"
                       />
-                      <div className="flex-1">
-                        <div className="text-xs text-base-content/60">
-                          {t('customers.form.country')}
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-base-content/60 mb-0.5">
+                          {t('customers.form.email')}
                         </div>
-                        <div className="flex items-center gap-2 font-medium">
-                          {getCountryInfo(customer.countryCode).flag && (
-                            <span className="text-lg">
-                              {getCountryInfo(customer.countryCode).flag}
-                            </span>
-                          )}
-                          <span>
-                            {getCountryInfo(customer.countryCode).name}
+                        <div className="font-medium break-all">
+                          {customer.email}
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {formatPhone() && (
+                    <div className="flex items-start gap-3">
+                      <Phone
+                        size={18}
+                        className="text-base-content/40 mt-0.5 flex-shrink-0"
+                      />
+                      <div className="flex-1 min-w-0">
+                        <div className="text-xs text-base-content/60 mb-0.5">
+                          {t('customers.phone')}
+                        </div>
+                        <span className="font-medium" dir="ltr">
+                          {formatPhone()}
+                        </span>
+                      </div>
+                    </div>
+                  )}
+
+                  <div className="flex items-start gap-3">
+                    <User
+                      size={18}
+                      className="text-base-content/40 mt-0.5 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-base-content/60 mb-0.5">
+                        {t('customers.form.gender')}
+                      </div>
+                      <div className="font-medium">
+                        {getGenderLabel(customer.gender)}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="flex items-start gap-3">
+                    <Globe
+                      size={18}
+                      className="text-base-content/40 mt-0.5 flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <div className="text-xs text-base-content/60 mb-0.5">
+                        {t('customers.form.country')}
+                      </div>
+                      <div className="flex items-center gap-2 font-medium">
+                        {getCountryInfo(customer.countryCode).flag && (
+                          <span className="text-lg leading-none">
+                            {getCountryInfo(customer.countryCode).flag}
                           </span>
-                        </div>
+                        )}
+                        <span>{getCountryInfo(customer.countryCode).name}</span>
                       </div>
                     </div>
                   </div>
                 </div>
-              </div>
 
-              {/* Addresses */}
-              <div className="card bg-base-100 border border-base-300">
-                <div className="card-body">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="card-title text-lg">
-                      {t('customers.details.addresses')}
-                    </h3>
+                {/* Social Media Handles */}
+                {(customer.instagramUsername ||
+                  customer.facebookUsername ||
+                  customer.tiktokUsername ||
+                  customer.snapchatUsername ||
+                  customer.xUsername ||
+                  customer.whatsappNumber) && (
+                  <div className="border-t border-base-300 pt-4 mt-6">
+                    <div className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-3">
+                      {t('customers.details.social_media')}
+                    </div>
+                    <SocialMediaHandles
+                      instagramUsername={customer.instagramUsername}
+                      facebookUsername={customer.facebookUsername}
+                      tiktokUsername={customer.tiktokUsername}
+                      snapchatUsername={customer.snapchatUsername}
+                      xUsername={customer.xUsername}
+                      whatsappNumber={customer.whatsappNumber}
+                      size="md"
+                    />
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {/* Addresses Card */}
+            <div className="card bg-base-100 border border-base-300">
+              <div className="card-body p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+                    {t('customers.details.addresses')}
+                  </h3>
+                  <button
+                    type="button"
+                    className="btn btn-primary btn-sm gap-2"
+                    onClick={handleAddAddress}
+                  >
+                    <Plus size={16} />
+                    <span className="hidden sm:inline">
+                      {t('customers.address.add_button')}
+                    </span>
+                    <span className="sm:hidden">+</span>
+                  </button>
+                </div>
+
+                {isLoadingAddresses ? (
+                  <div className="space-y-3">
+                    <div className="skeleton h-32 rounded-xl"></div>
+                    <div className="skeleton h-32 rounded-xl"></div>
+                  </div>
+                ) : addresses.length > 0 ? (
+                  <div className="space-y-3">
+                    {addresses.map((address) => (
+                      <AddressCard
+                        key={address.id}
+                        address={address}
+                        onEdit={() => handleEditAddress(address)}
+                        onDelete={() => handleDeleteAddressClick(address.id)}
+                        isDeleting={
+                          isDeletingAddress && deletingAddressId === address.id
+                        }
+                      />
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-12 text-base-content/60">
+                    <div className="size-16 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-4">
+                      <MapPin size={32} className="opacity-40" />
+                    </div>
+                    <p className="font-medium mb-4">
+                      {t('customers.details.no_addresses')}
+                    </p>
                     <button
                       type="button"
-                      className="btn btn-primary btn-sm gap-2"
+                      className="btn btn-outline btn-sm gap-2"
                       onClick={handleAddAddress}
                     >
                       <Plus size={16} />
-                      <span className="hidden sm:inline">
-                        {t('customers.address.add_button')}
-                      </span>
+                      {t('customers.address.add_first')}
                     </button>
                   </div>
-
-                  {isLoadingAddresses ? (
-                    <div className="space-y-3">
-                      <div className="skeleton h-24 rounded-box"></div>
-                      <div className="skeleton h-24 rounded-box"></div>
-                    </div>
-                  ) : addresses.length > 0 ? (
-                    <div className="space-y-3">
-                      {addresses.map((address) => (
-                        <AddressCard
-                          key={address.id}
-                          address={address}
-                          onEdit={() => {
-                            handleEditAddress(address)
-                          }}
-                          onDelete={() => {
-                            handleDeleteAddressClick(address.id)
-                          }}
-                          isDeleting={
-                            isDeletingAddress &&
-                            deletingAddressId === address.id
-                          }
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-base-content/60">
-                      <MapPin size={32} className="mx-auto mb-2 opacity-40" />
-                      <p className="mb-3">
-                        {t('customers.details.no_addresses')}
-                      </p>
-                      <button
-                        type="button"
-                        className="btn btn-outline btn-sm gap-2"
-                        onClick={handleAddAddress}
-                      >
-                        <Plus size={16} />
-                        {t('customers.address.add_first')}
-                      </button>
-                    </div>
-                  )}
-                </div>
+                )}
               </div>
             </div>
+          </div>
 
-            {/* Notes Section */}
-            {customer.notes && customer.notes.length > 0 && (
-              <div className="card bg-base-100 border border-base-300 mt-6">
-                <div className="card-body">
-                  <h3 className="card-title text-lg">
-                    {t('customers.details.notes')}
+          {/* Right Column */}
+          <div className="space-y-6">
+            {/* Customer Notes - Always show */}
+            <CustomerNotes
+              notes={customer.notes ?? []}
+              onAddNote={handleAddNote}
+              isAddingNote={isAddingNote}
+            />
+
+            {/* Recent Orders */}
+            <div className="card bg-base-100 border border-base-300">
+              <div className="card-body p-4">
+                <div className="flex items-center justify-between mb-4">
+                  <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
+                    {t('customers.details.recent_orders')}
                   </h3>
-                  <div className="space-y-2 mt-4">
-                    {customer.notes.map((note) => (
-                      <div key={note.id} className="p-3 bg-base-200 rounded-lg">
-                        <p className="text-sm">{note.content}</p>
-                        <div className="text-xs text-base-content/60 mt-2">
-                          {new Date(note.createdAt).toLocaleDateString(
-                            isArabic ? 'ar-AE' : 'en-US',
-                            {
-                              year: 'numeric',
-                              month: 'long',
-                              day: 'numeric',
-                            },
-                          )}
+                  {recentOrders.length > 0 && (
+                    <Link
+                      to="/business/$businessDescriptor/orders"
+                      params={{ businessDescriptor }}
+                      search={{
+                        customerId,
+                        page: 1,
+                        pageSize: 20,
+                      }}
+                      className="btn btn-ghost btn-sm gap-2"
+                    >
+                      <span className="hidden sm:inline">
+                        {t('customers.details.view_all_orders')}
+                      </span>
+                      <span className="sm:hidden">{t('common.view')}</span>
+                      <ArrowLeft
+                        size={16}
+                        className={isArabic ? '' : 'rotate-180'}
+                      />
+                    </Link>
+                  )}
+                </div>
+
+                {isLoadingOrders ? (
+                  <div className="space-y-3">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                      <div
+                        key={i}
+                        className="skeleton h-20 rounded-lg animate-pulse"
+                      ></div>
+                    ))}
+                  </div>
+                ) : recentOrders.length > 0 ? (
+                  <div className="space-y-2">
+                    {recentOrders.map((order) => (
+                      <div
+                        key={order.id}
+                        className="flex flex-col sm:flex-row sm:items-center justify-between p-3 rounded-lg border border-base-300 gap-3"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
+                            <span className="font-semibold">
+                              #{order.orderNumber}
+                            </span>
+                            <span
+                              className={`badge badge-sm ${getOrderStatusBadgeClass(order.status)}`}
+                            >
+                              {tOrders(`status_${order.status}`)}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-2 text-xs text-base-content/60">
+                            <Calendar size={12} />
+                            <span>{formatDateShort(order.orderedAt)}</span>
+                          </div>
+                        </div>
+                        <div className="text-start sm:text-end flex-shrink-0">
+                          <div className="font-bold text-primary text-lg">
+                            {formatCurrency(
+                              parseFloat(order.total),
+                              order.currency,
+                            )}
+                          </div>
                         </div>
                       </div>
                     ))}
                   </div>
-                </div>
+                ) : (
+                  <div className="text-center py-12 text-base-content/60">
+                    <div className="size-16 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-4">
+                      <ShoppingBag size={32} className="opacity-40" />
+                    </div>
+                    <p className="font-medium">
+                      {t('customers.details.no_orders')}
+                    </p>
+                  </div>
+                )}
               </div>
-            )}
+            </div>
           </div>
         </div>
       </div>
 
+      {/* Edit Customer Sheet */}
       <EditCustomerSheet
         isOpen={isEditOpen}
-        onClose={() => {
-          setIsEditOpen(false)
-        }}
+        onClose={() => setIsEditOpen(false)}
         businessDescriptor={businessDescriptor}
         customer={customer}
         onUpdated={() => {
@@ -569,11 +768,10 @@ function CustomerDetailPage() {
         }}
       />
 
+      {/* Delete Customer Dialog */}
       <Dialog
         open={isDeleteDialogOpen}
-        onClose={() => {
-          setIsDeleteDialogOpen(false)
-        }}
+        onClose={() => setIsDeleteDialogOpen(false)}
         title={t('customers.delete_confirm_title')}
         size="sm"
         footer={
@@ -581,9 +779,7 @@ function CustomerDetailPage() {
             <button
               type="button"
               className="btn btn-ghost"
-              onClick={() => {
-                setIsDeleteDialogOpen(false)
-              }}
+              onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
               {t('common.cancel')}
@@ -591,9 +787,7 @@ function CustomerDetailPage() {
             <button
               type="button"
               className="btn btn-error"
-              onClick={() => {
-                void handleDeleteCustomer()
-              }}
+              onClick={() => void handleDeleteCustomer()}
               disabled={isDeleting}
             >
               {isDeleting && (
@@ -607,6 +801,7 @@ function CustomerDetailPage() {
         <p>{t('customers.delete_confirm_message', { name: customer.name })}</p>
       </Dialog>
 
+      {/* Address Sheet */}
       <AddressSheet
         isOpen={isAddressSheetOpen}
         onClose={() => {
@@ -618,6 +813,7 @@ function CustomerDetailPage() {
         businessDescriptor={businessDescriptor}
       />
 
+      {/* Delete Address Dialog */}
       <Dialog
         open={addressDeleteDialogOpen}
         onClose={() => {
@@ -642,9 +838,7 @@ function CustomerDetailPage() {
             <button
               type="button"
               className="btn btn-error"
-              onClick={() => {
-                void handleDeleteAddressConfirm()
-              }}
+              onClick={() => void handleDeleteAddressConfirm()}
               disabled={isDeletingAddress}
             >
               {isDeletingAddress && (

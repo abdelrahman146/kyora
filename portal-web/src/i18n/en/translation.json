@@ -98,6 +98,7 @@
     "settings": "Settings",
     "help": "Help & Support",
     "dashboard": "Dashboard",
+    "quick_actions": "Quick Actions",
     "inventory": "Inventory",
     "orders": "Orders",
     "customers": "Customers",
@@ -266,12 +267,22 @@
     "delete_confirm_message": "Are you sure you want to delete {{name}}? This action cannot be undone.",
     "delete_success": "Customer deleted successfully",
     "details_title": "Customer Details",
+    "talk_on_whatsapp": "Talk on WhatsApp",
+    "phone": "Phone",
     "details": {
+      "title": "Customer Information",
       "basic_info": "Basic Information",
       "addresses": "Addresses",
       "notes": "Notes",
+      "add_note": "Add Note",
+      "note_added": "Note added successfully",
       "no_addresses": "No addresses added yet",
-      "no_notes": "No notes added yet"
+      "no_notes": "No notes added yet",
+      "joined": "Joined on",
+      "social_media": "Social Media",
+      "recent_orders": "Recent Orders",
+      "view_all_orders": "View All Orders",
+      "no_orders": "No orders yet"
     },
     "address": {
       "add_title": "Add Address",

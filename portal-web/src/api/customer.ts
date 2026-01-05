@@ -216,6 +216,20 @@ export const customerApi = {
       `v1/businesses/${businessDescriptor}/customers/${customerId}`,
     )
   },
+
+  /**
+   * Create a note for a customer
+   */
+  async createCustomerNote(
+    businessDescriptor: string,
+    customerId: string,
+    content: string,
+  ): Promise<CustomerNote> {
+    return post<CustomerNote>(
+      `v1/businesses/${businessDescriptor}/customers/${customerId}/notes`,
+      { json: { content } },
+    )
+  },
 }
 
 /**
@@ -356,6 +370,21 @@ export function useDeleteCustomerMutation(
   return useMutation({
     mutationFn: (customerId: string) =>
       customerApi.deleteCustomer(businessDescriptor, customerId),
+    ...options,
+  })
+}
+
+/**
+ * Mutation to create a customer note
+ */
+export function useCreateCustomerNoteMutation(
+  businessDescriptor: string,
+  customerId: string,
+  options?: UseMutationOptions<CustomerNote, Error, string>,
+) {
+  return useMutation({
+    mutationFn: (content: string) =>
+      customerApi.createCustomerNote(businessDescriptor, customerId, content),
     ...options,
   })
 }

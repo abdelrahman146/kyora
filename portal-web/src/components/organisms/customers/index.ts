@@ -7,3 +7,4 @@ export {
   type EditCustomerSheetProps,
 } from './EditCustomerSheet'
 export { AddressSheet, type AddressSheetProps } from './AddressSheet'
+export { CustomerNotes, type CustomerNotesProps } from './CustomerNotes'

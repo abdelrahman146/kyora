@@ -98,6 +98,7 @@
     "settings": "الإعدادات",
     "help": "المساعدة والدعم",
     "dashboard": "لوحة التحكم",
+    "quick_actions": "إجراءات سريعة",
     "inventory": "المخزون",
     "orders": "الطلبات",
     "customers": "العملاء",
@@ -266,12 +267,22 @@
     "delete_confirm_message": "هل أنت متأكد من حذف {{name}}؟ لا يمكن التراجع عن هذا الإجراء.",
     "delete_success": "تم حذف العميل بنجاح",
     "details_title": "تفاصيل العميل",
+    "talk_on_whatsapp": "تواصل عبر واتساب",
+    "phone": "الهاتف",
     "details": {
+      "title": "معلومات العميل",
       "basic_info": "المعلومات الأساسية",
       "addresses": "العناوين",
       "notes": "الملاحظات",
+      "add_note": "إضافة ملاحظة",
+      "note_added": "تمت إضافة الملاحظة بنجاح",
       "no_addresses": "لم تتم إضافة عناوين بعد",
-      "no_notes": "لم تتم إضافة ملاحظات بعد"
+      "no_notes": "لم تتم إضافة ملاحظات بعد",
+      "joined": "انضم في",
+      "social_media": "وسائل التواصل الاجتماعي",
+      "recent_orders": "الطلبات الأخيرة",
+      "view_all_orders": "عرض كل الطلبات",
+      "no_orders": "لا توجد طلبات حتى الآن"
     },
     "address": {
       "add_title": "إضافة عنوان",
