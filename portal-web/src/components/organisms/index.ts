@@ -13,6 +13,7 @@ export * from './BottomNav'
 // Data Display
 export * from './Table'
 export * from './FilterButton'
+export * from './Notes'
 
 // Forms
 export * from './LoginForm'

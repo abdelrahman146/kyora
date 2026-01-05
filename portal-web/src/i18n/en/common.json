@@ -130,6 +130,30 @@
     "create": "Create",
     "retry": "Retry"
   },
+  "notes": {
+    "section_label": "Notes section",
+    "title": "Notes",
+    "notes": "Notes",
+    "no_notes": "No notes yet",
+    "empty_description": "Add notes to keep track of important information",
+    "add_note": "Add Note",
+    "add": "Add",
+    "add_first_note": "Add First Note",
+    "note_label": "Note from",
+    "delete_note": "Delete note",
+    "count": "{{count}} note",
+    "count_plural": "{{count}} notes",
+    "content_label": "Note Content",
+    "content_placeholder": "Write your note here...",
+    "keyboard_shortcut_hint": "to save",
+    "adding": "Adding...",
+    "note_added": "Note added successfully",
+    "note_deleted": "Note deleted successfully",
+    "validation": {
+      "required": "Please write a note",
+      "max_length": "Note cannot exceed {{max}} characters"
+    }
+  },
   "validation": {
     "required": "This field is required",
     "invalid_email": "Invalid email address",

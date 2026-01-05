@@ -27,6 +27,7 @@ import {
   useCreateCustomerNoteMutation,
   useCustomerQuery,
   useDeleteCustomerMutation,
+  useDeleteCustomerNoteMutation,
 } from '@/api/customer'
 import { orderApi } from '@/api/order'
 import { metadataQueries, useCountriesQuery } from '@/api/metadata'
@@ -39,7 +40,7 @@ import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
 import { SocialMediaHandles } from '@/components/molecules/SocialMediaHandles'
 import { AddressSheet } from '@/components/organisms/customers/AddressSheet'
 import { EditCustomerSheet } from '@/components/organisms/customers'
-import { CustomerNotes } from '@/components/organisms/customers/CustomerNotes'
+import { Notes } from '@/components/organisms/Notes'
 import { queryKeys } from '@/lib/queryKeys'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
@@ -125,6 +126,8 @@ function CustomerDetailPage() {
 
   // Customer notes state
   const [isAddingNote, setIsAddingNote] = useState(false)
+  const [isDeletingNote, setIsDeletingNote] = useState(false)
+  const [deletingNoteId, setDeletingNoteId] = useState<string | null>(null)
 
   const {
     data: customer,
@@ -159,7 +162,23 @@ function CustomerDetailPage() {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
         })
-        showSuccessToast(t('customers.details.note_added'))
+        showSuccessToast(t('notes.note_added', { ns: 'common' }))
+      },
+      onError: (err) => {
+        void showErrorFromException(err, t)
+      },
+    },
+  )
+
+  const deleteNoteMutation = useDeleteCustomerNoteMutation(
+    businessDescriptor,
+    customerId,
+    {
+      onSuccess: () => {
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
+        })
+        showSuccessToast(t('notes.note_deleted', { ns: 'common' }))
       },
       onError: (err) => {
         void showErrorFromException(err, t)
@@ -324,6 +343,17 @@ function CustomerDetailPage() {
       await createNoteMutation.mutateAsync(content)
     } finally {
       setIsAddingNote(false)
+    }
+  }
+
+  const handleDeleteNote = async (noteId: string) => {
+    try {
+      setIsDeletingNote(true)
+      setDeletingNoteId(noteId)
+      await deleteNoteMutation.mutateAsync(noteId)
+    } finally {
+      setIsDeletingNote(false)
+      setDeletingNoteId(null)
     }
   }
 
@@ -605,7 +635,6 @@ function CustomerDetailPage() {
                     <span className="hidden sm:inline">
                       {t('customers.address.add_button')}
                     </span>
-                    <span className="sm:hidden">+</span>
                   </button>
                 </div>
 
@@ -653,10 +682,13 @@ function CustomerDetailPage() {
           {/* Right Column */}
           <div className="space-y-6">
             {/* Customer Notes - Always show */}
-            <CustomerNotes
+            <Notes
               notes={customer.notes ?? []}
               onAddNote={handleAddNote}
+              onDeleteNote={handleDeleteNote}
               isAddingNote={isAddingNote}
+              isDeletingNote={isDeletingNote}
+              deletingNoteId={deletingNoteId}
             />
 
             {/* Recent Orders */}

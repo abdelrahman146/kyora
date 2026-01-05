@@ -50,9 +50,9 @@ export interface CustomerNote {
   id: string
   customerId: string
   content: string
-  createdAt: string
-  updatedAt: string
-  deletedAt: string | null
+  CreatedAt: string
+  UpdatedAt: string
+  DeletedAt: string | null
 }
 
 export interface Customer {
@@ -230,6 +230,19 @@ export const customerApi = {
       { json: { content } },
     )
   },
+
+  /**
+   * Delete a note for a customer
+   */
+  async deleteCustomerNote(
+    businessDescriptor: string,
+    customerId: string,
+    noteId: string,
+  ): Promise<void> {
+    return del(
+      `v1/businesses/${businessDescriptor}/customers/${customerId}/notes/${noteId}`,
+    )
+  },
 }
 
 /**
@@ -385,6 +398,21 @@ export function useCreateCustomerNoteMutation(
   return useMutation({
     mutationFn: (content: string) =>
       customerApi.createCustomerNote(businessDescriptor, customerId, content),
+    ...options,
+  })
+}
+
+/**
+ * Mutation to delete a customer note
+ */
+export function useDeleteCustomerNoteMutation(
+  businessDescriptor: string,
+  customerId: string,
+  options?: UseMutationOptions<void, Error, string>,
+) {
+  return useMutation({
+    mutationFn: (noteId: string) =>
+      customerApi.deleteCustomerNote(businessDescriptor, customerId, noteId),
     ...options,
   })
 }

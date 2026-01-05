@@ -134,6 +134,30 @@
     "create": "إنشاء",
     "retry": "إعادة المحاولة"
   },
+  "notes": {
+    "section_label": "قسم الملاحظات",
+    "title": "الملاحظات",
+    "notes": "ملاحظات",
+    "no_notes": "لا توجد ملاحظات بعد",
+    "empty_description": "أضف ملاحظات لتتبع المعلومات المهمة",
+    "add_note": "إضافة ملاحظة",
+    "add": "إضافة",
+    "add_first_note": "إضافة أول ملاحظة",
+    "note_label": "ملاحظة من",
+    "delete_note": "حذف الملاحظة",
+    "count": "{{count}} ملاحظة",
+    "count_plural": "{{count}} ملاحظات",
+    "content_label": "محتوى الملاحظة",
+    "content_placeholder": "اكتب ملاحظتك هنا...",
+    "keyboard_shortcut_hint": "للحفظ",
+    "adding": "جارٍ الإضافة...",
+    "note_added": "تم إضافة الملاحظة بنجاح",
+    "note_deleted": "تم حذف الملاحظة بنجاح",
+    "validation": {
+      "required": "الرجاء كتابة ملاحظة",
+      "max_length": "لا يمكن أن تتجاوز الملاحظة {{max}} حرفًا"
+    }
+  },
   "validation": {
     "required": "هذا الحقل مطلوب",
     "invalid_email": "البريد الإلكتروني غير صالح",

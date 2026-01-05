@@ -12,7 +12,7 @@
  * - Auto-linking country to phone code
  */
 
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 import { Link } from '@tanstack/react-router'
@@ -63,6 +63,7 @@ export function AddressSheet({
   businessDescriptor,
 }: AddressSheetProps) {
   const { t } = useTranslation()
+  const formId = useId()
 
   // Fetch countries and shipping zones
   const { data: countries = [], isLoading: countriesLoading } =
@@ -215,17 +216,44 @@ export function AddressSheet({
   }, [selectedCountryCode, countries, countriesReady, form])
 
   return (
-    <BottomSheet
-      isOpen={isOpen}
-      onClose={onClose}
-      title={
-        address
-          ? t('customers.address.edit_title')
-          : t('customers.address.add_title')
-      }
-    >
-      <form.AppForm>
-        <form.FormRoot className="space-y-4" aria-busy={isSubmitting}>
+    <form.AppForm>
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={
+          address
+            ? t('customers.address.edit_title')
+            : t('customers.address.add_title')
+        }
+        footer={
+          <div className="flex gap-2">
+            <button
+              type="button"
+              className="btn btn-ghost flex-1"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              {t('common.cancel')}
+            </button>
+            <form.SubmitButton
+              variant="primary"
+              className="flex-1"
+              disabled={address ? !isDirty : false}
+              form={`address-form-${formId}`}
+            >
+              {isSubmitting && (
+                <span className="loading loading-spinner loading-sm" />
+              )}
+              {submitLabel ?? (address ? t('common.update') : t('common.add'))}
+            </form.SubmitButton>
+          </div>
+        }
+      >
+        <form.FormRoot
+          id={`address-form-${formId}`}
+          className="space-y-4"
+          aria-busy={isSubmitting}
+        >
           {/* Shipping Zone */}
           <form.AppField
             name="shippingZoneId"
@@ -376,30 +404,8 @@ export function AddressSheet({
               />
             )}
           </form.AppField>
-
-          {/* Footer Actions */}
-          <div className="flex gap-2 pt-4">
-            <button
-              type="button"
-              className="btn btn-ghost flex-1"
-              onClick={onClose}
-              disabled={isSubmitting}
-            >
-              {t('common.cancel')}
-            </button>
-            <form.SubmitButton
-              variant="primary"
-              className="flex-1"
-              disabled={address ? !isDirty : false}
-            >
-              {isSubmitting && (
-                <span className="loading loading-spinner loading-sm" />
-              )}
-              {submitLabel ?? (address ? t('common.update') : t('common.add'))}
-            </form.SubmitButton>
-          </div>
         </form.FormRoot>
-      </form.AppForm>
-    </BottomSheet>
+      </BottomSheet>
+    </form.AppForm>
   )
 }
