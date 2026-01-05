@@ -496,7 +496,7 @@ function CustomerDetailPage() {
             {/* Customer Details Card */}
             <div className="card bg-base-100 border border-base-300">
               <div className="card-body p-4">
-                <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-4">
+                <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
                   {t('customers.details.title')}
                 </h3>
 

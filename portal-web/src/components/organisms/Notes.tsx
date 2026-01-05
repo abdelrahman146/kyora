@@ -87,7 +87,7 @@ export function Notes({
           role="region"
           aria-label={t('notes.section_label')}
         >
-          <div className="card-body p-4 sm:p-6">
+          <div className="card-body p-4">
             <div className="text-center py-8 sm:py-12">
               <div className="size-16 sm:size-20 rounded-full bg-base-200 flex items-center justify-center mx-auto mb-3 sm:mb-4">
                 <MessageSquarePlus
@@ -218,10 +218,10 @@ export function Notes({
         role="region"
         aria-label={t('notes.section_label')}
       >
-        <div className="card-body p-4 sm:p-6">
+        <div className="card-body p-4">
           {/* Header */}
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-base font-semibold text-base-content">
+            <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
               {t('notes.notes')} ({notes.length})
             </h3>
             {onAddNote && showAddButton && (

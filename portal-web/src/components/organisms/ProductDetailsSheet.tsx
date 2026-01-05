@@ -166,7 +166,7 @@ export function ProductDetailsSheet({
                         <span className="text-sm text-base-content/60">
                           {t('cost_price', { ns: 'inventory' })}
                         </span>
-                        <span className="text-base font-semibold text-base-content">
+                        <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
                           {formatCurrency(
                             parseFloat(variant.costPrice),
                             variant.currency,
@@ -177,7 +177,7 @@ export function ProductDetailsSheet({
                         <span className="text-sm text-base-content/60">
                           {t('sale_price', { ns: 'inventory' })}
                         </span>
-                        <span className="text-base font-semibold text-base-content">
+                        <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
                           {formatCurrency(
                             parseFloat(variant.salePrice),
                             variant.currency,

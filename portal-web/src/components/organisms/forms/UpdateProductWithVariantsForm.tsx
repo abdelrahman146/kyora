@@ -193,7 +193,7 @@ export function UpdateProductWithVariantsForm({
             <form.FormError />
 
             <div className="space-y-4">
-              <h3 className="text-base font-semibold text-base-content border-b border-base-300 pb-2">
+              <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide border-b border-base-300 pb-2">
                 {t('product_information', { ns: 'inventory' })}
               </h3>
 
@@ -257,7 +257,7 @@ export function UpdateProductWithVariantsForm({
 
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-base-300 pb-2">
-                <h3 className="text-base font-semibold text-base-content">
+                <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
                   {t('variants', { ns: 'inventory' })}
                 </h3>
                 <form.Subscribe selector={(state) => state.values.variants}>

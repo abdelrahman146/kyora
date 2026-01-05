@@ -113,7 +113,7 @@ export function InventoryCard({
           <span className="text-sm text-base-content/60">
             {t('cost_price', { ns: 'inventory' })}
           </span>
-          <span className="text-base font-semibold text-base-content">
+          <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
             {formatPriceDisplay(costPriceRange)}
           </span>
         </div>
@@ -121,7 +121,7 @@ export function InventoryCard({
           <span className="text-sm text-base-content/60">
             {t('sale_price', { ns: 'inventory' })}
           </span>
-          <span className="text-base font-semibold text-base-content">
+          <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
             {formatPriceDisplay(salePriceRange)}
           </span>
         </div>
@@ -132,12 +132,12 @@ export function InventoryCard({
           {variantsCount > 1 ? (
             <div className="flex items-center gap-1">
               <Layers size={16} className="text-primary" />
-              <span className="text-base font-semibold text-base-content">
+              <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
                 {variantsCount}
               </span>
             </div>
           ) : (
-            <span className="text-base font-semibold text-base-content/60">
+            <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide/60">
               {variantsCount}
             </span>
           )}

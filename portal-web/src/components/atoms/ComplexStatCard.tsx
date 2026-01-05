@@ -93,7 +93,7 @@ export const ComplexStatCard = ({
                   <p className="text-xs text-base-content/50 truncate">
                     {metric.label}
                   </p>
-                  <p className="text-base font-semibold text-base-content tabular-nums">
+                  <p className="text-sm font-semibold text-base-content/60 uppercase tracking-wide tabular-nums">
                     {metric.value}
                   </p>
                 </div>

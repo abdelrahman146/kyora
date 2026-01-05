@@ -297,7 +297,8 @@ export const DateTimePicker = forwardRef<HTMLInputElement, DateTimePickerProps>(
           months: 'flex flex-col gap-4',
           month: 'space-y-4',
           month_caption: 'flex justify-center pt-1 relative items-center h-10',
-          caption_label: 'text-base font-semibold text-base-content',
+          caption_label:
+            'text-sm font-semibold text-base-content/60 uppercase tracking-wide',
           nav: 'flex items-center gap-1',
           button_previous: cn(
             'btn btn-ghost btn-sm btn-circle absolute',
