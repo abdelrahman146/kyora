@@ -3,8 +3,7 @@ name: AI Architect
 description: "Maintains Kyora’s Copilot AI infrastructure (.github agents, prompts, instructions, skills) and keeps it synced with the monorepo."
 target: vscode
 infer: false
-tools:
-  ["read", "search", "edit", "fetch", "usages", "problems", "changes", "todos"]
+tools: ["read", "search", "edit", "web", "search", "read/problems", "todo"]
 ---
 
 # AI Architect — Kyora AI Infrastructure Maintainer

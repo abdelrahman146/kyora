@@ -1,41 +1,96 @@
-# Kyora — Agent Orchestration Layer
+# Kyora — Agent Orchestration Layer (SSOT)
 
-## 1. Domain Context (30-Second Brief)
+These instructions are always-on context for working in this repository.
 
-**Product:** B2B SaaS for Middle East social commerce entrepreneurs. Automates accounting, inventory, and revenue recognition.
-**Tech:** Go monolith (backend), React + TanStack (portal-web), React (storefront-web).
-**User:** Non-technical business owners selling via Instagram/WhatsApp/TikTok DMs.
-**Philosophy:** "Professional tools that feel effortless" — zero accounting knowledge required.
-**Architecture:** Workspace-based multi-tenancy with multiple businesses per workspace. RBAC: admin/member. Billing via Stripe.
+## 1) Product and Audience (Always Assume)
 
-## 2. Business Logic (What To Build)
+**Kyora** is a SaaS platform for social media commerce entrepreneurs. It acts like a “silent business partner” that manages **orders, inventory, accounting/finance, and insights**.
 
-**Core Pain Solved:** "Financial blindness" — users don't know profit vs revenue, inventory levels, or cash position.
+### Target audience
 
-**Key Flows:**
+- **Primary region:** Middle East → **Arabic-first culture**.
+- **Users:** solo entrepreneurs, side hustlers, home-based makers (artisans/bakers/fashion), micro-teams (2–5).
+- **Tech literacy:** low–moderate; intimidated by Excel/ERPs.
+- **Sales channels:** orders originate in **DMs** (Instagram, WhatsApp, TikTok, Facebook).
+- **Usage pattern:** **mobile-heavy**; prefer mobile-first solutions.
 
-- Onboarding → workspace setup → add first order in <60s
-- Order entry (DM source) → auto revenue recognition → inventory update → profit calculation
-- Dashboard → plain-language insights ("You made $X profit this month", "Top seller: Y")
+### Core value proposition
 
-**Multi-Tenancy Rule:** Workspace is the top-level tenant. Business is the second-level scope for business-owned data. No cross-workspace or cross-business leaks.
+- **Simplicity first:** zero accounting/business-management knowledge required.
+- **Automatic heavy lifting:** revenue recognition, profitability, inventory levels, and records happen automatically.
+- **Social-media native:** optimized for DM-driven commerce.
+- **Peace of mind:** clear financial position, tax-ready records, actionable insights.
 
-**Avoid:** Accounting jargon (EBITDA, ledgers, accruals). Use: "Profit", "Cash in hand", "Best seller".
+### Language and tone
 
-## 3. Monorepo Structure (Where To Work)
+- Use **plain language**. Avoid accounting jargon (ledger, accrual, EBITDA, COGS).
+- Prefer: “Profit”, “Cash in hand”, “Best seller”, “Money in/out”, “What to do next”.
+- Assume **Arabic/RTL-first** UX and i18n requirements for user-facing UI.
+
+## 2) Product Concepts (What Kyora Does)
+
+### Key modules (conceptual)
+
+- **Order management:** quick order entry from any channel; track status; automatically recognize revenue.
+- **Inventory management:** stock visibility, low-stock alerts, best sellers.
+- **Customer management:** customer DB from orders; purchase history; best customers.
+- **Expense management:** recurring + one-off direct/indirect expenses.
+- **Owners management:** investments/withdrawals; safe amount to draw per owner.
+- **Accounting & finance:** profit and cash flow in plain language; reporting in background.
+- **Analytics:** dashboards without confusing charts/jargon.
+- **Team management:** invite members; roles/permissions.
+- **Multi-business:** multiple businesses per workspace.
+
+### Storefront (important behavior)
+
+Kyora does **not** do checkout. Sellers and customers prefer DM + payment links/COD/bank transfer.
+
+Kyora’s storefront is a **public SPA per business** that:
+
+1. Lets customers browse catalog and add to cart.
+2. “Send order to WhatsApp” creates a **Pending** order in Kyora.
+3. Redirects the customer to the seller’s WhatsApp chat with a **prepopulated message** of order details.
+4. Seller confirms via quick lookup and updates order status.
+
+## 3) Multi-Tenancy and Security (Non-Negotiable)
+
+- **Workspace** is the top-level tenant.
+- **Business** is a second-level scope inside a workspace.
+- No cross-workspace and no cross-business data leaks.
+- RBAC: `admin` / `member`.
+
+## 4) Repo Reality and “Don’t Hallucinate” Rules
+
+Kyora is **not live** and currently runs **locally**. Many components are incomplete or not yet implemented.
+
+- Never claim a feature exists unless you can point to the code.
+- Prefer: “Based on current code…” and verify using search/read before codifying instructions.
+- If something is planned but not implemented, label it explicitly as planned.
+
+## 5) Monorepo Structure (Where To Work)
 
 ```
 kyora/
 ├── backend/          # Go API (source of truth for business logic)
 ├── portal-web/       # React dashboard (TanStack stack)
 ├── storefront-web/   # Customer storefront (React)
+├── scripts/          # Repo scripts
 └── .github/
     └── instructions/ # Specialized agent rules (SSOT)
 ```
 
 **Path Prefix Rule:** Always include project prefix (`backend/`, `portal-web/`, `storefront-web/`).
 
-## 4. Instruction File Hierarchy (Which Rules Apply)
+## 6) Components and Status (High Level)
+
+- **Backend:** Go monolith API (Gin, GORM/Postgres, Memcached). Integrations: Stripe, Resend, blob storage; Go HTML email templates. Architecture: domain/platform. Tests: heavy integration tests, minimal unit tests. Status: ~90%.
+- **Portal Web:** SPA for clients (React 19 + TanStack Router/Query/Store/Form, i18n, `ky`, Zod, Chart.js, Tailwind v4 + daisyUI). Tests: none yet. Status: ~40%.
+- **Storefront Web:** currently unmaintained/deprecated; intended to be replaced/migrated to Portal stack.
+- **Planned (not implemented):** marketing website (SSG), docs app, admin dashboard + admin backend, mobile portal (React Native), infra deployment configs.
+
+Breaking changes are acceptable (project under heavy development).
+
+## 7) Instruction File Hierarchy (Which Rules Apply)
 
 **Priority Order (resolve conflicts top-down):**
 
@@ -84,7 +139,7 @@ kyora/
 - `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
 - `.github/instructions/ui-implementation.instructions.md` → Components, RTL rules, daisyUI usage
 
-## 5. Execution Standards (Non-Negotiable)
+## 8) Execution Standards (Non-Negotiable)
 
 **Code Quality Pillars:**
 
@@ -104,7 +159,7 @@ kyora/
 
 **Breaking Changes:** Allowed (project under heavy development). Prioritize simplicity over backward compatibility.
 
-## 6. Agent Decision Tree (How To Proceed)
+## 9) Agent Decision Tree (How To Proceed)
 
 ```
 Task received
@@ -133,7 +188,7 @@ Verify no TODOs, no duplication, production-ready
 Done
 ```
 
-## 7. Anti-Patterns (Never Do This)
+## 10) Anti-Patterns (Never Do This)
 
 - ❌ **Cross-Domain References:** Don't copy-paste rules from one instruction file to another. Link to SSOT.
 - ❌ **Vague Directives:** "Consider performance" is useless. Specify: "Use bulk inserts for >100 rows."
@@ -142,9 +197,8 @@ Done
 - ❌ **Token Waste:** Verbose explanations ("Now I will proceed to..."). Just execute.
 - ❌ **Design Assumptions:** Never assume left/right (RTL-first). Never assume English labels (i18n required).
 
-## 8. Conflict Resolution Protocol
+## 11) Conflict Resolution Protocol
 
--core
 **If instructions conflict:**
 
 1. **Same-Level Conflict** (e.g., two instruction files disagree):
@@ -162,7 +216,7 @@ Done
    - Instructions win (refactor legacy code to match)
    - Exception: If refactor breaks production, ask user
 
-## 9. Token Budget Guidance
+## 12) Token Budget Guidance
 
 **File Reading Strategy:**
 
@@ -178,7 +232,7 @@ Done
 - **Budget Per Task:** ~80K tokens context (40K instructions + 40K code)
 - If nearing limit, prioritize: instruction file > domain models > handlers > tests
 
-## 10. Meta-Instructions (For This File)
+## 13) Meta-Instructions (For This File)
 
 **Purpose:** Orchestrate agent behavior, not duplicate specialized rules.
 **Scope:** What to build (domain), where to work (structure), which rules apply (hierarchy).
