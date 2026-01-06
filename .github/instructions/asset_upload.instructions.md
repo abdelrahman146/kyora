@@ -1,6 +1,6 @@
 ---
 description: Asset Upload (backend contract + frontend integration flow)
-applyTo: "backend/**,portal-web/**,storefront-web/**"
+applyTo: "backend/internal/domain/asset/**,backend/internal/platform/types/asset/**,backend/internal/server/routes.go,backend/internal/tests/e2e/asset_upload_test.go,portal-web/src/api/assets.ts,portal-web/src/api/types/asset.ts,portal-web/src/types/asset.ts,portal-web/src/lib/upload/**,portal-web/src/lib/assetUrl.ts"
 ---
 
 # Asset Upload System
@@ -26,7 +26,7 @@ applyTo: "backend/**,portal-web/**,storefront-web/**"
 Kyora’s asset system is intentionally **simple and frontend-driven**:
 
 - Backend **never** receives file bytes in production. Frontend uploads directly to blob storage using pre-signed URLs.
-- Backend creates an **asset record immediately** (with `ast_...` id), then the client uploads bytes, then optionally completes multipart.
+- Backend creates an **asset record immediately** (with `ast...` id), then the client uploads bytes, then optionally completes multipart.
 - Domains don’t store “asset objects”. They store **`AssetReference`** (JSONB) on the owning entity (business/product/variant).
 
 This doc describes the **canonical contract** and the **only supported flow** that frontend/mobile/web should implement.
@@ -43,7 +43,8 @@ This doc describes the **canonical contract** and the **only supported flow** th
 - **Pre-signed URL approach:** clients upload directly to storage; backend does not proxy bytes.
 - **Client-side control:** frontend handles chunking, retries, progress, and resuming multipart.
 - **Provider agnostic:** works with S3-compatible storage in production and local filesystem in development.
-- **CDN-first URLs + immutable caching:** backend returns CDN/public URLs; assets are served with long-lived immutable cache headers (CDN should be configured in prod, but storage URLs still work as fallback).
+- **CDN-first URLs:** backend returns `cdnUrl` and `publicUrl` to render (CDN should be configured in prod, but public/storage URLs still work as fallback).
+- **Immutable caching (local provider):** `GET /v1/public/assets/:assetId` sets long-lived immutable cache headers only when streaming from local disk.
 - **Server-side validation:** backend validates file type and size per category; uploads are business-scoped and require JWT.
 
 ### Supported categories (defaults; configurable)
@@ -55,6 +56,11 @@ The backend classifies uploads by `contentType` into these categories:
 - **Audio** (e.g., mp3/wav/ogg/m4a/aac) — default max **20 MB**
 - **Documents** (e.g., pdf/doc/docx/txt/rtf/odt) — default max **10 MB**
 - **Compressed** (e.g., zip/tar/gz/rar/7z) — default max **50 MB**
+
+These defaults are configurable via:
+
+- `uploads.allowed_extensions` (per category)
+- `uploads.max_size_bytes` (per category)
 
 ### Thumbnails (images/videos)
 
@@ -142,17 +148,25 @@ Response:
 - Returns `uploads[]` where each upload has:
   - `assetId`
   - `method` and either:
-    - S3 multipart: `partSize`, `totalParts`, `partUrls[]`, `uploadId`, `method: "PUT"`
+    - S3 multipart: `partSize`, `totalParts`, `partUrls` (array of `{partNumber,url}`), `uploadId`, `method: "PUT"`
     - Local dev: `url`, `headers`, `method: "POST"`
   - `publicUrl` and `cdnUrl` (treat these as display URLs)
   - Optional `thumbnail` descriptor when the backend decides a thumbnail is needed
+
+Important contract details:
+
+- `partUrls` is an array of objects: `[{ "partNumber": 1, "url": "..." }, ...]` (not a string array).
+- Part URLs are currently issued with a long expiry (24h) to support large uploads.
+- Thumbnail uploads are:
+  - Local provider: a single `POST` to an internal URL (same pattern as main local upload).
+  - S3 provider: a single pre-signed `PUT` to a URL + required headers (not multipart).
 
 ### 2) Upload file bytes (client-to-storage)
 
 #### S3 multipart (production)
 
 - Chunk the file into `partSize` bytes.
-- For each `partUrls[i]` upload using `PUT`.
+- For each `partUrls[i].url` upload using `PUT`.
 - Collect the `ETag` header from each part upload response.
   - Browser note: your bucket CORS must expose `ETag`.
 
@@ -297,6 +311,11 @@ Safer recommended patterns:
 
 Do **not** persist an `AssetReference` to the backend just because you already received `cdnUrl/publicUrl` from `GenerateUploadURLs`. Those URLs are returned before the bytes exist.
 
+## Completion tracking (current reality)
+
+- The `complete` endpoint is required to assemble multipart uploads on S3.
+- The backend does not currently persist a “completed” flag in the `uploaded_assets` table (`MarkUploadComplete` is a no-op today). Do not build UX that depends on the server knowing multipart completion state.
+
 ## Multipart upload failures and resume
 
 Kyora uses **S3 multipart** for non-local providers. The backend currently returns all required part URLs up-front.
@@ -310,7 +329,7 @@ To support resume, persist this state locally (SQLite/Room/CoreData/IndexedDB/lo
 - `uploadId`
 - `partSize`
 - `totalParts`
-- `partUrls[]` (or enough info to map partNumber → URL)
+- `partUrls` (array of `{ partNumber, url }`, or enough info to map partNumber → URL)
 - `completedParts`: map of `partNumber -> etag`
 - (optional) a stable reference to the local file so the app can continue reading bytes
 
@@ -343,7 +362,7 @@ This is **client state only**. Kyora intentionally does not have a server-side �
   - Presigned part URLs expire.
   - Kyora does not currently expose an endpoint to “refresh part URLs for an existing assetId/uploadId”.
   - The correct recovery is to **restart the upload**:
-    1. Call `POST /assets/uploads` again to get a new `assetId` and new URLs
+    1. Call `POST /v1/businesses/{businessDescriptor}/assets/uploads` again to get a new `assetId` and new URLs
     2. Upload again
     3. Persist references using the new `assetId`
   - The old asset will remain unreferenced and should be cleaned up by GC.
@@ -365,7 +384,7 @@ This is **client state only**. Kyora intentionally does not have a server-side �
 - The client is responsible for:
   - generating a thumbnail (canvas for images; extracted frame for video),
   - uploading thumbnail bytes with the thumbnail descriptor,
-  - completing multipart if thumbnail upload is multipart.
+  - uploading the thumbnail using the returned `method`/`url`/`headers` (thumbnail is not multipart today).
 
 ## If you don’t store thumbnails in `AssetReference`, your UI will still work, but may load heavier media.
 

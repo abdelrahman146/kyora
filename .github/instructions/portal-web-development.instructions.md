@@ -49,6 +49,11 @@ npm run type-check  # Run TypeScript compiler
 
 ## 2. Adding New Features
 
+**File placement SSOT:** `.github/instructions/portal-web-code-structure.instructions.md`
+
+- `src/routes/**` must stay a thin routing layer (schema/loader + render wrapper).
+- Page implementations, feature-specific components, feature-specific schemas, and feature utilities must live under `src/features/<feature>/**`.
+
 ### Step-by-Step Process
 
 #### 1. Create API Module
@@ -109,12 +114,14 @@ export interface CreateProductRequest {
 }
 ```
 
-#### 4. Create Zod Schema
+#### 4. Create Feature Schema (if feature-specific)
 
-**Location:** `src/schemas/{feature}.ts`
+**Location:** `src/features/<feature>/schema/*`
+
+If the schema is only used by one feature, keep it inside that feature.
 
 ```typescript
-// src/schemas/product.ts
+// src/features/products/schema/createProduct.ts
 import { z } from "zod";
 
 export const createProductSchema = z.object({
@@ -125,13 +132,13 @@ export const createProductSchema = z.object({
 export type CreateProductFormData = z.infer<typeof createProductSchema>;
 ```
 
-#### 5. Create Component
+#### 5. Create Feature Components / Page
 
-**Location:** `src/components/organisms/AddProductForm.tsx`
+**Location:** `src/features/<feature>/components/*`
 
 ```typescript
 import { useKyoraForm } from "@/lib/form";
-import { createProductSchema } from "@/schemas/product";
+import { createProductSchema } from "@/features/products/schema/createProduct";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { createProduct } from "@/api/product";
 import { queryKeys } from "@/lib/queryKeys";
@@ -201,59 +208,22 @@ export function AddProductForm({ onSuccess }: { onSuccess: () => void }) {
 
 #### 6. Create Route
 
-**Location:** `src/routes/_app/products/index.tsx`
+**Location:** `src/routes/**` (thin wrapper)
+
+Routes must only wire URL/search, loaders/prefetch, and render the feature page.
 
 ```typescript
 import { createFileRoute } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
-import { getProducts } from "@/api/product";
-import { queryKeys } from "@/lib/queryKeys";
-import { AddProductForm } from "@/components/organisms/AddProductForm";
-import { BottomSheet } from "@/components/molecules/BottomSheet";
-import { useState } from "react";
+import { ProductsListPage } from "@/features/products/components/ProductsListPage";
 
-export const Route = createFileRoute("/_app/products/")({
-  component: ProductsPage,
-});
+export const Route = createFileRoute("/business/$businessDescriptor/products/")(
+  {
+    component: ProductsRoute,
+  }
+);
 
-function ProductsPage() {
-  const [isAddOpen, setIsAddOpen] = useState(false);
-
-  const { data, isLoading } = useQuery({
-    queryKey: queryKeys.products.all(),
-    queryFn: () => getProducts({ page: 1 }),
-  });
-
-  return (
-    <div>
-      <div className="flex justify-between items-center mb-4">
-        <h1 className="text-2xl font-bold">Products</h1>
-        <button onClick={() => setIsAddOpen(true)} className="btn btn-primary">
-          Add Product
-        </button>
-      </div>
-
-      {isLoading ? (
-        <div>Loading...</div>
-      ) : (
-        <div className="space-y-3">
-          {data?.map((product) => (
-            <div key={product.id} className="card">
-              {product.name}
-            </div>
-          ))}
-        </div>
-      )}
-
-      <BottomSheet
-        isOpen={isAddOpen}
-        onClose={() => setIsAddOpen(false)}
-        title="Add Product"
-      >
-        <AddProductForm onSuccess={() => setIsAddOpen(false)} />
-      </BottomSheet>
-    </div>
-  );
+function ProductsRoute() {
+  return <ProductsListPage />;
 }
 ```
 

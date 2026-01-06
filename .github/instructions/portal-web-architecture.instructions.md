@@ -9,7 +9,7 @@ applyTo: "portal-web/**"
 
 - Parent: copilot-instructions.md
 - Peers: portal-web-development.instructions.md
-- Related: forms.instructions.md, ui-implementation.instructions.md, ky.instructions.md
+- Related: portal-web-code-structure.instructions.md, state-management.instructions.md, forms.instructions.md, ui-implementation.instructions.md, ky.instructions.md
 
 **When to Read:**
 
@@ -116,6 +116,11 @@ applyTo: "portal-web/**"
 
 ## 3. Project Structure
 
+**Important:** This section describes the _current_ repo layout at a high level.
+
+- The single authoritative file-placement guide is: `.github/instructions/portal-web-code-structure.instructions.md`.
+- If this tree conflicts with the code-structure SSOT, the code-structure SSOT wins.
+
 ```
 portal-web/
 ├── src/
@@ -132,6 +137,7 @@ portal-web/
 │   │   ├── molecules/          # SearchInput, BottomSheet
 │   │   ├── organisms/          # LoginForm, FilterButton
 │   │   └── templates/          # Page layouts
+│   ├── features/               # Feature modules (SSOT: portal-web-code-structure.instructions.md)
 │   ├── hooks/                  # Custom hooks
 │   │   ├── useAuth.ts
 │   │   ├── useLanguage.ts
@@ -530,41 +536,17 @@ There are two patterns in use; follow the pattern of the namespace you are editi
 
 ### RFC 7807 Problem Details
 
-**Backend Contract:** All API errors return RFC 7807 format:
+**SSOT:** See `.github/instructions/errors-handling.instructions.md`.
 
-```json
-{
-  "type": "https://api.kyora.app/errors/validation-error",
-  "title": "Validation Error",
-  "status": 422,
-  "detail": "The request contains invalid fields.",
-  "instance": "/v1/customers",
-  "errors": {
-    "email": "Email is already taken",
-    "phone": "Invalid phone number"
-  }
-}
-```
+Portal-web uses:
 
-**Parser:** `src/lib/errorParser.ts`
+- Parser: `portal-web/src/lib/errorParser.ts` (`parseProblemDetails`)
+- Translator: `portal-web/src/lib/translateError.ts` (`translateErrorAsync`)
 
-```typescript
-export function parseError(error: unknown): ProblemDetails {
-  // Extract RFC 7807 structure
-  // Handle network errors, timeouts, etc.
-}
-```
+UI pattern:
 
-**Translation:** `src/lib/translateError.ts`
-
-```typescript
-export function translateError(error: unknown, t: TFunction): string {
-  const problem = parseError(error);
-  return t(`errors.${problem.type}`, { defaultValue: problem.detail });
-}
-```
-
-**Form Integration:** See forms.instructions.md → Server Errors
+- In `catch`, call `translateErrorAsync(error, t)` and show a toast or inline error.
+- Do not hardcode backend Problem JSON shapes in UI code; treat the backend as authoritative.
 
 ---
 
@@ -636,7 +618,7 @@ Before completing architecture task:
 - ☑ Auth logic through `authStore`, not custom hooks
 - ☑ Route guards (`requireAuth`, `requireGuest`) applied
 - ☑ HTTP requests via `apiClient` from `src/api/client.ts`
-- ☑ Error handling via `parseError` + `translateError`
+- ☑ Error handling via `parseProblemDetails` + `translateErrorAsync`
 - ☑ State management: TanStack Query (server), TanStack Store (client)
 - ☑ No Redux, no Zustand, no Axios
 - ☑ Translation keys, not hardcoded strings

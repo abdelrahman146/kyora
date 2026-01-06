@@ -5,27 +5,10 @@ applyTo: "portal-web/**,backend/**"
 
 # Stripe Integration
 
-**Purpose**: Billing infrastructure for Kyora workspace subscriptions  
-**Scope**: Backend (API integration) + Frontend (billing UI)  
-**Reference**: [backend-core.instructions.md](./backend-core.instructions.md) for architecture patterns
-
-## Kyora-Specific Implementation
-
-**Domain**: `backend/internal/domain/billing`  
-**Current Usage**:
-
-- Workspace subscription management (plans: Free, Starter, Pro, Enterprise)
-- Payment method management (cards, payment intents)
-- Invoice generation and payment collection
-- Webhook event processing
-- Plan limits enforcement
-
-**Key Files** (reference implementations):
-
-- `service.go`, `service_subscription.go`, `service_customer.go`, `service_invoices.go`
-- `webhooks.go` — Stripe event handling
-- `middleware_http.go` — Plan limits enforcement
-- `handler_http.go` — Billing API endpoints
+**Purpose**: Stripe fundamentals for Kyora billing and payments  
+**Scope**: Backend (Stripe SDK integration) + Frontend (Stripe-hosted redirect flows / Stripe.js when needed)  
+**Kyora workflow SSOT**: [.github/instructions/billing.instructions.md](./billing.instructions.md) (endpoints, webhook semantics, onboarding↔billing bridge)
+**Architecture reference**: [backend-core.instructions.md](./backend-core.instructions.md)
 
 ## Backend Integration
 
@@ -55,10 +38,9 @@ stripe.Key = cfg.GetString(config.StripeAPIKey)
 
 **Webhooks**:
 
-- Endpoint: `POST /v1/webhooks/stripe`
-- Verify signature: `stripe.ConstructEvent(payload, signature, secret)`
-- Handle events: `customer.subscription.created`, `customer.subscription.updated`, `customer.subscription.deleted`, `invoice.payment_succeeded`, `invoice.payment_failed`
-- Update workspace subscription status in database
+- Endpoint: `POST /webhooks/stripe` (see [.github/instructions/billing.instructions.md](./billing.instructions.md) for the authoritative route map)
+- Signature verification is implemented in Kyora (HMAC verification of `Stripe-Signature` header with timestamp tolerance)
+- Webhooks must be idempotent (Kyora persists processed Stripe event IDs)
 
 **Error Handling**:
 
@@ -69,7 +51,7 @@ stripe.Key = cfg.GetString(config.StripeAPIKey)
 ## Frontend Integration (Portal Web)
 
 **API Client**: Ky HTTP client (see [ky.instructions.md](./ky.instructions.md))  
-**Billing UI**: `portal-web/src/routes/workspace/billing/`
+**Billing UI**: not fully implemented yet; onboarding includes a paid-plan Checkout redirect flow.
 
 **Key Flows**:
 
@@ -84,6 +66,8 @@ stripe.Key = cfg.GetString(config.StripeAPIKey)
 - Initialize: `const stripe = Stripe(publishableKey)`
 - Payment Element for new payment methods
 - Display confirmation after successful payment
+
+Note: If Kyora uses Stripe-hosted flows (Checkout / Billing Portal), portal-web should prefer backend-created session URLs and redirect the browser, then refresh server state (don’t assume success from redirects alone).
 
 ## Stripe API Patterns
 
@@ -201,19 +185,11 @@ sub, err := subscription.New(params)
 
 **Process Webhook**:
 
-```go
-event, err := webhook.ConstructEvent(payload, signature, secret)
-if err != nil {
-    return problem.Unauthorized("invalid signature")
-}
-
-switch event.Type {
-case "customer.subscription.updated":
-    var sub stripe.Subscription
-    json.Unmarshal(event.Data.Raw, &sub)
-    // Update workspace subscription status
-}
-```
+- Verify `Stripe-Signature`
+- Enforce timestamp tolerance
+- Enforce idempotency by Stripe event ID
+- Dispatch by `event.type`
+- Persist side effects (DB updates) before acknowledging
 
 ## Documentation References
 

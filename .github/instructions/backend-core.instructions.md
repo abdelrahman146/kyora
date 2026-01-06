@@ -3,360 +3,306 @@ description: Backend Core Architecture — Go Monolith Patterns
 applyTo: "backend/**"
 ---
 
-# Backend Core Architecture
+# Backend Core Architecture (SSOT)
 
-**Stack**: Go 1.25.3 monolith, Cobra CLI, Gin, GORM, Viper, Stripe, Memcached  
-**Entry**: `backend/main.go` → `cmd/root.go` → HTTP via `cmd/server.go` → `internal/server/server.go`
+This file is the **source of truth** for how the Go backend is structured and how to extend it safely.
+It intentionally documents **only patterns that exist in this repo**.
 
-## Project Structure
+**Stack**: Go 1.25.3 monolith, Cobra CLI, Gin, GORM/Postgres, Viper, Memcached, Stripe, Resend, slog
+
+If you are applying these patterns to a new Go backend project (not Kyora’s main backend), start with:
+
+- `.github/instructions/go-backend-patterns.instructions.md`
+
+## Non‑negotiables (must follow)
+
+- **Multi-tenancy isolation**: never allow cross-workspace/business access.
+- **Middleware-first security**: all protected routes must apply the correct middleware chain.
+- **No raw SQL for domain work**: use the generic repository + schema/scopes.
+- **No manual transactions**: use the atomic processor.
+- **Strict JSON bodies**: use `request.ValidBody` (disallows unknown fields).
+- **Consistent error shape**: always return RFC7807 Problem JSON via `response.Error`.
+
+## Runtime entrypoints
+
+- CLI entry: `backend/main.go` → `backend/cmd/root.go`.
+- HTTP server: `kyora server` (`backend/cmd/server.go`) → `backend/internal/server/server.go`.
+
+Key lifecycle facts:
+
+- Config defaults are prepared via `internal/platform/config.Configure()`.
+- In normal CLI runs, config is loaded once in Cobra `PersistentPreRunE` (`config.Load()`), then logging is initialized (`logger.Init()`).
+- `server.New()` calls `config.Configure()` again to ensure defaults exist (important for tests / non-Cobra usage).
+
+## Folder structure and dependency direction
 
 ```
 backend/
-├── internal/
-│   ├── platform/     # Infrastructure (config, DB, cache, auth, logging, types, utils)
-│   ├── domain/       # Business logic modules (per-domain: model, storage, service, errors, handler_http)
-│   └── tests/        # e2e/ (integration), testutils/ (helpers) — See backend-testing.instructions.md
-└── .kyora.yaml       # Config (copy from .kyora.yaml.example)
+  cmd/                    # CLI commands (server, seed, sync_plans, ...)
+  internal/
+    server/               # Gin engine wiring, DI, and route registration
+    platform/             # Infrastructure primitives (config, db, cache, auth, request/response, logger, types, utils)
+    domain/               # Business modules (account, billing, inventory, ...)
+    tests/                # E2E/integration tests (see backend-testing.instructions.md)
 ```
 
-## Run & Configure
-
-**Local Dev**: `make dev.server` (requires `air`). Watches, builds to `tmp/main`, runs `kyora server`.
-
-**Config SSOT**: `internal/platform/config/config.go` — All keys as constants.
-
-**Key Settings**:
-
-- App: `app.port`, `app.domain`, `app.notifications_email`
-- HTTP: `http.port`, `http.base_url`, `http.trace_id_header` (default: `X-Trace-ID`)
-- Database: `database.dsn`, `database.max_open_conns`, `database.log_level`
-- Cache: `cache.hosts` (memcached)
-- JWT: `auth.jwt.secret`, `auth.jwt.expiry_seconds`, `auth.jwt.issuer`
-- Tokens: `auth.password_reset_ttl_seconds`, `auth.verify_email_ttl_seconds`, `auth.invitation_token_ttl_seconds`
-- OAuth: `auth.google_oauth.{client_id, client_secret, redirect_url}`
-- Stripe: `billing.stripe.{api_key, webhook_secret}`
-- Email: `email.provider` (resend/mock), `email.resend.api_key`, `email.from_email`
-- Logging: `log.format`, `log.level`
+**Dependency rules**:
 
-## Database Access
+- `internal/domain/**` may depend on `internal/platform/**`.
+- `internal/platform/**` must not depend on `internal/domain/**`.
+- Domains may depend on other **domain services** when needed (example: orders depend on inventory/customer/business services).
+- Avoid “cross-domain storage access”: do not import another domain’s `Storage` and query its tables directly.
 
-**Repository Pattern**: Generic `database.Repository[T]` per domain.
+## HTTP server wiring (what actually happens)
 
-```go
-// storage.go
-type Storage struct {
-    order     *database.Repository[Order]
-    orderItem *database.Repository[OrderItem]
-    cache     *cache.Cache
-}
-func NewStorage(db *database.Database, cache *cache.Cache) *Storage {
-    return &Storage{
-        order:     database.NewRepository[Order](db), // auto-migrates
-        orderItem: database.NewRepository[OrderItem](db),
-        cache:     cache,
-    }
-}
-```
+Server initialization is in `internal/server/server.go`:
 
-**Connection**: `db.Conn(ctx)` — transaction-aware via `TxKey` context.
+- Creates DB connection (`database.NewConnection`) and cache connection (`cache.NewConnection`).
+- Creates a shared `AtomicProcess` (`database.NewAtomicProcess`).
+- Creates shared integrations: `bus.New()`, `email.New()`, `blob.FromConfig()`.
+- Constructs each domain’s `Storage` then `Service`, then `HttpHandler`.
+- Builds a Gin engine with:
+  - `logger.Middleware()` (trace id + request lifecycle logs)
+  - `request.LimitBodySize(http.max_body_bytes)` (early body limit enforcement)
+  - `gin.Recovery()`
+- Adds health endpoints: `GET /healthz`, `GET /livez`.
+- Adds a catch-all `OPTIONS /*path` handler that applies:
+  - public CORS for `/v1/storefront...`
+  - regular CORS for everything else
 
-**Scopes** (chainable filters):
+Routes are registered in `internal/server/routes.go`.
 
-- Tenant: `ScopeWorkspaceID(id)` (workspace-scoped), `ScopeBusinessID(id)` (business-scoped)
-- ID: `ScopeID(id)`, `ScopeIDs(ids...)`
-- Comparison: `ScopeEquals(field, val)`, `ScopeIn(field, vals)`, `ScopeNotIn`, `ScopeGreaterThan`, `ScopeLessThan`, `ScopeBetween`
-- Time: `ScopeTime(field, from, to)`, `ScopeCreatedAt(from, to)`
-- Search: `ScopeSearchTerm(term, fields...)`, `ScopeIsNull(field)`
+## CORS (important invariants)
 
-**Query Modifiers**:
+Implementation: `internal/platform/middleware/cors.go`
 
-- Load: `WithPreload(assocs...)`, `WithJoins(assocs...)`
-- Page: `WithPagination(page, pageSize)`, `WithLimit(n)`
-- Order: `WithOrderBy(fields...)` — SQL format: `["total DESC", "createdAt ASC"]`
-- Lock: `WithLockingStrength(database.LockUpdate)` → FOR UPDATE / SHARE / SKIP LOCKED / NOWAIT
-- Return: `WithReturning(fields...)` — Postgres RETURNING clause
+- Uses Bearer auth (Authorization header), not cookies.
+- `AllowCredentials` is **false**.
+- Allowed origins are configured via `cors.allowed_origins` (defaults to `*`).
+- Public endpoints (storefront + some public APIs) use a middleware that always allows `*`.
 
-**CRUD**:
+## Auth + tenancy middleware (required chains)
 
-- Create: `CreateOne(ctx, model)`, `CreateMany(ctx, models)`
-- Update: `UpdateOne(ctx, model, scopes...)`, `UpdateMany(ctx, updates, scopes...)`
-- Delete: `DeleteOne(ctx, scopes...)`, `DeleteMany(ctx, scopes...)`
-- Find: `FindByID(ctx, id)`, `FindOne(ctx, scopes...)`, `FindMany(ctx, scopes...)`
-- Count: `Count(ctx, scopes...)`
+### Context keys you will rely on
 
-**Aggregates**:
+- `auth.ClaimsKey` → JWT claims
+- `account.ActorKey` → authenticated user
+- `account.WorkspaceKey` → workspace loaded from the authenticated user
+- `business.BusinessKey` → business loaded for `:businessDescriptor` within the user’s workspace
+- `database.TxKey` → injected gorm transaction used by `Database.Conn(ctx)`
 
-- Scalar: `Sum(ctx, column, scopes...)`, `Avg(ctx, column, scopes...)`
-- Group: `SumBy(ctx, valueCol, groupCol, scopes...)`, `CountBy(ctx, groupCol, scopes...)`, `AvgBy` → `[]keyvalue.KeyValue`
-- Time Series: `TimeSeriesSum(ctx, valueCol, timeCol, granularity, opts...)`, `TimeSeriesCount` → `*timeseries.TimeSeries`
+### Middleware chain (workspace-scoped protected routes)
 
-## Transactions
+From `internal/server/routes.go` and domain middleware implementations:
 
-**Atomic Operations**: Multi-step writes MUST use atomic processor.
+1. `middleware.NewCORSMiddleware()`
+2. `auth.EnforceAuthentication`
+   - JWT is taken from `Authorization: Bearer <token>`.
+   - Parsed claims are stored in Gin context.
+3. `account.EnforceValidActor(accountService)`
+   - Loads the user from DB.
+   - Enforces `claims.AuthVersion == user.AuthVersion` (access token invalidation).
+   - Enriches the slog logger with actor fields.
+4. `account.EnforceWorkspaceMembership(accountService)`
+   - Loads workspace by `user.WorkspaceID`.
+   - **Never** trusts a workspace id from URL params.
+5. Optional per-endpoint:
+   - `account.EnforceActorPermissions(role.Action*, role.Resource*)`
+   - `billing.EnforceActiveSubscription(billingService)`
+   - `billing.EnforcePlanWorkspaceLimits(...)`
 
-```go
-err := s.db.AtomicProcess.Exec(ctx, func(tctx context.Context) error {
-    // All repo calls use tctx (transaction injected via TxKey)
-    if err := s.storage.order.CreateOne(tctx, order); err != nil {
-        return err
-    }
-    return s.storage.inventory.UpdateMany(tctx, updates, scopes...)
-}, atomic.WithIsolationLevel(atomic.LevelSerializable), atomic.WithRetries(3))
-```
+### Middleware chain (business-scoped protected routes)
 
-**Reference**: `internal/platform/database/atomic.go`, `internal/platform/types/atomic/atomic.go`
+Same as workspace chain, plus:
 
-## HTTP Layer
+6. `business.EnforceBusinessValidity(businessService)`
+   - Loads business by `:businessDescriptor` but only for the authenticated user’s workspace.
 
-**Auth Middleware Chain** (workspace + optional business scope):
+### Public routes
 
-1. `auth.EnforceAuthentication` — JWT from `Authorization: Bearer <token>`, sets claims
-2. `account.EnforceValidActor(svc)` — loads user, sets `ActorKey`, enriches logger
-3. `account.EnforceWorkspaceMembership(svc)` — validates `workspaceId` param, sets `WorkspaceKey`
-4. `account.EnforceActorPermissions(action, resource)` — RBAC check
-5. For business-scoped routes: `business.EnforceBusinessValidity(svc)` — validates `businessDescriptor`, loads business for actor's workspace, sets `BusinessKey`
-6. Optional: `billing.EnforceActiveSubscription(svc)`, `billing.EnforcePlanWorkspaceLimits(limit, counterFunc)`
+- Storefront is mounted under `/v1/storefront` and intentionally uses public CORS.
+- Stripe webhooks are public (`POST /webhooks/stripe`) and must verify signature inside the handler.
 
-**Extract Context**:
+## Request validation (strict)
 
-- User: `account.ActorFromContext(c)`
-- Workspace: `account.WorkspaceFromContext(c)`
-- Business: `business.BusinessFromContext(c)` (only after `business.EnforceBusinessValidity`)
-- Claims: `auth.ClaimsFromContext(c)`
-- JWT Token: `auth.JwtFromContext(c)` — extracts from Authorization header ONLY (no cookies)
+Use `internal/platform/request.ValidBody(c, &req)` in handlers.
 
-**Token Flow**:
+It:
 
-- Access: Short-lived JWT in `Authorization` header
-- Refresh: Opaque server-side session (hashed token, expiry, metadata)
-- Rotation: `POST /v1/auth/refresh` consumes `refreshToken`, returns new `{token, refreshToken}`
-- Logout: `POST /v1/auth/logout` (revoke session), `/logout-others` (keep current), `/logout-all` (revoke all + bump `User.AuthVersion`)
-- Invalidation: JWT claims include `authVersion`; middleware rejects if `claims.authVersion != user.AuthVersion`
+- Requires a request body.
+- Uses a JSON decoder with `DisallowUnknownFields()`.
+- Rejects trailing JSON tokens.
+- Runs Gin’s validator on `binding:` tags.
 
-**Request Validation**: `request.ValidBody(c, &req)` — bind + validate JSON body
+Do not use `c.BindJSON`, `ShouldBindJSON`, or ad-hoc decoding.
 
-**Responses**:
+## Responses and errors (RFC7807)
 
-- Success: `response.SuccessJSON(c, status, data)`, `response.SuccessEmpty(c, status)`, `response.SuccessText`
-- Error: `response.Error(c, err)` — auto-converts to RFC 7807 Problem JSON
+Success:
 
-**Error Handling**:
+- `response.SuccessJSON(c, status, data)`
+- `response.SuccessEmpty(c, status)`
+- `response.SuccessText(c, status, text)`
 
-- Problem types: `problem.BadRequest()`, `Unauthorized()`, `Forbidden()`, `NotFound()`, `Conflict()`, `InternalError()`, `ValidationError(fields...)`
-- DB errors: `database.IsRecordNotFound(err)`, `IsUniqueViolation(err)`
-- Domain errors: Define in `errors.go` using problem constructors with `.With(key, val)`, `.WithError(err)`
+Errors:
 
-**Logging**: Structured `slog` logger. Context-aware: `logger.FromContext(ctx)`. Middleware adds `traceId` (from `http.trace_id_header`), actor info.
+- Always use `response.Error(c, err)`.
+- If `err` is not a `*problem.Problem`, `response.Error` maps:
+  - record not found → 404
+  - unique violation → 409
+  - everything else → 500
 
-## Domain Conventions
+Problem shape is `internal/platform/types/problem.Problem`.
 
-**model.go**:
+## Configuration (SSOT is code constants)
 
-- Embed `gorm.Model` (adds ID, CreatedAt, UpdatedAt, DeletedAt)
-- Override ID: `ID string \`gorm:"column:id;primaryKey;type:text"\``
-- Generate IDs in `BeforeCreate` hook: `id.KsuidWithPrefix("ord")` (external), `id.Base62(6)` (short codes)
-- Constants: `TableName`, `StructName`, `Prefix`
-- Schema: `var OrderSchema = struct { Total schema.Field }{Total: schema.NewField("total", "total")}` — maps DB column → JSON field
+All config keys must be constants in `internal/platform/config/config.go`.
+Do not introduce “magic strings” in code.
 
-**storage.go**:
+Notable defaults set by `config.Configure()`:
 
-- Typed repositories + cache
-- Auto-migrate on construction: `database.NewRepository[Model](db)`
+- `http.max_body_bytes` defaults to 1 MiB.
+- `database.auto_migrate` defaults to true.
+- `billing.auto_sync_plans` defaults to true.
+- `cors.allowed_origins` defaults to `[*]`.
+- `auth.refresh_token_ttl_seconds` defaults to 30 days.
+- Storage / uploads defaults (local provider under `./tmp/assets`).
 
-**service.go**:
+## Database access (GORM + repository)
 
-- Workspace-scoped signature: `(ctx context.Context, actor *account.User, workspace *account.Workspace, ...)`
-- Business-scoped signature: `(ctx context.Context, actor *account.User, biz *business.Business, ...)`
-- **Multi-tenancy**:
-  - Workspace-scoped data MUST be scoped by `workspace.ID`
-  - Business-owned data MUST be scoped by `biz.ID` (and business middleware guarantees the business belongs to the actor's workspace)
-- Use `AtomicProcess.Exec` for multi-entity ops
-- Pattern: Validate → Load related → Calculate → Persist → Return
-- Updates: Load with locking → Validate transitions → Update → Persist
+### Database connection
 
-**errors.go**:
+- `database.NewConnection(dsn, logLevel)` opens Postgres and configures pooling.
+- Ensures `pg_trgm` extension exists (best-effort).
 
-- Domain-specific problems: `problem.NotFound("order not found").WithError(err).With("orderId", id)`
+### Transaction-aware connections
 
-**handler_http.go**:
+Use `db.Conn(ctx)` everywhere.
 
-- Extract actor/workspace from context
-- Validate: `request.ValidBody`
-- Call service
-- Respond: `response.Success*` or `response.Error`
+- If `database.TxKey` exists in the context, it uses that transaction.
+- Otherwise it uses the normal DB connection.
 
-**middleware_http.go** (optional):
+### Repository pattern
 
-- Domain-specific checks (see `account/middleware_http.go`)
+Domains create typed repositories in `storage.go`:
 
-**state_machine.go** (optional):
+- `database.NewRepository[T](db)` (auto-migrates the model when enabled).
 
-- Valid state transitions + timestamp updates (see `order/state_machine.go`)
+Important: auto-migration is controlled by `database.auto_migrate`.
 
-## Pagination & Analytics
+### Common repository options (real APIs)
 
-**Lists**:
+Query modifiers:
 
-- Accept `*list.ListRequest` (page, pageSize, orderBy, searchTerm)
-- Parse ordering: `req.ParsedOrderBy(DomainSchema)` → `["total DESC", "createdAt ASC"]` (JSON fields → SQL)
-- Apply: `s.storage.order.WithOrderBy(req.ParsedOrderBy(OrderSchema))`
-- Return: `list.NewListResponse(items, page, pageSize, totalCount, hasMore)`
+- `WithPreload(associations...)`
+- `WithJoins(joins...)`
+- `WithOrderBy([]string{"created_at DESC"})` (already-parsed SQL order strings)
+- `WithOrderByExpr(clause.Expr)` for complex, injection-safe ordering
+- `WithPagination(offset, limit)`
+- `WithLimit(limit)`
+- `WithLockingStrength(database.LockingStrengthUpdate|Share|SkipLocked|NoWait)`
+- `WithReturning(value any)` (applies `RETURNING` and scans into `value`)
 
-**Time Series**:
+Scopes (filters):
 
-- `TimeSeriesSum(ctx, valueCol, timeCol, granularity, opts...)`, `TimeSeriesCount(ctx, timeCol, granularity, opts...)`
-- Granularity: `timeseries.GranularityHour/Day/Week/Month` or auto: `timeseries.GetTimeGranularityByDateRange(from, to)`
-- Returns: `*timeseries.TimeSeries` (bucketed data points)
+- `ScopeWorkspaceID(workspaceID)` / `ScopeBusinessID(businessID)`
+- `ScopeID(id)` / `ScopeIDs([]any{...})`
+- `ScopeEquals(field, value)`, `ScopeNotEquals`, `ScopeIn`, `ScopeNotIn`
+- `ScopeGreaterThan`, `ScopeLessThan`, `ScopeBetween`, and `...OrEqual` variants
+- `ScopeCreatedAt(from, to)` / `ScopeTime(field, from, to)`
+- `ScopeSearchTerm(term, fields...)`
+- `ScopeWhere(sql, vars...)` (bound vars; use sparingly for specialized queries)
 
-**Aggregations**:
+### Pagination, ordering, search (canonical pattern)
 
-- Group: `CountBy(ctx, groupCol, scopes...)`, `SumBy(ctx, valueCol, groupCol, scopes...)`, `AvgBy` → `[]keyvalue.KeyValue`
-- Scalar: `Sum`, `Avg`, `Count`
-- Time filter: `ScopeTime(field, from, to)`
+For list endpoints, use `internal/platform/types/list.ListRequest`:
 
-## Integrations
+- Convert page/pageSize → `Offset()` and `Limit()`.
+- Convert API-facing orderBy fields to SQL columns via `ParsedOrderBy(DomainSchema)`.
+- Normalize search terms with `list.NormalizeSearchTerm`.
 
-**Event Bus** (in-memory pub/sub):
+Do not accept DB column names directly from clients.
 
-- Emit: `bus.Emit(topic, payload)` — non-blocking, async
-- Listen: `unsub := bus.Listen(topic, func(payload any) {...})` — returns unsubscribe func
-- Topics: `bus.VerifyEmailTopic`, `ResetPasswordTopic`, `WorkspaceInvitationTopic`
-- Shutdown: `bus.Close()` — waits for handlers
+## Transactions (atomic processor)
 
-**Stripe**:
+Use `database.NewAtomicProcess(db)` and call `AtomicProcess.Exec(ctx, fn, opts...)`.
 
-- Domain: `internal/domain/billing` (plans, subscriptions, invoices, webhooks, customer management)
-- Webhooks: `webhooks.go`, `stripe_retry.go`
-- Middleware: Plan limits enforcement
-- Config: `billing.stripe.{api_key, webhook_secret}`
+Key behavior:
 
-**Email**:
+- If `database.TxKey` already exists in the context, `Exec` reuses it (no nested transaction).
+- Retries retryable transaction failures with exponential backoff + jitter.
+- Supports isolation level and read-only options via `internal/platform/types/atomic`.
 
-- Platform: `internal/platform/email`
-- Providers: `resend` (prod), `mock` (dev/test)
-- Send: `client.SendTemplate(ctx, templateID, to, from, subject, data)`
-- Templates: HTML in `internal/platform/email/templates/` (embedded via `go:embed`)
-- Available: `TemplateForgotPassword`, `TemplateEmailVerification`, `TemplateWelcome`, `TemplateSubscriptionConfirmed`, etc.
-- Reference: `internal/platform/email/README.md`
+Never call `db.Begin()/Commit()/Rollback()` directly in domain services.
 
-**OAuth**:
+## Auth model (access JWT + rotating refresh sessions)
 
-- Google flow: `internal/platform/auth/google_oauth.go`
-- Config: `auth.google_oauth.{client_id, client_secret, redirect_url}`
-- JWT helpers: `internal/platform/auth/jwt.go`
+Access token:
 
-## Caching (Memcached)
+- JWT created by `auth.NewJwtToken(userID, workspaceID, authVersion)`.
+- Required on protected endpoints via `Authorization: Bearer <token>`.
 
-- **Where**: Storage layer ONLY (keep service clean)
-- **When**: Frequently accessed data, infrequent changes
-- **Pattern**: Read-through (cache on first access, invalidate on update)
-- **Keys**: Unique, descriptive (avoid collisions)
-- **Service Use**: Expirable memory (auth tokens, password reset, email verification, invitations)
-- **Reference**: `internal/platform/cache`
+Refresh token:
 
-## Multi-Tenancy
+- Generated via `auth.NewRefreshToken()`.
+- Stored **hashed** in DB (see `account.Service.issueTokensForUser`).
+- Rotated on refresh (`/v1/auth/refresh`): old session revoked, new session created.
 
-- **Workspace**: Top-level tenant. Groups users, billing/subscription, and multiple businesses.
-- **User**: Belongs to one workspace (`WorkspaceID`), has role.
-- **Business**: Second-level scope. A workspace can have many businesses; each business has its own inventory, accounting, orders, assets, analytics, customers, and storefront.
-- **Scoping**:
-  - Workspace-scoped resources MUST filter by `WorkspaceID`.
-  - Business-owned resources MUST filter by `BusinessID`.
-- **Routing**:
-  - Workspace-scoped: typically `/v1/...` with `workspaceId` enforced by `account.EnforceWorkspaceMembership`.
-  - Business-scoped: `/v1/businesses/:businessDescriptor/...` enforced by `business.EnforceBusinessValidity`.
-- **Invitations**: Users invited with role (admin/member)
-- **Permissions**: `internal/platform/types/role` (actions: view/manage, resources: account/billing/orders)
-- **Middleware**: `account.EnforceWorkspaceMembership` (workspace) and `business.EnforceBusinessValidity` (business)
+Invalidation:
 
-## Routes & Permissions
+- `account.EnforceValidActor` rejects access tokens when `claims.AuthVersion != user.AuthVersion`.
+- `/v1/auth/logout-all` increments `user.AuthVersion` and revokes all sessions.
 
-- **Routes**: Define in `internal/server/routes.go` per domain
-- **Middleware chain**: Authentication → Actor → Workspace → Permissions → Plan limits
-- **Permissions**: `EnforceActorPermissions(action, resource)` in route chain
-- **Plan limits**: `EnforcePlanWorkspaceLimits(limit, counterFunc)` before operations
+Strict rule: treat `refreshToken` as a password. Never log it.
 
-## OpenAPI Documentation
+## Domain module conventions (how to add/change behavior)
 
-- **Tool**: `github.com/swaggo/swag` — generates from code comments
-- **Format**: Swaggo comment format in handlers
-- **Include**: Request params, body, response, errors
-- **Maintenance**: Keep docs in sync with code
+Each domain lives under `internal/domain/<name>/` and commonly contains:
 
-## Separation of Concerns
+- `model.go`: GORM models + schema definitions (JSON field ↔ DB column mapping).
+- `storage.go`: repositories and cache wiring. Keep caching here.
+- `service.go`: business logic. This is where invariants live.
+- `errors.go`: domain-specific `problem.*` constructors.
+- `handler_http.go`: HTTP handlers (parse/validate → service → respond).
+- `middleware_http.go`: optional domain-specific middleware.
+- `state_machine.go`: optional explicit transition rules.
 
-**Handler**: Request/response, validation, transformations → service call  
-**Service**: Business logic, data transformations → storage call  
-**Storage**: Data access, caching — NO business logic  
-**Model**: State transitions, derived values — NO business logic or data access
+Service rules:
 
-**Domain Independence**:
+- Always scope reads/writes by workspace/business.
+- Prefer helper methods that prevent BOLA patterns (example: `account.Service.GetWorkspaceUserByID`).
+- Use `shopspring/decimal` for money-like values (never `float64`).
+- Use UTC for timestamps.
 
-- No circular dependencies between domains
-- Cross-domain communication via event bus
-- Shared functionality → `internal/platform/utils/` or helpers
-- Never access other domain storages directly — use their service
+Handler rules:
 
-## Best Practices
+- Always use `request.ValidBody`.
+- Always use `response.Success*` / `response.Error`.
+- Extract actor/workspace/business via the `FromContext` helpers.
 
-**Security**:
+## Integrations (SSOT pointers)
 
-- Always enforce tenancy boundaries — no cross-workspace or cross-business leaks
-- Workspace-scoped data: scope by `WorkspaceID`
-- Business-owned data: scope by `BusinessID` (loaded via `business.EnforceBusinessValidity`)
-- Use config constants from `internal/platform/config/config.go` — never hardcode
-- JWT from Authorization header ONLY (format: `Bearer <token>`) — no cookies
-- Treat `refreshToken` like password (log/redact carefully) — store only hashes
-- Session invalidation: logout endpoints + `User.AuthVersion` bump on sensitive changes
+- Email (Resend/mock): see resend.instructions.md.
+- Stripe billing: see stripe.instructions.md.
+- Asset uploads/blob storage: see asset_upload.instructions.md.
+- Testing (E2E, unit patterns): see backend-testing.instructions.md.
 
-**Data Handling**:
+## Anti-patterns (avoid)
 
-- Ordering/search: JSON field names (Schema) in requests, not DB columns
-- ID generation: KSUID with prefix for external IDs, Base62 for short codes
-- Decimal math: `shopspring/decimal` for financial calculations — NEVER `float64` for money
-- Time zones: Store UTC — GORM uses `timestamptz`
+- Accepting `workspaceId` from URL/body for authorization decisions.
+- Skipping `DisallowUnknownFields` decoding by using Gin bind helpers.
+- Building SQL strings from user input (order/search filters) without schema mapping.
+- Using floats for money.
+- Performing multi-entity writes without `AtomicProcess.Exec`.
+- Calling another domain’s storage layer directly.
 
-**Code Quality**:
+## Reference implementations (ground truth)
 
-- Transactions: Use atomic processor — never manual begin/commit
-- Errors: Return domain problems (RFC 7807) — use `database.IsRecordNotFound/IsUniqueViolation` for DB errors
-- Logging: Structured `slog` via `logger.FromContext(ctx)` — context-aware, middleware-enriched
-- State machines: Define allowed transitions + timestamp updates for entities with state
-- Comments: Godoc style for all exported functions, structs, packages
-- Deprecated code: DELETE immediately — no "marked as deprecated"
-- Refactoring: Extract duplicates to `internal/platform/utils/` or helpers
-- No TODOs/FIXMEs: Complete implementations only
-
-**Code Standards**:
-
-- KISS: Simple, unambiguous requirements satisfaction
-- DRY: Extract, generalize, reuse — never repeat
-- Readability: Junior developer understands immediately
-- Pillars: 100% Robust, Reliable, Secure, Scalable, Optimized, Traceable, Testable
-- Self-documenting: Clear names, minimal comments
-
-## Reference Implementations
-
-**Core Patterns**:
-
-- Repository: `internal/platform/database/repository.go` (all scopes/methods)
-- Transactions: `internal/platform/database/atomic.go`, `internal/platform/types/atomic/atomic.go`
-- Service: `internal/domain/order/service.go` (CRUD, aggregations, time series)
-- HTTP: `internal/domain/order/handler_http.go`, `internal/domain/billing/handler_http.go`
-- Middleware: `internal/domain/account/middleware_http.go`, `internal/domain/billing/middleware_http.go`
-- Errors: `internal/domain/order/errors.go` (domain problems)
-- Models: `internal/domain/order/model.go` (GORM models, schemas, DTOs)
-- State: `internal/domain/order/state_machine.go` (status transitions)
-
-**Platform Helpers**:
-
-- Routes: `internal/server/routes.go` (middleware chains, grouping, permissions)
-- Server: `internal/server/server.go` (DI, service init, graceful shutdown)
-- Response: `internal/platform/response/response.go`
-- Request: `internal/platform/request/valid_body.go`
-- Logger: `internal/platform/logger/middleware.go`
-- List: `internal/platform/types/list/list_request.go`, `list_response.go`
-- Time Series: `internal/platform/types/timeseries/timeseries.go`
-- Problems: `internal/platform/types/problem/problem.go`
-
-**Testing**: See [backend-testing.instructions.md](./backend-testing.instructions.md) for comprehensive test guidelines.
+- Server wiring + DI: `backend/internal/server/server.go`
+- Routes and middleware chains: `backend/internal/server/routes.go`
+- Auth middleware + JWT helpers: `backend/internal/platform/auth/middleware.go`, `backend/internal/platform/auth/jwt.go`
+- Actor/workspace/business middleware: `backend/internal/domain/account/middleware_http.go`, `backend/internal/domain/business/middleware_http.go`
+- Request validation: `backend/internal/platform/request/valid_body.go`
+- Response + error mapping: `backend/internal/platform/response/response.go`
+- Repository + scopes: `backend/internal/platform/database/repository.go`
+- Atomic transactions: `backend/internal/platform/database/atomic.go`

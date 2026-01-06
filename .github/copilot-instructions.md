@@ -103,11 +103,21 @@ Breaking changes are acceptable (project under heavy development).
 **When:** Modifying `backend/**` or adding API endpoints.
 **Read First:**
 
+- `.github/instructions/go-backend-patterns.instructions.md` → Reusable Go backend patterns (Kyora-style)
 - `.github/instructions/backend-core.instructions.md` → Architecture, patterns, conventions
 - `.github/instructions/backend-testing.instructions.md` → Testing (E2E, unit, coverage) — only when writing tests
 
 **Also Read (if relevant):**
 
+- `.github/instructions/onboarding.instructions.md` → Onboarding flow SSOT (when touching onboarding)
+- `.github/instructions/account-management.instructions.md` → Account management SSOT (auth, workspaces, team/invitations)
+- `.github/instructions/business-management.instructions.md` → Business management SSOT (business CRUD, archive, shipping zones, payment methods)
+- `.github/instructions/billing.instructions.md` → Billing workflow SSOT (plans/subscriptions/invoices/webhooks)
+- `.github/instructions/inventory.instructions.md` → Inventory workflow SSOT (products/variants/categories/search/summary)
+- `.github/instructions/orders.instructions.md` → Orders SSOT (orders lifecycle, payments, inventory adjustments, plan gates)
+- `.github/instructions/customer.instructions.md` → Customer management SSOT (customers/addresses/notes/search/RBAC)
+- `.github/instructions/analytics.instructions.md` → Analytics SSOT (dashboard metrics, analytics endpoints, financial reports)
+- `.github/instructions/accounting.instructions.md` → Accounting SSOT (assets/investments/withdrawals/expenses/recurring/summary)
 - `.github/instructions/resend.instructions.md` → Email functionality
 - `.github/instructions/stripe.instructions.md` → Billing/payments
 - `.github/instructions/asset_upload.instructions.md` → File uploads (backend contract)
@@ -122,11 +132,26 @@ Breaking changes are acceptable (project under heavy development).
 
 **Also Read (if relevant):**
 
+- `.github/instructions/onboarding.instructions.md` → Onboarding flow SSOT (when touching onboarding)
+- `.github/instructions/account-management.instructions.md` → Account management SSOT (auth, workspaces, team/invitations)
+- `.github/instructions/business-management.instructions.md` → Business management SSOT (business CRUD, archive, shipping zones, payment methods)
+- `.github/instructions/billing.instructions.md` → Billing workflow SSOT (onboarding payment + future billing UI)
+- `.github/instructions/inventory.instructions.md` → Inventory workflow SSOT (inventory list + CRUD sheets)
+- `.github/instructions/orders.instructions.md` → Orders SSOT (orders list UI, query params, mutations)
+- `.github/instructions/customer.instructions.md` → Customer management SSOT (customers/addresses/notes/search/RBAC)
+- `.github/instructions/analytics.instructions.md` → Analytics SSOT (dashboard metrics, analytics endpoints, financial reports)
+- `.github/instructions/accounting.instructions.md` → Accounting SSOT (assets/investments/withdrawals/expenses/recurring/summary)
 - `.github/instructions/forms.instructions.md` → Form system (TanStack Form + all field components)
+- `.github/instructions/portal-web-code-structure.instructions.md` → Code structure SSOT (routes/components/features/lib), no-legacy
 - `.github/instructions/ui-implementation.instructions.md` → Components, RTL rules, daisyUI usage
 - `.github/instructions/charts.instructions.md` → Chart.js visualizations, statistics
 - `.github/instructions/design-tokens.instructions.md` → Colors, typography, spacing (SSOT)
 - `.github/instructions/ky.instructions.md` → HTTP requests
+- `.github/instructions/http-tanstack-query.instructions.md` → HTTP client + TanStack Query usage (no direct API calls, global error handling)
+- `.github/instructions/state-management.instructions.md` → State ownership (URL vs Query vs Store vs Form), TanStack Store rules
+- `.github/instructions/i18n-translations.instructions.md` → i18n keys, namespaces, no-duplication rules, locale parity (portal-web + storefront-web)
+- `.github/instructions/errors-handling.instructions.md` → Errors & failure handling (backend + portal-web)
+- `.github/instructions/responses-dtos-swagger.instructions.md` → Responses, DTOs & Swagger/OpenAPI (backend + portal-web)
 - `.github/instructions/asset_upload.instructions.md` → File uploads (frontend flow)
 - `.github/instructions/stripe.instructions.md` → Billing UI
 

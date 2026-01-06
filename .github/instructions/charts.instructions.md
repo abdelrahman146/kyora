@@ -459,6 +459,8 @@ const { themedOptions } = useChartTheme()
 
 ## 14. File Structure
 
+**File placement SSOT:** `.github/instructions/portal-web-code-structure.instructions.md`
+
 ```
 portal-web/src/
 ├── lib/charts/                  # Chart utilities
@@ -467,7 +469,7 @@ portal-web/src/
 │   ├── chartPlugins.ts          # Custom plugins
 │   ├── rtlSupport.ts            # RTL helpers
 │   └── index.ts                 # Public exports
-├── components/atoms/
+├── components/charts/
 │   ├── LineChart.tsx
 │   ├── BarChart.tsx
 │   ├── PieChart.tsx
@@ -475,7 +477,8 @@ portal-web/src/
 │   ├── MixedChart.tsx
 │   ├── ChartCard.tsx
 │   ├── ChartSkeleton.tsx
-│   ├── ChartEmptyState.tsx
+│   └── ChartEmptyState.tsx
+├── components/atoms/
 │   ├── StatCard.tsx
 │   ├── StatCardGroup.tsx
 │   └── ComplexStatCard.tsx
@@ -516,5 +519,4 @@ Before completing chart task:
 
 - Chart.js Docs: https://www.chartjs.org
 - react-chartjs-2: https://react-chartjs-2.js.org
-- Implementation: `portal-web/src/lib/charts/`, `portal-web/src/components/atoms/`
-- Examples: `portal-web/src/routes/_app/dashboard.tsx`
+- Implementation: `portal-web/src/lib/charts/`, `portal-web/src/components/charts/`

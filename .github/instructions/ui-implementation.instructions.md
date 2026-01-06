@@ -151,7 +151,8 @@ Variants: `badge-primary`, `badge-secondary`, `badge-success`, `badge-error`, `b
 <BottomSheet isOpen={isOpen} onClose={onClose}>
   {/* Content */}
 </BottomSheet>
-// Implementation: portal-web/src/components/molecules/BottomSheet.tsx
+// Note: file placement is governed by portal-web-code-structure.instructions.md
+// Current implementation location may change during refactors.
 ```
 
 **Loading:**
