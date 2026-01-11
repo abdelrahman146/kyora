@@ -2,7 +2,7 @@ import { useTranslation } from 'react-i18next'
 import { useMemo } from 'react'
 import type { DateRange } from 'react-day-picker'
 
-import { DateRangePicker } from '@/components/atoms/DateRangePicker'
+import { DateRangePicker } from '@/components/form/DateRangePicker'
 import { useFieldContext } from '@/lib/form'
 
 interface DateRangeFieldProps {

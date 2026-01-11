@@ -23,7 +23,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { TextFieldProps } from '../types'
-import { FormInput } from '@/components/atoms/FormInput'
+import { FormInput } from '@/components/form/FormInput'
 
 export function TextField(props: TextFieldProps) {
   const field = useFieldContext<string>()
@@ -39,7 +39,11 @@ export function TextField(props: TextFieldProps) {
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }

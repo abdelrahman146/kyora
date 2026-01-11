@@ -22,7 +22,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { ToggleFieldProps } from '../types'
-import { FormToggle } from '@/components/atoms/FormToggle'
+import { FormToggle } from '@/components/form/FormToggle'
 
 export function ToggleField(props: ToggleFieldProps) {
   const field = useFieldContext<boolean>()
@@ -38,7 +38,11 @@ export function ToggleField(props: ToggleFieldProps) {
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }

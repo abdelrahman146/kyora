@@ -25,10 +25,13 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
-import type { FormRadioProps } from '@/components/atoms/FormRadio'
-import { FormRadio } from '@/components/atoms/FormRadio'
+import type { FormRadioProps } from '@/components/form/FormRadio'
+import { FormRadio } from '@/components/form/FormRadio'
 
-export interface RadioFieldProps extends Omit<FormRadioProps, 'name' | 'value' | 'onChange'> {
+export interface RadioFieldProps extends Omit<
+  FormRadioProps,
+  'name' | 'value' | 'onChange'
+> {
   disabled?: boolean
 }
 
@@ -46,7 +49,11 @@ export function RadioField(props: RadioFieldProps) {
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }

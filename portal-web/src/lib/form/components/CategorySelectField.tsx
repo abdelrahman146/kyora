@@ -7,7 +7,7 @@ import { useFieldContext } from '../contexts'
 import type { SelectFieldProps } from '../types'
 import type { Category } from '@/api/inventory'
 import { useCategoriesQuery, useCreateCategoryMutation } from '@/api/inventory'
-import { FormSelect } from '@/components/atoms'
+import { FormSelect } from '@/components/form'
 import { queryKeys } from '@/lib/queryKeys'
 import { translateErrorAsync } from '@/lib/translateError'
 

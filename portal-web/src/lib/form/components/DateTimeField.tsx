@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { DateTimePickerProps } from '@/components/atoms/DateTimePicker'
+import type { DateTimePickerProps } from '@/components/form/DateTimePicker'
 import { useFieldContext } from '@/lib/form/contexts'
-import { DateTimePicker } from '@/components/atoms/DateTimePicker'
+import { DateTimePicker } from '@/components/form/DateTimePicker'
 
 export interface DateTimeFieldProps extends Omit<
   DateTimePickerProps,

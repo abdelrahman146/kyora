@@ -1,8 +1,8 @@
 import { forwardRef, useCallback } from 'react'
-import { FormInput } from './FormInput'
 
 import type { ChangeEvent } from 'react'
-import type { FormInputProps } from './FormInput'
+import type { FormInputProps } from '@/components/form/FormInput'
+import { FormInput } from '@/components/form/FormInput'
 import { cn } from '@/lib/utils'
 
 export interface PriceInputProps extends Omit<

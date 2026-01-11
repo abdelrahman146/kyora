@@ -53,7 +53,7 @@ import {
   FileThumbnail,
   FileUploadZone,
   UploadProgress,
-} from '@/components/atoms'
+} from '@/components/form'
 import { useFileUpload } from '@/lib/upload'
 import { useObjectURLs } from '@/lib/upload/filePreviewManager'
 import { validateFiles } from '@/lib/upload/fileValidator'

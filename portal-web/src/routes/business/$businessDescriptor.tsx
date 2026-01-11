@@ -1,13 +1,12 @@
-import { Outlet, createFileRoute } from '@tanstack/react-router'
-import { Suspense } from 'react'
+import { createFileRoute } from '@tanstack/react-router'
 
 import type { RouterContext } from '@/router'
 
 import { businessQueries } from '@/api/business'
 import { RouteErrorFallback } from '@/components/molecules/RouteErrorFallback'
+import { BusinessLayout } from '@/features/dashboard-layout/components/BusinessLayout'
 import { requireAuth } from '@/lib/routeGuards'
 import { selectBusiness } from '@/stores/businessStore'
-import { DashboardLayout } from '@/components/templates/DashboardLayout'
 
 /**
  * Business Layout Route
@@ -44,25 +43,3 @@ export const Route = createFileRoute('/business/$businessDescriptor')({
 
   component: BusinessLayout,
 })
-
-/**
- * Business Layout Component
- *
- * Wraps business routes with DashboardLayout template.
- */
-function BusinessLayout() {
-  return (
-    <DashboardLayout>
-      {/* Content outlet with Suspense boundary */}
-      <Suspense
-        fallback={
-          <div className="flex min-h-[400px] items-center justify-center">
-            <span className="loading loading-spinner loading-lg"></span>
-          </div>
-        }
-      >
-        <Outlet />
-      </Suspense>
-    </DashboardLayout>
-  )
-}

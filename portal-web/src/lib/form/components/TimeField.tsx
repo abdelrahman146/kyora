@@ -1,8 +1,8 @@
 import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import type { TimePickerProps } from '@/components/atoms/TimePicker'
+import type { TimePickerProps } from '@/components/form/TimePicker'
 import { useFieldContext } from '@/lib/form/contexts'
-import { TimePicker } from '@/components/atoms/TimePicker'
+import { TimePicker } from '@/components/form/TimePicker'
 
 export interface TimeFieldProps extends Omit<
   TimePickerProps,

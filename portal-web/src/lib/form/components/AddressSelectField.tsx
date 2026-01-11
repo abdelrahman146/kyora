@@ -35,8 +35,8 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 
 import { useFieldContext } from '../contexts'
-import type { FormSelectOption } from '@/components/atoms/FormSelect'
-import { FormSelect } from '@/components/atoms/FormSelect'
+import type { FormSelectOption } from '@/components/form/FormSelect'
+import { FormSelect } from '@/components/form/FormSelect'
 import { useAddressesQuery } from '@/api/address'
 
 export interface AddressSelectFieldProps {

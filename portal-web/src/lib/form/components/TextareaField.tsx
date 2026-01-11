@@ -24,7 +24,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { TextareaFieldProps } from '../types'
-import { FormTextarea } from '@/components/atoms/FormTextarea'
+import { FormTextarea } from '@/components/form/FormTextarea'
 
 export function TextareaField(props: TextareaFieldProps) {
   const field = useFieldContext<string>()
@@ -40,7 +40,11 @@ export function TextareaField(props: TextareaFieldProps) {
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }

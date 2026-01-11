@@ -6,7 +6,7 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
 
 ## High priority (likely user-visible)
 
-- [ ] **Portal-web code structure violates target architecture (routes contain pages; shared components contain feature UI)**
+- [x] **Portal-web code structure violates target architecture (routes contain pages; shared components contain feature UI)**
   - **SSOT target:** `.github/instructions/portal-web-code-structure.instructions.md`
   - **Routes contain page logic:** business routes like `portal-web/src/routes/business/$businessDescriptor/orders/index.tsx` and `portal-web/src/routes/business/$businessDescriptor/inventory/index.tsx` are large “page implementations” inside the route file.
     - **Impact:** routing layer is not thin; hard to reuse/test; encourages copy-paste.

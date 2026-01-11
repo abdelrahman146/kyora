@@ -21,7 +21,7 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { PasswordFieldProps } from '../types'
-import { PasswordInput } from '@/components/atoms/PasswordInput'
+import { PasswordInput } from '@/components/form/PasswordInput'
 
 export function PasswordField(props: PasswordFieldProps) {
   const field = useFieldContext<string>()
@@ -37,7 +37,11 @@ export function PasswordField(props: PasswordFieldProps) {
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }

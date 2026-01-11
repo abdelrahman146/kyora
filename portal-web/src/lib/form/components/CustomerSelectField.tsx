@@ -38,9 +38,9 @@ import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { CustomerSelectFieldProps } from '../types'
 import type { Customer } from '@/api/customer'
-import type { FormSelectOption } from '@/components/atoms/FormSelect'
+import type { FormSelectOption } from '@/components/form/FormSelect'
 import { customerApi } from '@/api/customer'
-import { FormSelect } from '@/components/atoms/FormSelect'
+import { FormSelect } from '@/components/form/FormSelect'
 
 export function CustomerSelectField(props: CustomerSelectFieldProps) {
   const field = useFieldContext<string>()

@@ -36,9 +36,11 @@ import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useFieldContext } from '../contexts'
 import type { SelectFieldProps } from '../types'
-import { FormSelect } from '@/components/atoms/FormSelect'
+import { FormSelect } from '@/components/form/FormSelect'
 
-export function SelectField<T extends string = string>(props: SelectFieldProps<T>) {
+export function SelectField<T extends string = string>(
+  props: SelectFieldProps<T>,
+) {
   const field = useFieldContext<T | Array<T>>()
   const { t } = useTranslation('errors')
 
@@ -52,7 +54,11 @@ export function SelectField<T extends string = string>(props: SelectFieldProps<T
       return t(firstError)
     }
 
-    if (typeof firstError === 'object' && firstError && 'message' in firstError) {
+    if (
+      typeof firstError === 'object' &&
+      firstError &&
+      'message' in firstError
+    ) {
       const errorObj = firstError as { message: string; code?: number }
       return t(errorObj.message)
     }
