@@ -41,7 +41,8 @@ export function UpdateProductWithVariantsForm({
   onSuccess,
   onCancel,
 }: UpdateProductWithVariantsFormProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const queryClient = useQueryClient()
   const selectedBusiness = getSelectedBusiness()
   const currencyCode = selectedBusiness?.currency ?? 'USD'
@@ -52,7 +53,7 @@ export function UpdateProductWithVariantsForm({
     product.id,
     {
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -63,7 +64,7 @@ export function UpdateProductWithVariantsForm({
     product.id,
     {
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -155,11 +156,11 @@ export function UpdateProductWithVariantsForm({
           await inventoryApi.deleteVariant(businessDescriptor, variantId)
         }
 
-        toast.success(t('product_updated', { ns: 'inventory' }))
+        toast.success(tInventory('product_updated'))
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         onSuccess()
       } catch (error) {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       }
     },
@@ -173,7 +174,7 @@ export function UpdateProductWithVariantsForm({
       id?: string
     }>
     if (currentVariants.length <= 1) {
-      toast.error(t('cannot_delete_last_variant', { ns: 'inventory' }))
+      toast.error(tInventory('cannot_delete_last_variant'))
       return
     }
 
@@ -192,7 +193,7 @@ export function UpdateProductWithVariantsForm({
 
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide border-b border-base-300 pb-2">
-                {t('product_information', { ns: 'inventory' })}
+                {tInventory('product_information')}
               </h3>
 
               <form.AppField
@@ -203,10 +204,8 @@ export function UpdateProductWithVariantsForm({
               >
                 {(field) => (
                   <field.TextField
-                    label={t('product_name', { ns: 'inventory' })}
-                    placeholder={t('product_name_placeholder', {
-                      ns: 'inventory',
-                    })}
+                    label={tInventory('product_name')}
+                    placeholder={tInventory('product_name_placeholder')}
                     required
                   />
                 )}
@@ -215,10 +214,8 @@ export function UpdateProductWithVariantsForm({
               <form.AppField name="description">
                 {(field) => (
                   <field.TextareaField
-                    label={t('description', { ns: 'inventory' })}
-                    placeholder={t('description_placeholder', {
-                      ns: 'inventory',
-                    })}
+                    label={tInventory('description')}
+                    placeholder={tInventory('description_placeholder')}
                     rows={3}
                   />
                 )}
@@ -233,8 +230,8 @@ export function UpdateProductWithVariantsForm({
                 {(field) => (
                   <field.CategorySelectField
                     businessDescriptor={businessDescriptor}
-                    label={t('category', { ns: 'inventory' })}
-                    placeholder={t('select_category', { ns: 'inventory' })}
+                    label={tInventory('category')}
+                    placeholder={tInventory('select_category')}
                     required
                   />
                 )}
@@ -243,8 +240,8 @@ export function UpdateProductWithVariantsForm({
               <form.AppField name="photos">
                 {(field) => (
                   <field.FileUploadField
-                    label={t('product_photos', { ns: 'inventory' })}
-                    hint={t('product_photos_hint', { ns: 'inventory' })}
+                    label={tInventory('product_photos')}
+                    hint={tInventory('product_photos_hint')}
                     accept="image/*"
                     maxFiles={10}
                     multiple
@@ -256,13 +253,12 @@ export function UpdateProductWithVariantsForm({
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-base-300 pb-2">
                 <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-                  {t('variants', { ns: 'inventory' })}
+                  {tInventory('variants')}
                 </h3>
                 <form.Subscribe selector={(state) => state.values.variants}>
                   {(variants) => (
                     <span className="text-sm text-base-content/70">
-                      {variants.length}{' '}
-                      {t('variant_count', { ns: 'inventory' })}
+                      {variants.length} {tInventory('variant_count')}
                     </span>
                   )}
                 </form.Subscribe>
@@ -279,10 +275,8 @@ export function UpdateProductWithVariantsForm({
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-sm text-base-content">
                             {variant.id
-                              ? t('variant', { ns: 'inventory' }) +
-                                ' ' +
-                                (index + 1)
-                              : t('new_variant', { ns: 'inventory' })}
+                              ? tInventory('variant') + ' ' + (index + 1)
+                              : tInventory('new_variant')}
                           </span>
                           {field.state.value.length > 1 && (
                             <button
@@ -314,9 +308,9 @@ export function UpdateProductWithVariantsForm({
                         >
                           {(codeField) => (
                             <codeField.TextField
-                              label={t('variant_code', { ns: 'inventory' })}
-                              placeholder={t(
-                                'inventory.variant_code_placeholder',
+                              label={tInventory('variant_code')}
+                              placeholder={tInventory(
+                                'variant_code_placeholder',
                               )}
                               required
                             />
@@ -326,11 +320,9 @@ export function UpdateProductWithVariantsForm({
                         <form.AppField name={`variants[${index}].sku`}>
                           {(skuField) => (
                             <skuField.TextField
-                              label={t('sku', { ns: 'inventory' })}
-                              placeholder={t('sku_placeholder', {
-                                ns: 'inventory',
-                              })}
-                              hint={t('sku_hint', { ns: 'inventory' })}
+                              label={tInventory('sku')}
+                              placeholder={tInventory('sku_placeholder')}
+                              hint={tInventory('sku_hint')}
                             />
                           )}
                         </form.AppField>
@@ -338,7 +330,7 @@ export function UpdateProductWithVariantsForm({
                         <form.AppField name={`variants[${index}].photos`}>
                           {(photosField) => (
                             <photosField.FileUploadField
-                              label={t('variant_photos', { ns: 'inventory' })}
+                              label={tInventory('variant_photos')}
                               accept="image/*"
                               maxFiles={10}
                               multiple
@@ -357,7 +349,7 @@ export function UpdateProductWithVariantsForm({
                           >
                             {(priceField) => (
                               <priceField.PriceField
-                                label={t('cost_price', { ns: 'inventory' })}
+                                label={tInventory('cost_price')}
                                 placeholder="0.00"
                                 currencyCode={currencyCode}
                                 required
@@ -375,7 +367,7 @@ export function UpdateProductWithVariantsForm({
                           >
                             {(priceField) => (
                               <priceField.PriceField
-                                label={t('sale_price', { ns: 'inventory' })}
+                                label={tInventory('sale_price')}
                                 placeholder="0.00"
                                 currencyCode={currencyCode}
                                 required
@@ -391,7 +383,7 @@ export function UpdateProductWithVariantsForm({
                             {(stockField) => (
                               <stockField.TextField
                                 type="text"
-                                label={t('stock_quantity', { ns: 'inventory' })}
+                                label={tInventory('stock_quantity')}
                                 placeholder="0"
                                 required
                               />
@@ -404,11 +396,9 @@ export function UpdateProductWithVariantsForm({
                             {(alertField) => (
                               <alertField.TextField
                                 type="text"
-                                label={t('stock_alert', { ns: 'inventory' })}
+                                label={tInventory('stock_alert')}
                                 placeholder="0"
-                                hint={t('stock_alert_hint', {
-                                  ns: 'inventory',
-                                })}
+                                hint={tInventory('stock_alert_hint')}
                               />
                             )}
                           </form.AppField>
@@ -437,14 +427,11 @@ export function UpdateProductWithVariantsForm({
                           </svg>
                           <div className="flex-1">
                             <span className="font-medium">
-                              {deletedVariant?.code ||
-                                t('variant', { ns: 'inventory' })}
+                              {deletedVariant?.code || tInventory('variant')}
                             </span>
                             {' - '}
                             <span>
-                              {t('variant_marked_for_deletion', {
-                                ns: 'inventory',
-                              })}
+                              {tInventory('variant_marked_for_deletion')}
                             </span>
                           </div>
                         </div>
@@ -471,7 +458,7 @@ export function UpdateProductWithVariantsForm({
                       disabled={field.state.value.length >= 50}
                     >
                       <Plus className="w-4 h-4" />
-                      {t('add_variant', { ns: 'inventory' })}
+                      {tInventory('add_variant')}
                     </button>
                   </div>
                 )}
@@ -486,10 +473,10 @@ export function UpdateProductWithVariantsForm({
               className="btn btn-ghost flex-1"
               disabled={isLoading}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton variant="primary" className="flex-1">
-              {t('update_product', { ns: 'inventory' })}
+              {tInventory('update_product')}
             </form.SubmitButton>
           </div>
         </form.FormRoot>

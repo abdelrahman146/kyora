@@ -14,7 +14,8 @@ import { cn } from '@/lib/utils'
 import { businessStore } from '@/stores/businessStore'
 
 export function BusinessSwitcher() {
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
+  const { t: tDashboard } = useTranslation('dashboard')
   const isMobile = useMediaQuery('(max-width: 640px)')
   const navigate = useNavigate()
 
@@ -86,7 +87,7 @@ export function BusinessSwitcher() {
         <Loader2 size={16} className="animate-spin text-base-content/60" />
         {!isMobile && (
           <span className="text-sm text-base-content/60">
-            {t('common.loading')}
+            {tCommon('loading')}
           </span>
         )}
       </div>
@@ -118,7 +119,7 @@ export function BusinessSwitcher() {
           {!isMobile && (
             <div className="flex flex-col items-start max-w-40">
               <span className="text-sm font-semibold text-base-content truncate">
-                {selectedBusiness?.name ?? t('dashboard.select_business')}
+                {selectedBusiness?.name ?? tDashboard('select_business')}
               </span>
             </div>
           )}
@@ -178,7 +179,7 @@ export function BusinessSwitcher() {
         >
           <Building2 size={18} className="shrink-0" />
           <span className="text-sm font-semibold">
-            {t('dashboard.add_business')}
+            {tDashboard('add_business')}
           </span>
         </button>
       </div>

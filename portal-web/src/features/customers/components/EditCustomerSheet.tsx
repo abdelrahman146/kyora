@@ -92,12 +92,13 @@ export function EditCustomerSheet({
   customer,
   onUpdated,
 }: EditCustomerSheetProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tCommon } = useTranslation('common')
   const formId = useId()
 
   const updateMutation = useUpdateCustomerMutation(businessDescriptor, {
     onSuccess: async (updated) => {
-      showSuccessToast(t('customers.update_success'))
+      showSuccessToast(tCustomers('update_success'))
       if (onUpdated) {
         await onUpdated(updated)
       }
@@ -167,7 +168,7 @@ export function EditCustomerSheet({
       <BottomSheet
         isOpen={isOpen}
         onClose={safeClose}
-        title={t('customers.edit_title')}
+        title={tCustomers('edit_title')}
         footer={
           <div className="flex gap-2">
             <button
@@ -177,7 +178,7 @@ export function EditCustomerSheet({
               disabled={updateMutation.isPending}
               aria-disabled={updateMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton
               form={`edit-customer-form-${formId}`}
@@ -186,8 +187,8 @@ export function EditCustomerSheet({
               disabled={!isDirty}
             >
               {updateMutation.isPending
-                ? t('customers.update_submitting')
-                : t('customers.update_submit')}
+                ? tCustomers('update_submitting')
+                : tCustomers('update_submit')}
             </form.SubmitButton>
           </div>
         }
@@ -196,7 +197,7 @@ export function EditCustomerSheet({
         closeOnOverlayClick={!updateMutation.isPending}
         closeOnEscape={!updateMutation.isPending}
         contentClassName="space-y-4"
-        ariaLabel={t('customers.edit_title')}
+        ariaLabel={tCustomers('edit_title')}
       >
         <form.FormRoot
           id={`edit-customer-form-${formId}`}
@@ -211,8 +212,8 @@ export function EditCustomerSheet({
           >
             {(field) => (
               <field.TextField
-                label={t('customers.form.name')}
-                placeholder={t('customers.form.name_placeholder')}
+                label={tCustomers('form.name')}
+                placeholder={tCustomers('form.name_placeholder')}
                 autoComplete="name"
                 required
               />
@@ -232,8 +233,8 @@ export function EditCustomerSheet({
             {(field) => (
               <field.TextField
                 type="email"
-                label={t('customers.form.email')}
-                placeholder={t('customers.form.email_placeholder')}
+                label={tCustomers('form.email')}
+                placeholder={tCustomers('form.email_placeholder')}
                 autoComplete="email"
                 required
               />
@@ -274,14 +275,14 @@ export function EditCustomerSheet({
             >
               {(field: any) => (
                 <FormSelect<CustomerGender>
-                  label={t('customers.form.gender')}
+                  label={tCustomers('form.gender')}
                   options={[
-                    { value: 'male', label: t('customers.form.gender_male') },
+                    { value: 'male', label: tCustomers('form.gender_male') },
                     {
                       value: 'female',
-                      label: t('customers.form.gender_female'),
+                      label: tCustomers('form.gender_female'),
                     },
-                    { value: 'other', label: t('customers.form.gender_other') },
+                    { value: 'other', label: tCustomers('form.gender_other') },
                   ]}
                   value={field.state.value}
                   onChange={(value: CustomerGender | Array<CustomerGender>) => {
@@ -290,7 +291,7 @@ export function EditCustomerSheet({
                   }}
                   required
                   disabled={updateMutation.isPending}
-                  placeholder={t('customers.form.select_gender')}
+                  placeholder={tCustomers('form.select_gender')}
                 />
               )}
             </form.AppField>
@@ -334,8 +335,8 @@ export function EditCustomerSheet({
                 {(field) => (
                   <field.TextField
                     type="tel"
-                    label={t('customers.form.phone_number')}
-                    placeholder={t('customers.form.phone_placeholder')}
+                    label={tCustomers('form.phone_number')}
+                    placeholder={tCustomers('form.phone_placeholder')}
                     autoComplete="tel"
                   />
                 )}

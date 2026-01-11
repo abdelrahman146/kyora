@@ -17,7 +17,7 @@ import { OnboardingLayout } from '@/features/onboarding/components/OnboardingLay
 export function VerifyEmailPage() {
   const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
-  const { t: tTranslation } = useTranslation('translation')
+  const { t: tAuth } = useTranslation('auth')
   const navigate = useNavigate()
 
   const { session } = useLoaderData({ from: '/onboarding/verify' })
@@ -398,7 +398,7 @@ export function VerifyEmailPage() {
                               })
                             }}
                           >
-                            {tTranslation('auth.login')}
+                            {tAuth('login')}
                           </Button>
                         )}
                       </div>

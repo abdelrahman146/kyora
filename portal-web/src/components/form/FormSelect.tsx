@@ -119,12 +119,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
-    const { t } = useTranslation()
+    const { t: tCommon } = useTranslation('common')
     const generatedId = useId()
     const inputId = id ?? generatedId
     const errorText = getErrorText(error)
     const hasError = Boolean(errorText)
-    const placeholder = placeholderProp ?? t('common.select')
+    const placeholder = placeholderProp ?? tCommon('select')
     const [isOpen, setIsOpen] = useState(false)
     const [isAnimating, setIsAnimating] = useState(false)
     const searchInputRef = useRef<HTMLInputElement>(null)
@@ -172,7 +172,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
 
     const createActionLabel = createOptionLabel
       ? createOptionLabel(normalizedSearchQuery)
-      : t('common.create_option', { option: normalizedSearchQuery })
+      : tCommon('create_option', { option: normalizedSearchQuery })
 
     // Close handler with animation
     const handleClose = useCallback(() => {
@@ -431,7 +431,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     )}
                     tabIndex={0}
                     role="button"
-                    aria-label={t('common.remove_option', {
+                    aria-label={tCommon('remove_option', {
                       option: option.label,
                     })}
                     onKeyDown={(e) => handleChipKeyDown(option.value, e)}
@@ -449,7 +449,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         'btn btn-ghost btn-circle btn-xs',
                         'hover:bg-base-content/10 transition-colors',
                       )}
-                      aria-label={t('common.remove', { item: option.label })}
+                      aria-label={tCommon('remove', { item: option.label })}
                       tabIndex={-1}
                     >
                       <X className="w-3.5 h-3.5" />
@@ -482,7 +482,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     }
                   }}
                   className="p-1 hover:bg-base-200 rounded-md transition-colors cursor-pointer"
-                  aria-label={t('common.clear_selection')}
+                  aria-label={tCommon('clear_selection')}
                 >
                   <X className="w-4 h-4" />
                 </span>
@@ -510,7 +510,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                   )}
                   role="dialog"
                   aria-modal="true"
-                  aria-label={mobileTitle || label || t('common.select')}
+                  aria-label={mobileTitle || label || tCommon('select')}
                   onClick={(e) => {
                     // Close on backdrop click
                     if (e.target === e.currentTarget) {
@@ -547,13 +547,13 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     {/* Header */}
                     <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-base-300">
                       <h2 className="text-lg font-semibold text-base-content">
-                        {mobileTitle || label || t('common.select')}
+                        {mobileTitle || label || tCommon('select')}
                       </h2>
                       <button
                         type="button"
                         onClick={handleClose}
                         className="btn btn-ghost btn-sm btn-square"
-                        aria-label={t('common.close')}
+                        aria-label={tCommon('close')}
                       >
                         <X className="w-5 h-5" />
                       </button>
@@ -576,12 +576,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                               handleCreateOption()
                             }
                           }}
-                          placeholder={t('common.search_placeholder_generic')}
+                          placeholder={tCommon('search_placeholder_generic')}
                           startIcon={<Search className="w-5 h-5" />}
                           size="lg"
                           variant="filled"
                           fullWidth
-                          aria-label={t('common.search_options')}
+                          aria-label={tCommon('search_options')}
                         />
                       </div>
                     )}
@@ -611,7 +611,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                               {createActionLabel}
                             </div>
                             <div className="text-sm text-base-content/60 mt-0.5">
-                              {t('common.create')}
+                              {tCommon('create')}
                             </div>
                           </div>
                           {isCreatingOption && (
@@ -622,7 +622,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
 
                       {filteredOptions.length === 0 && !canCreateOption ? (
                         <li className="p-6 text-center text-base-content/50">
-                          {t('common.no_options_found')}
+                          {tCommon('no_options_found')}
                         </li>
                       ) : (
                         filteredOptions.map((option) => {
@@ -718,12 +718,12 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                           handleCreateOption()
                         }
                       }}
-                      placeholder={t('common.search_placeholder_generic')}
+                      placeholder={tCommon('search_placeholder_generic')}
                       startIcon={<Search className="w-4 h-4" />}
                       size="sm"
                       variant="filled"
                       fullWidth
-                      aria-label={t('common.search_options')}
+                      aria-label={tCommon('search_options')}
                     />
                   </div>
                 )}
@@ -754,7 +754,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                           {createActionLabel}
                         </div>
                         <div className="text-sm text-base-content/60 truncate">
-                          {t('common.create')}
+                          {tCommon('create')}
                         </div>
                       </div>
                       {isCreatingOption && (
@@ -765,7 +765,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
 
                   {filteredOptions.length === 0 && !canCreateOption ? (
                     <li className="p-4 text-center text-base-content/50">
-                      {t('common.no_options_found')}
+                      {tCommon('no_options_found')}
                     </li>
                   ) : (
                     filteredOptions.map((option, index) => {

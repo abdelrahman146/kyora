@@ -57,7 +57,9 @@ export function HomePending() {
 }
 
 export function HomePage() {
-  const { t } = useTranslation()
+  const { t: tHome } = useTranslation('home')
+  const { t: tAuth } = useTranslation('auth')
+  const { t: tCommon } = useTranslation('common')
   const navigate = useNavigate()
   const { user, logout } = useAuth()
   const { isRTL } = useLanguage()
@@ -89,24 +91,24 @@ export function HomePage() {
     {
       key: 'workspace',
       icon: Users,
-      label: t('home.workspace_settings'),
-      description: t('home.workspace_settings_desc'),
+      label: tHome('workspace_settings'),
+      description: tHome('workspace_settings_desc'),
       path: '/workspace',
       disabled: true,
     },
     {
       key: 'account',
       icon: Settings,
-      label: t('home.account_settings'),
-      description: t('home.account_settings_desc'),
+      label: tHome('account_settings'),
+      description: tHome('account_settings_desc'),
       path: '/account',
       disabled: true,
     },
     {
       key: 'billing',
       icon: CreditCard,
-      label: t('home.billing'),
-      description: t('home.billing_desc'),
+      label: tHome('billing'),
+      description: tHome('billing_desc'),
       path: '/billing',
       disabled: true,
     },
@@ -116,14 +118,14 @@ export function HomePage() {
     {
       key: 'help',
       icon: HelpCircle,
-      label: t('home.help_center'),
+      label: tHome('help_center'),
       path: 'https://help.kyora.app',
       external: true,
     },
     {
       key: 'docs',
       icon: BookOpen,
-      label: t('home.documentation'),
+      label: tHome('documentation'),
       path: 'https://docs.kyora.app',
       external: true,
     },
@@ -147,7 +149,7 @@ export function HomePage() {
                 className="btn btn-ghost btn-sm"
                 onClick={handleLogout}
               >
-                {t('auth.logout')}
+                {tAuth('logout')}
               </button>
             </div>
           </div>
@@ -159,10 +161,10 @@ export function HomePage() {
         {/* Welcome Section */}
         <div className="mb-8">
           <h1 className="mb-2 text-3xl font-bold">
-            {t('home.welcome')}, {user?.firstName}!
+            {tHome('welcome')}, {user?.firstName}!
           </h1>
           <p className="text-base-content/70">
-            {t('home.select_business_or_manage')}
+            {tHome('select_business_or_manage')}
           </p>
         </div>
 
@@ -170,11 +172,11 @@ export function HomePage() {
         <section className="mb-8">
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold">
-              {t('home.your_businesses')}
+              {tHome('your_businesses')}
             </h2>
             <button className="btn btn-primary btn-sm gap-2" disabled>
               <Plus size={18} />
-              {t('home.add_business')}
+              {tHome('add_business')}
             </button>
           </div>
 
@@ -183,14 +185,14 @@ export function HomePage() {
               <div className="card-body items-center py-12 text-center">
                 <Building2 size={48} className="mb-4 text-base-content/30" />
                 <h3 className="mb-2 text-lg font-semibold">
-                  {t('home.no_businesses')}
+                  {tHome('no_businesses')}
                 </h3>
                 <p className="mb-4 text-sm text-base-content/60">
-                  {t('home.no_businesses_desc')}
+                  {tHome('no_businesses_desc')}
                 </p>
                 <button className="btn btn-primary gap-2" disabled>
                   <Plus size={18} />
-                  {t('home.create_first_business')}
+                  {tHome('create_first_business')}
                 </button>
               </div>
             </div>
@@ -233,9 +235,7 @@ export function HomePage() {
 
         {/* Quick Links Section */}
         <section className="mb-8">
-          <h2 className="mb-4 text-xl font-semibold">
-            {t('home.quick_links')}
-          </h2>
+          <h2 className="mb-4 text-xl font-semibold">{tHome('quick_links')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
             {quickLinks.map((link) => (
               <button
@@ -253,7 +253,7 @@ export function HomePage() {
                   </p>
                   {link.disabled && (
                     <span className="badge badge-ghost badge-sm mt-2">
-                      {t('common.coming_soon')}
+                      {tCommon('coming_soon')}
                     </span>
                   )}
                 </div>
@@ -264,7 +264,7 @@ export function HomePage() {
 
         {/* Support Links Section */}
         <section>
-          <h2 className="mb-4 text-xl font-semibold">{t('home.support')}</h2>
+          <h2 className="mb-4 text-xl font-semibold">{tHome('support')}</h2>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
             {supportLinks.map((link) => (
               <a

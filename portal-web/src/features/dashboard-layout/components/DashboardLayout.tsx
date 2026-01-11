@@ -17,7 +17,7 @@ export interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ title, children }: DashboardLayoutProps) {
-  const { t } = useTranslation()
+  const { t: tDashboard } = useTranslation('dashboard')
   const matches = useMatches()
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
@@ -35,7 +35,7 @@ export function DashboardLayout({ title, children }: DashboardLayoutProps) {
       : undefined
 
   const resolvedTitle =
-    title ?? (derivedTitleKey ? t(derivedTitleKey) : undefined)
+    title ?? (derivedTitleKey ? tDashboard(derivedTitleKey) : undefined)
 
   // Close sidebar when switching to desktop
   useEffect(() => {
@@ -72,7 +72,7 @@ export function DashboardLayout({ title, children }: DashboardLayoutProps) {
           }}
           role="button"
           tabIndex={0}
-          aria-label={t('dashboard.close_menu')}
+          aria-label={tDashboard('close_menu')}
         />
       )}
 

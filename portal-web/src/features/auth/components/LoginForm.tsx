@@ -17,7 +17,7 @@ export function LoginForm({
   onGoogleLogin,
   isGoogleLoading = false,
 }: LoginFormProps) {
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
 
   const form = useKyoraForm({
     defaultValues: {
@@ -46,8 +46,8 @@ export function LoginForm({
           {(field) => (
             <field.TextField
               type="email"
-              label={t('auth.email')}
-              placeholder={t('auth.email_placeholder')}
+              label={tAuth('email')}
+              placeholder={tAuth('email_placeholder')}
               startIcon={<Mail size={20} />}
               autoComplete="email"
             />
@@ -62,8 +62,8 @@ export function LoginForm({
         >
           {(field) => (
             <field.PasswordField
-              label={t('auth.password')}
-              placeholder={t('auth.password_placeholder')}
+              label={tAuth('password')}
+              placeholder={tAuth('password_placeholder')}
               autoComplete="current-password"
             />
           )}
@@ -74,7 +74,7 @@ export function LoginForm({
             to="/auth/forgot-password"
             className="text-sm text-primary hover:text-primary-focus hover:underline transition-colors"
           >
-            {t('auth.forgot_password')}
+            {tAuth('forgot_password')}
           </Link>
         </div>
 
@@ -82,15 +82,15 @@ export function LoginForm({
           variant="primary"
           size="lg"
           fullWidth
-          loadingText={t('auth.logging_in')}
+          loadingText={tAuth('logging_in')}
         >
-          {t('auth.login')}
+          {tAuth('login')}
         </form.SubmitButton>
 
         {onGoogleLogin && (
           <>
             <div className="divider text-neutral-500 text-sm">
-              {t('auth.or_continue_with')}
+              {tAuth('or_continue_with')}
             </div>
 
             <form.Subscribe
@@ -107,7 +107,7 @@ export function LoginForm({
                     <>
                       <Loader2 size={20} className="animate-spin" />
                       <span className="font-semibold">
-                        {t('auth.connecting_google')}
+                        {tAuth('connecting_google')}
                       </span>
                     </>
                   ) : (
@@ -135,7 +135,7 @@ export function LoginForm({
                         />
                       </svg>
                       <span className="font-semibold">
-                        {t('auth.continue_with_google')}
+                        {tAuth('continue_with_google')}
                       </span>
                     </>
                   )}

@@ -147,7 +147,8 @@ export function useCreateAddressMutation(
   customerId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (data: CreateAddressRequest) =>
@@ -161,10 +162,10 @@ export function useCreateAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('customers.address.create_success'))
+      showSuccessToast(tCustomers('address.create_success'))
     },
     onError: () => {
-      showErrorToast(t('errors.generic.unexpected'))
+      showErrorToast(tErrors('generic.unexpected'))
     },
   })
 }
@@ -178,7 +179,8 @@ export function useUpdateAddressMutation(
   addressId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (data: UpdateAddressRequest) =>
@@ -190,10 +192,10 @@ export function useUpdateAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('customers.address.update_success'))
+      showSuccessToast(tCustomers('address.update_success'))
     },
     onError: () => {
-      showErrorToast(t('errors.generic.unexpected'))
+      showErrorToast(tErrors('generic.unexpected'))
     },
   })
 }
@@ -206,7 +208,8 @@ export function useDeleteAddressMutation(
   customerId: string,
 ) {
   const queryClient = useQueryClient()
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (addressId: string) =>
@@ -218,10 +221,10 @@ export function useDeleteAddressMutation(
       void queryClient.invalidateQueries({
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
-      showSuccessToast(t('customers.address.delete_success'))
+      showSuccessToast(tCustomers('address.delete_success'))
     },
     onError: () => {
-      showErrorToast(t('errors.generic.unexpected'))
+      showErrorToast(tErrors('generic.unexpected'))
     },
   })
 }

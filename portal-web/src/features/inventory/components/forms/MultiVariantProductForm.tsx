@@ -25,7 +25,8 @@ export function MultiVariantProductForm({
   onSuccess,
   onCancel,
 }: MultiVariantProductFormProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const { businessDescriptor } = useParams({ strict: false })
   const queryClient = useQueryClient()
   const selectedBusiness = getSelectedBusiness()
@@ -35,12 +36,12 @@ export function MultiVariantProductForm({
     businessDescriptor!,
     {
       onSuccess: () => {
-        toast.success(t('product_created', { ns: 'inventory' }))
+        toast.success(tInventory('product_created'))
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         onSuccess()
       },
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -104,7 +105,7 @@ export function MultiVariantProductForm({
 
             <div className="space-y-4">
               <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide border-b border-base-300 pb-2">
-                {t('product_information', { ns: 'inventory' })}
+                {tInventory('product_information')}
               </h3>
 
               <form.AppField
@@ -115,8 +116,8 @@ export function MultiVariantProductForm({
               >
                 {(field) => (
                   <field.TextField
-                    label={t('product_name', { ns: 'inventory' })}
-                    placeholder={t('product_name_placeholder', {
+                    label={tInventory('product_name')}
+                    placeholder={tInventory('product_name_placeholder', {
                       ns: 'inventory',
                     })}
                     required
@@ -127,8 +128,8 @@ export function MultiVariantProductForm({
               <form.AppField name="description">
                 {(field) => (
                   <field.TextareaField
-                    label={t('description', { ns: 'inventory' })}
-                    placeholder={t('description_placeholder', {
+                    label={tInventory('description')}
+                    placeholder={tInventory('description_placeholder', {
                       ns: 'inventory',
                     })}
                     rows={3}
@@ -145,8 +146,8 @@ export function MultiVariantProductForm({
                 {(field) => (
                   <field.CategorySelectField
                     businessDescriptor={businessDescriptor!}
-                    label={t('category', { ns: 'inventory' })}
-                    placeholder={t('select_category', { ns: 'inventory' })}
+                    label={tInventory('category')}
+                    placeholder={tInventory('select_category')}
                     required
                   />
                 )}
@@ -155,8 +156,8 @@ export function MultiVariantProductForm({
               <form.AppField name="photos">
                 {(field) => (
                   <field.FileUploadField
-                    label={t('product_photos', { ns: 'inventory' })}
-                    hint={t('product_photos_hint', { ns: 'inventory' })}
+                    label={tInventory('product_photos')}
+                    hint={tInventory('product_photos_hint')}
                     accept="image/*"
                     maxFiles={10}
                     multiple
@@ -168,13 +169,12 @@ export function MultiVariantProductForm({
             <div className="space-y-4">
               <div className="flex items-center justify-between border-b border-base-300 pb-2">
                 <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-                  {t('variants', { ns: 'inventory' })}
+                  {tInventory('variants')}
                 </h3>
                 <form.Subscribe selector={(state) => state.values.variants}>
                   {(variants) => (
                     <span className="text-sm text-base-content/70">
-                      {variants.length}{' '}
-                      {t('variant_count', { ns: 'inventory' })}
+                      {variants.length} {tInventory('variant_count')}
                     </span>
                   )}
                 </form.Subscribe>
@@ -190,7 +190,7 @@ export function MultiVariantProductForm({
                       >
                         <div className="flex items-center justify-between">
                           <span className="font-medium text-sm text-base-content">
-                            {t('variant', { ns: 'inventory' })} {index + 1}
+                            {tInventory('variant')} {index + 1}
                           </span>
                           {field.state.value.length > 1 && (
                             <button
@@ -218,9 +218,9 @@ export function MultiVariantProductForm({
                         >
                           {(codeField) => (
                             <codeField.TextField
-                              label={t('variant_code', { ns: 'inventory' })}
-                              placeholder={t(
-                                'inventory.variant_code_placeholder',
+                              label={tInventory('variant_code')}
+                              placeholder={tInventory(
+                                'variant_code_placeholder',
                               )}
                               required
                             />
@@ -230,11 +230,11 @@ export function MultiVariantProductForm({
                         <form.AppField name={`variants[${index}].sku`}>
                           {(skuField) => (
                             <skuField.TextField
-                              label={t('sku', { ns: 'inventory' })}
-                              placeholder={t('sku_placeholder', {
+                              label={tInventory('sku')}
+                              placeholder={tInventory('sku_placeholder', {
                                 ns: 'inventory',
                               })}
-                              hint={t('sku_hint', { ns: 'inventory' })}
+                              hint={tInventory('sku_hint')}
                             />
                           )}
                         </form.AppField>
@@ -242,7 +242,7 @@ export function MultiVariantProductForm({
                         <form.AppField name={`variants[${index}].photos`}>
                           {(photosField) => (
                             <photosField.FileUploadField
-                              label={t('variant_photos', { ns: 'inventory' })}
+                              label={tInventory('variant_photos')}
                               accept="image/*"
                               maxFiles={10}
                               multiple
@@ -261,7 +261,7 @@ export function MultiVariantProductForm({
                           >
                             {(costPriceField) => (
                               <costPriceField.PriceField
-                                label={t('cost_price', { ns: 'inventory' })}
+                                label={tInventory('cost_price')}
                                 placeholder="0.00"
                                 currencyCode={currencyCode}
                                 required
@@ -279,7 +279,7 @@ export function MultiVariantProductForm({
                           >
                             {(salePriceField) => (
                               <salePriceField.PriceField
-                                label={t('sale_price', { ns: 'inventory' })}
+                                label={tInventory('sale_price')}
                                 placeholder="0.00"
                                 currencyCode={currencyCode}
                                 required
@@ -295,7 +295,7 @@ export function MultiVariantProductForm({
                             {(stockField) => (
                               <stockField.TextField
                                 type="text"
-                                label={t('stock_quantity', { ns: 'inventory' })}
+                                label={tInventory('stock_quantity')}
                                 placeholder="0"
                                 required
                               />
@@ -308,9 +308,9 @@ export function MultiVariantProductForm({
                             {(alertField) => (
                               <alertField.TextField
                                 type="text"
-                                label={t('stock_alert', { ns: 'inventory' })}
+                                label={tInventory('stock_alert')}
                                 placeholder="0"
-                                hint={t('stock_alert_hint', {
+                                hint={tInventory('stock_alert_hint', {
                                   ns: 'inventory',
                                 })}
                               />
@@ -339,9 +339,7 @@ export function MultiVariantProductForm({
                       }
                     >
                       <Plus className="w-4 h-4" />
-                      <span className="ms-2">
-                        {t('add_variant', { ns: 'inventory' })}
-                      </span>
+                      <span className="ms-2">{tInventory('add_variant')}</span>
                     </button>
                   </div>
                 )}
@@ -356,10 +354,10 @@ export function MultiVariantProductForm({
               className="btn btn-ghost flex-1"
               disabled={createMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton variant="primary" className="flex-1">
-              {t('create_product', { ns: 'inventory' })}
+              {tInventory('create_product')}
             </form.SubmitButton>
           </div>
         </form.FormRoot>

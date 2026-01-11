@@ -56,7 +56,8 @@ export async function customersListLoader({
 }
 
 export function CustomersListPage() {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tCommon } = useTranslation('common')
 
   const { businessDescriptor } = useParams({
     from: '/business/$businessDescriptor/customers/',
@@ -139,12 +140,12 @@ export function CustomersListPage() {
 
   const deleteMutation = useDeleteCustomerMutation(businessDescriptor, {
     onSuccess: () => {
-      showSuccessToast(t('customers.delete_success'))
+      showSuccessToast(tCustomers('delete_success'))
       setIsDeleteDialogOpen(false)
       setSelectedCustomer(null)
     },
     onError: (error) => {
-      void showErrorFromException(error, t)
+      void showErrorFromException(error, tCustomers)
     },
   })
 
@@ -252,20 +253,20 @@ export function CustomersListPage() {
 
   const sortOptions = useMemo<Array<SortOption>>(
     () => [
-      { value: 'name', label: t('customers.name') },
-      { value: 'countryCode', label: t('customers.country') },
-      { value: 'ordersCount', label: t('customers.orders_count') },
-      { value: 'totalSpent', label: t('customers.total_spent') },
-      { value: 'joinedAt', label: t('customers.joined_date') },
+      { value: 'name', label: tCustomers('name') },
+      { value: 'countryCode', label: tCustomers('country') },
+      { value: 'ordersCount', label: tCustomers('orders_count') },
+      { value: 'totalSpent', label: tCustomers('total_spent') },
+      { value: 'joinedAt', label: tCustomers('joined_date') },
     ],
-    [t],
+    [tCustomers],
   )
 
   const tableColumns = useMemo<Array<TableColumn<Customer>>>(
     () => [
       {
         key: 'name',
-        label: t('customers.name'),
+        label: tCustomers('name'),
         sortable: true,
         render: (customer) => (
           <div className="flex items-center gap-3">
@@ -286,7 +287,7 @@ export function CustomersListPage() {
       },
       {
         key: 'phone',
-        label: t('customers.phone'),
+        label: tCustomers('phone'),
         render: (customer) => {
           if (customer.phoneCode && customer.phoneNumber) {
             return `${customer.phoneCode} ${customer.phoneNumber}`
@@ -296,7 +297,7 @@ export function CustomersListPage() {
       },
       {
         key: 'countryCode',
-        label: t('customers.country'),
+        label: tCustomers('country'),
         sortable: true,
         render: (customer) => {
           const metadata = getMetadata()
@@ -318,7 +319,7 @@ export function CustomersListPage() {
       },
       {
         key: 'ordersCount',
-        label: t('customers.orders_count'),
+        label: tCustomers('orders_count'),
         sortable: true,
         align: 'center',
         render: (customer) => (
@@ -329,7 +330,7 @@ export function CustomersListPage() {
       },
       {
         key: 'totalSpent',
-        label: t('customers.total_spent'),
+        label: tCustomers('total_spent'),
         sortable: true,
         align: 'end',
         render: (customer) => {
@@ -343,7 +344,7 @@ export function CustomersListPage() {
       },
       {
         key: 'joinedAt',
-        label: t('customers.joined_date'),
+        label: tCustomers('joined_date'),
         sortable: true,
         render: (customer) => (
           <span className="text-sm text-base-content/70">
@@ -353,7 +354,7 @@ export function CustomersListPage() {
       },
       {
         key: 'actions',
-        label: t('common.actions'),
+        label: tCommon('actions'),
         align: 'center',
         width: '120px',
         render: (customer) => (
@@ -365,8 +366,8 @@ export function CustomersListPage() {
                 e.stopPropagation()
                 handleCustomerClick(customer)
               }}
-              aria-label={t('common.view')}
-              title={t('common.view')}
+              aria-label={tCommon('view')}
+              title={tCommon('view')}
             >
               <Eye size={16} />
             </button>
@@ -376,8 +377,8 @@ export function CustomersListPage() {
               onClick={(e) => {
                 handleEditClick(customer, e)
               }}
-              aria-label={t('common.edit')}
-              title={t('common.edit')}
+              aria-label={tCommon('edit')}
+              title={tCommon('edit')}
             >
               <Edit size={16} />
             </button>
@@ -387,8 +388,8 @@ export function CustomersListPage() {
               onClick={(e) => {
                 handleDeleteClick(customer, e)
               }}
-              aria-label={t('common.delete')}
-              title={t('common.delete')}
+              aria-label={tCommon('delete')}
+              title={tCommon('delete')}
             >
               <Trash2 size={16} />
             </button>
@@ -396,24 +397,30 @@ export function CustomersListPage() {
         ),
       },
     ],
-    [currency, handleCustomerClick, handleDeleteClick, handleEditClick, t],
+    [
+      currency,
+      handleCustomerClick,
+      handleDeleteClick,
+      handleEditClick,
+      tCustomers,
+    ],
   )
 
   return (
     <>
       <ResourceListLayout
-        title={t('customers.title')}
-        subtitle={t('customers.subtitle')}
-        addButtonText={t('customers.add_customer')}
+        title={tCustomers('title')}
+        subtitle={tCustomers('subtitle')}
+        addButtonText={tCustomers('add_customer')}
         onAddClick={() => {
           setIsAddCustomerOpen(true)
         }}
         addButtonDisabled={!businessDescriptor}
-        searchPlaceholder={t('customers.search_placeholder')}
+        searchPlaceholder={tCustomers('search_placeholder')}
         searchValue={search.search ?? ''}
         onSearchChange={handleSearch}
-        filterTitle={t('customers.filters')}
-        filterButtonText={t('common.filter')}
+        filterTitle={tCustomers('filters')}
+        filterButtonText={tCommon('filter')}
         filterButton={
           <filterForm.AppForm>
             <div className="space-y-6 p-4">
@@ -423,7 +430,7 @@ export function CustomersListPage() {
                     <CountrySelect
                       value={field.state.value}
                       onChange={(val) => field.handleChange(val)}
-                      placeholder={t('customers.all_countries')}
+                      placeholder={tCustomers('all_countries')}
                       searchable
                     />
                   </div>
@@ -433,8 +440,8 @@ export function CustomersListPage() {
               <filterForm.AppField name="hasOrders">
                 {(field) => (
                   <field.ToggleField
-                    label={t('customers.filter_only_with_orders')}
-                    description={t('customers.filter_only_with_orders_desc')}
+                    label={tCustomers('filter_only_with_orders')}
+                    description={tCustomers('filter_only_with_orders_desc')}
                   />
                 )}
               </filterForm.AppField>
@@ -442,31 +449,31 @@ export function CustomersListPage() {
               <filterForm.AppField name="socialPlatforms">
                 {(field) => (
                   <field.CheckboxGroupField
-                    label={t('customers.filter_by_social_platform')}
+                    label={tCustomers('filter_by_social_platform')}
                     options={[
                       {
                         value: 'instagram' as const,
-                        label: t('customers.instagram'),
+                        label: tCustomers('instagram'),
                       },
                       {
                         value: 'tiktok' as const,
-                        label: t('customers.tiktok'),
+                        label: tCustomers('tiktok'),
                       },
                       {
                         value: 'facebook' as const,
-                        label: t('customers.facebook'),
+                        label: tCustomers('facebook'),
                       },
                       {
                         value: 'x' as const,
-                        label: t('customers.x'),
+                        label: tCustomers('x'),
                       },
                       {
                         value: 'snapchat' as const,
-                        label: t('customers.snapchat'),
+                        label: tCustomers('snapchat'),
                       },
                       {
                         value: 'whatsapp' as const,
-                        label: t('customers.whatsapp'),
+                        label: tCustomers('whatsapp'),
                       },
                     ]}
                   />
@@ -476,28 +483,26 @@ export function CustomersListPage() {
           </filterForm.AppForm>
         }
         activeFilterCount={activeFilterCount}
-        applyLabel={t('common.apply')}
-        resetLabel={t('common.reset')}
+        applyLabel={tCommon('apply')}
+        resetLabel={tCommon('reset')}
         onApplyFilters={() => {
           filterForm.handleSubmit()
         }}
         onResetFilters={handleResetFilters}
-        sortTitle={t('customers.sort_customers')}
+        sortTitle={tCustomers('sort_customers')}
         sortOptions={sortOptions}
         onSortApply={handleSortApply}
         emptyIcon={<Users size={48} />}
         emptyTitle={
-          search.search
-            ? t('customers.no_results')
-            : t('customers.no_customers')
+          search.search ? tCustomers('no_results') : tCustomers('no_customers')
         }
         emptyMessage={
           search.search
-            ? t('customers.try_different_search')
-            : t('customers.get_started_message')
+            ? tCustomers('try_different_search')
+            : tCustomers('get_started_message')
         }
         emptyActionText={
-          !search.search ? t('customers.add_first_customer') : undefined
+          !search.search ? tCustomers('add_first_customer') : undefined
         }
         onEmptyAction={
           !search.search
@@ -506,8 +511,8 @@ export function CustomersListPage() {
               }
             : undefined
         }
-        noResultsTitle={t('customers.no_results')}
-        noResultsMessage={t('customers.try_different_search')}
+        noResultsTitle={tCustomers('no_results')}
+        noResultsMessage={tCustomers('try_different_search')}
         tableColumns={tableColumns}
         tableData={customers}
         tableKeyExtractor={(customer) => customer.id}
@@ -531,7 +536,7 @@ export function CustomersListPage() {
                 onClick={(e) => {
                   handleEditClick(customer, e)
                 }}
-                aria-label={t('common.edit')}
+                aria-label={tCommon('edit')}
               >
                 <Edit size={16} />
               </button>
@@ -541,7 +546,7 @@ export function CustomersListPage() {
                 onClick={(e) => {
                   handleDeleteClick(customer, e)
                 }}
-                aria-label={t('common.delete')}
+                aria-label={tCommon('delete')}
               >
                 <Trash2 size={16} />
               </button>
@@ -556,7 +561,7 @@ export function CustomersListPage() {
         totalItems={totalItems}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        itemsName={t('customers.customers').toLowerCase()}
+        itemsName={tCustomers('customers').toLowerCase()}
         skeleton={<CustomerListSkeleton />}
       />
 
@@ -589,7 +594,7 @@ export function CustomersListPage() {
           setIsDeleteDialogOpen(false)
           setSelectedCustomer(null)
         }}
-        title={t('customers.delete_confirm_title')}
+        title={tCustomers('delete_confirm_title')}
         size="sm"
         footer={
           <div className="flex gap-2 justify-end">
@@ -602,7 +607,7 @@ export function CustomersListPage() {
               }}
               disabled={deleteMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <button
               type="button"
@@ -613,17 +618,17 @@ export function CustomersListPage() {
               {deleteMutation.isPending ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  {t('common.deleting')}
+                  {tCommon('deleting')}
                 </>
               ) : (
-                t('common.delete')
+                tCommon('delete')
               )}
             </button>
           </div>
         }
       >
         <p className="text-base-content/70">
-          {t('customers.delete_confirm_message', {
+          {tCustomers('delete_confirm_message', {
             name: selectedCustomer?.name,
           })}
         </p>

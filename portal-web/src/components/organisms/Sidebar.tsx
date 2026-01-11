@@ -62,7 +62,8 @@ const navItems: Array<NavItem> = [
  * - Business descriptor from props for navigation
  */
 export function Sidebar(_props: SidebarProps) {
-  const { t } = useTranslation()
+  const { t: tDashboard } = useTranslation('dashboard')
+  const { t: tCommon } = useTranslation('common')
   const location = useLocation()
   const { isRTL } = useLanguage()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -87,8 +88,7 @@ export function Sidebar(_props: SidebarProps) {
         isDesktop && !sidebarCollapsed && 'w-64',
         isDesktop && sidebarCollapsed && 'w-20',
         // Mobile: Drawer from start with slide animation
-        !isDesktop &&
-          'start-0 w-64 transition-transform duration-300',
+        !isDesktop && 'start-0 w-64 transition-transform duration-300',
         // Mobile animation states
         !isDesktop && !isRTL && !sidebarOpen && '-translate-x-full',
         !isDesktop && isRTL && !sidebarOpen && 'translate-x-full',
@@ -112,7 +112,7 @@ export function Sidebar(_props: SidebarProps) {
               size="sm"
               variant="ghost"
               onClick={toggleSidebar}
-              aria-label={t('dashboard.toggle_sidebar')}
+              aria-label={tDashboard('toggle_sidebar')}
             />
           </>
         ) : (
@@ -127,7 +127,7 @@ export function Sidebar(_props: SidebarProps) {
                 size="sm"
                 variant="ghost"
                 onClick={toggleSidebar}
-                aria-label={t('dashboard.toggle_sidebar')}
+                aria-label={tDashboard('toggle_sidebar')}
               />
             ) : (
               <IconButton
@@ -135,7 +135,7 @@ export function Sidebar(_props: SidebarProps) {
                 size="sm"
                 variant="ghost"
                 onClick={closeSidebar}
-                aria-label={t('common.close')}
+                aria-label={tCommon('close')}
               />
             )}
           </>
@@ -162,8 +162,10 @@ export function Sidebar(_props: SidebarProps) {
           const isActive =
             item.path === ''
               ? !!selectedBusinessDescriptor &&
-                (location.pathname === `/business/${selectedBusinessDescriptor}` ||
-                  location.pathname === `/business/${selectedBusinessDescriptor}/`)
+                (location.pathname ===
+                  `/business/${selectedBusinessDescriptor}` ||
+                  location.pathname ===
+                    `/business/${selectedBusinessDescriptor}/`)
               : location.pathname.startsWith(itemPath)
           const Icon = item.icon
 
@@ -187,14 +189,12 @@ export function Sidebar(_props: SidebarProps) {
                 // Desktop collapsed: center icon
                 isDesktop && sidebarCollapsed && 'justify-center px-0',
               )}
-              title={sidebarCollapsed ? t(`dashboard.${item.key}`) : undefined}
+              title={sidebarCollapsed ? tDashboard(item.key) : undefined}
             >
               <Icon size={20} className="shrink-0" />
               {/* Hide text when collapsed on desktop */}
               {(!isDesktop || !sidebarCollapsed) && (
-                <span className="text-sm truncate">
-                  {t(`dashboard.${item.key}`)}
-                </span>
+                <span className="text-sm truncate">{tDashboard(item.key)}</span>
               )}
             </Link>
           )

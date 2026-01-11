@@ -27,7 +27,8 @@ export function UpdateProductForm({
   onSuccess,
   onCancel,
 }: UpdateProductFormProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const queryClient = useQueryClient()
   const selectedBusiness = getSelectedBusiness()
   const currencyCode = selectedBusiness?.currency ?? 'USD'
@@ -39,7 +40,7 @@ export function UpdateProductForm({
     product.id,
     {
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -50,7 +51,7 @@ export function UpdateProductForm({
     variant?.id || '',
     {
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -94,7 +95,7 @@ export function UpdateProductForm({
         })
       }
 
-      toast.success(t('product_updated', { ns: 'inventory' }))
+      toast.success(tInventory('product_updated'))
       queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
       onSuccess()
     },
@@ -119,8 +120,8 @@ export function UpdateProductForm({
               >
                 {(field) => (
                   <field.TextField
-                    label={t('product_name', { ns: 'inventory' })}
-                    placeholder={t('product_name_placeholder', {
+                    label={tInventory('product_name')}
+                    placeholder={tInventory('product_name_placeholder', {
                       ns: 'inventory',
                     })}
                     required
@@ -131,8 +132,8 @@ export function UpdateProductForm({
               <form.AppField name="description">
                 {(field) => (
                   <field.TextareaField
-                    label={t('description', { ns: 'inventory' })}
-                    placeholder={t('description_placeholder', {
+                    label={tInventory('description')}
+                    placeholder={tInventory('description_placeholder', {
                       ns: 'inventory',
                     })}
                     rows={3}
@@ -149,8 +150,8 @@ export function UpdateProductForm({
                 {(field) => (
                   <field.CategorySelectField
                     businessDescriptor={businessDescriptor}
-                    label={t('category', { ns: 'inventory' })}
-                    placeholder={t('select_category', { ns: 'inventory' })}
+                    label={tInventory('category')}
+                    placeholder={tInventory('select_category')}
                     required
                   />
                 )}
@@ -159,8 +160,8 @@ export function UpdateProductForm({
               <form.AppField name="photos">
                 {(field) => (
                   <field.FileUploadField
-                    label={t('product_photos', { ns: 'inventory' })}
-                    hint={t('product_photos_hint', { ns: 'inventory' })}
+                    label={tInventory('product_photos')}
+                    hint={tInventory('product_photos_hint')}
                     accept="image/*"
                     maxFiles={10}
                     multiple
@@ -171,9 +172,9 @@ export function UpdateProductForm({
               <form.AppField name="sku">
                 {(field) => (
                   <field.TextField
-                    label={t('sku', { ns: 'inventory' })}
-                    placeholder={t('sku_placeholder', { ns: 'inventory' })}
-                    hint={t('sku_hint', { ns: 'inventory' })}
+                    label={tInventory('sku')}
+                    placeholder={tInventory('sku_placeholder')}
+                    hint={tInventory('sku_hint')}
                   />
                 )}
               </form.AppField>
@@ -187,7 +188,7 @@ export function UpdateProductForm({
                 >
                   {(field) => (
                     <field.PriceField
-                      label={t('cost_price', { ns: 'inventory' })}
+                      label={tInventory('cost_price')}
                       placeholder="0.00"
                       currencyCode={currencyCode}
                       required
@@ -203,7 +204,7 @@ export function UpdateProductForm({
                 >
                   {(field) => (
                     <field.PriceField
-                      label={t('sale_price', { ns: 'inventory' })}
+                      label={tInventory('sale_price')}
                       placeholder="0.00"
                       currencyCode={currencyCode}
                       required
@@ -217,7 +218,7 @@ export function UpdateProductForm({
                   {(field) => (
                     <field.TextField
                       type="text"
-                      label={t('stock_quantity', { ns: 'inventory' })}
+                      label={tInventory('stock_quantity')}
                       placeholder="0"
                       required
                     />
@@ -228,9 +229,9 @@ export function UpdateProductForm({
                   {(field) => (
                     <field.TextField
                       type="text"
-                      label={t('stock_alert', { ns: 'inventory' })}
+                      label={tInventory('stock_alert')}
                       placeholder="0"
-                      hint={t('stock_alert_hint', { ns: 'inventory' })}
+                      hint={tInventory('stock_alert_hint')}
                     />
                   )}
                 </form.AppField>
@@ -245,10 +246,10 @@ export function UpdateProductForm({
               className="btn btn-ghost flex-1"
               disabled={isLoading}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton variant="primary" className="flex-1">
-              {t('update_product', { ns: 'inventory' })}
+              {tInventory('update_product')}
             </form.SubmitButton>
           </div>
         </form.FormRoot>

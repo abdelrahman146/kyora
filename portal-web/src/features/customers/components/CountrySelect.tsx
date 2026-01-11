@@ -34,7 +34,8 @@ export function CountrySelect({
   searchable = true,
   availableCountries,
 }: CountrySelectProps) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
   const countries = useStore(metadataStore, (state) => state.countries)
   const countriesStatus = useStore(metadataStore, (state) => state.status)
 
@@ -59,7 +60,7 @@ export function CountrySelect({
 
   return (
     <FormSelect<string>
-      label={t('customers.form.country')}
+      label={tCustomers('form.country')}
       options={countryOptions}
       value={value}
       onChange={(val) => {
@@ -67,7 +68,7 @@ export function CountrySelect({
       }}
       required={required}
       disabled={disabled ?? !countriesReady}
-      placeholder={placeholder ?? t('customers.form.select_country')}
+      placeholder={placeholder ?? tCustomers('form.select_country')}
       searchable={searchable}
       error={error}
     />

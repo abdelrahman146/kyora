@@ -36,6 +36,14 @@
   "imageFormatsUpTo10MB": "PNG, JPG, WebP up to 10MB",
   "videoFormatsUpTo100MB": "MP4, MOV up to 100MB",
   "acceptedFileTypes": "Accepted file types",
-  "maximumFiles": "Maximum {{count}} file",
+  "filesUploading_zero": "No files uploading",
+  "filesUploading_two": "Uploading 2 files",
+  "filesUploading_few": "Uploading {{count}} files",
+  "filesUploading_many": "Uploading {{count}} files",
+  "maximumFiles_zero": "Maximum {{count}} file",
+  "maximumFiles_one": "Maximum 1 file",
+  "maximumFiles_two": "Maximum 2 files",
+  "maximumFiles_few": "Maximum {{count}} files",
+  "maximumFiles_many": "Maximum {{count}} files",
   "maximumFiles_other": "Maximum {{count}} files"
 }

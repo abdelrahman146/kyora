@@ -52,14 +52,23 @@
   "free": "مجاني",
   "selected": "محدد",
   "select": "اختر",
-  "selected_count": "تم اختيار {{count}}",
+  "selected_count": "{{count}} محدد",
   "remove": "إزالة {{item}}",
   "remove_option": "إزالة {{option}}",
   "clear_selection": "مسح الاختيار",
   "search_options": "البحث في الخيارات",
   "search_placeholder_generic": "بحث...",
-  "no_options_found": "لم يتم العثور على خيارات",
+  "no_options_found": "لا توجد خيارات",
   "change": "تغيير",
+  "add": "إضافة",
+  "view": "عرض",
+  "changeLanguage": "تغيير اللغة",
+  "selectLanguage": "اختر اللغة",
+  "clear_search": "مسح البحث",
+  "close_modal": "إغلاق النافذة",
+  "close_dialog": "إغلاق الحوار",
+  "loading_more": "جاري تحميل المزيد...",
+  "coming_soon": "قريباً",
   "or": "أو",
   "startFresh": "ابدأ من جديد",
   "unknown": "غير معروف",
@@ -190,5 +199,9 @@
     "maxItemsReached": "تم الوصول إلى الحد الأقصى من العناصر",
     "dragToReorder": "اسحب لإعادة الترتيب",
     "item": "العنصر {{index}}"
+  },
+  "profile": {
+    "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
+    "updateError": "فشل تحديث الملف الشخصي"
   }
 }

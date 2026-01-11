@@ -116,7 +116,7 @@ export function BottomSheet({
   ariaLabel,
   ariaLabelledBy,
 }: BottomSheetProps) {
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
   const isMobile = useMediaQuery('(max-width: 768px)')
   const [isAnimating, setIsAnimating] = useState(false)
   const drawerRef = useRef<HTMLDivElement>(null)
@@ -255,7 +255,7 @@ export function BottomSheet({
                 type="button"
                 onClick={onClose}
                 className="btn btn-ghost btn-sm btn-circle"
-                aria-label={t('common.close')}
+                aria-label={tCommon('close')}
               >
                 <X size={20} />
               </button>

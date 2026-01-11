@@ -61,8 +61,8 @@ export function SearchInput({
   disabled = false,
   className = '',
 }: SearchInputProps) {
-  const { t } = useTranslation()
-  const placeholder = placeholderProp ?? t('common.search_placeholder_generic')
+  const { t: tCommon } = useTranslation('common')
+  const placeholder = placeholderProp ?? tCommon('search_placeholder_generic')
   const [localValue, setLocalValue] = useState(value)
   const [isDebouncePending, setIsDebouncePending] = useState(false)
   const timeoutRef = useRef<NodeJS.Timeout | null>(null)
@@ -156,7 +156,7 @@ export function SearchInput({
             disabled:opacity-50
             disabled:cursor-not-allowed
           "
-          aria-label={t('common.clear_search')}
+          aria-label={tCommon('clear_search')}
         >
           {isDebouncePending ? (
             <span className="loading loading-spinner loading-xs"></span>

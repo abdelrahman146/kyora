@@ -44,7 +44,7 @@ const navItems: Array<NavItem> = [
  * - "More" button opens the full sidebar drawer
  */
 export function BottomNav(_props: BottomNavProps) {
-  const { t } = useTranslation()
+  const { t: tDashboard } = useTranslation('dashboard')
   const location = useLocation()
   const selectedBusinessDescriptor = useStore(
     businessStore,
@@ -63,8 +63,10 @@ export function BottomNav(_props: BottomNavProps) {
           const isActive =
             item.path === ''
               ? !!selectedBusinessDescriptor &&
-                (location.pathname === `/business/${selectedBusinessDescriptor}` ||
-                  location.pathname === `/business/${selectedBusinessDescriptor}/`)
+                (location.pathname ===
+                  `/business/${selectedBusinessDescriptor}` ||
+                  location.pathname ===
+                    `/business/${selectedBusinessDescriptor}/`)
               : location.pathname.startsWith(itemPath)
           const Icon = item.icon
 
@@ -87,7 +89,7 @@ export function BottomNav(_props: BottomNavProps) {
             >
               <Icon size={22} className="shrink-0" />
               <span className="text-xs font-medium truncate">
-                {t(`dashboard.${item.key}`)}
+                {tDashboard(item.key)}
               </span>
             </Link>
           )
@@ -106,7 +108,7 @@ export function BottomNav(_props: BottomNavProps) {
         >
           <Menu size={22} className="shrink-0" />
           <span className="text-xs font-medium truncate">
-            {t('dashboard.more')}
+            {tDashboard('more')}
           </span>
         </button>
       </div>

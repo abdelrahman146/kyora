@@ -25,7 +25,7 @@ export function InventoryCard({
   categories,
   onClick,
 }: InventoryCardProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
 
   const totalStock = calculateTotalStock(product.variants)
   const isLowStock = hasLowStock(product.variants)
@@ -42,8 +42,8 @@ export function InventoryCard({
   }
 
   const getStockTooltip = () => {
-    if (isOutOfStock) return t('out_of_stock', { ns: 'inventory' })
-    if (isLowStock) return t('low_stock', { ns: 'inventory' })
+    if (isOutOfStock) return tInventory('out_of_stock')
+    if (isLowStock) return tInventory('low_stock')
     return undefined
   }
 
@@ -94,7 +94,7 @@ export function InventoryCard({
       <div className="space-y-2 mb-4">
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-base-content/60">
-            {t('cost_price', { ns: 'inventory' })}
+            {tInventory('cost_price')}
           </span>
           <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
             {formatPriceDisplay(costPriceRange)}
@@ -102,7 +102,7 @@ export function InventoryCard({
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-base-content/60">
-            {t('sale_price', { ns: 'inventory' })}
+            {tInventory('sale_price')}
           </span>
           <span className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
             {formatPriceDisplay(salePriceRange)}
@@ -110,7 +110,7 @@ export function InventoryCard({
         </div>
         <div className="flex items-baseline justify-between">
           <span className="text-sm text-base-content/60">
-            {t('variants', { ns: 'inventory' })}
+            {tInventory('variants')}
           </span>
           {variantsCount > 1 ? (
             <div className="flex items-center gap-1">
@@ -129,7 +129,7 @@ export function InventoryCard({
 
       <div className="flex items-center justify-between pt-3 border-t border-base-300">
         <span className="text-sm text-base-content/60">
-          {t('stock_quantity', { ns: 'inventory' })}
+          {tInventory('stock_quantity')}
         </span>
         {getStockTooltip() ? (
           <Tooltip content={getStockTooltip()}>

@@ -25,7 +25,8 @@ export function EditProductSheet({
   onSuccess,
   onDelete,
 }: EditProductSheetProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const [showVariantsForm, setShowVariantsForm] = useState(false)
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
 
@@ -69,7 +70,7 @@ export function EditProductSheet({
       <BottomSheet
         isOpen={isOpen}
         onClose={handleClose}
-        title={t('edit_product', { ns: 'inventory' })}
+        title={tInventory('edit_product')}
         size="lg"
         side="end"
       >
@@ -85,7 +86,7 @@ export function EditProductSheet({
                 className="rtl:rotate-180 text-base-content/70"
               />
               <span className="text-sm font-medium text-base-content/70">
-                {t('common.back')}
+                {tCommon('back')}
               </span>
             </button>
           </div>
@@ -99,7 +100,7 @@ export function EditProductSheet({
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Package size={64} className="text-base-content/40 mb-4" />
             <p className="text-base-content/70">
-              {t('product_not_found', { ns: 'inventory' })}
+              {tInventory('product_not_found')}
             </p>
           </div>
         ) : (
@@ -119,7 +120,7 @@ export function EditProductSheet({
                     className="btn btn-outline btn-sm w-full"
                   >
                     <Layers className="w-4 h-4" />
-                    {t('add_more_variants', { ns: 'inventory' })}
+                    {tInventory('add_more_variants')}
                   </button>
                   <button
                     type="button"
@@ -127,7 +128,7 @@ export function EditProductSheet({
                     className="btn btn-ghost btn-sm w-full text-error mt-2"
                   >
                     <Trash2 className="w-4 h-4" />
-                    {t('delete_product', { ns: 'inventory' })}
+                    {tInventory('delete_product')}
                   </button>
                 </div>
               </div>
@@ -148,7 +149,7 @@ export function EditProductSheet({
                     className="btn btn-ghost btn-sm w-full text-error"
                   >
                     <Trash2 className="w-4 h-4" />
-                    {t('delete_product', { ns: 'inventory' })}
+                    {tInventory('delete_product')}
                   </button>
                 </div>
               </div>
@@ -161,13 +162,13 @@ export function EditProductSheet({
         isOpen={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
         onConfirm={handleConfirmDelete}
-        title={t('delete_confirm_title', { ns: 'inventory' })}
-        message={t('delete_confirm_message', {
+        title={tInventory('delete_confirm_title')}
+        message={tInventory('delete_confirm_message', {
           ns: 'inventory',
           name: product?.name || '',
         })}
-        confirmText={t('common.delete')}
-        cancelText={t('common.cancel')}
+        confirmText={tCommon('delete')}
+        cancelText={tCommon('cancel')}
         variant="error"
       />
     </>

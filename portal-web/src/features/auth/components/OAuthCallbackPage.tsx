@@ -11,7 +11,7 @@ export function OAuthCallbackPage() {
   const { code, state, error, error_description } = useSearch({
     from: '/auth/oauth/callback',
   })
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading',
@@ -23,13 +23,13 @@ export function OAuthCallbackPage() {
       try {
         if (error) {
           setStatus('error')
-          setErrorMessage(error_description || t('auth.oauth_error', { error }))
+          setErrorMessage(error_description || tAuth('oauth_error', { error }))
           return
         }
 
         if (!code) {
           setStatus('error')
-          setErrorMessage(t('auth.oauth_missing_code'))
+          setErrorMessage(tAuth('oauth_missing_code'))
           return
         }
 
@@ -57,13 +57,13 @@ export function OAuthCallbackPage() {
         }, 1000)
       } catch (err) {
         setStatus('error')
-        const message = await translateErrorAsync(err, t)
+        const message = await translateErrorAsync(err, tAuth)
         setErrorMessage(message)
       }
     }
 
     void handleCallback()
-  }, [code, state, error, error_description, navigate, t])
+  }, [code, state, error, error_description, navigate, tAuth])
 
   const handleRetry = async () => {
     await navigate({
@@ -81,10 +81,10 @@ export function OAuthCallbackPage() {
             <>
               <Loader2 className="w-16 h-16 text-primary animate-spin" />
               <h2 className="card-title text-2xl mt-4">
-                {t('auth.oauth_processing')}
+                {tAuth('oauth_processing')}
               </h2>
               <p className="text-base-content/60">
-                {t('auth.oauth_processing_description')}
+                {tAuth('oauth_processing_description')}
               </p>
             </>
           )}
@@ -95,10 +95,10 @@ export function OAuthCallbackPage() {
                 <CheckCircle className="w-10 h-10 text-success" />
               </div>
               <h2 className="card-title text-2xl mt-4 text-success">
-                {t('auth.oauth_success')}
+                {tAuth('oauth_success')}
               </h2>
               <p className="text-base-content/60">
-                {t('auth.oauth_success_description')}
+                {tAuth('oauth_success_description')}
               </p>
             </>
           )}
@@ -109,7 +109,7 @@ export function OAuthCallbackPage() {
                 <AlertCircle className="w-10 h-10 text-error" />
               </div>
               <h2 className="card-title text-2xl mt-4 text-error">
-                {t('auth.oauth_failed')}
+                {tAuth('oauth_failed')}
               </h2>
               <p className="text-base-content/60">{errorMessage}</p>
               <div className="card-actions mt-6">
@@ -120,7 +120,7 @@ export function OAuthCallbackPage() {
                   className="btn btn-primary"
                   type="button"
                 >
-                  {t('auth.return_to_login')}
+                  {tAuth('return_to_login')}
                 </button>
               </div>
             </>

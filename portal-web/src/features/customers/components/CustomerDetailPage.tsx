@@ -66,7 +66,11 @@ export async function customerDetailLoader({
 }
 
 export function CustomerDetailPage() {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tDashboard } = useTranslation('dashboard')
+  const { t: tErrors } = useTranslation('errors')
   const { t: tOrders } = useTranslation('orders')
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
@@ -116,7 +120,7 @@ export function CustomerDetailPage() {
         queryKey: queryKeys.customers.list(businessDescriptor),
       })
 
-      showSuccessToast(t('customers.delete_success'))
+      showSuccessToast(tCustomers('delete_success'))
 
       void navigate({
         to: '/business/$businessDescriptor/customers',
@@ -125,7 +129,7 @@ export function CustomerDetailPage() {
       })
     },
     onError: (err) => {
-      void showErrorFromException(err, t)
+      void showErrorFromException(err, tCustomers)
     },
   })
 
@@ -137,10 +141,10 @@ export function CustomerDetailPage() {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
         })
-        showSuccessToast(t('notes.note_added', { ns: 'common' }))
+        showSuccessToast(tCommon('notes.note_added'))
       },
       onError: (err) => {
-        void showErrorFromException(err, t)
+        void showErrorFromException(err, tCustomers)
       },
     },
   )
@@ -153,10 +157,10 @@ export function CustomerDetailPage() {
         void queryClient.invalidateQueries({
           queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
         })
-        showSuccessToast(t('notes.note_deleted', { ns: 'common' }))
+        showSuccessToast(tCommon('notes.note_deleted'))
       },
       onError: (err) => {
-        void showErrorFromException(err, t)
+        void showErrorFromException(err, tCustomers)
       },
     },
   )
@@ -175,7 +179,7 @@ export function CustomerDetailPage() {
         setAddresses(data)
       } catch (err) {
         if (!mounted) return
-        void showErrorFromException(err, t)
+        void showErrorFromException(err, tCustomers)
       } finally {
         if (mounted) {
           setIsLoadingAddresses(false)
@@ -188,7 +192,7 @@ export function CustomerDetailPage() {
     return () => {
       mounted = false
     }
-  }, [businessDescriptor, customerId, i18n.language, t])
+  }, [businessDescriptor, customerId, i18n.language, tCustomers])
 
   useEffect(() => {
     let mounted = true
@@ -248,9 +252,9 @@ export function CustomerDetailPage() {
 
   const getGenderLabel = (gender: CustomerGender): string => {
     const genderMap: Record<CustomerGender, string> = {
-      male: t('customers.form.gender_male'),
-      female: t('customers.form.gender_female'),
-      other: t('customers.form.gender_other'),
+      male: tCustomers('form.gender_male'),
+      female: tCustomers('form.gender_female'),
+      other: tCustomers('form.gender_other'),
     }
     return genderMap[gender]
   }
@@ -299,9 +303,9 @@ export function CustomerDetailPage() {
         deletingAddressId,
       )
       setAddresses((prev) => prev.filter((a) => a.id !== deletingAddressId))
-      showSuccessToast(t('customers.address.delete_success'))
+      showSuccessToast(tCustomers('address.delete_success'))
     } catch (err) {
-      void showErrorFromException(err, t)
+      void showErrorFromException(err, tCustomers)
     } finally {
       setIsDeletingAddress(false)
       setDeletingAddressId(null)
@@ -380,9 +384,9 @@ export function CustomerDetailPage() {
   if (error || !customer) {
     return (
       <div className="flex min-h-[400px] flex-col items-center justify-center gap-4">
-        <p className="text-error">{t('errors.generic.load_failed')}</p>
+        <p className="text-error">{tErrors('generic.load_failed')}</p>
         <button className="btn btn-sm" onClick={() => window.location.reload()}>
-          {t('common.retry')}
+          {tCommon('retry')}
         </button>
       </div>
     )
@@ -396,10 +400,10 @@ export function CustomerDetailPage() {
             type="button"
             className="btn btn-ghost btn-sm gap-2"
             onClick={handleBack}
-            aria-label={t('common.back')}
+            aria-label={tCommon('back')}
           >
             <ArrowLeft size={18} className={isArabic ? 'rotate-180' : ''} />
-            <span className="hidden sm:inline">{t('common.back')}</span>
+            <span className="hidden sm:inline">{tCommon('back')}</span>
           </button>
 
           <h1 className="text-2xl font-bold flex-1 truncate">
@@ -409,13 +413,13 @@ export function CustomerDetailPage() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatCard
-            label={t('customers.orders_count')}
+            label={tCustomers('orders_count')}
             value={customer.ordersCount ?? 0}
             icon={<ShoppingBag size={24} className="text-success" />}
             variant="success"
           />
           <StatCard
-            label={t('customers.total_spent')}
+            label={tCustomers('total_spent')}
             value={formatCurrency(customer.totalSpent ?? 0, currency)}
             icon={<ShoppingBag size={24} className="text-primary" />}
             variant="default"
@@ -425,7 +429,7 @@ export function CustomerDetailPage() {
         <div className="card bg-base-100 border border-base-300">
           <div className="card-body p-4">
             <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide mb-3">
-              {t('dashboard.quick_actions')}
+              {tDashboard('quick_actions')}
             </h3>
             <div className="flex flex-col sm:flex-row gap-2">
               <button
@@ -434,7 +438,7 @@ export function CustomerDetailPage() {
                 onClick={() => setIsEditOpen(true)}
               >
                 <Edit size={16} />
-                <span>{t('common.edit')}</span>
+                <span>{tCommon('edit')}</span>
               </button>
               {customer.whatsappNumber && (
                 <button
@@ -443,7 +447,7 @@ export function CustomerDetailPage() {
                   onClick={handleWhatsAppClick}
                 >
                   <FaWhatsapp size={16} />
-                  <span>{t('customers.talk_on_whatsapp')}</span>
+                  <span>{tCustomers('talk_on_whatsapp')}</span>
                 </button>
               )}
               <button
@@ -452,7 +456,7 @@ export function CustomerDetailPage() {
                 onClick={() => setIsDeleteDialogOpen(true)}
               >
                 <Trash2 size={16} />
-                <span>{t('common.delete')}</span>
+                <span>{tCommon('delete')}</span>
               </button>
             </div>
           </div>
@@ -463,7 +467,7 @@ export function CustomerDetailPage() {
             <div className="card bg-base-100 border border-base-300">
               <div className="card-body p-4">
                 <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-                  {t('customers.details.title')}
+                  {tCustomers('details.title')}
                 </h3>
 
                 <div className="flex items-start gap-2 mb-6 pb-6 border-b border-base-300">
@@ -480,7 +484,7 @@ export function CustomerDetailPage() {
                     <div className="flex items-center gap-1 text-xs text-base-content/60">
                       <Calendar size={14} />
                       <span>
-                        {t('customers.details.joined')}{' '}
+                        {tCustomers('details.joined')}{' '}
                         {formatDateShort(customer.joinedAt)}
                       </span>
                     </div>
@@ -496,7 +500,7 @@ export function CustomerDetailPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-base-content/60 mb-0.5">
-                          {t('customers.form.email')}
+                          {tCustomers('form.email')}
                         </div>
                         <div className="font-medium break-all">
                           {customer.email}
@@ -513,7 +517,7 @@ export function CustomerDetailPage() {
                       />
                       <div className="flex-1 min-w-0">
                         <div className="text-xs text-base-content/60 mb-0.5">
-                          {t('customers.phone')}
+                          {tCustomers('phone')}
                         </div>
                         <span className="font-medium" dir="ltr">
                           {formatPhone()}
@@ -529,7 +533,7 @@ export function CustomerDetailPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-base-content/60 mb-0.5">
-                        {t('customers.form.gender')}
+                        {tCustomers('form.gender')}
                       </div>
                       <div className="font-medium">
                         {getGenderLabel(customer.gender)}
@@ -544,7 +548,7 @@ export function CustomerDetailPage() {
                     />
                     <div className="flex-1 min-w-0">
                       <div className="text-xs text-base-content/60 mb-0.5">
-                        {t('customers.form.country')}
+                        {tCustomers('form.country')}
                       </div>
                       <div className="flex items-center gap-2 font-medium">
                         {getCountryInfo(customer.countryCode).flag && (
@@ -566,7 +570,7 @@ export function CustomerDetailPage() {
                   customer.whatsappNumber) && (
                   <div className="border-t border-base-300 pt-4 mt-6">
                     <div className="text-xs text-base-content/60 uppercase tracking-wide font-semibold mb-3">
-                      {t('customers.details.social_media')}
+                      {tCustomers('details.social_media')}
                     </div>
                     <SocialMediaHandles
                       instagramUsername={customer.instagramUsername}
@@ -586,7 +590,7 @@ export function CustomerDetailPage() {
               <div className="card-body p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-                    {t('customers.details.addresses')}
+                    {tCustomers('details.addresses')}
                   </h3>
                   <button
                     type="button"
@@ -595,7 +599,7 @@ export function CustomerDetailPage() {
                   >
                     <Plus size={16} />
                     <span className="hidden sm:inline">
-                      {t('customers.address.add_button')}
+                      {tCustomers('address.add_button')}
                     </span>
                   </button>
                 </div>
@@ -625,7 +629,7 @@ export function CustomerDetailPage() {
                       <MapPin size={32} className="opacity-40" />
                     </div>
                     <p className="font-medium mb-4">
-                      {t('customers.details.no_addresses')}
+                      {tCustomers('details.no_addresses')}
                     </p>
                     <button
                       type="button"
@@ -633,7 +637,7 @@ export function CustomerDetailPage() {
                       onClick={handleAddAddress}
                     >
                       <Plus size={16} />
-                      {t('customers.address.add_first')}
+                      {tCustomers('address.add_first')}
                     </button>
                   </div>
                 )}
@@ -655,7 +659,7 @@ export function CustomerDetailPage() {
               <div className="card-body p-4">
                 <div className="flex items-center justify-between mb-4">
                   <h3 className="text-sm font-semibold text-base-content/60 uppercase tracking-wide">
-                    {t('customers.details.recent_orders')}
+                    {tCustomers('details.recent_orders')}
                   </h3>
                   {recentOrders.length > 0 && (
                     <Link
@@ -669,9 +673,9 @@ export function CustomerDetailPage() {
                       className="btn btn-ghost btn-sm gap-2"
                     >
                       <span className="hidden sm:inline">
-                        {t('customers.details.view_all_orders')}
+                        {tCustomers('details.view_all_orders')}
                       </span>
-                      <span className="sm:hidden">{t('common.view')}</span>
+                      <span className="sm:hidden">{tCommon('view')}</span>
                       <ArrowLeft
                         size={16}
                         className={isArabic ? '' : 'rotate-180'}
@@ -729,7 +733,7 @@ export function CustomerDetailPage() {
                       <ShoppingBag size={32} className="opacity-40" />
                     </div>
                     <p className="font-medium">
-                      {t('customers.details.no_orders')}
+                      {tCustomers('details.no_orders')}
                     </p>
                   </div>
                 )}
@@ -761,7 +765,7 @@ export function CustomerDetailPage() {
       <Dialog
         open={isDeleteDialogOpen}
         onClose={() => setIsDeleteDialogOpen(false)}
-        title={t('customers.delete_confirm_title')}
+        title={tCustomers('delete_confirm_title')}
         size="sm"
         footer={
           <div className="flex gap-2 justify-end">
@@ -771,7 +775,7 @@ export function CustomerDetailPage() {
               onClick={() => setIsDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <button
               type="button"
@@ -782,12 +786,12 @@ export function CustomerDetailPage() {
               {isDeleting && (
                 <span className="loading loading-spinner loading-sm" />
               )}
-              {t('common.delete')}
+              {tCommon('delete')}
             </button>
           </div>
         }
       >
-        <p>{t('customers.delete_confirm_message', { name: customer.name })}</p>
+        <p>{tCustomers('delete_confirm_message', { name: customer.name })}</p>
       </Dialog>
 
       <AddressSheet
@@ -807,7 +811,7 @@ export function CustomerDetailPage() {
           setAddressDeleteDialogOpen(false)
           setDeletingAddressId(null)
         }}
-        title={t('customers.address.delete_confirm_title')}
+        title={tCustomers('address.delete_confirm_title')}
         size="sm"
         footer={
           <div className="flex gap-2 justify-end">
@@ -820,7 +824,7 @@ export function CustomerDetailPage() {
               }}
               disabled={isDeletingAddress}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <button
               type="button"
@@ -831,12 +835,12 @@ export function CustomerDetailPage() {
               {isDeletingAddress && (
                 <span className="loading loading-spinner loading-sm" />
               )}
-              {t('common.delete')}
+              {tCommon('delete')}
             </button>
           </div>
         }
       >
-        <p>{t('customers.address.delete_confirm_message')}</p>
+        <p>{tCustomers('address.delete_confirm_message')}</p>
       </Dialog>
     </>
   )

@@ -36,7 +36,7 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Feature-specific utilities in `lib/`:** `portal-web/src/lib/inventoryUtils.ts`, `portal-web/src/lib/onboarding.ts`.
     - **Fix:** move to `portal-web/src/features/inventory/utils/**` and `portal-web/src/features/onboarding/utils/**` and update imports.
 
-- [ ] **Portal-web translations have competing/duplicated structures (agents pick wrong key path)**
+- [x] **Portal-web translations have competing/duplicated structures (agents pick wrong key path)**
   - **Where:**
     - `portal-web/src/i18n/{en,ar}/common.json` (namespace `common`)
     - `portal-web/src/i18n/{en,ar}/translation.json` (namespace `translation`, contains nested `common` object and also feature strings)

@@ -24,7 +24,8 @@ export function SingleVariantProductForm({
   onSuccess,
   onCancel,
 }: SingleVariantProductFormProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const { businessDescriptor } = useParams({ strict: false })
   const queryClient = useQueryClient()
   const selectedBusiness = getSelectedBusiness()
@@ -34,12 +35,12 @@ export function SingleVariantProductForm({
     businessDescriptor!,
     {
       onSuccess: () => {
-        toast.success(t('product_created', { ns: 'inventory' }))
+        toast.success(tInventory('product_created'))
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         onSuccess()
       },
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tInventory)
         toast.error(message)
       },
     },
@@ -106,8 +107,8 @@ export function SingleVariantProductForm({
               >
                 {(field) => (
                   <field.TextField
-                    label={t('product_name', { ns: 'inventory' })}
-                    placeholder={t('product_name_placeholder', {
+                    label={tInventory('product_name')}
+                    placeholder={tInventory('product_name_placeholder', {
                       ns: 'inventory',
                     })}
                     required
@@ -118,8 +119,8 @@ export function SingleVariantProductForm({
               <form.AppField name="description">
                 {(field) => (
                   <field.TextareaField
-                    label={t('description', { ns: 'inventory' })}
-                    placeholder={t('description_placeholder', {
+                    label={tInventory('description')}
+                    placeholder={tInventory('description_placeholder', {
                       ns: 'inventory',
                     })}
                     rows={3}
@@ -136,8 +137,8 @@ export function SingleVariantProductForm({
                 {(field) => (
                   <field.CategorySelectField
                     businessDescriptor={businessDescriptor!}
-                    label={t('category', { ns: 'inventory' })}
-                    placeholder={t('select_category', { ns: 'inventory' })}
+                    label={tInventory('category')}
+                    placeholder={tInventory('select_category')}
                     required
                   />
                 )}
@@ -146,8 +147,8 @@ export function SingleVariantProductForm({
               <form.AppField name="photos">
                 {(field) => (
                   <field.FileUploadField
-                    label={t('product_photos', { ns: 'inventory' })}
-                    hint={t('product_photos_hint', { ns: 'inventory' })}
+                    label={tInventory('product_photos')}
+                    hint={tInventory('product_photos_hint')}
                     accept="image/*"
                     maxFiles={10}
                     multiple
@@ -158,9 +159,9 @@ export function SingleVariantProductForm({
               <form.AppField name="sku">
                 {(field) => (
                   <field.TextField
-                    label={t('sku', { ns: 'inventory' })}
-                    placeholder={t('sku_placeholder', { ns: 'inventory' })}
-                    hint={t('sku_hint', { ns: 'inventory' })}
+                    label={tInventory('sku')}
+                    placeholder={tInventory('sku_placeholder')}
+                    hint={tInventory('sku_hint')}
                   />
                 )}
               </form.AppField>
@@ -174,7 +175,7 @@ export function SingleVariantProductForm({
                 >
                   {(field) => (
                     <field.PriceField
-                      label={t('cost_price', { ns: 'inventory' })}
+                      label={tInventory('cost_price')}
                       placeholder="0.00"
                       currencyCode={currencyCode}
                       required
@@ -190,7 +191,7 @@ export function SingleVariantProductForm({
                 >
                   {(field) => (
                     <field.PriceField
-                      label={t('sale_price', { ns: 'inventory' })}
+                      label={tInventory('sale_price')}
                       placeholder="0.00"
                       currencyCode={currencyCode}
                       required
@@ -204,7 +205,7 @@ export function SingleVariantProductForm({
                   {(field) => (
                     <field.TextField
                       type="text"
-                      label={t('stock_quantity', { ns: 'inventory' })}
+                      label={tInventory('stock_quantity')}
                       placeholder="0"
                       required
                     />
@@ -215,9 +216,9 @@ export function SingleVariantProductForm({
                   {(field) => (
                     <field.TextField
                       type="text"
-                      label={t('stock_alert', { ns: 'inventory' })}
+                      label={tInventory('stock_alert')}
                       placeholder="0"
-                      hint={t('stock_alert_hint', { ns: 'inventory' })}
+                      hint={tInventory('stock_alert_hint')}
                     />
                   )}
                 </form.AppField>
@@ -232,10 +233,10 @@ export function SingleVariantProductForm({
               className="btn btn-ghost flex-1"
               disabled={createMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton variant="primary" className="flex-1">
-              {t('create_product', { ns: 'inventory' })}
+              {tInventory('create_product')}
             </form.SubmitButton>
           </div>
         </form.FormRoot>

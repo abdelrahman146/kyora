@@ -1,0 +1,19 @@
+{
+  "welcome": "مرحباً",
+  "select_business_or_manage": "اختر منشأة لإدارتها أو قم بإدارة إعدادات مساحة العمل والحساب",
+  "your_businesses": "منشآتك",
+  "add_business": "إضافة منشأة",
+  "no_businesses": "لا توجد منشآت حتى الآن",
+  "no_businesses_desc": "ابدأ بإنشاء أول منشأة لك لبدء إدارة أعمالك",
+  "create_first_business": "إنشاء أول منشأة",
+  "quick_links": "روابط سريعة",
+  "workspace_settings": "إعدادات مساحة العمل",
+  "workspace_settings_desc": "إدارة الأعضاء والأدوار والأذونات",
+  "account_settings": "إعدادات الحساب",
+  "account_settings_desc": "تحديث ملفك الشخصي والتفضيلات",
+  "billing": "الفواتير والاشتراكات",
+  "billing_desc": "إدارة خطتك وطرق الدفع والفواتير",
+  "support": "الدعم والمساعدة",
+  "help_center": "مركز المساعدة",
+  "documentation": "الوثائق"
+}

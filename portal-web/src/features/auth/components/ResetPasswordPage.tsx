@@ -13,7 +13,7 @@ type PageStatus = 'loading' | 'ready' | 'success' | 'error'
 export function ResetPasswordPage() {
   const navigate = useNavigate()
   const { token } = useSearch({ from: '/auth/reset-password' })
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState('')
 
@@ -21,7 +21,7 @@ export function ResetPasswordPage() {
     if (!token) {
       queueMicrotask(() => {
         setPageStatus('error')
-        setErrorMessage(t('auth.reset_password_missing_token'))
+        setErrorMessage(tAuth('reset_password_missing_token'))
       })
       return
     }
@@ -29,7 +29,7 @@ export function ResetPasswordPage() {
     queueMicrotask(() => {
       setPageStatus('ready')
     })
-  }, [token, t])
+  }, [token, tAuth])
 
   const handleBackToLogin = async () => {
     await navigate({
@@ -48,7 +48,7 @@ export function ResetPasswordPage() {
             size={48}
           />
           <p className="text-base-content/70">
-            {t('auth.reset_password_validating')}
+            {tAuth('reset_password_validating')}
           </p>
         </div>
       </div>
@@ -66,7 +66,7 @@ export function ResetPasswordPage() {
               </div>
 
               <h1 className="card-title text-2xl mb-2">
-                {t('auth.reset_password_error_title')}
+                {tAuth('reset_password_error_title')}
               </h1>
 
               <p className="text-base-content/70 mb-6">{errorMessage}</p>
@@ -81,7 +81,7 @@ export function ResetPasswordPage() {
                     void handleBackToLogin()
                   }}
                 >
-                  {t('auth.return_to_login')}
+                  {tAuth('return_to_login')}
                 </Button>
                 <Button
                   type="button"
@@ -95,7 +95,7 @@ export function ResetPasswordPage() {
                     })
                   }}
                 >
-                  {t('auth.request_new_link')}
+                  {tAuth('request_new_link')}
                 </Button>
               </div>
             </div>
@@ -116,16 +116,16 @@ export function ResetPasswordPage() {
               </div>
 
               <h1 className="card-title text-2xl mb-2">
-                {t('auth.password_reset_success_title')}
+                {tAuth('password_reset_success_title')}
               </h1>
 
               <p className="text-base-content/70 mb-6">
-                {t('auth.password_reset_success_description')}
+                {tAuth('password_reset_success_description')}
               </p>
 
               <div className="flex items-center gap-2 text-sm text-base-content/60 mb-4">
                 <Loader2 className="animate-spin" size={16} />
-                <span>{t('auth.redirecting_to_login')}</span>
+                <span>{tAuth('redirecting_to_login')}</span>
               </div>
 
               <Button
@@ -137,7 +137,7 @@ export function ResetPasswordPage() {
                   void handleBackToLogin()
                 }}
               >
-                {t('auth.return_to_login')}
+                {tAuth('return_to_login')}
               </Button>
             </div>
           </div>
@@ -178,10 +178,10 @@ export function ResetPasswordPage() {
         <div className="card bg-base-200">
           <div className="card-body">
             <h1 className="card-title text-3xl mb-2">
-              {t('auth.reset_password_title')}
+              {tAuth('reset_password_title')}
             </h1>
             <p className="text-base-content/70 mb-6">
-              {t('auth.reset_password_description')}
+              {tAuth('reset_password_description')}
             </p>
 
             <form.AppForm>
@@ -202,9 +202,9 @@ export function ResetPasswordPage() {
                 >
                   {(field) => (
                     <field.PasswordField
-                      label={t('auth.new_password')}
-                      placeholder={t('auth.new_password_placeholder')}
-                      hint={t('auth.password_requirements')}
+                      label={tAuth('new_password')}
+                      placeholder={tAuth('new_password_placeholder')}
+                      hint={tAuth('password_requirements')}
                       autoComplete="new-password"
                       autoFocus
                     />
@@ -232,20 +232,20 @@ export function ResetPasswordPage() {
                 >
                   {(field) => (
                     <field.PasswordField
-                      label={t('auth.confirm_password')}
-                      placeholder={t('auth.confirm_password_placeholder')}
+                      label={tAuth('confirm_password')}
+                      placeholder={tAuth('confirm_password_placeholder')}
                       autoComplete="new-password"
                     />
                   )}
                 </form.AppField>
 
                 <form.SubmitButton variant="primary" size="lg" fullWidth>
-                  {t('auth.reset_password_submit')}
+                  {tAuth('reset_password_submit')}
                 </form.SubmitButton>
 
                 <div className="text-center">
                   <p className="text-sm text-base-content/60">
-                    {t('auth.remember_password')}{' '}
+                    {tAuth('remember_password')}{' '}
                     <button
                       type="button"
                       onClick={() => {
@@ -253,7 +253,7 @@ export function ResetPasswordPage() {
                       }}
                       className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
                     >
-                      {t('auth.login')}
+                      {tAuth('login')}
                     </button>
                   </p>
                 </div>

@@ -81,7 +81,7 @@ export function useCurrentUserQuery() {
  */
 export function useUpdateUserMutation() {
   const queryClient = useQueryClient()
-  const { t } = useTranslation('translation')
+  const { t } = useTranslation('common')
 
   return useMutation({
     mutationFn: (data: UpdateUserRequest) => userApi.updateCurrentUser(data),

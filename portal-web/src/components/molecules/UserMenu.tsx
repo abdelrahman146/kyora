@@ -22,7 +22,7 @@ import { useAuth } from '../../hooks/useAuth'
  * ```
  */
 export function UserMenu() {
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
   const navigate = useNavigate()
   const { user, logout } = useAuth()
 
@@ -94,7 +94,7 @@ export function UserMenu() {
             className="flex items-center gap-3 w-full px-4 py-2.5 text-error hover:bg-error/10 transition-colors text-start hover:cursor-pointer"
           >
             <LogOut size={16} className="shrink-0" />
-            <span className="text-sm">{t('auth.logout')}</span>
+            <span className="text-sm">{tAuth('logout')}</span>
           </button>
         </div>
       </div>

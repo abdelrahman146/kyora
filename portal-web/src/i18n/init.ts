@@ -3,19 +3,27 @@ import { initReactI18next } from 'react-i18next'
 import arCommon from './ar/common.json'
 import arErrors from './ar/errors.json'
 import arOnboarding from './ar/onboarding.json'
-import arTranslation from './ar/translation.json'
 import arUpload from './ar/upload.json'
 import arAnalytics from './ar/analytics.json'
 import arInventory from './ar/inventory.json'
 import arOrders from './ar/orders.json'
+import arAuth from './ar/auth.json'
+import arDashboard from './ar/dashboard.json'
+import arCustomers from './ar/customers.json'
+import arPagination from './ar/pagination.json'
+import arHome from './ar/home.json'
 import enCommon from './en/common.json'
 import enErrors from './en/errors.json'
 import enOnboarding from './en/onboarding.json'
-import enTranslation from './en/translation.json'
 import enUpload from './en/upload.json'
 import enAnalytics from './en/analytics.json'
 import enInventory from './en/inventory.json'
 import enOrders from './en/orders.json'
+import enAuth from './en/auth.json'
+import enDashboard from './en/dashboard.json'
+import enCustomers from './en/customers.json'
+import enPagination from './en/pagination.json'
+import enHome from './en/home.json'
 import { getCookie } from '@/lib/cookies'
 
 /**
@@ -63,35 +71,47 @@ void i18n.use(initReactI18next).init({
       common: arCommon,
       errors: arErrors,
       onboarding: arOnboarding,
-      translation: arTranslation,
       upload: arUpload,
       analytics: arAnalytics,
       inventory: arInventory,
       orders: arOrders,
+      auth: arAuth,
+      dashboard: arDashboard,
+      customers: arCustomers,
+      pagination: arPagination,
+      home: arHome,
     },
     en: {
       common: enCommon,
       errors: enErrors,
       onboarding: enOnboarding,
-      translation: enTranslation,
       upload: enUpload,
       analytics: enAnalytics,
       inventory: enInventory,
       orders: enOrders,
+      auth: enAuth,
+      dashboard: enDashboard,
+      customers: enCustomers,
+      pagination: enPagination,
+      home: enHome,
     },
   },
   lng: detectedLanguage,
   fallbackLng: 'en',
-  defaultNS: 'translation',
+  defaultNS: 'common',
   ns: [
-    'translation',
-    'errors',
     'common',
+    'errors',
     'onboarding',
     'upload',
     'analytics',
     'inventory',
     'orders',
+    'auth',
+    'dashboard',
+    'customers',
+    'pagination',
+    'home',
   ],
   interpolation: {
     escapeValue: false,

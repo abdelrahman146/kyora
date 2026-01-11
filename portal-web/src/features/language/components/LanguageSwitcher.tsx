@@ -37,7 +37,7 @@ export function LanguageSwitcher({
 }: LanguageSwitcherProps) {
   const { language, changeLanguage, toggleLanguage, supportedLanguages } =
     useLanguage()
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
 
   const currentLangConfig = LANGUAGE_CONFIG[language]
   const languages = supportedLanguages.map((code) => LANGUAGE_CONFIG[code])
@@ -49,7 +49,7 @@ export function LanguageSwitcher({
       <button
         onClick={toggleLanguage}
         className={`btn btn-ghost btn-sm gap-2 ${className}`}
-        aria-label={t('common.changeLanguage')}
+        aria-label={tCommon('changeLanguage')}
         type="button"
       >
         <Languages className="size-4" />
@@ -66,7 +66,7 @@ export function LanguageSwitcher({
         <button
           tabIndex={0}
           className="btn btn-ghost btn-sm btn-circle"
-          aria-label={t('common.changeLanguage')}
+          aria-label={tCommon('changeLanguage')}
           type="button"
         >
           <Globe className="size-5" />
@@ -105,7 +105,7 @@ export function LanguageSwitcher({
         <button
           tabIndex={0}
           className="btn btn-ghost btn-sm gap-2"
-          aria-label={t('common.changeLanguage')}
+          aria-label={tCommon('changeLanguage')}
           type="button"
         >
           {showFlag && (
@@ -154,7 +154,7 @@ export function LanguageSwitcher({
       <button
         tabIndex={0}
         className="btn btn-ghost gap-3"
-        aria-label={t('common.changeLanguage')}
+        aria-label={tCommon('changeLanguage')}
         type="button"
       >
         <Languages className="size-5" />
@@ -177,7 +177,7 @@ export function LanguageSwitcher({
       >
         <li className="menu-title px-4 py-2">
           <span className="text-base-content/70 text-sm font-semibold">
-            {t('common.selectLanguage')}
+            {tCommon('selectLanguage')}
           </span>
         </li>
         {languages.map((lang) => (

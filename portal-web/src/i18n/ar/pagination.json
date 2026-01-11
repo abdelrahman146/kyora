@@ -1,0 +1,10 @@
+{
+  "showing": "عرض {{start}} - {{end}} من {{total}} {{items}}",
+  "show": "عرض",
+  "itemsPerPage": "العناصر في الصفحة",
+  "firstPage": "الصفحة الأولى",
+  "previousPage": "الصفحة السابقة",
+  "nextPage": "الصفحة التالية",
+  "lastPage": "الصفحة الأخيرة",
+  "page": "الصفحة {{number}}"
+}

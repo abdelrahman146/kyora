@@ -31,7 +31,9 @@ export function AddressCard({
   onDelete,
   isDeleting,
 }: AddressCardProps) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
+  const { t: tCustomers } = useTranslation('customers')
   const countries = useStore(metadataStore, (s) => s.countries)
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
@@ -83,7 +85,7 @@ export function AddressCard({
                 className="btn btn-ghost btn-sm btn-square"
                 onClick={onEdit}
                 disabled={isDeleting}
-                aria-label={t('common.edit')}
+                aria-label={tCommon('edit')}
               >
                 <Edit size={16} />
               </button>
@@ -94,7 +96,7 @@ export function AddressCard({
                 className="btn btn-ghost btn-sm btn-square text-error hover:bg-error/10"
                 onClick={onDelete}
                 disabled={isDeleting}
-                aria-label={t('common.delete')}
+                aria-label={tCommon('delete')}
               >
                 {isDeleting ? (
                   <span className="loading loading-spinner loading-sm" />
@@ -112,7 +114,7 @@ export function AddressCard({
         {address.street && (
           <div className="flex items-start gap-2">
             <span className="text-sm text-base-content/60 min-w-[4rem]">
-              {t('customers.form.street')}:
+              {tCustomers('form.street')}:
             </span>
             <span className="text-sm font-medium flex-1">{address.street}</span>
           </div>
@@ -121,7 +123,7 @@ export function AddressCard({
         {address.zipCode && (
           <div className="flex items-start gap-2">
             <span className="text-sm text-base-content/60 min-w-[4rem]">
-              {t('customers.form.zip_code')}:
+              {tCustomers('form.zip_code')}:
             </span>
             <span className="text-sm font-medium flex-1">
               {address.zipCode}

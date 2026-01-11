@@ -11,7 +11,7 @@ import { useKyoraForm } from '@/lib/form'
 
 export function ForgotPasswordPage() {
   const navigate = useNavigate()
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
   const { isRTL } = useLanguage()
   const [isSuccess, setIsSuccess] = useState(false)
   const [submittedEmail, setSubmittedEmail] = useState('')
@@ -46,11 +46,11 @@ export function ForgotPasswordPage() {
               </div>
 
               <h1 className="card-title text-2xl mb-2">
-                {t('auth.password_reset_sent_title')}
+                {tAuth('password_reset_sent_title')}
               </h1>
 
               <p className="text-base-content/70 mb-6">
-                {t('auth.password_reset_sent_description', {
+                {tAuth('password_reset_sent_description', {
                   email: submittedEmail,
                 })}
               </p>
@@ -58,12 +58,12 @@ export function ForgotPasswordPage() {
               <div className="alert alert-info mb-6">
                 <div className="flex flex-col gap-2 text-start">
                   <p className="text-sm font-medium">
-                    {t('auth.password_reset_email_tips_title')}
+                    {tAuth('password_reset_email_tips_title')}
                   </p>
                   <ul className="text-xs list-disc list-inside space-y-1">
-                    <li>{t('auth.password_reset_tip_check_spam')}</li>
-                    <li>{t('auth.password_reset_tip_expires')}</li>
-                    <li>{t('auth.password_reset_tip_no_account')}</li>
+                    <li>{tAuth('password_reset_tip_check_spam')}</li>
+                    <li>{tAuth('password_reset_tip_expires')}</li>
+                    <li>{tAuth('password_reset_tip_no_account')}</li>
                   </ul>
                 </div>
               </div>
@@ -77,7 +77,7 @@ export function ForgotPasswordPage() {
                   void handleBackToLogin()
                 }}
               >
-                {t('auth.return_to_login')}
+                {tAuth('return_to_login')}
               </Button>
             </div>
           </div>
@@ -97,17 +97,17 @@ export function ForgotPasswordPage() {
                 void handleBackToLogin()
               }}
               className="btn btn-ghost btn-sm w-fit mb-4 -ms-2"
-              aria-label={t('auth.back_to_login')}
+              aria-label={tAuth('back_to_login')}
             >
               <ArrowLeft size={20} className={isRTL ? 'rotate-180' : ''} />
-              {t('auth.back_to_login')}
+              {tAuth('back_to_login')}
             </button>
 
             <h1 className="card-title text-3xl mb-2">
-              {t('auth.forgot_password_title')}
+              {tAuth('forgot_password_title')}
             </h1>
             <p className="text-base-content/70 mb-6">
-              {t('auth.forgot_password_description')}
+              {tAuth('forgot_password_description')}
             </p>
 
             <form.AppForm>
@@ -126,8 +126,8 @@ export function ForgotPasswordPage() {
                   {(field) => (
                     <field.TextField
                       type="email"
-                      label={t('auth.email')}
-                      placeholder={t('auth.email_placeholder')}
+                      label={tAuth('email')}
+                      placeholder={tAuth('email_placeholder')}
                       startIcon={<Mail size={20} />}
                       autoComplete="email"
                       autoFocus
@@ -136,12 +136,12 @@ export function ForgotPasswordPage() {
                 </form.AppField>
 
                 <form.SubmitButton variant="primary" size="lg" fullWidth>
-                  {t('auth.send_reset_link')}
+                  {tAuth('send_reset_link')}
                 </form.SubmitButton>
 
                 <div className="text-center">
                   <p className="text-sm text-base-content/60">
-                    {t('auth.remember_password')}{' '}
+                    {tAuth('remember_password')}{' '}
                     <button
                       type="button"
                       onClick={() => {
@@ -149,7 +149,7 @@ export function ForgotPasswordPage() {
                       }}
                       className="text-primary hover:text-primary-focus hover:underline transition-colors font-medium"
                     >
-                      {t('auth.login')}
+                      {tAuth('login')}
                     </button>
                   </p>
                 </div>

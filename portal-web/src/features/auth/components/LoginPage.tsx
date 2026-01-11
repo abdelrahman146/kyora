@@ -14,7 +14,8 @@ export function LoginPage() {
   const authState = useStore(authStore)
   const navigate = useNavigate()
   const { redirect } = useSearch({ from: '/auth/login' })
-  const { t } = useTranslation()
+  const { t: tAuth } = useTranslation('auth')
+  const { t: tCommon } = useTranslation('common')
   const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [googleErrorMessage, setGoogleErrorMessage] = useState<string>('')
 
@@ -28,7 +29,7 @@ export function LoginPage() {
       <div className="flex min-h-screen items-center justify-center bg-base-100">
         <div className="flex flex-col items-center gap-4">
           <span className="loading loading-spinner loading-lg text-primary"></span>
-          <p className="text-base-content/60 text-sm">{t('common.loading')}</p>
+          <p className="text-base-content/60 text-sm">{tCommon('loading')}</p>
         </div>
       </div>
     )
@@ -59,7 +60,7 @@ export function LoginPage() {
       window.location.href = oauthUrl
     } catch (error) {
       setIsGoogleLoading(false)
-      const message = await translateErrorAsync(error, t)
+      const message = await translateErrorAsync(error, tAuth)
       setGoogleErrorMessage(message)
     }
   }
@@ -73,7 +74,7 @@ export function LoginPage() {
             Kyora
           </h1>
           <p className="text-xl text-primary-content/80 leading-relaxed">
-            {t('auth.login_welcome_message')}
+            {tAuth('login_welcome_message')}
           </p>
         </div>
       </div>
@@ -84,17 +85,15 @@ export function LoginPage() {
           {/* Mobile Logo */}
           <div className="text-center mb-8 lg:hidden">
             <h1 className="text-4xl font-bold text-primary mb-2">Kyora</h1>
-            <p className="text-base-content/60">{t('auth.login_subtitle')}</p>
+            <p className="text-base-content/60">{tAuth('login_subtitle')}</p>
           </div>
 
           {/* Page Title */}
           <div className="mb-8">
             <h2 className="text-3xl font-bold text-base-content mb-2">
-              {t('auth.welcome_back')}
+              {tAuth('welcome_back')}
             </h2>
-            <p className="text-base-content/60">
-              {t('auth.login_description')}
-            </p>
+            <p className="text-base-content/60">{tAuth('login_description')}</p>
           </div>
 
           {googleErrorMessage ? (
@@ -115,12 +114,12 @@ export function LoginPage() {
           {/* Sign Up Link */}
           <div className="mt-8 text-center">
             <p className="text-base-content/60">
-              {t('auth.no_account')}{' '}
+              {tAuth('no_account')}{' '}
               <Link
                 to="/onboarding"
                 className="text-primary hover:text-primary-focus font-semibold hover:underline transition-colors"
               >
-                {t('auth.sign_up')}
+                {tAuth('sign_up')}
               </Link>
             </p>
           </div>

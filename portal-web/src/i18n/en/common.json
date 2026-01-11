@@ -13,6 +13,9 @@
   "sort_order": "Sort Order",
   "ascending": "Ascending",
   "descending": "Descending",
+  "address": "Address",
+  "select_address": "Select address",
+  "error_occurred": "An error occurred",
   "actions": "Actions",
   "status": "Status",
   "active": "Active",
@@ -64,6 +67,15 @@
   "search_placeholder_generic": "Search...",
   "no_options_found": "No options found",
   "change": "Change",
+  "add": "Add",
+  "view": "View",
+  "changeLanguage": "Change Language",
+  "selectLanguage": "Select Language",
+  "clear_search": "Clear search",
+  "close_modal": "Close modal",
+  "close_dialog": "Close dialog",
+  "loading_more": "Loading more...",
+  "coming_soon": "Coming Soon",
   "or": "OR",
   "startFresh": "Start Fresh",
   "unknown": "Unknown",
@@ -121,6 +133,7 @@
   },
   "actions": {
     "actions": "Actions",
+    "more_actions": "More Actions",
     "view": "View",
     "edit": "Edit",
     "delete": "Delete",
@@ -186,5 +199,9 @@
     "maxItemsReached": "Maximum items reached",
     "dragToReorder": "Drag to reorder",
     "item": "Item {{index}}"
+  },
+  "profile": {
+    "updateSuccess": "Profile updated successfully",
+    "updateError": "Failed to update profile"
   }
 }

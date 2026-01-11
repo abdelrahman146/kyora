@@ -21,7 +21,7 @@ export function CustomerCard({
   totalSpent = 0,
   currency = 'AED',
 }: CustomerCardProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
 
   const getInitials = (name: string): string => {
     return name
@@ -103,7 +103,7 @@ export function CustomerCard({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs text-base-content/60 truncate">
-                {t('customers.orders_count')}
+                {tCustomers('orders_count')}
               </div>
               <div className="font-semibold">{ordersCount}</div>
             </div>
@@ -115,7 +115,7 @@ export function CustomerCard({
             </div>
             <div className="flex-1 min-w-0">
               <div className="text-xs text-base-content/60 truncate">
-                {t('customers.total_spent')}
+                {tCustomers('total_spent')}
               </div>
               <div className="font-semibold truncate">
                 {currency} {formatAmount(totalSpent)}

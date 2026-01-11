@@ -29,7 +29,7 @@ interface HeaderProps {
  * - Fixed positioning with proper z-index stacking
  */
 export function Header({ title }: HeaderProps) {
-  const { t } = useTranslation()
+  const { t: tDashboard } = useTranslation('dashboard')
   const isDesktop = useMediaQuery('(min-width: 768px)')
   const sidebarCollapsed = useStore(businessStore, (s) => s.sidebarCollapsed)
 
@@ -54,7 +54,7 @@ export function Header({ title }: HeaderProps) {
               size="md"
               variant="ghost"
               onClick={openSidebar}
-              aria-label={t('dashboard.open_menu')}
+              aria-label={tDashboard('open_menu')}
             />
           )}
 

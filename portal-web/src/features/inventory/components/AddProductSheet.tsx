@@ -19,7 +19,8 @@ export function AddProductSheet({
   onClose,
   onSuccess,
 }: AddProductSheetProps) {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
   const [mode, setMode] = useState<VariantMode>('selection')
 
   const handleClose = () => {
@@ -39,10 +40,10 @@ export function AddProductSheet({
       onClose={handleClose}
       title={
         mode === 'selection'
-          ? t('add_product', { ns: 'inventory' })
+          ? tInventory('add_product')
           : mode === 'single'
-            ? t('add_single_variant_product', { ns: 'inventory' })
-            : t('add_multi_variant_product', { ns: 'inventory' })
+            ? tInventory('add_single_variant_product')
+            : tInventory('add_multi_variant_product')
       }
       size="lg"
       side="end"
@@ -59,7 +60,7 @@ export function AddProductSheet({
               className="rtl:rotate-180 text-base-content/70"
             />
             <span className="text-sm font-medium text-base-content/70">
-              {t('common.back')}
+              {tCommon('back')}
             </span>
           </button>
         </div>
@@ -68,7 +69,7 @@ export function AddProductSheet({
       {mode === 'selection' && (
         <div className="flex flex-col gap-4 p-4">
           <p className="text-base-content/70 mb-2">
-            {t('select_variant_mode_description', { ns: 'inventory' })}
+            {tInventory('select_variant_mode_description')}
           </p>
 
           <button
@@ -81,10 +82,10 @@ export function AddProductSheet({
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-lg mb-1">
-                {t('single_variant_product', { ns: 'inventory' })}
+                {tInventory('single_variant_product')}
               </h3>
               <p className="text-sm text-base-content/70">
-                {t('single_variant_description', { ns: 'inventory' })}
+                {tInventory('single_variant_description')}
               </p>
             </div>
           </button>
@@ -99,10 +100,10 @@ export function AddProductSheet({
             </div>
             <div className="flex-1">
               <h3 className="font-semibold text-lg mb-1">
-                {t('multi_variant_product', { ns: 'inventory' })}
+                {tInventory('multi_variant_product')}
               </h3>
               <p className="text-sm text-base-content/70">
-                {t('multi_variant_description', { ns: 'inventory' })}
+                {tInventory('multi_variant_description')}
               </p>
             </div>
           </button>

@@ -47,7 +47,8 @@ export function AddressSheet({
   submitLabel,
   businessDescriptor,
 }: AddressSheetProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tCommon } = useTranslation('common')
   const formId = useId()
 
   const { data: countries = [], isLoading: countriesLoading } =
@@ -111,7 +112,7 @@ export function AddressSheet({
             zipCode: value.zipCode,
           }
           await onSubmit(updateData)
-          showSuccessToast(t('customers.address.update_success'))
+          showSuccessToast(tCustomers('address.update_success'))
         } else {
           const createData: CreateAddressRequest = {
             shippingZoneId: value.shippingZoneId,
@@ -124,7 +125,7 @@ export function AddressSheet({
             zipCode: value.zipCode,
           }
           await onSubmit(createData)
-          showSuccessToast(t('customers.address.create_success'))
+          showSuccessToast(tCustomers('address.create_success'))
         }
         onClose()
       } catch (error) {
@@ -192,8 +193,8 @@ export function AddressSheet({
         onClose={onClose}
         title={
           address
-            ? t('customers.address.edit_title')
-            : t('customers.address.add_title')
+            ? tCustomers('address.edit_title')
+            : tCustomers('address.add_title')
         }
         footer={
           <div className="flex gap-2">
@@ -203,7 +204,7 @@ export function AddressSheet({
               onClick={onClose}
               disabled={isSubmitting}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton
               variant="primary"
@@ -214,7 +215,7 @@ export function AddressSheet({
               {isSubmitting && (
                 <span className="loading loading-spinner loading-sm" />
               )}
-              {submitLabel ?? (address ? t('common.update') : t('common.add'))}
+              {submitLabel ?? (address ? tCommon('update') : tCommon('add'))}
             </form.SubmitButton>
           </div>
         }
@@ -246,13 +247,13 @@ export function AddressSheet({
 
           {!zonesLoading && shippingZones.length === 0 && (
             <div className="text-sm text-base-content/70 -mt-2">
-              {t('customers.address.no_zones_message')}{' '}
+              {tCustomers('address.no_zones_message')}{' '}
               <Link
                 to="/business/$businessDescriptor"
                 params={{ businessDescriptor }}
                 className="link link-primary"
               >
-                {t('customers.address.configure_zones_link')}
+                {tCustomers('address.configure_zones_link')}
               </Link>
             </div>
           )}
@@ -277,7 +278,7 @@ export function AddressSheet({
                 />
                 {selectedZoneId && availableCountries.length > 0 && (
                   <div className="text-xs text-base-content/60 mt-1">
-                    {t('customers.address.filtered_by_zone', {
+                    {tCustomers('address.filtered_by_zone', {
                       count: availableCountries.length,
                     })}
                   </div>
@@ -294,8 +295,8 @@ export function AddressSheet({
           >
             {(field) => (
               <field.TextField
-                label={t('customers.form.state')}
-                placeholder={t('customers.form.state_placeholder')}
+                label={tCustomers('form.state')}
+                placeholder={tCustomers('form.state_placeholder')}
                 required
               />
             )}
@@ -309,8 +310,8 @@ export function AddressSheet({
           >
             {(field) => (
               <field.TextField
-                label={t('customers.form.city')}
-                placeholder={t('customers.form.city_placeholder')}
+                label={tCustomers('form.city')}
+                placeholder={tCustomers('form.city_placeholder')}
                 required
               />
             )}
@@ -319,8 +320,8 @@ export function AddressSheet({
           <form.AppField name="street">
             {(field) => (
               <field.TextField
-                label={t('customers.form.street')}
-                placeholder={t('customers.form.street_placeholder')}
+                label={tCustomers('form.street')}
+                placeholder={tCustomers('form.street_placeholder')}
               />
             )}
           </form.AppField>
@@ -328,8 +329,8 @@ export function AddressSheet({
           <form.AppField name="zipCode">
             {(field) => (
               <field.TextField
-                label={t('customers.form.zip_code')}
-                placeholder={t('customers.form.zip_placeholder')}
+                label={tCustomers('form.zip_code')}
+                placeholder={tCustomers('form.zip_placeholder')}
               />
             )}
           </form.AppField>
@@ -359,8 +360,8 @@ export function AddressSheet({
             {(field) => (
               <field.TextField
                 type="tel"
-                label={t('customers.form.phone_number')}
-                placeholder={t('customers.form.phone_placeholder')}
+                label={tCustomers('form.phone_number')}
+                placeholder={tCustomers('form.phone_placeholder')}
                 required
               />
             )}

@@ -104,7 +104,7 @@ export function Dialog({
   centered = false,
   className = '',
 }: DialogProps) {
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
   if (!open) return null
 
   const sizeClasses = {
@@ -148,7 +148,7 @@ export function Dialog({
               <button
                 onClick={onClose}
                 className="btn btn-circle btn-ghost btn-sm shrink-0"
-                aria-label={t('common.close_dialog')}
+                aria-label={tCommon('close_dialog')}
               >
                 <X className="h-5 w-5" />
               </button>

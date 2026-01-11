@@ -5,16 +5,13 @@ import { Edit, Layers, Package, Trash2 } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
 
-import {
-  
-  InventorySearchSchema
-} from '../schema/inventorySearch'
+import { InventorySearchSchema } from '../schema/inventorySearch'
 import { InventoryCard } from './InventoryCard'
 import { InventoryListSkeleton } from './InventoryListSkeleton'
 import { AddProductSheet } from './AddProductSheet'
 import { EditProductSheet } from './EditProductSheet'
 import { ProductDetailsSheet } from './ProductDetailsSheet'
-import type {InventorySearch} from '../schema/inventorySearch';
+import type { InventorySearch } from '../schema/inventorySearch'
 import type { TableColumn } from '@/components/organisms/Table'
 import type { Product } from '@/api/inventory'
 import type { SortOption } from '@/components/organisms/SortButton'
@@ -41,7 +38,8 @@ import { translateErrorAsync } from '@/lib/translateError'
 import { formatDateShort } from '@/lib/formatDate'
 
 export function InventoryListPage() {
-  const { t } = useTranslation()
+  const { t: tInventory } = useTranslation('inventory')
+  const { t: tCommon } = useTranslation('common')
 
   const { businessDescriptor } = useParams({
     from: '/business/$businessDescriptor/inventory/',
@@ -73,13 +71,13 @@ export function InventoryListPage() {
     selectedProductId || '',
     {
       onSuccess: () => {
-        toast.success(t('product_deleted', { ns: 'inventory' }))
+        toast.success(tInventory('product_deleted'))
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         setSelectedProductId(null)
         setIsEditSheetOpen(false)
       },
       onError: async (error) => {
-        const message = await translateErrorAsync(error, t)
+        const message = await translateErrorAsync(error, tCommon)
         toast.error(message)
       },
     },
@@ -136,7 +134,7 @@ export function InventoryListPage() {
   const categories = categoriesResponse.data ?? []
 
   const categoryOptions: Array<{ value: string; label: string }> = [
-    { value: '', label: t('all_categories', { ns: 'inventory' }) },
+    { value: '', label: tInventory('all_categories') },
     ...categories.map((cat) => ({
       value: cat.id,
       label: cat.name,
@@ -144,9 +142,9 @@ export function InventoryListPage() {
   ]
 
   const stockStatusOptions: Array<{ value: string; label: string }> = [
-    { value: 'in_stock', label: t('in_stock', { ns: 'inventory' }) },
-    { value: 'low_stock', label: t('low_stock', { ns: 'inventory' }) },
-    { value: 'out_of_stock', label: t('out_of_stock', { ns: 'inventory' }) },
+    { value: 'in_stock', label: tInventory('in_stock') },
+    { value: 'low_stock', label: tInventory('low_stock') },
+    { value: 'out_of_stock', label: tInventory('out_of_stock') },
   ]
 
   const activeFilterCount =
@@ -154,13 +152,13 @@ export function InventoryListPage() {
 
   const sortOptions = useMemo<Array<SortOption>>(
     () => [
-      { value: 'name', label: t('product_name', { ns: 'inventory' }) },
-      { value: 'variantsCount', label: t('variants', { ns: 'inventory' }) },
-      { value: 'stock', label: t('stock_quantity', { ns: 'inventory' }) },
-      { value: 'costPrice', label: t('cost_price', { ns: 'inventory' }) },
-      { value: 'createdAt', label: t('date_added', { ns: 'inventory' }) },
+      { value: 'name', label: tInventory('product_name') },
+      { value: 'variantsCount', label: tInventory('variants') },
+      { value: 'stock', label: tInventory('stock_quantity') },
+      { value: 'costPrice', label: tInventory('cost_price') },
+      { value: 'createdAt', label: tInventory('date_added') },
     ],
-    [t],
+    [tInventory],
   )
 
   const handleSearch = (value: string) => {
@@ -235,7 +233,7 @@ export function InventoryListPage() {
   const columns: Array<TableColumn<Product>> = [
     {
       key: 'name',
-      label: t('product_name', { ns: 'inventory' }),
+      label: tInventory('product_name'),
       sortable: true,
       render: (product: Product) => (
         <div className="flex items-center gap-3">
@@ -254,7 +252,7 @@ export function InventoryListPage() {
     },
     {
       key: 'category',
-      label: t('category', { ns: 'inventory' }),
+      label: tInventory('category'),
       render: (product: Product) => {
         const category = categories.find((c) => c.id === product.categoryId)
         return (
@@ -266,7 +264,7 @@ export function InventoryListPage() {
     },
     {
       key: 'costPrice',
-      label: t('cost_price', { ns: 'inventory' }),
+      label: tInventory('cost_price'),
       sortable: true,
       render: (product: Product) => {
         const priceRange = getPriceRange(product.variants, 'costPrice')
@@ -283,7 +281,7 @@ export function InventoryListPage() {
     },
     {
       key: 'sale_price',
-      label: t('sale_price', { ns: 'inventory' }),
+      label: tInventory('sale_price'),
       render: (product: Product) => {
         const priceRange = getPriceRange(product.variants, 'salePrice')
         if (priceRange.isSame) {
@@ -299,7 +297,7 @@ export function InventoryListPage() {
     },
     {
       key: 'variantsCount',
-      label: t('variants', { ns: 'inventory' }),
+      label: tInventory('variants'),
       sortable: true,
       align: 'center',
       render: (product: Product) => {
@@ -317,7 +315,7 @@ export function InventoryListPage() {
     },
     {
       key: 'stock',
-      label: t('stock_quantity', { ns: 'inventory' }),
+      label: tInventory('stock_quantity'),
       sortable: true,
       render: (product: Product) => {
         const totalStock = calculateTotalStock(product.variants)
@@ -329,10 +327,10 @@ export function InventoryListPage() {
 
         if (isOutOfStock) {
           colorClass = 'text-error font-semibold'
-          tooltipText = t('out_of_stock', { ns: 'inventory' })
+          tooltipText = tInventory('out_of_stock')
         } else if (isLowStock) {
           colorClass = 'text-warning font-semibold'
-          tooltipText = t('low_stock', { ns: 'inventory' })
+          tooltipText = tInventory('low_stock')
         }
 
         if (tooltipText) {
@@ -348,7 +346,7 @@ export function InventoryListPage() {
     },
     {
       key: 'createdAt',
-      label: t('date_added', { ns: 'inventory' }),
+      label: tInventory('date_added'),
       sortable: true,
       render: (product: Product) => (
         <span className="text-sm text-base-content/70">
@@ -358,7 +356,7 @@ export function InventoryListPage() {
     },
     {
       key: 'actions',
-      label: t('common.actions'),
+      label: tCommon('actions'),
       render: (product: Product) => (
         <div className="flex gap-1">
           <button
@@ -368,8 +366,8 @@ export function InventoryListPage() {
               handleEditProduct(product)
             }}
             className="btn btn-ghost btn-sm"
-            aria-label={t('common.edit')}
-            title={t('common.edit')}
+            aria-label={tCommon('edit')}
+            title={tCommon('edit')}
           >
             <Edit size={16} />
           </button>
@@ -380,8 +378,8 @@ export function InventoryListPage() {
               handleDeleteClick(product)
             }}
             className="btn btn-ghost btn-sm text-error hover:bg-error/10"
-            aria-label={t('common.delete')}
-            title={t('common.delete')}
+            aria-label={tCommon('delete')}
+            title={tCommon('delete')}
           >
             <Trash2 size={16} />
           </button>
@@ -418,24 +416,24 @@ export function InventoryListPage() {
   return (
     <>
       <ResourceListLayout
-        title={t('title', { ns: 'inventory' })}
-        subtitle={t('subtitle', { ns: 'inventory' })}
-        addButtonText={t('add_product', { ns: 'inventory' })}
+        title={tInventory('title')}
+        subtitle={tInventory('subtitle')}
+        addButtonText={tInventory('add_product')}
         onAddClick={() => {
           setIsAddSheetOpen(true)
         }}
-        searchPlaceholder={t('search_placeholder', { ns: 'inventory' })}
+        searchPlaceholder={tInventory('search_placeholder')}
         searchValue={search.search ?? ''}
         onSearchChange={handleSearch}
-        filterTitle={t('filters_title', { ns: 'inventory' })}
-        filterButtonText={t('common.filter')}
+        filterTitle={tInventory('filters_title')}
+        filterButtonText={tCommon('filter')}
         filterButton={
           <filterForm.AppForm>
             <div className="space-y-6 p-4">
               <filterForm.AppField name="categoryId">
                 {(field) => (
                   <field.SelectField
-                    label={t('filter_by_category', { ns: 'inventory' })}
+                    label={tInventory('filter_by_category')}
                     options={categoryOptions}
                     disabled={categoriesResponse.isLoading}
                     clearable
@@ -445,7 +443,7 @@ export function InventoryListPage() {
               <filterForm.AppField name="stockStatus">
                 {(field) => (
                   <field.RadioField
-                    label={t('filter_by_stock', { ns: 'inventory' })}
+                    label={tInventory('filter_by_stock')}
                     options={stockStatusOptions}
                     orientation="vertical"
                   />
@@ -459,26 +457,22 @@ export function InventoryListPage() {
           filterForm.handleSubmit()
         }}
         onResetFilters={handleResetFilters}
-        applyLabel={t('common.apply')}
-        resetLabel={t('common.reset')}
-        sortTitle={t('sort_products', { ns: 'inventory' })}
+        applyLabel={tCommon('apply')}
+        resetLabel={tCommon('reset')}
+        sortTitle={tInventory('sort_products')}
         sortOptions={sortOptions}
         onSortApply={handleSortApply}
         emptyIcon={<Package size={48} />}
         emptyTitle={
-          search.search
-            ? t('no_results', { ns: 'inventory' })
-            : t('no_products', { ns: 'inventory' })
+          search.search ? tInventory('no_results') : tInventory('no_products')
         }
         emptyMessage={
           search.search
-            ? t('try_different_search', { ns: 'inventory' })
-            : t('get_started_message', { ns: 'inventory' })
+            ? tInventory('try_different_search')
+            : tInventory('get_started_message')
         }
         emptyActionText={
-          !search.search
-            ? t('add_first_product', { ns: 'inventory' })
-            : undefined
+          !search.search ? tInventory('add_first_product') : undefined
         }
         onEmptyAction={
           !search.search
@@ -487,8 +481,8 @@ export function InventoryListPage() {
               }
             : undefined
         }
-        noResultsTitle={t('no_results', { ns: 'inventory' })}
-        noResultsMessage={t('try_different_search', { ns: 'inventory' })}
+        noResultsTitle={tInventory('no_results')}
+        noResultsMessage={tInventory('try_different_search')}
         tableColumns={columns}
         tableData={products}
         tableKeyExtractor={(product) => product.id}
@@ -514,7 +508,7 @@ export function InventoryListPage() {
         totalItems={totalItems}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        itemsName={t('title', { ns: 'inventory' }).toLowerCase()}
+        itemsName={tInventory('title').toLowerCase()}
         skeleton={<InventoryListSkeleton />}
       />
 
@@ -558,7 +552,7 @@ export function InventoryListPage() {
           setSelectedProduct(null)
           setSelectedProductId(null)
         }}
-        title={t('delete_confirm_title', { ns: 'inventory' })}
+        title={tInventory('delete_confirm_title')}
         size="sm"
         footer={
           <div className="flex gap-2 justify-end">
@@ -572,7 +566,7 @@ export function InventoryListPage() {
               }}
               disabled={deleteProductMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <button
               type="button"
@@ -586,10 +580,10 @@ export function InventoryListPage() {
               {deleteProductMutation.isPending ? (
                 <>
                   <span className="loading loading-spinner loading-sm"></span>
-                  {t('common.deleting')}
+                  {tCommon('deleting')}
                 </>
               ) : (
-                t('common.delete')
+                tCommon('delete')
               )}
             </button>
           </div>
@@ -599,8 +593,7 @@ export function InventoryListPage() {
           {selectedProduct && (
             <span
               dangerouslySetInnerHTML={{
-                __html: t('delete_confirm_message', {
-                  ns: 'inventory',
+                __html: tInventory('delete_confirm_message', {
                   name: `<strong>${selectedProduct.name}</strong>`,
                 }),
               }}

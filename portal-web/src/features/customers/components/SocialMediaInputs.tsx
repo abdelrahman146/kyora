@@ -90,7 +90,7 @@ export function SocialMediaInputs({
   disabled = false,
   defaultExpanded = false,
 }: SocialMediaInputsProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
 
   // Count filled fields for summary
   const filledCount = useMemo(() => {
@@ -138,7 +138,7 @@ export function SocialMediaInputs({
       >
         <div className="flex items-center gap-3">
           <span className="font-medium text-base-content">
-            {t('customers.form.social_media_section')}
+            {tCustomers('form.social_media_section')}
           </span>
           {filledCount > 0 && (
             <span className="badge badge-primary badge-sm">{filledCount}</span>
@@ -163,8 +163,8 @@ export function SocialMediaInputs({
         >
           {/* Instagram */}
           <FormInput
-            label={t('customers.form.instagram')}
-            placeholder={t('customers.form.instagram_placeholder')}
+            label={tCustomers('form.instagram')}
+            placeholder={tCustomers('form.instagram_placeholder')}
             value={instagramUsername}
             onChange={(e) => {
               onInstagramChange?.(e.target.value)
@@ -183,8 +183,8 @@ export function SocialMediaInputs({
 
           {/* Facebook */}
           <FormInput
-            label={t('customers.form.facebook')}
-            placeholder={t('customers.form.facebook_placeholder')}
+            label={tCustomers('form.facebook')}
+            placeholder={tCustomers('form.facebook_placeholder')}
             value={facebookUsername}
             onChange={(e) => {
               onFacebookChange?.(e.target.value)
@@ -203,8 +203,8 @@ export function SocialMediaInputs({
 
           {/* TikTok */}
           <FormInput
-            label={t('customers.form.tiktok')}
-            placeholder={t('customers.form.tiktok_placeholder')}
+            label={tCustomers('form.tiktok')}
+            placeholder={tCustomers('form.tiktok_placeholder')}
             value={tiktokUsername}
             onChange={(e) => {
               onTiktokChange?.(e.target.value)
@@ -218,8 +218,8 @@ export function SocialMediaInputs({
 
           {/* Snapchat */}
           <FormInput
-            label={t('customers.form.snapchat')}
-            placeholder={t('customers.form.snapchat_placeholder')}
+            label={tCustomers('form.snapchat')}
+            placeholder={tCustomers('form.snapchat_placeholder')}
             value={snapchatUsername}
             onChange={(e) => {
               onSnapchatChange?.(e.target.value)
@@ -238,8 +238,8 @@ export function SocialMediaInputs({
 
           {/* X (Twitter) */}
           <FormInput
-            label={t('customers.form.x')}
-            placeholder={t('customers.form.x_placeholder')}
+            label={tCustomers('form.x')}
+            placeholder={tCustomers('form.x_placeholder')}
             value={xUsername}
             onChange={(e) => {
               onXChange?.(e.target.value)
@@ -253,8 +253,8 @@ export function SocialMediaInputs({
 
           {/* WhatsApp */}
           <FormInput
-            label={t('customers.form.whatsapp')}
-            placeholder={t('customers.form.whatsapp_placeholder')}
+            label={tCustomers('form.whatsapp')}
+            placeholder={tCustomers('form.whatsapp_placeholder')}
             value={whatsappNumber}
             onChange={(e) => {
               onWhatsappChange?.(e.target.value)
@@ -277,7 +277,7 @@ export function SocialMediaInputs({
       {/* Helper text when collapsed */}
       {!isExpanded && filledCount === 0 && (
         <p className="text-sm text-base-content/60 px-4">
-          {t('customers.form.social_media_hint')}
+          {tCustomers('form.social_media_hint')}
         </p>
       )}
     </div>

@@ -31,7 +31,8 @@ export function PhoneCodeSelect({
   placeholder,
   searchable = true,
 }: PhoneCodeSelectProps) {
-  const { t, i18n } = useTranslation()
+  const { i18n } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
   const countries = useStore(metadataStore, (state) => state.countries)
   const countriesStatus = useStore(metadataStore, (state) => state.status)
 
@@ -64,7 +65,7 @@ export function PhoneCodeSelect({
 
   return (
     <FormSelect<string>
-      label={t('customers.form.phone_code')}
+      label={tCustomers('form.phone_code')}
       options={phoneCodeOptions}
       value={value}
       onChange={(val) => {
@@ -72,7 +73,7 @@ export function PhoneCodeSelect({
       }}
       required={required}
       disabled={disabled ?? !countriesReady}
-      placeholder={placeholder ?? t('customers.form.select_phone_code')}
+      placeholder={placeholder ?? tCustomers('form.select_phone_code')}
       searchable={searchable}
       error={error}
     />

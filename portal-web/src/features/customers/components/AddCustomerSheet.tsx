@@ -91,7 +91,8 @@ export function AddCustomerSheet({
   businessCountryCode,
   onCreated,
 }: AddCustomerSheetProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
+  const { t: tCommon } = useTranslation('common')
   const formId = useId()
 
   const [selectedCountryCode, setSelectedCountryCode] =
@@ -103,7 +104,7 @@ export function AddCustomerSheet({
 
   const createMutation = useCreateCustomerMutation(businessDescriptor, {
     onSuccess: async (created) => {
-      showSuccessToast(t('customers.create_success'))
+      showSuccessToast(tCustomers('create_success'))
       if (onCreated) {
         await onCreated(created)
       }
@@ -167,7 +168,7 @@ export function AddCustomerSheet({
       <BottomSheet
         isOpen={isOpen}
         onClose={safeClose}
-        title={t('customers.create_title')}
+        title={tCustomers('create_title')}
         footer={
           <div className="flex gap-2">
             <button
@@ -177,7 +178,7 @@ export function AddCustomerSheet({
               disabled={createMutation.isPending}
               aria-disabled={createMutation.isPending}
             >
-              {t('common.cancel')}
+              {tCommon('cancel')}
             </button>
             <form.SubmitButton
               form={`add-customer-form-${formId}`}
@@ -185,8 +186,8 @@ export function AddCustomerSheet({
               className="flex-1"
             >
               {createMutation.isPending
-                ? t('customers.create_submitting')
-                : t('customers.create_submit')}
+                ? tCustomers('create_submitting')
+                : tCustomers('create_submit')}
             </form.SubmitButton>
           </div>
         }
@@ -195,7 +196,7 @@ export function AddCustomerSheet({
         closeOnOverlayClick={!createMutation.isPending}
         closeOnEscape={!createMutation.isPending}
         contentClassName="space-y-4"
-        ariaLabel={t('customers.create_title')}
+        ariaLabel={tCustomers('create_title')}
       >
         <form.FormRoot
           id={`add-customer-form-${formId}`}
@@ -210,8 +211,8 @@ export function AddCustomerSheet({
           >
             {(field) => (
               <field.TextField
-                label={t('customers.form.name')}
-                placeholder={t('customers.form.name_placeholder')}
+                label={tCustomers('form.name')}
+                placeholder={tCustomers('form.name_placeholder')}
                 autoComplete="name"
                 required
               />
@@ -231,8 +232,8 @@ export function AddCustomerSheet({
             {(field) => (
               <field.TextField
                 type="email"
-                label={t('customers.form.email')}
-                placeholder={t('customers.form.email_placeholder')}
+                label={tCustomers('form.email')}
+                placeholder={tCustomers('form.email_placeholder')}
                 autoComplete="email"
                 required
               />
@@ -276,14 +277,14 @@ export function AddCustomerSheet({
             >
               {(field: any) => (
                 <FormSelect<CustomerGender>
-                  label={t('customers.form.gender')}
+                  label={tCustomers('form.gender')}
                   options={[
-                    { value: 'male', label: t('customers.form.gender_male') },
+                    { value: 'male', label: tCustomers('form.gender_male') },
                     {
                       value: 'female',
-                      label: t('customers.form.gender_female'),
+                      label: tCustomers('form.gender_female'),
                     },
-                    { value: 'other', label: t('customers.form.gender_other') },
+                    { value: 'other', label: tCustomers('form.gender_other') },
                   ]}
                   value={field.state.value}
                   onChange={(value: CustomerGender | Array<CustomerGender>) => {
@@ -292,7 +293,7 @@ export function AddCustomerSheet({
                   }}
                   required
                   disabled={createMutation.isPending}
-                  placeholder={t('customers.form.select_gender')}
+                  placeholder={tCustomers('form.select_gender')}
                 />
               )}
             </form.AppField>
@@ -336,8 +337,8 @@ export function AddCustomerSheet({
                 {(field) => (
                   <field.TextField
                     type="tel"
-                    label={t('customers.form.phone_number')}
-                    placeholder={t('customers.form.phone_placeholder')}
+                    label={tCustomers('form.phone_number')}
+                    placeholder={tCustomers('form.phone_placeholder')}
                     autoComplete="tel"
                   />
                 )}

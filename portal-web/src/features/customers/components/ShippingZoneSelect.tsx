@@ -28,19 +28,19 @@ export function ShippingZoneSelect({
   placeholder,
   searchable = true,
 }: ShippingZoneSelectProps) {
-  const { t } = useTranslation()
+  const { t: tCustomers } = useTranslation('customers')
 
   const zoneOptions: Array<FormSelectOption> = useMemo(() => {
     return zones.map((zone) => {
       const countryCount = zone.countries.length
-      const label = `${zone.name} (${countryCount} ${t('customers.address.countries', { count: countryCount })})`
+      const label = `${zone.name} (${countryCount} ${tCustomers('address.countries', { count: countryCount })})`
       return { value: zone.id, label }
     })
-  }, [zones, t])
+  }, [zones, tCustomers])
 
   return (
     <FormSelect<string>
-      label={t('customers.address.shipping_zone')}
+      label={tCustomers('address.shipping_zone')}
       options={zoneOptions}
       value={value}
       onChange={(val) => {
@@ -48,7 +48,7 @@ export function ShippingZoneSelect({
       }}
       required={required}
       disabled={disabled ?? isLoading}
-      placeholder={placeholder ?? t('customers.address.select_shipping_zone')}
+      placeholder={placeholder ?? tCustomers('address.select_shipping_zone')}
       searchable={searchable}
       error={error}
     />

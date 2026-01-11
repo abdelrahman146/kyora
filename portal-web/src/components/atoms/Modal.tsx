@@ -94,7 +94,7 @@ export function Modal({
   scrollable = true,
   zIndex = 50,
 }: ModalProps) {
-  const { t } = useTranslation()
+  const { t: tCommon } = useTranslation('common')
   const modalRef = useRef<HTMLDivElement>(null)
 
   // Size mapping for responsive modal widths
@@ -208,7 +208,7 @@ export function Modal({
               <button
                 onClick={onClose}
                 className="btn btn-sm btn-circle btn-ghost shrink-0"
-                aria-label={t('common.close_modal')}
+                aria-label={tCommon('close_modal')}
               >
                 <X size={20} />
               </button>
