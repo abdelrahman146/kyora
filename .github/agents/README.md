@@ -15,6 +15,42 @@ The orchestrator agent that builds end-to-end features by coordinating between s
 
 ---
 
+### 🧰 **Maintenance Engineer** (Bugfix/Refactor)
+
+**Use when**: Fixing fullstack bugs, refactoring, or reducing drift (without adding features)
+
+Cross-stack maintenance agent focused on correctness, SSOT compliance, and small safe changes.
+
+**Best for**: "Fix a regression across API + UI", "Refactor drifted code to match SSOT", "Improve performance without changing behavior"
+
+**⚠️ Manual activation required**: Set `infer: false`
+
+---
+
+### 🧱 **Backend Maintenance**
+
+**Use when**: Fixing backend bugs or refactoring backend code (no new endpoints)
+
+Focuses on tenant isolation, RBAC/plan gates, error handling, and query performance.
+
+**Best for**: "Fix a storage scoping bug", "Remove duplication in a service", "Optimize a slow query"
+
+**⚠️ Manual activation required**: Set `infer: false`
+
+---
+
+### 🧼 **Portal Web Maintenance**
+
+**Use when**: Fixing portal-web bugs or cleaning up drift (no new pages)
+
+Focuses on TanStack Router/Query/Form correctness, state ownership, i18n parity, and RTL safety.
+
+**Best for**: "Fix broken list filters", "Remove ad-hoc API calls", "Align a route with URL-state rules"
+
+**⚠️ Manual activation required**: Set `infer: false`
+
+---
+
 ### 🔧 **Backend Specialist**
 
 **Use when**: Implementing backend-only features or fixing backend issues
@@ -95,6 +131,12 @@ Maintains `.github/` AI infrastructure (agents, instructions, prompts, skills). 
 ```
 @Feature-Builder Add expense tracking with recurring expenses support
 
+@Maintenance-Engineer Fix a bug without adding features; include the smallest safe refactor if needed
+
+@Backend-Maintenance Fix backend bug and add/adjust E2E coverage
+
+@Portal-Web-Maintenance Refactor drifted portal-web code to match TanStack + i18n/RTL rules
+
 @Backend-Specialist Fix order state machine to handle partial refunds
 
 @Portal-Web-Specialist Create mobile-first analytics dashboard with charts
@@ -126,15 +168,18 @@ Reusable, on-demand workflows live under `.github/skills/`.
 
 ## Agent Capabilities Matrix
 
-| Agent                     | Backend           | Frontend          | Testing              | Design           | Audit             |
-| ------------------------- | ----------------- | ----------------- | -------------------- | ---------------- | ----------------- |
-| **Feature Builder**       | ✅ (orchestrates) | ✅ (orchestrates) | ✅ (via specialists) | ❌               | ❌                |
-| **Backend Specialist**    | ✅✅✅            | ❌                | ✅ (E2E)             | ❌               | ❌                |
-| **Portal-Web Specialist** | ❌                | ✅✅✅            | ❌                   | ✅ (UX patterns) | ❌                |
-| **Domain Architect**      | ✅ (design only)  | ❌                | ✅ (test planning)   | ✅✅✅           | ❌                |
-| **E2E Test Specialist**   | ✅ (tests only)   | ❌                | ✅✅✅               | ❌               | ❌                |
-| **SSOT Auditor**          | ✅ (audit)        | ✅ (audit)        | ✅ (audit)           | ❌               | ✅✅✅            |
-| **AI Architect**          | ❌                | ❌                | ❌                   | ✅ (docs)        | ✅ (instructions) |
+| Agent                      | Backend           | Frontend          | Testing              | Design           | Audit             |
+| -------------------------- | ----------------- | ----------------- | -------------------- | ---------------- | ----------------- |
+| **Feature Builder**        | ✅ (orchestrates) | ✅ (orchestrates) | ✅ (via specialists) | ❌               | ❌                |
+| **Maintenance Engineer**   | ✅                | ✅                | ✅ (targeted)        | ❌               | ✅ (drift fixes)  |
+| **Backend Maintenance**    | ✅✅✅            | ❌                | ✅ (E2E)             | ❌               | ✅ (SSOT fixes)   |
+| **Portal Web Maintenance** | ❌                | ✅✅✅            | ✅ (typecheck/build) | ❌               | ✅ (SSOT fixes)   |
+| **Backend Specialist**     | ✅✅✅            | ❌                | ✅ (E2E)             | ❌               | ❌                |
+| **Portal-Web Specialist**  | ❌                | ✅✅✅            | ❌                   | ✅ (UX patterns) | ❌                |
+| **Domain Architect**       | ✅ (design only)  | ❌                | ✅ (test planning)   | ✅✅✅           | ❌                |
+| **E2E Test Specialist**    | ✅ (tests only)   | ❌                | ✅✅✅               | ❌               | ❌                |
+| **SSOT Auditor**           | ✅ (audit)        | ✅ (audit)        | ✅ (audit)           | ❌               | ✅✅✅            |
+| **AI Architect**           | ❌                | ❌                | ❌                   | ✅ (docs)        | ✅ (instructions) |
 
 Legend: ✅✅✅ = Primary expertise | ✅ = Can do | ❌ = Not in scope
 
@@ -145,6 +190,10 @@ Legend: ✅✅✅ = Primary expertise | ✅ = Can do | ❌ = Not in scope
 ```
 Start here
     ↓
+Fixing bugs, refactoring, or reducing drift?
+    YES → Maintenance Engineer (or Backend Maintenance / Portal Web Maintenance)
+    NO → Continue
+        ↓
 Building a complete feature?
     YES → Feature Builder (orchestrates everything)
     NO → Continue
@@ -323,7 +372,7 @@ This prevents agents from accidentally modifying code outside their scope.
 
 ### Adding New Agents
 
-1. Read [.github/instructions/ai-infrastructure.instructions.md](.github/instructions/ai-infrastructure.instructions.md)
+1. Read [.github/instructions/ai-infrastructure.instructions.md](../instructions/ai-infrastructure.instructions.md)
 2. Use `@AI-Architect` to create new agent file
 3. Test with representative tasks
 4. Document in this README

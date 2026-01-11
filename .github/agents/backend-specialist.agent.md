@@ -2,7 +2,7 @@
 name: Backend Specialist
 description: "Expert in Go backend development for Kyora. Specializes in domain-driven design, GORM/Postgres, multi-tenancy, Stripe/Resend integration, and E2E testing with testcontainers."
 target: vscode
-model: Claude Sonnet 4.5
+model: GPT-5.2 (copilot)
 tools:
   [
     "vscode",
