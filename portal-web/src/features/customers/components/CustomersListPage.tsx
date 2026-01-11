@@ -12,7 +12,7 @@ import type { QueryClient } from '@tanstack/react-query'
 
 import type { Customer, SocialPlatform } from '@/api/customer'
 import type { TableColumn } from '@/components/organisms/Table'
-import type { SortOption } from '@/components/organisms/SortButton'
+import type { SortOption } from '@/components/molecules/SortButton'
 import type { CustomersSearch } from '@/features/customers/schema/customersSearch'
 import {
   customerQueries,
@@ -20,7 +20,7 @@ import {
   useDeleteCustomerMutation,
 } from '@/api/customer'
 import { Avatar } from '@/components/atoms/Avatar'
-import { Dialog } from '@/components/atoms/Dialog'
+import { Dialog } from '@/components/molecules/Dialog'
 import { ResourceListLayout } from '@/components/templates/ResourceListLayout'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'

@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next'
-import { Dialog } from '../atoms/Dialog'
+import { Dialog } from './Dialog'
 
 interface ResumeSessionDialogProps {
   open: boolean

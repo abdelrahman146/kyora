@@ -6,7 +6,7 @@ import { Building2, Check, ChevronDown, Loader2 } from 'lucide-react'
 
 import type { Business } from '@/stores/businessStore'
 import { Avatar } from '@/components/atoms/Avatar'
-import { Dropdown } from '@/components/atoms/Dropdown'
+import { Dropdown } from '@/components/molecules/Dropdown'
 import { businessApi } from '@/api/business'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getThumbnailUrl } from '@/lib/assetUrl'

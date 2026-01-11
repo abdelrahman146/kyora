@@ -9,10 +9,10 @@
 export * from './Header'
 export * from './Sidebar'
 export * from './BottomNav'
+export * from './UserMenu'
 
 // Data Display
 export * from './Table'
-export * from './FilterButton'
 export * from './Notes'
 
 // Forms

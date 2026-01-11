@@ -6,7 +6,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { Plan } from '@/api/types/onboarding'
 import { onboardingQueries } from '@/api/onboarding'
-import { Modal } from '@/components/atoms/Modal'
+import { Modal } from '@/components/molecules/Modal'
 import { OnboardingLayout } from '@/features/onboarding/components/OnboardingLayout'
 
 /**

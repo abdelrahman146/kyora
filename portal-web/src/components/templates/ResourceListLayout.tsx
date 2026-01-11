@@ -57,12 +57,12 @@ import { Plus } from 'lucide-react'
 
 import { Pagination } from '../molecules/Pagination'
 import { SearchInput } from '../molecules/SearchInput'
-import { FilterButton } from '../organisms/FilterButton'
-import { SortButton } from '../organisms/SortButton'
+import { FilterButton } from '../molecules/FilterButton'
+import { SortButton } from '../molecules/SortButton'
 import { Table } from '../organisms/Table'
 import type { ReactNode } from 'react'
 import type { TableColumn } from '../organisms/Table'
-import type { SortOption } from '../organisms/SortButton'
+import type { SortOption } from '../molecules/SortButton'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 
 export interface ResourceListLayoutProps<T> {

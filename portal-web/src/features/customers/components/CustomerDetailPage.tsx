@@ -36,7 +36,7 @@ import {
 import { orderApi } from '@/api/order'
 import { metadataQueries, useCountriesQuery } from '@/api/metadata'
 import { Avatar } from '@/components/atoms/Avatar'
-import { Dialog } from '@/components/atoms/Dialog'
+import { Dialog } from '@/components/molecules/Dialog'
 import { StatCard } from '@/components/atoms/StatCard'
 import { SocialMediaHandles } from '@/components/molecules/SocialMediaHandles'
 import { Notes } from '@/components/organisms/Notes'

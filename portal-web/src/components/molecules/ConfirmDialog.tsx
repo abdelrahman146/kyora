@@ -1,4 +1,4 @@
-import { Dialog } from '../atoms/Dialog'
+import { Dialog } from './Dialog'
 import { Button } from '../atoms/Button'
 
 export interface ConfirmDialogProps {

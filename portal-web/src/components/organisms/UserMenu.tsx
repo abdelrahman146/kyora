@@ -2,7 +2,7 @@ import { useNavigate } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { ChevronDown, LogOut } from 'lucide-react'
 import { Avatar } from '../atoms/Avatar'
-import { Dropdown } from '../atoms/Dropdown'
+import { Dropdown } from '../molecules/Dropdown'
 import { useAuth } from '../../hooks/useAuth'
 
 /**

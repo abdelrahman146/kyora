@@ -21,7 +21,7 @@ import type { DateRange } from 'react-day-picker'
 
 import type { Order } from '@/api/order'
 import type { SocialPlatform } from '@/api/customer'
-import type { SortOption } from '@/components/organisms/SortButton'
+import type { SortOption } from '@/components/molecules/SortButton'
 import type { TableColumn } from '@/components/organisms/Table'
 import { orderQueries, useOrdersQuery } from '@/api/order'
 import { ResourceListLayout } from '@/components/templates/ResourceListLayout'

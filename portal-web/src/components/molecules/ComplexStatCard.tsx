@@ -1,4 +1,4 @@
-import { Badge } from './Badge'
+import { Badge } from '../atoms/Badge'
 import type { ReactNode } from 'react'
 import { cn } from '@/lib/utils'
 
