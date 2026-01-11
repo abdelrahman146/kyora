@@ -242,7 +242,7 @@ export const orderApi = {
     if (params?.pageSize)
       searchParams.set('pageSize', params.pageSize.toString())
     if (params?.orderBy && params.orderBy.length > 0) {
-      searchParams.set('orderBy', params.orderBy.join(','))
+      params.orderBy.forEach((o) => searchParams.append('orderBy', o))
     }
     if (params?.status && params.status.length > 0) {
       params.status.forEach((s) => searchParams.append('status', s))

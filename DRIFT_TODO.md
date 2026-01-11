@@ -60,32 +60,35 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
     - Update `portal-web/src/i18n/init.ts` to remove `translation` from `resources`, `ns`, and `defaultNS` (prefer `common` as `defaultNS` once fully migrated).
     - Delete `portal-web/src/i18n/{en,ar}/translation.json` after it is empty.
 
-- [ ] **Portal-web likely contains duplicate keys inside translation JSON (invalid per SSOT)**
+- [x] **Portal-web likely contains duplicate keys inside translation JSON (invalid per SSOT)**
   - **Where:** `portal-web/src/i18n/{en,ar}/translation.json`
   - **Observation:** file content shows repeated keys in the same object (e.g. dashboard entries) and mixed formatting; even when runtime survives, duplicates are invalid by policy.
   - **Fix:** remove duplicates and enforce a single authoritative location for each key.
 
-- [ ] **Portal orders date filters don’t match backend**
+- [x] **Portal orders date filters don't match backend**
   - **Where:** `portal-web/src/routes/business/$businessDescriptor/orders/index.tsx`
   - **Backend expects:** `from/to` as RFC3339 timestamps (`2006-01-02T15:04:05Z07:00`) via Gin `time_format`.
   - **Portal sends today:** `yyyy-MM-dd` strings.
-  - **Fix:** serialize `from/to` as RFC3339 (or update backend to accept date-only, but that’s a contract change; prefer aligning portal).
+  - **Fix:** serialize `from/to` as RFC3339 (or update backend to accept date-only, but that's a contract change; prefer aligning portal).
+  - **Resolution:** Updated `OrdersListPage.tsx` to use `formatISO()` from date-fns, which produces RFC3339/ISO 8601 timestamps (e.g., `2024-01-15T00:00:00Z`).
 
-- [ ] **Portal list sorting uses CSV `orderBy`, backend binds repeatable `orderBy`**
+- [x] **Portal list sorting uses CSV `orderBy`, backend binds repeatable `orderBy`**
   - **Where:**
     - `portal-web/src/api/order.ts`
     - `portal-web/src/api/customer.ts`
     - `portal-web/src/api/inventory.ts`
   - **Backend binds:** `OrderBy []string \`form:"orderBy"\`` (repeatable query param).
-  - **Portal sends today:** `orderBy=-foo,bar` (CSV) via `join(',')`.
+  - **Portal sends today:** `orderBy=-foo,bar` (CSV) via `join(',')`.  
   - **Impact:** multi-sort will not parse correctly; backend schema mapping will see a single unknown field.
   - **Fix:** send repeatable params using `searchParams.append('orderBy', value)` for each entry.
+  - **Resolution:** Updated all three API files to use `params.orderBy.forEach((o) => searchParams.append('orderBy', o))` instead of CSV join. This now produces `orderBy=value1&orderBy=value2` format that matches backend expectations.
 
-- [ ] **Portal customers `socialPlatforms` filter uses CSV, backend binds repeatable**
+- [x] **Portal customers `socialPlatforms` filter uses CSV, backend binds repeatable**
   - **Where:** `portal-web/src/api/customer.ts`
   - **Backend binds:** `SocialPlatforms []string \`form:"socialPlatforms"\`` (repeatable query param).
   - **Portal sends today:** `socialPlatforms=instagram,whatsapp`.
   - **Fix:** use `searchParams.append('socialPlatforms', platform)` per value.
+  - **Resolution:** Updated to use `params.socialPlatforms.forEach((p) => searchParams.append('socialPlatforms', p))` instead of CSV join, matching the backend's repeatable query param binding.
 
 - [ ] **Portal analytics sidebar link points to a missing route**
   - **Where:** `portal-web/src/components/organisms/Sidebar.tsx`
@@ -94,7 +97,7 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Impact:** clicking Analytics will 404/blank until a route exists.
   - **Fix:** implement `portal-web/src/routes/business/$businessDescriptor/analytics/**` (preferred), or remove the nav item until implemented.
 
-- [ ] **Portal asset uploads `partUrls` shape mismatches backend (upload breaks)**
+- [x] **Portal asset uploads `partUrls` shape mismatches backend (upload breaks)**
   - **Where:**
     - `portal-web/src/types/asset.ts` (`UploadDescriptor.partUrls`)
     - `portal-web/src/api/assets.ts` (`uploadMultipart`)
@@ -102,13 +105,15 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Portal expects:** `partUrls: string[]`
   - **Impact:** multipart uploads will fail at runtime (URL becomes `[object Object]`).
   - **Fix:** update portal types + upload logic to use `partUrls[i].url` (and optionally validate `partNumber`).
+  - **Resolution:** Updated `UploadDescriptor.partUrls` type to `Array<{ partNumber: number; url: string }>` and modified `uploadMultipart` to use `partUrls[i].url` instead of treating array as strings.
 
-- [ ] **Portal cannot upload thumbnails on S3 (backend uses single pre-signed PUT)**
+- [x] **Portal cannot upload thumbnails on S3 (backend uses single pre-signed PUT)**
   - **Where:** `portal-web/src/api/assets.ts` (`uploadToStorage`)
   - **Backend returns (thumbnail):** `method: "PUT"` + `url` + `headers` (no `partUrls`/`partSize`)
   - **Portal supports today:** multipart PUT (`partUrls`+`partSize`) or local POST (`url`)
   - **Impact:** thumbnail upload will throw `Invalid upload descriptor` in production storage.
   - **Fix:** add support for simple pre-signed `PUT` (single request) in `uploadToStorage`.
+  - **Resolution:** Added `uploadSimplePut` function and updated `uploadToStorage` to handle `method === 'PUT' && url` case (simple pre-signed PUT without multipart). Now supports three upload modes: multipart PUT, simple PUT, and local POST.
 
 - [ ] **Backend leaks GORM `gorm.Model` fields into API JSON (PascalCase timestamps)**
   - **Where:** many domain models embed `gorm.Model` and are returned directly from handlers (e.g. orders/customers/billing).

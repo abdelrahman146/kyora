@@ -53,8 +53,8 @@ export interface UploadDescriptor {
   partSize?: number
   /** Total number of parts */
   totalParts?: number
-  /** Pre-signed URLs for each part (1-based indexing) */
-  partUrls?: Array<string>
+  /** Pre-signed URLs for each part with part numbers */
+  partUrls?: Array<{ partNumber: number; url: string }>
   /** S3 upload ID */
   uploadId?: string
 

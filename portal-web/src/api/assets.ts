@@ -71,6 +71,10 @@ export async function uploadToStorage(
   ) {
     // S3 Multipart upload
     return uploadMultipart(descriptor, file, onProgress, signal)
+  } else if (descriptor.method === 'PUT' && descriptor.url) {
+    // Simple pre-signed PUT (e.g., for thumbnails)
+    await uploadSimplePut(descriptor, file, onProgress, signal)
+    return null
   } else if (descriptor.method === 'POST' && descriptor.url) {
     // Local provider upload
     await uploadLocal(descriptor, file, onProgress, signal)
@@ -98,13 +102,14 @@ async function uploadMultipart(
   const totalParts = partUrls.length
 
   for (let i = 0; i < totalParts; i++) {
-    const partNumber = i + 1 // 1-based
+    const partInfo = partUrls[i]
+    const partNumber = partInfo.partNumber
     const start = i * partSize
     const end = Math.min(start + partSize, file.size)
     const chunk = file.slice(start, end)
 
     // Upload part with retry
-    const etag = await uploadPartWithRetry(partUrls[i], chunk, signal)
+    const etag = await uploadPartWithRetry(partInfo.url, chunk, signal)
     parts.push({ partNumber, etag })
 
     // Report progress
@@ -156,6 +161,37 @@ async function uploadPartWithRetry(
       return uploadPartWithRetry(url, chunk, signal, retryCount + 1)
     }
     throw error
+  }
+}
+
+/**
+ * Upload file using simple pre-signed PUT (single request)
+ */
+async function uploadSimplePut(
+  descriptor: UploadDescriptor,
+  file: File,
+  onProgress?: (percent: number) => void,
+  signal?: AbortSignal,
+): Promise<void> {
+  if (!descriptor.url) {
+    throw new Error('Missing URL for simple PUT upload')
+  }
+
+  const headers = descriptor.headers || {}
+
+  const response = await fetch(descriptor.url, {
+    method: 'PUT',
+    body: file,
+    headers,
+    signal,
+  })
+
+  if (!response.ok) {
+    throw new Error(`Simple PUT upload failed: ${response.status}`)
+  }
+
+  if (onProgress) {
+    onProgress(100)
   }
 }
 

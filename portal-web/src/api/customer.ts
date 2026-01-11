@@ -150,15 +150,15 @@ export const customerApi = {
     if (params?.pageSize)
       searchParams.set('pageSize', params.pageSize.toString())
     if (params?.orderBy && params.orderBy.length > 0) {
-      // swagger: orderBy is collectionFormat=csv
-      searchParams.set('orderBy', params.orderBy.join(','))
+      params.orderBy.forEach((o) => searchParams.append('orderBy', o))
     }
     if (params?.countryCode) searchParams.set('countryCode', params.countryCode)
     if (params?.hasOrders !== undefined)
       searchParams.set('hasOrders', params.hasOrders.toString())
     if (params?.socialPlatforms && params.socialPlatforms.length > 0) {
-      // swagger: socialPlatforms is collectionFormat=csv
-      searchParams.set('socialPlatforms', params.socialPlatforms.join(','))
+      params.socialPlatforms.forEach((p) =>
+        searchParams.append('socialPlatforms', p),
+      )
     }
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''

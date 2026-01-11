@@ -169,7 +169,7 @@ export const inventoryApi = {
     if (params?.pageSize)
       searchParams.set('pageSize', params.pageSize.toString())
     if (params?.orderBy && params.orderBy.length > 0) {
-      searchParams.set('orderBy', params.orderBy.join(','))
+      params.orderBy.forEach((o) => searchParams.append('orderBy', o))
     }
     if (params?.categoryId) searchParams.set('categoryId', params.categoryId)
     if (params?.stockStatus) searchParams.set('stockStatus', params.stockStatus)
@@ -325,7 +325,7 @@ export const inventoryApi = {
     if (params?.pageSize)
       searchParams.set('pageSize', params.pageSize.toString())
     if (params?.orderBy && params.orderBy.length > 0) {
-      searchParams.set('orderBy', params.orderBy.join(','))
+      params.orderBy.forEach((o) => searchParams.append('orderBy', o))
     }
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : ''

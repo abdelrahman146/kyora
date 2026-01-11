@@ -11,7 +11,7 @@ import {
 } from 'react-icons/fa'
 import { FaXTwitter } from 'react-icons/fa6'
 import { useEffect, useState } from 'react'
-import { format } from 'date-fns'
+import { formatISO } from 'date-fns'
 import { OrdersSearchSchema } from '../schema/ordersSearch'
 import { OrderCard } from './OrderCard'
 import { OrderQuickActions } from './OrderQuickActions'
@@ -90,11 +90,9 @@ export function OrdersListPage() {
               : undefined,
           customerId: value.customerId || undefined,
           from: value.dateRange?.from
-            ? format(value.dateRange.from, 'yyyy-MM-dd')
+            ? formatISO(value.dateRange.from)
             : undefined,
-          to: value.dateRange?.to
-            ? format(value.dateRange.to, 'yyyy-MM-dd')
-            : undefined,
+          to: value.dateRange?.to ? formatISO(value.dateRange.to) : undefined,
           page: 1,
         }),
       })
