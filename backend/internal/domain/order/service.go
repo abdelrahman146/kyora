@@ -52,13 +52,12 @@ func (s *Service) orderListPreloads() []func(*gorm.DB) *gorm.DB {
 		s.storage.order.WithPreload(OrderItemStruct),
 		s.storage.order.WithPreload("Items.Product"),
 		s.storage.order.WithPreload("Items.Variant"),
+		s.storage.order.WithPreload(OrderNoteStruct),
 	}
 }
 
 func (s *Service) orderDetailPreloads() []func(*gorm.DB) *gorm.DB {
-	preloads := s.orderListPreloads()
-	preloads = append(preloads, s.storage.order.WithPreload(OrderNoteStruct))
-	return preloads
+	return s.orderListPreloads()
 }
 
 func (s *Service) shippingFeeFromZone(subtotal, discount decimal.Decimal, zone *business.ShippingZone) decimal.Decimal {

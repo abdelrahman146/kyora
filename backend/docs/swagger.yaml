@@ -882,7 +882,7 @@ definitions:
         type: string
       topProductsByInventoryValue:
         items:
-          $ref: '#/definitions/inventory.Product'
+          $ref: '#/definitions/inventory.ProductResponse'
         type: array
       totalInStock:
         type: integer
@@ -1614,33 +1614,6 @@ definitions:
       logoUrl:
         type: string
       name:
-        type: string
-    type: object
-  business.ShippingZone:
-    properties:
-      business:
-        $ref: '#/definitions/business.Business'
-      businessId:
-        type: string
-      countries:
-        items:
-          type: string
-        type: array
-      createdAt:
-        type: string
-      currency:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      freeShippingThreshold:
-        type: number
-      id:
-        type: string
-      name:
-        type: string
-      shippingCost:
-        type: number
-      updatedAt:
         type: string
     type: object
   business.ShippingZoneResponse:
@@ -2895,105 +2868,29 @@ definitions:
     - items
     - shippingAddressId
     type: object
-  order.Order:
+  order.OrderItemProductResponse:
     properties:
-      business:
-        $ref: '#/definitions/business.Business'
-      businessId:
-        type: string
-      cancelledAt:
-        $ref: '#/definitions/sql.NullTime'
-      channel:
-        type: string
-      cogs:
-        type: number
-      createdAt:
-        type: string
-      currency:
-        type: string
-      customer:
-        $ref: '#/definitions/customer.Customer'
-      customerId:
-        type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
-      discount:
-        type: number
-      failedAt:
-        $ref: '#/definitions/sql.NullTime'
-      fulfilledAt:
-        $ref: '#/definitions/sql.NullTime'
       id:
         type: string
-      items:
+      name:
+        type: string
+      photos:
         items:
-          $ref: '#/definitions/order.OrderItem'
+          $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
         type: array
-      notes:
-        items:
-          $ref: '#/definitions/order.OrderNote'
-        type: array
-      orderNumber:
-        type: string
-      orderedAt:
-        type: string
-      paidAt:
-        $ref: '#/definitions/sql.NullTime'
-      paymentMethod:
-        $ref: '#/definitions/order.OrderPaymentMethod'
-      paymentReference:
-        $ref: '#/definitions/sql.NullString'
-      paymentStatus:
-        $ref: '#/definitions/order.OrderPaymentStatus'
-      placedAt:
-        $ref: '#/definitions/sql.NullTime'
-      readyForShipmentAt:
-        $ref: '#/definitions/sql.NullTime'
-      refundedAt:
-        $ref: '#/definitions/sql.NullTime'
-      returnedAt:
-        $ref: '#/definitions/sql.NullTime'
-      shippedAt:
-        $ref: '#/definitions/sql.NullTime'
-      shippingAddress:
-        $ref: '#/definitions/customer.CustomerAddress'
-      shippingAddressId:
-        type: string
-      shippingFee:
-        type: number
-      shippingZone:
-        $ref: '#/definitions/business.ShippingZone'
-      shippingZoneId:
-        type: string
-      status:
-        $ref: '#/definitions/order.OrderStatus'
-      subtotal:
-        type: number
-      total:
-        type: number
-      updatedAt:
-        type: string
-      vat:
-        type: number
-      vatRate:
-        type: number
     type: object
-  order.OrderItem:
+  order.OrderItemResponse:
     properties:
       createdAt:
         type: string
       currency:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: string
-      order:
-        $ref: '#/definitions/order.Order'
       orderId:
         type: string
       product:
-        $ref: '#/definitions/inventory.Product'
+        $ref: '#/definitions/order.OrderItemProductResponse'
       productId:
         type: string
       quantity:
@@ -3009,22 +2906,29 @@ definitions:
       updatedAt:
         type: string
       variant:
-        $ref: '#/definitions/inventory.Variant'
+        $ref: '#/definitions/order.OrderItemVariantResponse'
       variantId:
         type: string
     type: object
-  order.OrderNote:
+  order.OrderItemVariantResponse:
+    properties:
+      code:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      sku:
+        type: string
+    type: object
+  order.OrderNoteResponse:
     properties:
       content:
         type: string
       createdAt:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: string
-      order:
-        $ref: '#/definitions/order.Order'
       orderId:
         type: string
       updatedAt:
@@ -3073,10 +2977,8 @@ definitions:
       currency:
         type: string
       customer:
-        $ref: '#/definitions/customer.Customer'
+        $ref: '#/definitions/customer.CustomerResponse'
       customerId:
-        type: string
-      deletedAt:
         type: string
       discount:
         type: number
@@ -3088,11 +2990,11 @@ definitions:
         type: string
       items:
         items:
-          $ref: '#/definitions/order.OrderItem'
+          $ref: '#/definitions/order.OrderItemResponse'
         type: array
       notes:
         items:
-          $ref: '#/definitions/order.OrderNote'
+          $ref: '#/definitions/order.OrderNoteResponse'
         type: array
       orderNumber:
         type: string
@@ -3117,13 +3019,13 @@ definitions:
       shippedAt:
         type: string
       shippingAddress:
-        $ref: '#/definitions/customer.CustomerAddress'
+        $ref: '#/definitions/customer.CustomerAddressResponse'
       shippingAddressId:
         type: string
       shippingFee:
         type: number
       shippingZone:
-        $ref: '#/definitions/business.ShippingZone'
+        $ref: '#/definitions/business.ShippingZoneResponse'
       shippingZoneId:
         type: string
       status:
@@ -26885,7 +26787,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/order.OrderNote'
+            $ref: '#/definitions/order.OrderNoteResponse'
         "400":
           description: Bad Request
           schema:
@@ -26992,7 +26894,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.OrderNote'
+            $ref: '#/definitions/order.OrderNoteResponse'
         "400":
           description: Bad Request
           schema:

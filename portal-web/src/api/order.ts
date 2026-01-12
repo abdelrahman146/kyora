@@ -138,7 +138,6 @@ export interface Order {
   notes?: Array<OrderNote>
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
 }
 
 export interface ListResponse<T> {

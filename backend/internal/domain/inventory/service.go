@@ -40,6 +40,7 @@ func (s *Service) GetProductByID(ctx context.Context, actor *account.User, biz *
 	return s.storage.products.FindOne(ctx,
 		s.storage.products.ScopeBusinessID(biz.ID),
 		s.storage.products.ScopeID(id),
+		s.storage.products.WithPreload("Variants"),
 	)
 }
 
@@ -47,6 +48,7 @@ func (s *Service) GetVariantByID(ctx context.Context, actor *account.User, biz *
 	return s.storage.variants.FindOne(ctx,
 		s.storage.variants.ScopeBusinessID(biz.ID),
 		s.storage.variants.ScopeID(id),
+		s.storage.variants.WithPreload(ProductStruct),
 	)
 }
 
@@ -272,6 +274,7 @@ func (s *Service) ListVariants(ctx context.Context, actor *account.User, biz *bu
 		s.storage.variants.ScopeBusinessID(biz.ID),
 		s.storage.variants.WithPagination(req.Offset(), req.Limit()),
 		s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)),
+		s.storage.variants.WithPreload(ProductStruct),
 	)
 }
 

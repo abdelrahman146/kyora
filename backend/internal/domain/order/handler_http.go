@@ -83,7 +83,7 @@ type updateOrderNoteRequest struct {
 // @Param        orderNumber query string false "Filter by exact orderNumber"
 // @Param        from query string false "Filter by orderedAt >= from (RFC3339)"
 // @Param        to query string false "Filter by orderedAt <= to (RFC3339)"
-// @Success      200 {object} list.ListResponse[OrderResponse]
+// @Success      200 {object} list.ListResponse[order.OrderResponse]
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -141,7 +141,7 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	respItems := toOrderResponses(items)
+	respItems := ToOrderResponses(items)
 	hasMore := int64(query.Page*query.PageSize) < total
 	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(respItems, query.Page, query.PageSize, total, hasMore))
 }
@@ -154,7 +154,7 @@ func (h *HttpHandler) ListOrders(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -187,7 +187,7 @@ func (h *HttpHandler) GetOrder(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(ord))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(ord))
 }
 
 // GetOrderByNumber returns an order by its order number.
@@ -198,7 +198,7 @@ func (h *HttpHandler) GetOrder(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderNumber path string true "Order number"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -230,7 +230,7 @@ func (h *HttpHandler) GetOrderByNumber(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(ord))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(ord))
 }
 
 // CreateOrder creates a new order.
@@ -242,7 +242,7 @@ func (h *HttpHandler) GetOrderByNumber(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateOrderRequest true "Order"
-// @Success      201 {object} OrderResponse
+// @Success      201 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -279,7 +279,7 @@ func (h *HttpHandler) CreateOrder(c *gin.Context) {
 		response.Error(c, loadErr)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, toOrderResponse(loaded))
+	response.SuccessJSON(c, http.StatusCreated, ToOrderResponse(loaded))
 }
 
 // UpdateOrder updates an order.
@@ -292,7 +292,7 @@ func (h *HttpHandler) CreateOrder(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body UpdateOrderRequest true "Order updates"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -339,7 +339,7 @@ func (h *HttpHandler) UpdateOrder(c *gin.Context) {
 		response.Error(c, loadErr)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(loaded))
 }
 
 // DeleteOrder deletes an order (restricted to safe statuses) and restocks inventory.
@@ -392,7 +392,7 @@ func (h *HttpHandler) DeleteOrder(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body updateOrderStatusRequest true "Status"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -431,7 +431,7 @@ func (h *HttpHandler) UpdateOrderStatus(c *gin.Context) {
 		response.Error(c, loadErr)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(loaded))
 }
 
 // UpdateOrderPaymentStatus updates order payment status.
@@ -444,7 +444,7 @@ func (h *HttpHandler) UpdateOrderStatus(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body updateOrderPaymentStatusRequest true "Payment status"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -483,7 +483,7 @@ func (h *HttpHandler) UpdateOrderPaymentStatus(c *gin.Context) {
 		response.Error(c, loadErr)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(loaded))
 }
 
 // AddOrderPaymentDetails sets payment method/reference without changing payment status.
@@ -496,7 +496,7 @@ func (h *HttpHandler) UpdateOrderPaymentStatus(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body addOrderPaymentDetailsRequest true "Payment details"
-// @Success      200 {object} OrderResponse
+// @Success      200 {object} order.OrderResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -539,7 +539,7 @@ func (h *HttpHandler) AddOrderPaymentDetails(c *gin.Context) {
 		response.Error(c, loadErr)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toOrderResponse(loaded))
+	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(loaded))
 }
 
 // CreateOrderNote creates a note for an order.
@@ -552,7 +552,7 @@ func (h *HttpHandler) AddOrderPaymentDetails(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        orderId path string true "Order ID"
 // @Param        body body createOrderNoteRequest true "Note"
-// @Success      201 {object} OrderNote
+// @Success      201 {object} order.OrderNoteResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -589,7 +589,8 @@ func (h *HttpHandler) CreateOrderNote(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, note)
+	noteResponse := ToOrderNoteResponse(note)
+	response.SuccessJSON(c, http.StatusCreated, noteResponse)
 }
 
 // UpdateOrderNote updates an order note.
@@ -603,7 +604,7 @@ func (h *HttpHandler) CreateOrderNote(c *gin.Context) {
 // @Param        orderId path string true "Order ID"
 // @Param        noteId path string true "Note ID"
 // @Param        body body updateOrderNoteRequest true "Note"
-// @Success      200 {object} OrderNote
+// @Success      200 {object} order.OrderNoteResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -641,7 +642,8 @@ func (h *HttpHandler) UpdateOrderNote(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, note)
+	noteResponse := ToOrderNoteResponse(note)
+	response.SuccessJSON(c, http.StatusOK, noteResponse)
 }
 
 // DeleteOrderNote deletes an order note.

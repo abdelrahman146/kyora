@@ -7157,7 +7157,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/order.OrderNote"
+                            "$ref": "#/definitions/order.OrderNoteResponse"
                         }
                     },
                     "400": {
@@ -7320,7 +7320,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/order.OrderNote"
+                            "$ref": "#/definitions/order.OrderNoteResponse"
                         }
                     },
                     "400": {
@@ -10793,7 +10793,7 @@
                 "topProductsByInventoryValue": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/inventory.Product"
+                        "$ref": "#/definitions/inventory.ProductResponse"
                     }
                 },
                 "totalInStock": {
@@ -11876,47 +11876,6 @@
                     "type": "string"
                 },
                 "name": {
-                    "type": "string"
-                }
-            }
-        },
-        "business.ShippingZone": {
-            "type": "object",
-            "properties": {
-                "business": {
-                    "$ref": "#/definitions/business.Business"
-                },
-                "businessId": {
-                    "type": "string"
-                },
-                "countries": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "freeShippingThreshold": {
-                    "type": "number"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "name": {
-                    "type": "string"
-                },
-                "shippingCost": {
-                    "type": "number"
-                },
-                "updatedAt": {
                     "type": "string"
                 }
             }
@@ -13790,132 +13749,24 @@
                 }
             }
         },
-        "order.Order": {
+        "order.OrderItemProductResponse": {
             "type": "object",
             "properties": {
-                "business": {
-                    "$ref": "#/definitions/business.Business"
-                },
-                "businessId": {
-                    "type": "string"
-                },
-                "cancelledAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "channel": {
-                    "type": "string"
-                },
-                "cogs": {
-                    "type": "number"
-                },
-                "createdAt": {
-                    "type": "string"
-                },
-                "currency": {
-                    "type": "string"
-                },
-                "customer": {
-                    "$ref": "#/definitions/customer.Customer"
-                },
-                "customerId": {
-                    "type": "string"
-                },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
-                "discount": {
-                    "type": "number"
-                },
-                "failedAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "fulfilledAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
                 "id": {
                     "type": "string"
                 },
-                "items": {
+                "name": {
+                    "type": "string"
+                },
+                "photos": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/order.OrderItem"
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
                     }
-                },
-                "notes": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/order.OrderNote"
-                    }
-                },
-                "orderNumber": {
-                    "type": "string"
-                },
-                "orderedAt": {
-                    "type": "string"
-                },
-                "paidAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "paymentMethod": {
-                    "$ref": "#/definitions/order.OrderPaymentMethod"
-                },
-                "paymentReference": {
-                    "$ref": "#/definitions/sql.NullString"
-                },
-                "paymentStatus": {
-                    "$ref": "#/definitions/order.OrderPaymentStatus"
-                },
-                "placedAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "readyForShipmentAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "refundedAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "returnedAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "shippedAt": {
-                    "$ref": "#/definitions/sql.NullTime"
-                },
-                "shippingAddress": {
-                    "$ref": "#/definitions/customer.CustomerAddress"
-                },
-                "shippingAddressId": {
-                    "type": "string"
-                },
-                "shippingFee": {
-                    "type": "number"
-                },
-                "shippingZone": {
-                    "$ref": "#/definitions/business.ShippingZone"
-                },
-                "shippingZoneId": {
-                    "type": "string"
-                },
-                "status": {
-                    "$ref": "#/definitions/order.OrderStatus"
-                },
-                "subtotal": {
-                    "type": "number"
-                },
-                "total": {
-                    "type": "number"
-                },
-                "updatedAt": {
-                    "type": "string"
-                },
-                "vat": {
-                    "type": "number"
-                },
-                "vatRate": {
-                    "type": "number"
                 }
             }
         },
-        "order.OrderItem": {
+        "order.OrderItemResponse": {
             "type": "object",
             "properties": {
                 "createdAt": {
@@ -13924,20 +13775,14 @@
                 "currency": {
                     "type": "string"
                 },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
                 "id": {
                     "type": "string"
-                },
-                "order": {
-                    "$ref": "#/definitions/order.Order"
                 },
                 "orderId": {
                     "type": "string"
                 },
                 "product": {
-                    "$ref": "#/definitions/inventory.Product"
+                    "$ref": "#/definitions/order.OrderItemProductResponse"
                 },
                 "productId": {
                     "type": "string"
@@ -13961,14 +13806,31 @@
                     "type": "string"
                 },
                 "variant": {
-                    "$ref": "#/definitions/inventory.Variant"
+                    "$ref": "#/definitions/order.OrderItemVariantResponse"
                 },
                 "variantId": {
                     "type": "string"
                 }
             }
         },
-        "order.OrderNote": {
+        "order.OrderItemVariantResponse": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "sku": {
+                    "type": "string"
+                }
+            }
+        },
+        "order.OrderNoteResponse": {
             "type": "object",
             "properties": {
                 "content": {
@@ -13977,14 +13839,8 @@
                 "createdAt": {
                     "type": "string"
                 },
-                "deletedAt": {
-                    "$ref": "#/definitions/gorm.DeletedAt"
-                },
                 "id": {
                     "type": "string"
-                },
-                "order": {
-                    "$ref": "#/definitions/order.Order"
                 },
                 "orderId": {
                     "type": "string"
@@ -14050,12 +13906,9 @@
                     "type": "string"
                 },
                 "customer": {
-                    "$ref": "#/definitions/customer.Customer"
+                    "$ref": "#/definitions/customer.CustomerResponse"
                 },
                 "customerId": {
-                    "type": "string"
-                },
-                "deletedAt": {
                     "type": "string"
                 },
                 "discount": {
@@ -14073,13 +13926,13 @@
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/order.OrderItem"
+                        "$ref": "#/definitions/order.OrderItemResponse"
                     }
                 },
                 "notes": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/order.OrderNote"
+                        "$ref": "#/definitions/order.OrderNoteResponse"
                     }
                 },
                 "orderNumber": {
@@ -14116,7 +13969,7 @@
                     "type": "string"
                 },
                 "shippingAddress": {
-                    "$ref": "#/definitions/customer.CustomerAddress"
+                    "$ref": "#/definitions/customer.CustomerAddressResponse"
                 },
                 "shippingAddressId": {
                     "type": "string"
@@ -14125,7 +13978,7 @@
                     "type": "number"
                 },
                 "shippingZone": {
-                    "$ref": "#/definitions/business.ShippingZone"
+                    "$ref": "#/definitions/business.ShippingZoneResponse"
                 },
                 "shippingZoneId": {
                     "type": "string"

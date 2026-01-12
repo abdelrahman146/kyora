@@ -140,12 +140,6 @@ func (h *HttpHandler) GetProduct(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	variants, err := h.service.GetProductVariants(c.Request.Context(), actor, biz, product.ID)
-	if err != nil {
-		response.Error(c, err)
-		return
-	}
-	product.Variants = variants
 	productResponse := ToProductResponse(product)
 	response.SuccessJSON(c, http.StatusOK, productResponse)
 }
