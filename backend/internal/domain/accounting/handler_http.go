@@ -54,7 +54,7 @@ type listAssetsQuery struct {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -value, name)"
-// @Success      200 {object} list.ListResponse[Asset]
+// @Success      200 {object} list.ListResponse[accounting.AssetResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/accounting/assets [get]
@@ -101,7 +101,7 @@ func (h *HttpHandler) ListAssets(c *gin.Context) {
 	}
 
 	hasMore := int64(query.Page*query.PageSize) < totalCount
-	listResp := list.NewListResponse(assets, query.Page, query.PageSize, totalCount, hasMore)
+	listResp := list.NewListResponse(ToAssetResponses(assets), query.Page, query.PageSize, totalCount, hasMore)
 	response.SuccessJSON(c, http.StatusOK, listResp)
 }
 
@@ -113,7 +113,7 @@ func (h *HttpHandler) ListAssets(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        assetId path string true "Asset ID"
-// @Success      200 {object} Asset
+// @Success      200 {object} accounting.AssetResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -148,7 +148,7 @@ func (h *HttpHandler) GetAsset(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, asset)
+	response.SuccessJSON(c, http.StatusOK, ToAssetResponse(asset))
 }
 
 // CreateAsset creates a new asset
@@ -160,7 +160,7 @@ func (h *HttpHandler) GetAsset(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateAssetRequest true "Asset data"
-// @Success      201 {object} Asset
+// @Success      201 {object} accounting.AssetResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -190,7 +190,7 @@ func (h *HttpHandler) CreateAsset(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, asset)
+	response.SuccessJSON(c, http.StatusCreated, ToAssetResponse(asset))
 }
 
 // UpdateAsset updates an existing asset
@@ -203,7 +203,7 @@ func (h *HttpHandler) CreateAsset(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        assetId path string true "Asset ID"
 // @Param        request body UpdateAssetRequest true "Asset update data"
-// @Success      200 {object} Asset
+// @Success      200 {object} accounting.AssetResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -244,7 +244,7 @@ func (h *HttpHandler) UpdateAsset(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, asset)
+	response.SuccessJSON(c, http.StatusOK, ToAssetResponse(asset))
 }
 
 // DeleteAsset deletes an asset
@@ -305,7 +305,7 @@ func (h *HttpHandler) DeleteAsset(c *gin.Context) {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, investedAt)"
-// @Success      200 {object} list.ListResponse[Investment]
+// @Success      200 {object} list.ListResponse[accounting.InvestmentResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/accounting/investments [get]
@@ -349,7 +349,7 @@ func (h *HttpHandler) ListInvestments(c *gin.Context) {
 		return
 	}
 
-	listResp := list.NewListResponse(investments, query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
+	listResp := list.NewListResponse(ToInvestmentResponses(investments), query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
 	response.SuccessJSON(c, http.StatusOK, listResp)
 }
 
@@ -361,7 +361,7 @@ func (h *HttpHandler) ListInvestments(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        investmentId path string true "Investment ID"
-// @Success      200 {object} Investment
+// @Success      200 {object} accounting.InvestmentResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -396,7 +396,7 @@ func (h *HttpHandler) GetInvestment(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, investment)
+	response.SuccessJSON(c, http.StatusOK, ToInvestmentResponse(investment))
 }
 
 // CreateInvestment creates a new investment
@@ -408,7 +408,7 @@ func (h *HttpHandler) GetInvestment(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateInvestmentRequest true "Investment data"
-// @Success      201 {object} Investment
+// @Success      201 {object} accounting.InvestmentResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -438,7 +438,7 @@ func (h *HttpHandler) CreateInvestment(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, investment)
+	response.SuccessJSON(c, http.StatusCreated, ToInvestmentResponse(investment))
 }
 
 // UpdateInvestment updates an existing investment
@@ -451,7 +451,7 @@ func (h *HttpHandler) CreateInvestment(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        investmentId path string true "Investment ID"
 // @Param        request body UpdateInvestmentRequest true "Investment update data"
-// @Success      200 {object} Investment
+// @Success      200 {object} accounting.InvestmentResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -492,7 +492,7 @@ func (h *HttpHandler) UpdateInvestment(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, investment)
+	response.SuccessJSON(c, http.StatusOK, ToInvestmentResponse(investment))
 }
 
 // DeleteInvestment deletes an investment
@@ -553,7 +553,7 @@ func (h *HttpHandler) DeleteInvestment(c *gin.Context) {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, withdrawnAt)"
-// @Success      200 {object} list.ListResponse[Withdrawal]
+// @Success      200 {object} list.ListResponse[accounting.WithdrawalResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/accounting/withdrawals [get]
@@ -597,7 +597,7 @@ func (h *HttpHandler) ListWithdrawals(c *gin.Context) {
 		return
 	}
 
-	listResp := list.NewListResponse(withdrawals, query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
+	listResp := list.NewListResponse(ToWithdrawalResponses(withdrawals), query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
 	response.SuccessJSON(c, http.StatusOK, listResp)
 }
 
@@ -609,7 +609,7 @@ func (h *HttpHandler) ListWithdrawals(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        withdrawalId path string true "Withdrawal ID"
-// @Success      200 {object} Withdrawal
+// @Success      200 {object} accounting.WithdrawalResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -644,7 +644,7 @@ func (h *HttpHandler) GetWithdrawal(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, withdrawal)
+	response.SuccessJSON(c, http.StatusOK, ToWithdrawalResponse(withdrawal))
 }
 
 // CreateWithdrawal creates a new withdrawal
@@ -656,7 +656,7 @@ func (h *HttpHandler) GetWithdrawal(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateWithdrawalRequest true "Withdrawal data"
-// @Success      201 {object} Withdrawal
+// @Success      201 {object} accounting.WithdrawalResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -686,7 +686,7 @@ func (h *HttpHandler) CreateWithdrawal(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, withdrawal)
+	response.SuccessJSON(c, http.StatusCreated, ToWithdrawalResponse(withdrawal))
 }
 
 // UpdateWithdrawal updates an existing withdrawal
@@ -699,7 +699,7 @@ func (h *HttpHandler) CreateWithdrawal(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        withdrawalId path string true "Withdrawal ID"
 // @Param        request body UpdateWithdrawalRequest true "Withdrawal update data"
-// @Success      200 {object} Withdrawal
+// @Success      200 {object} accounting.WithdrawalResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -740,7 +740,7 @@ func (h *HttpHandler) UpdateWithdrawal(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, withdrawal)
+	response.SuccessJSON(c, http.StatusOK, ToWithdrawalResponse(withdrawal))
 }
 
 // DeleteWithdrawal deletes a withdrawal
@@ -801,7 +801,7 @@ func (h *HttpHandler) DeleteWithdrawal(c *gin.Context) {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, occurredOn)"
-// @Success      200 {object} list.ListResponse[Expense]
+// @Success      200 {object} list.ListResponse[accounting.ExpenseResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/accounting/expenses [get]
@@ -845,7 +845,7 @@ func (h *HttpHandler) ListExpenses(c *gin.Context) {
 		return
 	}
 
-	listResp := list.NewListResponse(expenses, query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
+	listResp := list.NewListResponse(ToExpenseResponses(expenses), query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
 	response.SuccessJSON(c, http.StatusOK, listResp)
 }
 
@@ -857,7 +857,7 @@ func (h *HttpHandler) ListExpenses(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        expenseId path string true "Expense ID"
-// @Success      200 {object} Expense
+// @Success      200 {object} accounting.ExpenseResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -892,7 +892,7 @@ func (h *HttpHandler) GetExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, expense)
+	response.SuccessJSON(c, http.StatusOK, ToExpenseResponse(expense))
 }
 
 // CreateExpense creates a new expense
@@ -904,7 +904,7 @@ func (h *HttpHandler) GetExpense(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateExpenseRequest true "Expense data"
-// @Success      201 {object} Expense
+// @Success      201 {object} accounting.ExpenseResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -934,7 +934,7 @@ func (h *HttpHandler) CreateExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, expense)
+	response.SuccessJSON(c, http.StatusCreated, ToExpenseResponse(expense))
 }
 
 // UpdateExpense updates an existing expense
@@ -947,7 +947,7 @@ func (h *HttpHandler) CreateExpense(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        expenseId path string true "Expense ID"
 // @Param        request body UpdateExpenseRequest true "Expense update data"
-// @Success      200 {object} Expense
+// @Success      200 {object} accounting.ExpenseResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -988,7 +988,7 @@ func (h *HttpHandler) UpdateExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, expense)
+	response.SuccessJSON(c, http.StatusOK, ToExpenseResponse(expense))
 }
 
 // DeleteExpense deletes an expense
@@ -1049,7 +1049,7 @@ func (h *HttpHandler) DeleteExpense(c *gin.Context) {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, nextRecurringDate)"
-// @Success      200 {object} list.ListResponse[RecurringExpense]
+// @Success      200 {object} list.ListResponse[accounting.RecurringExpenseResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/accounting/recurring-expenses [get]
@@ -1093,7 +1093,7 @@ func (h *HttpHandler) ListRecurringExpenses(c *gin.Context) {
 		return
 	}
 
-	listResp := list.NewListResponse(recurringExpenses, query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
+	listResp := list.NewListResponse(ToRecurringExpenseResponses(recurringExpenses), query.Page, query.PageSize, totalCount, (int64(query.Page*query.PageSize) < totalCount))
 	response.SuccessJSON(c, http.StatusOK, listResp)
 }
 
@@ -1105,7 +1105,7 @@ func (h *HttpHandler) ListRecurringExpenses(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
-// @Success      200 {object} RecurringExpense
+// @Success      200 {object} accounting.RecurringExpenseResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -1140,7 +1140,7 @@ func (h *HttpHandler) GetRecurringExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, recurringExpense)
+	response.SuccessJSON(c, http.StatusOK, ToRecurringExpenseResponse(recurringExpense))
 }
 
 // CreateRecurringExpense creates a new recurring expense
@@ -1152,7 +1152,7 @@ func (h *HttpHandler) GetRecurringExpense(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateRecurringExpenseRequest true "Recurring expense data"
-// @Success      201 {object} RecurringExpense
+// @Success      201 {object} accounting.RecurringExpenseResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -1182,7 +1182,7 @@ func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, recurringExpense)
+	response.SuccessJSON(c, http.StatusCreated, ToRecurringExpenseResponse(recurringExpense))
 }
 
 // UpdateRecurringExpense updates an existing recurring expense
@@ -1195,7 +1195,7 @@ func (h *HttpHandler) CreateRecurringExpense(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Param        request body UpdateRecurringExpenseRequest true "Recurring expense update data"
-// @Success      200 {object} RecurringExpense
+// @Success      200 {object} accounting.RecurringExpenseResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -1236,7 +1236,7 @@ func (h *HttpHandler) UpdateRecurringExpense(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, recurringExpense)
+	response.SuccessJSON(c, http.StatusOK, ToRecurringExpenseResponse(recurringExpense))
 }
 
 // DeleteRecurringExpense deletes a recurring expense
@@ -1299,7 +1299,7 @@ type updateRecurringExpenseStatusRequest struct {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        recurringExpenseId path string true "Recurring Expense ID"
 // @Param        request body updateRecurringExpenseStatusRequest true "Status update data"
-// @Success      200 {object} RecurringExpense
+// @Success      200 {object} accounting.RecurringExpenseResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -1341,7 +1341,7 @@ func (h *HttpHandler) UpdateRecurringExpenseStatus(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, recurringExpense)
+	response.SuccessJSON(c, http.StatusOK, ToRecurringExpenseResponse(recurringExpense))
 }
 
 // GetRecurringExpenseOccurrences returns all expense occurrences for a recurring expense

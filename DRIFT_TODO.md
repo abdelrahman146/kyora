@@ -115,7 +115,7 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Fix:** add support for simple pre-signed `PUT` (single request) in `uploadToStorage`.
   - **Resolution:** Added `uploadSimplePut` function and updated `uploadToStorage` to handle `method === 'PUT' && url` case (simple pre-signed PUT without multipart). Now supports three upload modes: multipart PUT, simple PUT, and local POST.
 
-- [x] **Backend leaks GORM `gorm.Model` fields into API JSON (PascalCase timestamps)** — **ACCOUNT + BILLING DOMAINS FIXED**
+- [x] **Backend leaks GORM `gorm.Model` fields into API JSON (PascalCase timestamps)** — **ALL DOMAINS FIXED ✅**
   - **Where:** many domain models embed `gorm.Model` and are returned directly from handlers (e.g. orders/customers/inventory/analytics).
   - **Symptom:** responses include `CreatedAt` / `UpdatedAt` / `DeletedAt` fields (PascalCase) in addition to (or instead of) `createdAt` / `updatedAt`. response swagger types include nested objects (ex: business) that are not supposed to be part of the response because they were not preloaded or joined.
   - **Impact:** breaks response casing standards, pollutes Swagger with misleading fields, and forces portal types to be inconsistent.
@@ -139,7 +139,47 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
       - Updated Swagger annotations to reference response types
       - Portal-web types already aligned (business.ts uses clean camelCase schemas)
       - All E2E tests passing (71.982s)
-    - ⏳ **Remaining domains:** orders, customers, inventory, analytics, accounting
+    - ✅ **Customer domain complete** (`backend/internal/domain/customer/model_response.go`):
+      - Created response types: `CustomerResponse`, `AddressResponse` (no DTO suffix)
+      - Updated all 9 handlers to use response types
+      - Updated Swagger annotations to reference response types
+      - Aligned portal-web types (removed PascalCase timestamps)
+      - All E2E tests passing (22.736s)
+    - ✅ **Inventory domain complete** (`backend/internal/domain/inventory/model_response.go`):
+      - Created response types: `ProductResponse`, `VariantResponse`, `CategoryResponse` (no DTO suffix)
+      - Updated all 16 handlers to use response types
+      - Fixed preload consistency (GetProductByID, ListVariants, GetVariantByID)
+      - Updated Swagger annotations to reference response types
+      - Aligned portal-web types (removed PascalCase timestamps)
+      - All E2E tests passing (23.637s)
+    - ✅ **Orders domain complete** (`backend/internal/domain/order/model_response.go`):
+      - Created response types: `OrderResponse`, `OrderItemResponse`, `OrderNoteResponse` (no DTO suffix)
+      - Updated all 12 handlers to use response types
+      - Fixed preload consistency (ListOrders now includes notes)
+      - Updated Swagger annotations to reference response types
+      - Portal-web types already aligned (order.ts uses clean schemas)
+      - All E2E tests passing (22.982s)
+    - ✅ **Accounting domain complete** (`backend/internal/domain/accounting/model_response.go`):
+      - Created response types: `AssetResponse`, `InvestmentResponse`, `WithdrawalResponse`, `ExpenseResponse`, `RecurringExpenseResponse` (no DTO suffix)
+      - Updated all 21 handlers to use response types (4 Asset + 4 Investment + 4 Withdrawal + 4 Expense + 5 RecurringExpense)
+      - Proper date types: time.Time for required, *time.Time for optional (NO sql.NullTime)
+      - String handling: string for required, *string for sql.NullString fields
+      - Updated Swagger annotations to reference response types
+      - Portal-web types: no accounting API exists yet (future work)
+      - All E2E tests passing (20.827s)
+    - ✅ **Onboarding domain verified clean**:
+      - Already uses clean response types in handlers (no GORM leakage)
+      - `sessionResponse` struct manually builds responses with proper date formatting
+      - `completeResponse` uses `account.UserResponse` (already fixed)
+      - No model_response.go needed
+    - ✅ **Analytics domain verified clean**:
+      - Domain uses only response/DTO types (no GORM models)
+      - All structs have proper time.Time fields and no GORM leakage
+      - No fixes needed
+    - ✅ **Other domains verified**:
+      - Storefront: Has GORM model but never exposed in responses
+      - Asset: Has GORM model but never exposed in responses (only URLs/metadata)
+      - Metadata: No models at all
 
 ## Medium priority (contract/type drift, correctness + maintenance)
 

@@ -236,18 +236,14 @@ definitions:
     required:
     - token
     type: object
-  accounting.Asset:
+  accounting.AssetResponse:
     properties:
-      business:
-        $ref: '#/definitions/business.Business'
       businessId:
         type: string
       createdAt:
         type: string
       currency:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: string
       name:
@@ -467,6 +463,33 @@ definitions:
     - ExpenseCategoryShipping
     - ExpenseCategoryTransactionFee
     - ExpenseCategoryOther
+  accounting.ExpenseResponse:
+    properties:
+      amount:
+        type: number
+      businessId:
+        type: string
+      category:
+        $ref: '#/definitions/accounting.ExpenseCategory'
+      createdAt:
+        type: string
+      currency:
+        type: string
+      id:
+        type: string
+      note:
+        type: string
+      occurredOn:
+        type: string
+      orderId:
+        type: string
+      recurringExpenseId:
+        type: string
+      type:
+        $ref: '#/definitions/accounting.ExpenseType'
+      updatedAt:
+        type: string
+    type: object
   accounting.ExpenseType:
     enum:
     - one_time
@@ -475,26 +498,20 @@ definitions:
     x-enum-varnames:
     - ExpenseTypeOneTime
     - ExpenseTypeRecurring
-  accounting.Investment:
+  accounting.InvestmentResponse:
     properties:
       amount:
         type: number
-      business:
-        $ref: '#/definitions/business.Business'
       businessId:
         type: string
       createdAt:
         type: string
       currency:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: string
       investedAt:
         type: string
-      investor:
-        $ref: '#/definitions/account.User'
       investorId:
         type: string
       note:
@@ -532,6 +549,35 @@ definitions:
         $ref: '#/definitions/sql.NullString'
       recurringEndDate:
         $ref: '#/definitions/sql.NullTime'
+      recurringStartDate:
+        type: string
+      status:
+        $ref: '#/definitions/accounting.RecurringExpenseStatus'
+      updatedAt:
+        type: string
+    type: object
+  accounting.RecurringExpenseResponse:
+    properties:
+      amount:
+        type: number
+      businessId:
+        type: string
+      category:
+        $ref: '#/definitions/accounting.ExpenseCategory'
+      createdAt:
+        type: string
+      currency:
+        type: string
+      frequency:
+        type: string
+      id:
+        type: string
+      nextRecurringDate:
+        type: string
+      note:
+        type: string
+      recurringEndDate:
+        type: string
       recurringStartDate:
         type: string
       status:
@@ -621,28 +667,22 @@ definitions:
       withdrawnAt:
         type: string
     type: object
-  accounting.Withdrawal:
+  accounting.WithdrawalResponse:
     properties:
       amount:
         type: number
-      business:
-        $ref: '#/definitions/business.Business'
       businessId:
         type: string
       createdAt:
         type: string
       currency:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       id:
         type: string
       note:
         type: string
       updatedAt:
         type: string
-      withdrawer:
-        $ref: '#/definitions/account.User'
       withdrawerId:
         type: string
       withdrawnAt:
@@ -2423,13 +2463,13 @@ definitions:
       key: {}
       value: {}
     type: object
-  list.ListResponse-accounting_Asset:
+  list.ListResponse-accounting_AssetResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/accounting.Asset'
+          $ref: '#/definitions/accounting.AssetResponse'
         type: array
       page:
         type: integer
@@ -2440,13 +2480,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-accounting_Expense:
+  list.ListResponse-accounting_ExpenseResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/accounting.Expense'
+          $ref: '#/definitions/accounting.ExpenseResponse'
         type: array
       page:
         type: integer
@@ -2457,13 +2497,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-accounting_Investment:
+  list.ListResponse-accounting_InvestmentResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/accounting.Investment'
+          $ref: '#/definitions/accounting.InvestmentResponse'
         type: array
       page:
         type: integer
@@ -2474,13 +2514,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-accounting_RecurringExpense:
+  list.ListResponse-accounting_RecurringExpenseResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/accounting.RecurringExpense'
+          $ref: '#/definitions/accounting.RecurringExpenseResponse'
         type: array
       page:
         type: integer
@@ -2491,13 +2531,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-accounting_Withdrawal:
+  list.ListResponse-accounting_WithdrawalResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/accounting.Withdrawal'
+          $ref: '#/definitions/accounting.WithdrawalResponse'
         type: array
       page:
         type: integer
@@ -23479,7 +23519,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-accounting_Asset'
+            $ref: '#/definitions/list.ListResponse-accounting_AssetResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23515,7 +23555,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accounting.Asset'
+            $ref: '#/definitions/accounting.AssetResponse'
         "400":
           description: Bad Request
           schema:
@@ -23588,7 +23628,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Asset'
+            $ref: '#/definitions/accounting.AssetResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23633,7 +23673,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Asset'
+            $ref: '#/definitions/accounting.AssetResponse'
         "400":
           description: Bad Request
           schema:
@@ -23686,7 +23726,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-accounting_Expense'
+            $ref: '#/definitions/list.ListResponse-accounting_ExpenseResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23722,7 +23762,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accounting.Expense'
+            $ref: '#/definitions/accounting.ExpenseResponse'
         "400":
           description: Bad Request
           schema:
@@ -23795,7 +23835,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Expense'
+            $ref: '#/definitions/accounting.ExpenseResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23840,7 +23880,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Expense'
+            $ref: '#/definitions/accounting.ExpenseResponse'
         "400":
           description: Bad Request
           schema:
@@ -23893,7 +23933,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-accounting_Investment'
+            $ref: '#/definitions/list.ListResponse-accounting_InvestmentResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23929,7 +23969,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accounting.Investment'
+            $ref: '#/definitions/accounting.InvestmentResponse'
         "400":
           description: Bad Request
           schema:
@@ -24002,7 +24042,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Investment'
+            $ref: '#/definitions/accounting.InvestmentResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24047,7 +24087,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Investment'
+            $ref: '#/definitions/accounting.InvestmentResponse'
         "400":
           description: Bad Request
           schema:
@@ -24100,7 +24140,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-accounting_RecurringExpense'
+            $ref: '#/definitions/list.ListResponse-accounting_RecurringExpenseResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24136,7 +24176,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accounting.RecurringExpense'
+            $ref: '#/definitions/accounting.RecurringExpenseResponse'
         "400":
           description: Bad Request
           schema:
@@ -24210,7 +24250,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.RecurringExpense'
+            $ref: '#/definitions/accounting.RecurringExpenseResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24255,7 +24295,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.RecurringExpense'
+            $ref: '#/definitions/accounting.RecurringExpenseResponse'
         "400":
           description: Bad Request
           schema:
@@ -24347,7 +24387,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.RecurringExpense'
+            $ref: '#/definitions/accounting.RecurringExpenseResponse'
         "400":
           description: Bad Request
           schema:
@@ -24446,7 +24486,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-accounting_Withdrawal'
+            $ref: '#/definitions/list.ListResponse-accounting_WithdrawalResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24482,7 +24522,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/accounting.Withdrawal'
+            $ref: '#/definitions/accounting.WithdrawalResponse'
         "400":
           description: Bad Request
           schema:
@@ -24555,7 +24595,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Withdrawal'
+            $ref: '#/definitions/accounting.WithdrawalResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24600,7 +24640,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/accounting.Withdrawal'
+            $ref: '#/definitions/accounting.WithdrawalResponse'
         "400":
           description: Bad Request
           schema:
