@@ -5408,7 +5408,7 @@
                         "schema": {
                             "type": "array",
                             "items": {
-                                "$ref": "#/definitions/inventory.Category"
+                                "$ref": "#/definitions/inventory.CategoryResponse"
                             }
                         }
                     },
@@ -5465,7 +5465,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Category"
+                            "$ref": "#/definitions/inventory.CategoryResponse"
                         }
                     },
                     "400": {
@@ -5524,7 +5524,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Category"
+                            "$ref": "#/definitions/inventory.CategoryResponse"
                         }
                     },
                     "401": {
@@ -5647,7 +5647,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Category"
+                            "$ref": "#/definitions/inventory.CategoryResponse"
                         }
                     },
                     "400": {
@@ -5745,7 +5745,7 @@
                     "200": {
                         "description": "Products with their variants included",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse-inventory_Product"
+                            "$ref": "#/definitions/list.ListResponse-inventory_ProductResponse"
                         }
                     },
                     "401": {
@@ -5801,7 +5801,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Product"
+                            "$ref": "#/definitions/inventory.ProductResponse"
                         }
                     },
                     "400": {
@@ -5865,7 +5865,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Product"
+                            "$ref": "#/definitions/inventory.ProductResponse"
                         }
                     },
                     "400": {
@@ -5924,7 +5924,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Product"
+                            "$ref": "#/definitions/inventory.ProductResponse"
                         }
                     },
                     "401": {
@@ -6047,7 +6047,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Product"
+                            "$ref": "#/definitions/inventory.ProductResponse"
                         }
                     },
                     "400": {
@@ -6140,7 +6140,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse-inventory_Variant"
+                            "$ref": "#/definitions/list.ListResponse-inventory_VariantResponse"
                         }
                     },
                     "401": {
@@ -6327,7 +6327,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/list.ListResponse-inventory_Variant"
+                            "$ref": "#/definitions/list.ListResponse-inventory_VariantResponse"
                         }
                     },
                     "401": {
@@ -6383,7 +6383,7 @@
                     "201": {
                         "description": "Created",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Variant"
+                            "$ref": "#/definitions/inventory.VariantResponse"
                         }
                     },
                     "400": {
@@ -6448,7 +6448,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Variant"
+                            "$ref": "#/definitions/inventory.VariantResponse"
                         }
                     },
                     "401": {
@@ -6571,7 +6571,7 @@
                     "200": {
                         "description": "OK",
                         "schema": {
-                            "$ref": "#/definitions/inventory.Variant"
+                            "$ref": "#/definitions/inventory.VariantResponse"
                         }
                     },
                     "400": {
@@ -12657,6 +12657,29 @@
                 }
             }
         },
+        "inventory.CategoryResponse": {
+            "type": "object",
+            "properties": {
+                "businessId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "descriptor": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "inventory.CreateCategoryRequest": {
             "type": "object",
             "required": [
@@ -12845,6 +12868,44 @@
                 }
             }
         },
+        "inventory.ProductResponse": {
+            "type": "object",
+            "properties": {
+                "businessId": {
+                    "type": "string"
+                },
+                "categoryId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
+                    }
+                },
+                "updatedAt": {
+                    "type": "string"
+                },
+                "variants": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/inventory.VariantResponse"
+                    }
+                }
+            }
+        },
         "inventory.TopProductByInventoryValue": {
             "type": "object",
             "properties": {
@@ -12852,7 +12913,7 @@
                     "type": "number"
                 },
                 "product": {
-                    "$ref": "#/definitions/inventory.Product"
+                    "$ref": "#/definitions/inventory.ProductResponse"
                 }
             }
         },
@@ -12982,6 +13043,56 @@
                 }
             }
         },
+        "inventory.VariantResponse": {
+            "type": "object",
+            "properties": {
+                "businessId": {
+                    "type": "string"
+                },
+                "code": {
+                    "type": "string"
+                },
+                "costPrice": {
+                    "type": "number"
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                },
+                "photos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference"
+                    }
+                },
+                "productId": {
+                    "type": "string"
+                },
+                "salePrice": {
+                    "type": "number"
+                },
+                "sku": {
+                    "type": "string"
+                },
+                "stockQuantity": {
+                    "type": "integer"
+                },
+                "stockQuantityAlert": {
+                    "type": "integer"
+                },
+                "updatedAt": {
+                    "type": "string"
+                }
+            }
+        },
         "inventory.inventorySummaryResponse": {
             "type": "object",
             "properties": {
@@ -13003,7 +13114,7 @@
                 "topProductsByInventoryValue": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/inventory.Product"
+                        "$ref": "#/definitions/inventory.ProductResponse"
                     }
                 },
                 "totalStockUnits": {
@@ -13203,7 +13314,7 @@
                 }
             }
         },
-        "list.ListResponse-inventory_Product": {
+        "list.ListResponse-inventory_ProductResponse": {
             "type": "object",
             "properties": {
                 "hasMore": {
@@ -13212,7 +13323,7 @@
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/inventory.Product"
+                        "$ref": "#/definitions/inventory.ProductResponse"
                     }
                 },
                 "page": {
@@ -13229,7 +13340,7 @@
                 }
             }
         },
-        "list.ListResponse-inventory_Variant": {
+        "list.ListResponse-inventory_VariantResponse": {
             "type": "object",
             "properties": {
                 "hasMore": {
@@ -13238,7 +13349,7 @@
                 "items": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/inventory.Variant"
+                        "$ref": "#/definitions/inventory.VariantResponse"
                     }
                 },
                 "page": {

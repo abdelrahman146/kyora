@@ -661,14 +661,9 @@ func (s *Service) SumInventoryValue(ctx context.Context, actor *account.User, bi
 	return total, nil
 }
 
-type TopProductByInventoryValue struct {
-	Product        *Product        `json:"product"`
-	InventoryValue decimal.Decimal `json:"inventoryValue"`
-}
-
 // ComputeTopProductsByInventoryValueDetailed returns the top N products by their on-hand inventory value
 // and includes the computed inventory value per product.
-func (s *Service) ComputeTopProductsByInventoryValueDetailed(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]*TopProductByInventoryValue, error) {
+func (s *Service) ComputeTopProductsByInventoryValueDetailed(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]TopProductByInventoryValue, error) {
 	if limit <= 0 {
 		limit = 5
 	}
@@ -698,26 +693,13 @@ func (s *Service) ComputeTopProductsByInventoryValueDetailed(ctx context.Context
 	sort.Slice(arr, func(i, j int) bool { return arr[i].value.GreaterThan(arr[j].value) })
 
 	n := min(len(arr), limit)
-	out := make([]*TopProductByInventoryValue, 0, n)
+	out := make([]TopProductByInventoryValue, 0, n)
 	for i := range n {
 		p, ok := productRef[arr[i].id]
 		if !ok {
 			continue
 		}
-		out = append(out, &TopProductByInventoryValue{Product: p, InventoryValue: arr[i].value})
-	}
-	return out, nil
-}
-
-// ComputeTopProductsByInventoryValue returns the top N products by their on-hand inventory value (sum of variant cost * qty).
-func (s *Service) ComputeTopProductsByInventoryValue(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]*Product, error) {
-	detailed, err := s.ComputeTopProductsByInventoryValueDetailed(ctx, actor, biz, limit)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]*Product, 0, len(detailed))
-	for _, d := range detailed {
-		out = append(out, d.Product)
+		out = append(out, ToTopProductByInventoryValue(p, arr[i].value))
 	}
 	return out, nil
 }

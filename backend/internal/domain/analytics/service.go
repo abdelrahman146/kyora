@@ -219,9 +219,13 @@ func (s *Service) ComputeInventoryAnalytics(ctx context.Context, actor *account.
 		analytics.SellThroughRate = decimal.Zero
 	}
 
-	analytics.TopProductsByInventoryValue, err = s.inventory.ComputeTopProductsByInventoryValue(ctx, actor, biz, 5)
+	topProducts, err := s.inventory.ComputeTopProductsByInventoryValueDetailed(ctx, actor, biz, 5)
 	if err != nil {
 		return nil, err
+	}
+	analytics.TopProductsByInventoryValue = make([]inventory.ProductResponse, len(topProducts))
+	for i, tp := range topProducts {
+		analytics.TopProductsByInventoryValue[i] = tp.Product
 	}
 
 	return analytics, nil

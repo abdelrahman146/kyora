@@ -14,22 +14,21 @@ export type { AssetReference }
 
 /**
  * Inventory API Types
- * Based on backend inventory domain DTOs
+ * Based on backend inventory domain response DTOs
  */
 
 export interface Category {
   id: string
-  business_id: string
+  businessId: string
   name: string
   descriptor: string
-  created_at: string
-  updated_at: string
-  deleted_at: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Product {
   id: string
-  business_id: string
+  businessId: string
   name: string
   description: string
   photos: Array<AssetReference>
@@ -38,13 +37,12 @@ export interface Product {
   variants?: Array<Variant>
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
 }
 
 export interface Variant {
   id: string
-  business_id: string
-  product_id: string
+  businessId: string
+  productId: string
   name: string
   code: string
   sku: string
@@ -57,7 +55,6 @@ export interface Variant {
   product?: Product
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
 }
 
 export interface ListResponse<T> {

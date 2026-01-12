@@ -53,7 +53,7 @@ type listInventoryQuery struct {
 // @Param        search query string false "Search term (matches product name, variant name, variant SKU, or category name)"
 // @Param        categoryId query string false "Filter by category ID"
 // @Param        stockStatus query string false "Filter by stock status (in_stock, low_stock, out_of_stock)"
-// @Success      200 {object} list.ListResponse[Product] "Products with their variants included"
+// @Success      200 {object} list.ListResponse[inventory.ProductResponse] "Products with their variants included"
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/inventory/products [get]
@@ -100,8 +100,9 @@ func (h *HttpHandler) ListProducts(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
+	productResponses := ToProductResponses(items)
 	hasMore := int64(query.Page*query.PageSize) < total
-	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(items, query.Page, query.PageSize, total, hasMore))
+	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(productResponses, query.Page, query.PageSize, total, hasMore))
 }
 
 // GetProduct returns a product by ID including its variants.
@@ -112,7 +113,7 @@ func (h *HttpHandler) ListProducts(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
-// @Success      200 {object} Product
+// @Success      200 {object} inventory.ProductResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -145,7 +146,8 @@ func (h *HttpHandler) GetProduct(c *gin.Context) {
 		return
 	}
 	product.Variants = variants
-	response.SuccessJSON(c, http.StatusOK, product)
+	productResponse := ToProductResponse(product)
+	response.SuccessJSON(c, http.StatusOK, productResponse)
 }
 
 // CreateProduct creates a new product.
@@ -157,7 +159,7 @@ func (h *HttpHandler) GetProduct(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateProductRequest true "Product"
-// @Success      201 {object} Product
+// @Success      201 {object} inventory.ProductResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -184,7 +186,8 @@ func (h *HttpHandler) CreateProduct(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, product)
+	productResponse := ToProductResponse(product)
+	response.SuccessJSON(c, http.StatusCreated, productResponse)
 }
 
 // CreateProductWithVariants creates a product and its variants atomically.
@@ -196,7 +199,7 @@ func (h *HttpHandler) CreateProduct(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateProductWithVariantsRequest true "Product with variants"
-// @Success      201 {object} Product
+// @Success      201 {object} inventory.ProductResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -223,7 +226,8 @@ func (h *HttpHandler) CreateProductWithVariants(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, product)
+	productResponse := ToProductResponse(product)
+	response.SuccessJSON(c, http.StatusCreated, productResponse)
 }
 
 // UpdateProduct updates an existing product.
@@ -236,7 +240,7 @@ func (h *HttpHandler) CreateProductWithVariants(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        productId path string true "Product ID"
 // @Param        body body UpdateProductRequest true "Updates"
-// @Success      200 {object} Product
+// @Success      200 {object} inventory.ProductResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -284,7 +288,8 @@ func (h *HttpHandler) UpdateProduct(c *gin.Context) {
 		return
 	}
 	updated.Variants = variants
-	response.SuccessJSON(c, http.StatusOK, updated)
+	productResponse := ToProductResponse(updated)
+	response.SuccessJSON(c, http.StatusOK, productResponse)
 }
 
 // DeleteProduct deletes a product.
@@ -336,7 +341,7 @@ func (h *HttpHandler) DeleteProduct(c *gin.Context) {
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
 // @Param        search query string false "Search term for variant name"
-// @Success      200 {object} list.ListResponse[Variant]
+// @Success      200 {object} list.ListResponse[inventory.VariantResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -387,8 +392,9 @@ func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
+	variantResponses := ToVariantResponses(items)
 	hasMore := int64(query.Page*query.PageSize) < total
-	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(items, query.Page, query.PageSize, total, hasMore))
+	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(variantResponses, query.Page, query.PageSize, total, hasMore))
 }
 
 // ListVariants returns a paginated list of variants.
@@ -402,7 +408,7 @@ func (h *HttpHandler) ListProductVariants(c *gin.Context) {
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -name, createdAt)"
 // @Param        search query string false "Search term for variant name"
-// @Success      200 {object} list.ListResponse[Variant]
+// @Success      200 {object} list.ListResponse[inventory.VariantResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/inventory/variants [get]
@@ -448,8 +454,9 @@ func (h *HttpHandler) ListVariants(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
+	variantResponses := ToVariantResponses(items)
 	hasMore := int64(query.Page*query.PageSize) < total
-	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(items, query.Page, query.PageSize, total, hasMore))
+	response.SuccessJSON(c, http.StatusOK, list.NewListResponse(variantResponses, query.Page, query.PageSize, total, hasMore))
 }
 
 // GetVariant returns a variant by ID.
@@ -460,7 +467,7 @@ func (h *HttpHandler) ListVariants(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        variantId path string true "Variant ID"
-// @Success      200 {object} Variant
+// @Success      200 {object} inventory.VariantResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -487,7 +494,8 @@ func (h *HttpHandler) GetVariant(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, variant)
+	variantResponse := ToVariantResponse(variant)
+	response.SuccessJSON(c, http.StatusOK, variantResponse)
 }
 
 // CreateVariant creates a new variant.
@@ -499,7 +507,7 @@ func (h *HttpHandler) GetVariant(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateVariantRequest true "Variant"
-// @Success      201 {object} Variant
+// @Success      201 {object} inventory.VariantResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -531,7 +539,8 @@ func (h *HttpHandler) CreateVariant(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, variant)
+	variantResponse := ToVariantResponse(variant)
+	response.SuccessJSON(c, http.StatusCreated, variantResponse)
 }
 
 // UpdateVariant updates a variant.
@@ -544,7 +553,7 @@ func (h *HttpHandler) CreateVariant(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        variantId path string true "Variant ID"
 // @Param        body body UpdateVariantRequest true "Updates"
-// @Success      200 {object} Variant
+// @Success      200 {object} inventory.VariantResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -581,7 +590,8 @@ func (h *HttpHandler) UpdateVariant(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, updated)
+	variantResponse := ToVariantResponse(updated)
+	response.SuccessJSON(c, http.StatusOK, variantResponse)
 }
 
 // DeleteVariant deletes a variant.
@@ -628,7 +638,7 @@ func (h *HttpHandler) DeleteVariant(c *gin.Context) {
 // @Tags         inventory
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
-// @Success      200 {array} Category
+// @Success      200 {array} inventory.CategoryResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/inventory/categories [get]
@@ -649,7 +659,8 @@ func (h *HttpHandler) ListCategories(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, items)
+	categoryResponses := ToCategoryResponses(items)
+	response.SuccessJSON(c, http.StatusOK, categoryResponses)
 }
 
 // GetCategory returns a category by ID.
@@ -660,7 +671,7 @@ func (h *HttpHandler) ListCategories(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        categoryId path string true "Category ID"
-// @Success      200 {object} Category
+// @Success      200 {object} inventory.CategoryResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -687,7 +698,8 @@ func (h *HttpHandler) GetCategory(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, cat)
+	categoryResponse := ToCategoryResponse(cat)
+	response.SuccessJSON(c, http.StatusOK, categoryResponse)
 }
 
 // CreateCategory creates a category.
@@ -699,7 +711,7 @@ func (h *HttpHandler) GetCategory(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        body body CreateCategoryRequest true "Category"
-// @Success      201 {object} Category
+// @Success      201 {object} inventory.CategoryResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -726,7 +738,8 @@ func (h *HttpHandler) CreateCategory(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, cat)
+	categoryResponse := ToCategoryResponse(cat)
+	response.SuccessJSON(c, http.StatusCreated, categoryResponse)
 }
 
 // UpdateCategory updates a category.
@@ -739,7 +752,7 @@ func (h *HttpHandler) CreateCategory(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        categoryId path string true "Category ID"
 // @Param        body body UpdateCategoryRequest true "Updates"
-// @Success      200 {object} Category
+// @Success      200 {object} inventory.CategoryResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -781,7 +794,8 @@ func (h *HttpHandler) UpdateCategory(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, updated)
+	categoryResponse := ToCategoryResponse(updated)
+	response.SuccessJSON(c, http.StatusOK, categoryResponse)
 }
 
 // DeleteCategory deletes a category.
@@ -822,14 +836,14 @@ func (h *HttpHandler) DeleteCategory(c *gin.Context) {
 }
 
 type inventorySummaryResponse struct {
-	ProductsCount           int64           `json:"productsCount"`
-	VariantsCount           int64           `json:"variantsCount"`
-	CategoriesCount         int64           `json:"categoriesCount"`
-	LowStockVariantsCount   int64           `json:"lowStockVariantsCount"`
-	OutOfStockVariantsCount int64           `json:"outOfStockVariantsCount"`
-	TotalStockUnits         int64           `json:"totalStockUnits"`
-	InventoryValue          decimal.Decimal `json:"inventoryValue"`
-	TopProducts             []*Product      `json:"topProductsByInventoryValue"`
+	ProductsCount           int64             `json:"productsCount"`
+	VariantsCount           int64             `json:"variantsCount"`
+	CategoriesCount         int64             `json:"categoriesCount"`
+	LowStockVariantsCount   int64             `json:"lowStockVariantsCount"`
+	OutOfStockVariantsCount int64             `json:"outOfStockVariantsCount"`
+	TotalStockUnits         int64             `json:"totalStockUnits"`
+	InventoryValue          decimal.Decimal   `json:"inventoryValue"`
+	TopProducts             []ProductResponse `json:"topProductsByInventoryValue"`
 }
 
 // GetInventorySummary returns inventory summary metrics.
@@ -900,10 +914,14 @@ func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 	if limit == 0 {
 		limit = 5
 	}
-	topProducts, err := h.service.ComputeTopProductsByInventoryValue(c.Request.Context(), actor, biz, limit)
+	topProducts, err := h.service.ComputeTopProductsByInventoryValueDetailed(c.Request.Context(), actor, biz, limit)
 	if err != nil {
 		response.Error(c, err)
 		return
+	}
+	topProductResponses := make([]ProductResponse, len(topProducts))
+	for i, tp := range topProducts {
+		topProductResponses[i] = tp.Product
 	}
 	resp := inventorySummaryResponse{
 		ProductsCount:           productsCount,
@@ -913,7 +931,7 @@ func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 		OutOfStockVariantsCount: outOfStockCount,
 		TotalStockUnits:         totalUnits,
 		InventoryValue:          invValue,
-		TopProducts:             topProducts,
+		TopProducts:             topProductResponses,
 	}
 	response.SuccessJSON(c, http.StatusOK, resp)
 }
@@ -926,7 +944,7 @@ func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        limit query int false "Top limit (default: 5, max: 50)"
-// @Success      200 {array} TopProductByInventoryValue
+// @Success      200 {array} inventory.TopProductByInventoryValue
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/inventory/top-products [get]

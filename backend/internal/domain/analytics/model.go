@@ -42,16 +42,16 @@ type SalesAnalytics struct {
 }
 
 type InventoryAnalytics struct {
-	BusinessID                  string               `json:"businessID"`
-	From                        time.Time            `json:"from"`
-	To                          time.Time            `json:"to"`
-	TotalInventoryValue         decimal.Decimal      `json:"totalInventoryValue"`
-	TotalInStock                int64                `json:"totalInStock"`
-	LowStockItems               int64                `json:"lowStockItems"`
-	OutOfStockItems             int64                `json:"outOfStockItems"`
-	InventoryTurnoverRatio      decimal.Decimal      `json:"inventoryTurnoverRatio"`
-	SellThroughRate             decimal.Decimal      `json:"sellThroughRate"`
-	TopProductsByInventoryValue []*inventory.Product `json:"topProductsByInventoryValue"`
+	BusinessID                  string                      `json:"businessID"`
+	From                        time.Time                   `json:"from"`
+	To                          time.Time                   `json:"to"`
+	TotalInventoryValue         decimal.Decimal             `json:"totalInventoryValue"`
+	TotalInStock                int64                       `json:"totalInStock"`
+	LowStockItems               int64                       `json:"lowStockItems"`
+	OutOfStockItems             int64                       `json:"outOfStockItems"`
+	InventoryTurnoverRatio      decimal.Decimal             `json:"inventoryTurnoverRatio"`
+	SellThroughRate             decimal.Decimal             `json:"sellThroughRate"`
+	TopProductsByInventoryValue []inventory.ProductResponse `json:"topProductsByInventoryValue"`
 }
 
 type ExpenseAnalytics struct {
