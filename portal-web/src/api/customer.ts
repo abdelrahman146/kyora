@@ -33,52 +33,46 @@ export interface ListCustomersFilters {
 export interface CustomerAddress {
   id: string
   customerId: string
-  shippingZoneId: string | null
-  street: string | null
-  city: string
-  state: string
-  zipCode: string | null
   countryCode: string
+  state: string
+  city: string
+  street?: string
   phoneCode: string
   phoneNumber: string
+  zipCode?: string
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
 }
 
 export interface CustomerNote {
   id: string
   customerId: string
   content: string
-  CreatedAt: string
-  UpdatedAt: string
-  DeletedAt: string | null
+  createdAt: string
+  updatedAt: string
 }
 
 export interface Customer {
   id: string
   businessId: string
   name: string
-  email: string | null
-  phoneCode: string | null
-  phoneNumber: string | null
+  email: string
+  phoneCode?: string
+  phoneNumber?: string
   countryCode: string
-  whatsappNumber: string | null
+  whatsappNumber?: string
   gender: CustomerGender
   joinedAt: string
-  instagramUsername: string | null
-  facebookUsername: string | null
-  tiktokUsername: string | null
-  snapchatUsername: string | null
-  xUsername: string | null
-  addresses?: Array<CustomerAddress>
-  notes?: Array<CustomerNote>
+  instagramUsername?: string
+  facebookUsername?: string
+  tiktokUsername?: string
+  snapchatUsername?: string
+  xUsername?: string
   createdAt: string
   updatedAt: string
-  deletedAt: string | null
   // Computed fields from backend aggregation
-  ordersCount?: number
-  totalSpent?: number
+  ordersCount: number
+  totalSpent: number
   avatarUrl?: string
 }
 

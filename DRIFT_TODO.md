@@ -115,11 +115,31 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Fix:** add support for simple pre-signed `PUT` (single request) in `uploadToStorage`.
   - **Resolution:** Added `uploadSimplePut` function and updated `uploadToStorage` to handle `method === 'PUT' && url` case (simple pre-signed PUT without multipart). Now supports three upload modes: multipart PUT, simple PUT, and local POST.
 
-- [ ] **Backend leaks GORM `gorm.Model` fields into API JSON (PascalCase timestamps)**
-  - **Where:** many domain models embed `gorm.Model` and are returned directly from handlers (e.g. orders/customers/billing).
-  - **Symptom:** responses include `CreatedAt` / `UpdatedAt` / `DeletedAt` fields (PascalCase) in addition to (or instead of) `createdAt` / `updatedAt`.
-  - **Impact:** breaks response casing standards, pollutes Swagger, and forces portal types to be inconsistent.
+- [x] **Backend leaks GORM `gorm.Model` fields into API JSON (PascalCase timestamps)** — **ACCOUNT + BILLING DOMAINS FIXED**
+  - **Where:** many domain models embed `gorm.Model` and are returned directly from handlers (e.g. orders/customers/inventory/analytics).
+  - **Symptom:** responses include `CreatedAt` / `UpdatedAt` / `DeletedAt` fields (PascalCase) in addition to (or instead of) `createdAt` / `updatedAt`. response swagger types include nested objects (ex: business) that are not supposed to be part of the response because they were not preloaded or joined.
+  - **Impact:** breaks response casing standards, pollutes Swagger with misleading fields, and forces portal types to be inconsistent.
   - **Fix (preferred):** introduce per-domain response DTOs and return DTOs from handlers; update Swagger `@Success` types to DTOs.
+  - **Status:**
+    - ✅ **Account domain complete** (`backend/internal/domain/account/model_response.go`):
+      - Created response types: `UserResponse`, `WorkspaceResponse`, `UserInvitationResponse`, `LoginResponse`, `RefreshResponse` (no DTO suffix)
+      - Updated all 14 handlers to use response types
+      - Updated Swagger annotations to reference response types
+      - Aligned portal-web types (removed PascalCase fallbacks)
+      - All E2E tests passing
+    - ✅ **Billing domain complete** (`backend/internal/domain/billing/model_response.go`):
+      - Created response types: `PlanResponse`, `SubscriptionResponse` (no DTO suffix)
+      - Updated handlers: ListPlans, GetPlan, GetSubscription, CreateSubscription, ResumeSubscription
+      - Updated Swagger annotations to reference response types
+      - Portal-web types already aligned (onboarding.ts uses clean schemas)
+      - All E2E tests passing
+    - ✅ **Business domain complete** (`backend/internal/domain/business/model_response.go`):
+      - Created response types: `BusinessResponse`, `ShippingZoneResponse`, `PaymentMethodResponse` (no DTO suffix)
+      - Updated all 10 handlers to use response types (ListBusinesses, GetBusinessByDescriptor, CreateBusiness, UpdateBusiness, ListShippingZones, GetShippingZone, CreateShippingZone, UpdateShippingZone, ListPaymentMethods, UpdatePaymentMethod)
+      - Updated Swagger annotations to reference response types
+      - Portal-web types already aligned (business.ts uses clean camelCase schemas)
+      - All E2E tests passing (71.982s)
+    - ⏳ **Remaining domains:** orders, customers, inventory, analytics, accounting
 
 ## Medium priority (contract/type drift, correctness + maintenance)
 

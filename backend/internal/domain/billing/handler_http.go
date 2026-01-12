@@ -35,7 +35,7 @@ func NewHttpHandler(service *Service, accountSvc *account.Service) *HttpHandler 
 // @Summary      List billing plans
 // @Tags         billing
 // @Produce      json
-// @Success      200 {array} Plan
+// @Success      200 {array} PlanResponse
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/billing/plans [get]
 func (h *HttpHandler) ListPlans(c *gin.Context) {
@@ -44,7 +44,7 @@ func (h *HttpHandler) ListPlans(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, plans)
+	response.SuccessJSON(c, http.StatusOK, ToPlanResponses(plans))
 }
 
 // GetPlan returns a plan by descriptor.
@@ -53,7 +53,7 @@ func (h *HttpHandler) ListPlans(c *gin.Context) {
 // @Tags         billing
 // @Produce      json
 // @Param        descriptor path string true "Plan descriptor"
-// @Success      200 {object} Plan
+// @Success      200 {object} PlanResponse
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/billing/plans/{descriptor} [get]
@@ -64,7 +64,7 @@ func (h *HttpHandler) GetPlan(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, plan)
+	response.SuccessJSON(c, http.StatusOK, ToPlanResponse(plan))
 }
 
 // Subscription Operations
@@ -74,7 +74,7 @@ func (h *HttpHandler) GetPlan(c *gin.Context) {
 // @Summary      Get current subscription
 // @Tags         billing
 // @Produce      json
-// @Success      200 {object} Subscription
+// @Success      200 {object} SubscriptionResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -91,7 +91,7 @@ func (h *HttpHandler) GetSubscription(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, subscription)
+	response.SuccessJSON(c, http.StatusOK, ToSubscriptionResponse(subscription))
 }
 
 // CreateSubscription creates or updates the workspace subscription.
@@ -101,7 +101,7 @@ func (h *HttpHandler) GetSubscription(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body subRequest true "Subscription request"
-// @Success      200 {object} Subscription
+// @Success      200 {object} SubscriptionResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -131,7 +131,7 @@ func (h *HttpHandler) CreateSubscription(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, subscription)
+	response.SuccessJSON(c, http.StatusOK, ToSubscriptionResponse(subscription))
 }
 
 // CancelSubscription cancels the workspace subscription immediately.
@@ -187,7 +187,7 @@ func (h *HttpHandler) GetSubscriptionDetails(c *gin.Context) {
 // @Summary      Resume subscription
 // @Tags         billing
 // @Produce      json
-// @Success      200 {object} Subscription
+// @Success      200 {object} SubscriptionResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -204,7 +204,7 @@ func (h *HttpHandler) ResumeSubscription(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, sub)
+	response.SuccessJSON(c, http.StatusOK, ToSubscriptionResponse(sub))
 }
 
 // ScheduleSubscriptionChange schedules a plan change.

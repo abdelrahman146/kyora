@@ -10,13 +10,6 @@ import { z } from 'zod'
 export const RoleSchema = z.enum(['user', 'admin'])
 export type Role = z.infer<typeof RoleSchema>
 
-const NullableStringSchema = z
-  .object({
-    String: z.string().optional(),
-    Valid: z.boolean().optional(),
-  })
-  .passthrough()
-
 const WorkspaceSchema = z
   .object({
     // backend returns ids like "wrk..." not UUIDs
@@ -25,14 +18,12 @@ const WorkspaceSchema = z
     // name is not present in the login response today
     name: z.string().optional(),
 
-    // timestamps are returned in PascalCase on some endpoints/structs
+    // timestamps in camelCase (GORM metadata leak fixed in backend)
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
-    CreatedAt: z.string().optional(),
-    UpdatedAt: z.string().optional(),
 
-    stripeCustomerId: NullableStringSchema.optional(),
-    stripePaymentMethodId: NullableStringSchema.optional(),
+    stripeCustomerId: z.string().optional().nullable(),
+    stripePaymentMethodId: z.string().optional().nullable(),
   })
   .passthrough()
 
@@ -47,20 +38,11 @@ export const UserSchema = z
     role: RoleSchema,
     workspaceId: z.string().min(1),
 
-    // Allow both camelCase and PascalCase timestamp keys.
+    // timestamps in camelCase (GORM metadata leak fixed in backend)
     createdAt: z.string().optional(),
     updatedAt: z.string().optional(),
-    CreatedAt: z.string().optional(),
-    UpdatedAt: z.string().optional(),
-
-    // gorm.DeletedAt sometimes comes as null.
-    deletedAt: z.unknown().optional().nullable(),
-    DeletedAt: z.unknown().optional().nullable(),
 
     workspace: WorkspaceSchema.optional(),
-
-    // gorm also returns these, ignore them
-    ID: z.number().optional(),
   })
   .passthrough()
 

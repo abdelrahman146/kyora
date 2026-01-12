@@ -103,17 +103,6 @@ func (s *Service) GetUserByEmail(ctx context.Context, email string) (*User, erro
 	return s.storage.user.FindOne(ctx, s.storage.user.ScopeEquals(UserSchema.Email, email), s.storage.user.WithPreload(WorkspaceStruct))
 }
 
-type LoginResponse struct {
-	User         *User  `json:"user"`
-	Token        string `json:"token"`
-	RefreshToken string `json:"refreshToken"`
-}
-
-type RefreshResponse struct {
-	Token        string `json:"token"`
-	RefreshToken string `json:"refreshToken"`
-}
-
 func (s *Service) issueTokensForUser(ctx context.Context, user *User, clientIP, userAgent string) (*RefreshResponse, error) {
 	// Ensure we always have a non-zero auth version moving forward.
 	if user.AuthVersion <= 0 {
@@ -200,11 +189,7 @@ func (s *Service) LoginWithEmailAndPasswordWithContext(ctx context.Context, emai
 			}
 		}(user, clientIP, userAgent)
 
-		return &LoginResponse{
-			User:         user,
-			Token:        tokens.Token,
-			RefreshToken: tokens.RefreshToken,
-		}, nil
+		return ToLoginResponse(user, tokens.Token, tokens.RefreshToken), nil
 	}
 	return nil, ErrInvalidCredentials(nil)
 }

@@ -126,9 +126,7 @@ func (h *HttpHandler) LoginWithGoogle(c *gin.Context) {
 		return
 	}
 
-	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
-
-	response.SuccessJSON(c, http.StatusOK, loginResp)
+	response.SuccessJSON(c, http.StatusOK, ToLoginResponse(user, tokens.Token, tokens.RefreshToken))
 }
 
 type refreshRequest struct {
@@ -386,7 +384,7 @@ func (h *HttpHandler) VerifyEmail(c *gin.Context) {
 // @Description  Returns the profile of the currently authenticated user
 // @Tags         users
 // @Produce      json
-// @Success      200 {object} User
+// @Success      200 {object} UserResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/users/me [get]
@@ -398,7 +396,7 @@ func (h *HttpHandler) GetCurrentUser(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, actor)
+	response.SuccessJSON(c, http.StatusOK, ToUserResponse(actor))
 }
 
 // UpdateCurrentUser updates the authenticated user's profile
@@ -409,7 +407,7 @@ func (h *HttpHandler) GetCurrentUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body UpdateUserInput true "User update data"
-// @Success      200 {object} User
+// @Success      200 {object} UserResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -454,7 +452,7 @@ func (h *HttpHandler) UpdateCurrentUser(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, updatedUser)
+	response.SuccessJSON(c, http.StatusOK, ToUserResponse(updatedUser))
 }
 
 // Workspace endpoints
@@ -465,7 +463,7 @@ func (h *HttpHandler) UpdateCurrentUser(c *gin.Context) {
 // @Description  Returns the workspace of the currently authenticated user
 // @Tags         workspaces
 // @Produce      json
-// @Success      200 {object} Workspace
+// @Success      200 {object} WorkspaceResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -484,7 +482,7 @@ func (h *HttpHandler) GetCurrentWorkspace(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, workspace)
+	response.SuccessJSON(c, http.StatusOK, ToWorkspaceResponse(workspace))
 }
 
 // GetWorkspaceUsers returns all users in the workspace
@@ -493,7 +491,7 @@ func (h *HttpHandler) GetCurrentWorkspace(c *gin.Context) {
 // @Description  Returns all users that belong to the workspace
 // @Tags         workspaces
 // @Produce      json
-// @Success      200 {array} User
+// @Success      200 {array} UserResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -516,7 +514,7 @@ func (h *HttpHandler) GetWorkspaceUsers(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, users)
+	response.SuccessJSON(c, http.StatusOK, ToUserResponses(users))
 }
 
 // GetWorkspaceUser returns a specific user in the workspace
@@ -526,7 +524,7 @@ func (h *HttpHandler) GetWorkspaceUsers(c *gin.Context) {
 // @Tags         workspaces
 // @Produce      json
 // @Param        userId path string true "User ID"
-// @Success      200 {object} User
+// @Success      200 {object} UserResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -552,7 +550,7 @@ func (h *HttpHandler) GetWorkspaceUser(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, user)
+	response.SuccessJSON(c, http.StatusOK, ToUserResponse(user))
 }
 
 // Invitation endpoints
@@ -565,7 +563,7 @@ func (h *HttpHandler) GetWorkspaceUser(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body InviteUserInput true "Invitation data"
-// @Success      201 {object} UserInvitation
+// @Success      201 {object} UserInvitationResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -591,7 +589,7 @@ func (h *HttpHandler) InviteUserToWorkspace(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, invitation)
+	response.SuccessJSON(c, http.StatusCreated, ToUserInvitationResponse(invitation))
 }
 
 // GetWorkspaceInvitations returns all invitations for the workspace
@@ -601,7 +599,7 @@ func (h *HttpHandler) InviteUserToWorkspace(c *gin.Context) {
 // @Tags         invitations
 // @Produce      json
 // @Param        status query string false "Filter by invitation status (pending, accepted, expired, revoked)"
-// @Success      200 {array} UserInvitation
+// @Success      200 {array} UserInvitationResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -626,7 +624,7 @@ func (h *HttpHandler) GetWorkspaceInvitations(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, invitations)
+	response.SuccessJSON(c, http.StatusOK, ToUserInvitationResponses(invitations))
 }
 
 // RevokeInvitation revokes a pending invitation
@@ -710,9 +708,7 @@ func (h *HttpHandler) AcceptInvitation(c *gin.Context) {
 		return
 	}
 
-	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
-
-	response.SuccessJSON(c, http.StatusOK, loginResp)
+	response.SuccessJSON(c, http.StatusOK, ToLoginResponse(user, tokens.Token, tokens.RefreshToken))
 }
 
 // AcceptInvitationWithGoogle accepts a workspace invitation using Google OAuth (public endpoint)
@@ -768,9 +764,7 @@ func (h *HttpHandler) AcceptInvitationWithGoogle(c *gin.Context) {
 		return
 	}
 
-	loginResp := &LoginResponse{User: user, Token: tokens.Token, RefreshToken: tokens.RefreshToken}
-
-	response.SuccessJSON(c, http.StatusOK, loginResp)
+	response.SuccessJSON(c, http.StatusOK, ToLoginResponse(user, tokens.Token, tokens.RefreshToken))
 }
 
 // User management endpoints
@@ -784,7 +778,7 @@ func (h *HttpHandler) AcceptInvitationWithGoogle(c *gin.Context) {
 // @Produce      json
 // @Param        userId path string true "User ID"
 // @Param        request body UpdateUserRoleInput true "Role update data"
-// @Success      200 {object} User
+// @Success      200 {object} UserResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -823,7 +817,7 @@ func (h *HttpHandler) UpdateUserRole(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, updatedUser)
+	response.SuccessJSON(c, http.StatusOK, ToUserResponse(updatedUser))
 }
 
 // RemoveUserFromWorkspace removes a user from the workspace

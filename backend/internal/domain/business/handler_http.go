@@ -3,13 +3,11 @@ package business
 import (
 	"net/http"
 	"strings"
-	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
-	"github.com/abdelrahman146/kyora/internal/platform/types/asset"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
@@ -26,129 +24,13 @@ func NewHttpHandler(svc *Service) *HttpHandler {
 	return &HttpHandler{svc: svc}
 }
 
-type businessResponse struct {
-	ID                 string                `json:"id"`
-	WorkspaceID        string                `json:"workspaceId"`
-	Descriptor         string                `json:"descriptor"`
-	Name               string                `json:"name"`
-	Brand              string                `json:"brand"`
-	Logo               *asset.AssetReference `json:"logo,omitempty"`
-	CountryCode        string                `json:"countryCode"`
-	Currency           string                `json:"currency"`
-	StorefrontPublicID string                `json:"storefrontPublicId"`
-	StorefrontEnabled  bool                  `json:"storefrontEnabled"`
-	StorefrontTheme    StorefrontTheme       `json:"storefrontTheme"`
-	SupportEmail       string                `json:"supportEmail"`
-	PhoneNumber        string                `json:"phoneNumber"`
-	WhatsappNumber     string                `json:"whatsappNumber"`
-	Address            string                `json:"address"`
-	WebsiteURL         string                `json:"websiteUrl"`
-	InstagramURL       string                `json:"instagramUrl"`
-	FacebookURL        string                `json:"facebookUrl"`
-	TikTokURL          string                `json:"tiktokUrl"`
-	XURL               string                `json:"xUrl"`
-	SnapchatURL        string                `json:"snapchatUrl"`
-	VatRate            string                `json:"vatRate"`
-	SafetyBuffer       string                `json:"safetyBuffer"`
-	EstablishedAt      time.Time             `json:"establishedAt"`
-	ArchivedAt         *time.Time            `json:"archivedAt,omitempty"`
-	CreatedAt          time.Time             `json:"createdAt"`
-	UpdatedAt          time.Time             `json:"updatedAt"`
-}
-
-type shippingZoneResponse struct {
-	ID                    string    `json:"id"`
-	BusinessID            string    `json:"businessId"`
-	Name                  string    `json:"name"`
-	Countries             []string  `json:"countries"`
-	Currency              string    `json:"currency"`
-	ShippingCost          string    `json:"shippingCost"`
-	FreeShippingThreshold string    `json:"freeShippingThreshold"`
-	CreatedAt             time.Time `json:"createdAt"`
-	UpdatedAt             time.Time `json:"updatedAt"`
-}
-
-type paymentMethodResponse struct {
-	Descriptor        string `json:"descriptor"`
-	Name              string `json:"name"`
-	LogoURL           string `json:"logoUrl"`
-	Enabled           bool   `json:"enabled"`
-	FeePercent        string `json:"feePercent"`
-	FeeFixed          string `json:"feeFixed"`
-	DefaultFeePercent string `json:"defaultFeePercent"`
-	DefaultFeeFixed   string `json:"defaultFeeFixed"`
-}
-
-func toShippingZoneResponse(z *ShippingZone) shippingZoneResponse {
-	resp := shippingZoneResponse{
-		ID:                    z.ID,
-		BusinessID:            z.BusinessID,
-		Name:                  z.Name,
-		Countries:             []string(z.Countries),
-		Currency:              z.Currency,
-		ShippingCost:          z.ShippingCost.String(),
-		FreeShippingThreshold: z.FreeShippingThreshold.String(),
-		CreatedAt:             z.CreatedAt,
-		UpdatedAt:             z.UpdatedAt,
-	}
-	if resp.Countries == nil {
-		resp.Countries = []string{}
-	}
-	return resp
-}
-
-func toPaymentMethodResponse(v BusinessPaymentMethodView) paymentMethodResponse {
-	return paymentMethodResponse{
-		Descriptor:        string(v.Descriptor),
-		Name:              v.Name,
-		LogoURL:           v.LogoURL,
-		Enabled:           v.Enabled,
-		FeePercent:        v.FeePercent.String(),
-		FeeFixed:          v.FeeFixed.String(),
-		DefaultFeePercent: v.DefaultFeePercent.String(),
-		DefaultFeeFixed:   v.DefaultFeeFixed.String(),
-	}
-}
-
-func toBusinessResponse(b *Business) businessResponse {
-	return businessResponse{
-		ID:                 b.ID,
-		WorkspaceID:        b.WorkspaceID,
-		Descriptor:         b.Descriptor,
-		Name:               b.Name,
-		Brand:              b.Brand,
-		Logo:               b.Logo,
-		CountryCode:        b.CountryCode,
-		Currency:           b.Currency,
-		StorefrontPublicID: b.StorefrontPublicID,
-		StorefrontEnabled:  b.StorefrontEnabled,
-		StorefrontTheme:    b.StorefrontTheme,
-		SupportEmail:       b.SupportEmail,
-		PhoneNumber:        b.PhoneNumber,
-		WhatsappNumber:     b.WhatsappNumber,
-		Address:            b.Address,
-		WebsiteURL:         b.WebsiteURL,
-		InstagramURL:       b.InstagramURL,
-		FacebookURL:        b.FacebookURL,
-		TikTokURL:          b.TikTokURL,
-		XURL:               b.XURL,
-		SnapchatURL:        b.SnapchatURL,
-		VatRate:            b.VatRate.String(),
-		SafetyBuffer:       b.SafetyBuffer.StringFixed(2),
-		EstablishedAt:      b.EstablishedAt,
-		ArchivedAt:         b.ArchivedAt,
-		CreatedAt:          b.CreatedAt,
-		UpdatedAt:          b.UpdatedAt,
-	}
-}
-
 // ListBusinesses returns all businesses for the authenticated workspace.
 //
 // @Summary      List businesses
 // @Description  Returns businesses for the authenticated workspace
 // @Tags         business
 // @Produce      json
-// @Success      200 {object} map[string][]business.businessResponse
+// @Success      200 {object} map[string][]business.BusinessResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -167,9 +49,9 @@ func (h *HttpHandler) ListBusinesses(c *gin.Context) {
 		return
 	}
 
-	resp := make([]businessResponse, 0, len(items))
+	resp := make([]BusinessResponse, 0, len(items))
 	for _, b := range items {
-		resp = append(resp, toBusinessResponse(b))
+		resp = append(resp, ToBusinessResponse(b))
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"businesses": resp})
 }
@@ -181,7 +63,7 @@ func (h *HttpHandler) ListBusinesses(c *gin.Context) {
 // @Tags         business
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
-// @Success      200 {object} map[string]business.businessResponse
+// @Success      200 {object} map[string]business.BusinessResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -210,7 +92,7 @@ func (h *HttpHandler) GetBusinessByDescriptor(c *gin.Context) {
 		response.Error(c, ErrBusinessNotFound(descriptor, nil))
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"business": toBusinessResponse(biz)})
+	response.SuccessJSON(c, http.StatusOK, gin.H{"business": ToBusinessResponse(biz)})
 }
 
 // CreateBusiness creates a business within the authenticated workspace.
@@ -221,7 +103,7 @@ func (h *HttpHandler) GetBusinessByDescriptor(c *gin.Context) {
 // @Accept       json
 // @Produce      json
 // @Param        request body business.CreateBusinessInput true "Create business"
-// @Success      201 {object} map[string]business.businessResponse
+// @Success      201 {object} map[string]business.BusinessResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -252,7 +134,7 @@ func (h *HttpHandler) CreateBusiness(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, gin.H{"business": toBusinessResponse(biz)})
+	response.SuccessJSON(c, http.StatusCreated, gin.H{"business": ToBusinessResponse(biz)})
 }
 
 // ListShippingZones returns all shipping zones for a business.
@@ -262,7 +144,7 @@ func (h *HttpHandler) CreateBusiness(c *gin.Context) {
 // @Tags         business
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
-// @Success      200 {array} business.shippingZoneResponse
+// @Success      200 {array} business.ShippingZoneResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -285,9 +167,9 @@ func (h *HttpHandler) ListShippingZones(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	resp := make([]shippingZoneResponse, 0, len(items))
-	for _, z := range items {
-		resp = append(resp, toShippingZoneResponse(z))
+	resp := make([]ShippingZoneResponse, 0, len(items))
+	for i := range items {
+		resp = append(resp, ToShippingZoneResponse(items[i]))
 	}
 	response.SuccessJSON(c, http.StatusOK, resp)
 }
@@ -299,7 +181,7 @@ func (h *HttpHandler) ListShippingZones(c *gin.Context) {
 // @Tags         business
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
-// @Success      200 {array} business.paymentMethodResponse
+// @Success      200 {array} business.PaymentMethodResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -323,9 +205,9 @@ func (h *HttpHandler) ListPaymentMethods(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	resp := make([]paymentMethodResponse, 0, len(items))
+	resp := make([]PaymentMethodResponse, 0, len(items))
 	for _, it := range items {
-		resp = append(resp, toPaymentMethodResponse(it))
+		resp = append(resp, ToPaymentMethodResponse(it))
 	}
 	response.SuccessJSON(c, http.StatusOK, resp)
 }
@@ -340,7 +222,7 @@ func (h *HttpHandler) ListPaymentMethods(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        descriptor path string true "Payment method descriptor"
 // @Param        request body business.UpdateBusinessPaymentMethodRequest true "Payment method update"
-// @Success      200 {object} business.paymentMethodResponse
+// @Success      200 {object} business.PaymentMethodResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -375,7 +257,7 @@ func (h *HttpHandler) UpdatePaymentMethod(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toPaymentMethodResponse(*updated))
+	response.SuccessJSON(c, http.StatusOK, ToPaymentMethodResponse(*updated))
 }
 
 // GetShippingZone returns a shipping zone by ID.
@@ -386,7 +268,7 @@ func (h *HttpHandler) UpdatePaymentMethod(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        zoneId path string true "Shipping zone ID"
-// @Success      200 {object} business.shippingZoneResponse
+// @Success      200 {object} business.ShippingZoneResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -415,7 +297,7 @@ func (h *HttpHandler) GetShippingZone(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toShippingZoneResponse(z))
+	response.SuccessJSON(c, http.StatusOK, ToShippingZoneResponse(z))
 }
 
 // CreateShippingZone creates a shipping zone.
@@ -427,7 +309,7 @@ func (h *HttpHandler) GetShippingZone(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body business.CreateShippingZoneRequest true "Create shipping zone"
-// @Success      201 {object} business.shippingZoneResponse
+// @Success      201 {object} business.ShippingZoneResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -456,7 +338,7 @@ func (h *HttpHandler) CreateShippingZone(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusCreated, toShippingZoneResponse(z))
+	response.SuccessJSON(c, http.StatusCreated, ToShippingZoneResponse(z))
 }
 
 // UpdateShippingZone updates a shipping zone.
@@ -469,7 +351,7 @@ func (h *HttpHandler) CreateShippingZone(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        zoneId path string true "Shipping zone ID"
 // @Param        request body business.UpdateShippingZoneRequest true "Update shipping zone"
-// @Success      200 {object} business.shippingZoneResponse
+// @Success      200 {object} business.ShippingZoneResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -504,7 +386,7 @@ func (h *HttpHandler) UpdateShippingZone(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, toShippingZoneResponse(z))
+	response.SuccessJSON(c, http.StatusOK, ToShippingZoneResponse(z))
 }
 
 // DeleteShippingZone deletes a shipping zone.
@@ -556,7 +438,7 @@ func (h *HttpHandler) DeleteShippingZone(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body business.UpdateBusinessInput true "Update business"
-// @Success      200 {object} map[string]business.businessResponse
+// @Success      200 {object} map[string]business.BusinessResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -611,7 +493,7 @@ func (h *HttpHandler) UpdateBusiness(c *gin.Context) {
 		response.Error(c, ErrBusinessNotFound(descriptor, nil))
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"business": toBusinessResponse(biz)})
+	response.SuccessJSON(c, http.StatusOK, gin.H{"business": ToBusinessResponse(biz)})
 }
 
 // ArchiveBusiness marks a business as archived.

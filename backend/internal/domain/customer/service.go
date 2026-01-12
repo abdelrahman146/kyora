@@ -242,7 +242,7 @@ type ListCustomersFilters struct {
 	SocialPlatforms []string
 }
 
-func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListCustomersFilters) ([]*CustomerResponse, int64, error) {
+func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListCustomersFilters) ([]CustomerResponse, int64, error) {
 	scopes := []func(*gorm.DB) *gorm.DB{
 		s.storage.customer.ScopeBusinessID(biz.ID),
 	}
@@ -405,7 +405,7 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 	}
 
 	// Build response DTOs with aggregation data
-	responses := make([]*CustomerResponse, len(customers))
+	responses := make([]CustomerResponse, len(customers))
 	for i, customer := range customers {
 		ordersCount := 0
 		totalSpent := 0.0
@@ -413,7 +413,7 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 			ordersCount = agg.OrdersCount
 			totalSpent = agg.TotalSpent
 		}
-		responses[i] = customer.ToResponse(ordersCount, totalSpent)
+		responses[i] = ToCustomerResponse(customer, ordersCount, totalSpent)
 	}
 
 	// Count with same filters (excluding pagination)

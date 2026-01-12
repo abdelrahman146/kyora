@@ -2,7 +2,6 @@ package customer
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
@@ -17,24 +16,6 @@ import (
 // HttpHandler handles HTTP requests for customer domain operations
 type HttpHandler struct {
 	service *Service
-}
-
-type customerNoteResponse struct {
-	ID         string    `json:"id"`
-	CustomerID string    `json:"customerId"`
-	Content    string    `json:"content"`
-	CreatedAt  time.Time `json:"createdAt"`
-	UpdatedAt  time.Time `json:"updatedAt"`
-}
-
-func toCustomerNoteResponse(n *CustomerNote) customerNoteResponse {
-	return customerNoteResponse{
-		ID:         n.ID,
-		CustomerID: n.CustomerID,
-		Content:    n.Content,
-		CreatedAt:  n.CreatedAt,
-		UpdatedAt:  n.UpdatedAt,
-	}
 }
 
 // NewHttpHandler creates a new HTTP handler for customer operations.
@@ -75,7 +56,7 @@ type listCustomersQuery struct {
 // @Param        countryCode query string false "Filter by country code (e.g., US, AE)"
 // @Param        hasOrders query bool false "Filter by customers with or without orders"
 // @Param        socialPlatforms query []string false "Filter by social media platforms (instagram, tiktok, facebook, x, snapchat, whatsapp)"
-// @Success      200 {object} list.ListResponse[Customer]
+// @Success      200 {object} list.ListResponse[customer.CustomerResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
 // @Router       /v1/businesses/{businessDescriptor}/customers [get]
@@ -141,7 +122,7 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
-// @Success      200 {object} Customer
+// @Success      200 {object} customer.CustomerResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -177,7 +158,22 @@ func (h *HttpHandler) GetCustomer(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, customer)
+	// Get customer aggregations (orders count, total spent)
+	aggregations, err := h.service.storage.GetCustomerAggregations(c.Request.Context(), biz.ID, []string{customer.ID})
+	if err != nil {
+		response.Error(c, problem.InternalError().WithError(err))
+		return
+	}
+
+	var ordersCount int
+	var totalSpent float64
+	if agg, ok := aggregations[customer.ID]; ok {
+		ordersCount = int(agg.OrdersCount)
+		totalSpent = agg.TotalSpent
+	}
+
+	customerResponse := ToCustomerResponse(customer, ordersCount, totalSpent)
+	response.SuccessJSON(c, http.StatusOK, customerResponse)
 }
 
 // CreateCustomer creates a new customer
@@ -189,7 +185,7 @@ func (h *HttpHandler) GetCustomer(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        request body CreateCustomerRequest true "Customer data"
-// @Success      201 {object} Customer
+// @Success      201 {object} customer.CustomerResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      409 {object} problem.Problem
@@ -224,7 +220,9 @@ func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, customer)
+	// New customers have no orders yet
+	customerResponse := ToCustomerResponse(customer, 0, 0)
+	response.SuccessJSON(c, http.StatusCreated, customerResponse)
 }
 
 // UpdateCustomer updates an existing customer
@@ -237,7 +235,7 @@ func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body UpdateCustomerRequest true "Updated customer data"
-// @Success      200 {object} Customer
+// @Success      200 {object} customer.CustomerResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -284,7 +282,22 @@ func (h *HttpHandler) UpdateCustomer(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, customer)
+	// Get customer aggregations (orders count, total spent)
+	aggregations, err := h.service.storage.GetCustomerAggregations(c.Request.Context(), biz.ID, []string{customer.ID})
+	if err != nil {
+		response.Error(c, problem.InternalError().WithError(err))
+		return
+	}
+
+	var ordersCount int
+	var totalSpent float64
+	if agg, ok := aggregations[customer.ID]; ok {
+		ordersCount = int(agg.OrdersCount)
+		totalSpent = agg.TotalSpent
+	}
+
+	customerResponse := ToCustomerResponse(customer, ordersCount, totalSpent)
+	response.SuccessJSON(c, http.StatusOK, customerResponse)
 }
 
 // DeleteCustomer soft deletes a customer
@@ -343,7 +356,7 @@ func (h *HttpHandler) DeleteCustomer(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
-// @Success      200 {array} CustomerAddress
+// @Success      200 {array} customer.CustomerAddressResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -379,7 +392,13 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, addresses)
+	// Convert to response types
+	addressResponses := make([]CustomerAddressResponse, len(addresses))
+	for i, addr := range addresses {
+		addressResponses[i] = ToCustomerAddressResponse(addr)
+	}
+
+	response.SuccessJSON(c, http.StatusOK, addressResponses)
 }
 
 // CreateCustomerAddress creates a new address for a customer
@@ -392,7 +411,7 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body CreateCustomerAddressRequest true "Address data"
-// @Success      201 {object} CustomerAddress
+// @Success      201 {object} customer.CustomerAddressResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -434,7 +453,8 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, address)
+	addressResponse := ToCustomerAddressResponse(address)
+	response.SuccessJSON(c, http.StatusCreated, addressResponse)
 }
 
 // UpdateCustomerAddress updates an existing address
@@ -448,7 +468,7 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 // @Param        customerId path string true "Customer ID"
 // @Param        addressId path string true "Address ID"
 // @Param        request body UpdateCustomerAddressRequest true "Updated address data"
-// @Success      200 {object} CustomerAddress
+// @Success      200 {object} customer.CustomerAddressResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -491,7 +511,8 @@ func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusOK, address)
+	addressResponse := ToCustomerAddressResponse(address)
+	response.SuccessJSON(c, http.StatusOK, addressResponse)
 }
 
 // DeleteCustomerAddress deletes an address
@@ -552,7 +573,7 @@ func (h *HttpHandler) DeleteCustomerAddress(c *gin.Context) {
 // @Produce      json
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
-// @Success      200 {array} CustomerNote
+// @Success      200 {array} customer.CustomerNoteResponse
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -588,11 +609,12 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 		return
 	}
 
-	resp := make([]customerNoteResponse, 0, len(notes))
-	for _, n := range notes {
-		resp = append(resp, toCustomerNoteResponse(n))
+	// Convert to response types
+	noteResponses := make([]CustomerNoteResponse, len(notes))
+	for i, note := range notes {
+		noteResponses[i] = ToCustomerNoteResponse(note)
 	}
-	response.SuccessJSON(c, http.StatusOK, resp)
+	response.SuccessJSON(c, http.StatusOK, noteResponses)
 }
 
 // CreateCustomerNote creates a new note for a customer
@@ -605,7 +627,7 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 // @Param        businessDescriptor path string true "Business descriptor"
 // @Param        customerId path string true "Customer ID"
 // @Param        request body CreateCustomerNoteRequest true "Note data"
-// @Success      201 {object} CustomerNote
+// @Success      201 {object} customer.CustomerNoteResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      403 {object} problem.Problem
@@ -647,7 +669,8 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 		return
 	}
 
-	response.SuccessJSON(c, http.StatusCreated, toCustomerNoteResponse(note))
+	noteResponse := ToCustomerNoteResponse(note)
+	response.SuccessJSON(c, http.StatusCreated, noteResponse)
 }
 
 // DeleteCustomerNote deletes a note

@@ -50,7 +50,7 @@ definitions:
       token:
         type: string
       user:
-        $ref: '#/definitions/account.User'
+        $ref: '#/definitions/account.UserResponse'
     type: object
   account.RefreshResponse:
     properties:
@@ -102,20 +102,16 @@ definitions:
       workspaceId:
         type: string
     type: object
-  account.UserInvitation:
+  account.UserInvitationResponse:
     properties:
       acceptedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
+        type: string
       createdAt:
         type: string
-      deletedAt:
-        $ref: '#/definitions/gorm.DeletedAt'
       email:
         type: string
       id:
         type: string
-      inviter:
-        $ref: '#/definitions/account.User'
       inviterId:
         type: string
       role:
@@ -124,8 +120,27 @@ definitions:
         $ref: '#/definitions/account.InvitationStatus'
       updatedAt:
         type: string
-      workspace:
-        $ref: '#/definitions/account.Workspace'
+      workspaceId:
+        type: string
+    type: object
+  account.UserResponse:
+    properties:
+      createdAt:
+        type: string
+      email:
+        type: string
+      firstName:
+        type: string
+      id:
+        type: string
+      isEmailVerified:
+        type: boolean
+      lastName:
+        type: string
+      role:
+        $ref: '#/definitions/role.Role'
+      updatedAt:
+        type: string
       workspaceId:
         type: string
     type: object
@@ -149,6 +164,21 @@ definitions:
         items:
           $ref: '#/definitions/account.User'
         type: array
+    type: object
+  account.WorkspaceResponse:
+    properties:
+      createdAt:
+        type: string
+      id:
+        type: string
+      ownerId:
+        type: string
+      stripeCustomerId:
+        type: string
+      stripePaymentMethodId:
+        type: string
+      updatedAt:
+        type: string
     type: object
   account.forgotPasswordRequest:
     properties:
@@ -1190,6 +1220,33 @@ definitions:
       maxTeamMembers:
         type: integer
     type: object
+  billing.PlanResponse:
+    properties:
+      billingCycle:
+        $ref: '#/definitions/billing.BillingCycle'
+      createdAt:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      descriptor:
+        type: string
+      features:
+        $ref: '#/definitions/billing.PlanFeature'
+      id:
+        type: string
+      limits:
+        $ref: '#/definitions/billing.PlanLimit'
+      name:
+        type: string
+      price:
+        type: number
+      stripePlanId:
+        type: string
+      updatedAt:
+        type: string
+    type: object
   billing.Subscription:
     properties:
       createdAt:
@@ -1221,6 +1278,27 @@ definitions:
         $ref: '#/definitions/billing.Plan'
       subscription:
         $ref: '#/definitions/billing.Subscription'
+    type: object
+  billing.SubscriptionResponse:
+    properties:
+      createdAt:
+        type: string
+      currentPeriodEnd:
+        type: string
+      id:
+        type: string
+      plan:
+        $ref: '#/definitions/billing.PlanResponse'
+      planId:
+        type: string
+      status:
+        $ref: '#/definitions/billing.SubscriptionStatus'
+      stripeSubId:
+        type: string
+      updatedAt:
+        type: string
+      workspaceId:
+        type: string
     type: object
   billing.SubscriptionStatus:
     enum:
@@ -1394,6 +1472,63 @@ definitions:
       xUrl:
         type: string
     type: object
+  business.BusinessResponse:
+    properties:
+      address:
+        type: string
+      archivedAt:
+        type: string
+      brand:
+        type: string
+      countryCode:
+        type: string
+      createdAt:
+        type: string
+      currency:
+        type: string
+      descriptor:
+        type: string
+      establishedAt:
+        type: string
+      facebookUrl:
+        type: string
+      id:
+        type: string
+      instagramUrl:
+        type: string
+      logo:
+        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
+      name:
+        type: string
+      phoneNumber:
+        type: string
+      safetyBuffer:
+        type: string
+      snapchatUrl:
+        type: string
+      storefrontEnabled:
+        type: boolean
+      storefrontPublicId:
+        type: string
+      storefrontTheme:
+        $ref: '#/definitions/business.StorefrontTheme'
+      supportEmail:
+        type: string
+      tiktokUrl:
+        type: string
+      updatedAt:
+        type: string
+      vatRate:
+        type: string
+      websiteUrl:
+        type: string
+      whatsappNumber:
+        type: string
+      workspaceId:
+        type: string
+      xUrl:
+        type: string
+    type: object
   business.CreateBusinessInput:
     properties:
       address:
@@ -1462,6 +1597,25 @@ definitions:
     - countries
     - name
     type: object
+  business.PaymentMethodResponse:
+    properties:
+      defaultFeeFixed:
+        type: string
+      defaultFeePercent:
+        type: string
+      descriptor:
+        type: string
+      enabled:
+        type: boolean
+      feeFixed:
+        type: string
+      feePercent:
+        type: string
+      logoUrl:
+        type: string
+      name:
+        type: string
+    type: object
   business.ShippingZone:
     properties:
       business:
@@ -1486,6 +1640,29 @@ definitions:
         type: string
       shippingCost:
         type: number
+      updatedAt:
+        type: string
+    type: object
+  business.ShippingZoneResponse:
+    properties:
+      businessId:
+        type: string
+      countries:
+        items:
+          type: string
+        type: array
+      createdAt:
+        type: string
+      currency:
+        type: string
+      freeShippingThreshold:
+        type: string
+      id:
+        type: string
+      name:
+        type: string
+      shippingCost:
+        type: string
       updatedAt:
         type: string
     type: object
@@ -1576,105 +1753,6 @@ definitions:
         $ref: '#/definitions/decimal.NullDecimal'
     required:
     - countries
-    type: object
-  business.businessResponse:
-    properties:
-      address:
-        type: string
-      archivedAt:
-        type: string
-      brand:
-        type: string
-      countryCode:
-        type: string
-      createdAt:
-        type: string
-      currency:
-        type: string
-      descriptor:
-        type: string
-      establishedAt:
-        type: string
-      facebookUrl:
-        type: string
-      id:
-        type: string
-      instagramUrl:
-        type: string
-      logo:
-        $ref: '#/definitions/github_com_abdelrahman146_kyora_internal_platform_types_asset.AssetReference'
-      name:
-        type: string
-      phoneNumber:
-        type: string
-      safetyBuffer:
-        type: string
-      snapchatUrl:
-        type: string
-      storefrontEnabled:
-        type: boolean
-      storefrontPublicId:
-        type: string
-      storefrontTheme:
-        $ref: '#/definitions/business.StorefrontTheme'
-      supportEmail:
-        type: string
-      tiktokUrl:
-        type: string
-      updatedAt:
-        type: string
-      vatRate:
-        type: string
-      websiteUrl:
-        type: string
-      whatsappNumber:
-        type: string
-      workspaceId:
-        type: string
-      xUrl:
-        type: string
-    type: object
-  business.paymentMethodResponse:
-    properties:
-      defaultFeeFixed:
-        type: string
-      defaultFeePercent:
-        type: string
-      descriptor:
-        type: string
-      enabled:
-        type: boolean
-      feeFixed:
-        type: string
-      feePercent:
-        type: string
-      logoUrl:
-        type: string
-      name:
-        type: string
-    type: object
-  business.shippingZoneResponse:
-    properties:
-      businessId:
-        type: string
-      countries:
-        items:
-          type: string
-        type: array
-      createdAt:
-        type: string
-      currency:
-        type: string
-      freeShippingThreshold:
-        type: string
-      id:
-        type: string
-      name:
-        type: string
-      shippingCost:
-        type: string
-      updatedAt:
-        type: string
     type: object
   customer.CreateCustomerAddressRequest:
     properties:
@@ -1822,6 +1900,31 @@ definitions:
       zipCode:
         $ref: '#/definitions/nullable.String'
     type: object
+  customer.CustomerAddressResponse:
+    properties:
+      city:
+        type: string
+      countryCode:
+        type: string
+      createdAt:
+        type: string
+      customerId:
+        type: string
+      id:
+        type: string
+      phoneCode:
+        type: string
+      phoneNumber:
+        type: string
+      state:
+        type: string
+      street:
+        type: string
+      updatedAt:
+        type: string
+      zipCode:
+        type: string
+    type: object
   customer.CustomerGender:
     enum:
     - male
@@ -1847,6 +1950,62 @@ definitions:
       id:
         type: string
       updatedAt:
+        type: string
+    type: object
+  customer.CustomerNoteResponse:
+    properties:
+      content:
+        type: string
+      createdAt:
+        type: string
+      customerId:
+        type: string
+      id:
+        type: string
+      updatedAt:
+        type: string
+    type: object
+  customer.CustomerResponse:
+    properties:
+      avatarUrl:
+        type: string
+      businessId:
+        type: string
+      countryCode:
+        type: string
+      createdAt:
+        type: string
+      email:
+        type: string
+      facebookUsername:
+        type: string
+      gender:
+        $ref: '#/definitions/customer.CustomerGender'
+      id:
+        type: string
+      instagramUsername:
+        type: string
+      joinedAt:
+        type: string
+      name:
+        type: string
+      ordersCount:
+        type: integer
+      phoneCode:
+        type: string
+      phoneNumber:
+        type: string
+      snapchatUsername:
+        type: string
+      tiktokUsername:
+        type: string
+      totalSpent:
+        type: number
+      updatedAt:
+        type: string
+      whatsappNumber:
+        type: string
+      xUsername:
         type: string
     type: object
   customer.UpdateCustomerAddressRequest:
@@ -2320,13 +2479,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-customer_Customer:
+  list.ListResponse-customer_CustomerResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/customer.Customer'
+          $ref: '#/definitions/customer.CustomerResponse'
         type: array
       page:
         type: integer
@@ -2371,13 +2530,13 @@ definitions:
       totalPages:
         type: integer
     type: object
-  list.ListResponse-order_Order:
+  list.ListResponse-order_OrderResponse:
     properties:
       hasMore:
         type: boolean
       items:
         items:
-          $ref: '#/definitions/order.Order'
+          $ref: '#/definitions/order.OrderResponse'
         type: array
       page:
         type: integer
@@ -2826,6 +2985,87 @@ definitions:
     - OrderPaymentStatusPaid
     - OrderPaymentStatusFailed
     - OrderPaymentStatusRefunded
+  order.OrderResponse:
+    properties:
+      businessId:
+        type: string
+      cancelledAt:
+        type: string
+      channel:
+        type: string
+      cogs:
+        type: number
+      createdAt:
+        type: string
+      currency:
+        type: string
+      customer:
+        $ref: '#/definitions/customer.Customer'
+      customerId:
+        type: string
+      deletedAt:
+        type: string
+      discount:
+        type: number
+      failedAt:
+        type: string
+      fulfilledAt:
+        type: string
+      id:
+        type: string
+      items:
+        items:
+          $ref: '#/definitions/order.OrderItem'
+        type: array
+      notes:
+        items:
+          $ref: '#/definitions/order.OrderNote'
+        type: array
+      orderNumber:
+        type: string
+      orderedAt:
+        type: string
+      paidAt:
+        type: string
+      paymentMethod:
+        $ref: '#/definitions/order.OrderPaymentMethod'
+      paymentReference:
+        type: string
+      paymentStatus:
+        $ref: '#/definitions/order.OrderPaymentStatus'
+      placedAt:
+        type: string
+      readyForShipmentAt:
+        type: string
+      refundedAt:
+        type: string
+      returnedAt:
+        type: string
+      shippedAt:
+        type: string
+      shippingAddress:
+        $ref: '#/definitions/customer.CustomerAddress'
+      shippingAddressId:
+        type: string
+      shippingFee:
+        type: number
+      shippingZone:
+        $ref: '#/definitions/business.ShippingZone'
+      shippingZoneId:
+        type: string
+      status:
+        $ref: '#/definitions/order.OrderStatus'
+      subtotal:
+        type: number
+      total:
+        type: number
+      updatedAt:
+        type: string
+      vat:
+        type: number
+      vatRate:
+        type: number
+    type: object
   order.OrderStatus:
     enum:
     - pending
@@ -22562,7 +22802,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/billing.Plan'
+              $ref: '#/definitions/billing.PlanResponse'
             type: array
         "500":
           description: Internal Server Error
@@ -22585,7 +22825,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/billing.Plan'
+            $ref: '#/definitions/billing.PlanResponse'
         "404":
           description: Not Found
           schema:
@@ -22667,7 +22907,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/billing.Subscription'
+            $ref: '#/definitions/billing.SubscriptionResponse'
         "401":
           description: Unauthorized
           schema:
@@ -22699,7 +22939,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/billing.Subscription'
+            $ref: '#/definitions/billing.SubscriptionResponse'
         "400":
           description: Bad Request
           schema:
@@ -22820,7 +23060,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/billing.Subscription'
+            $ref: '#/definitions/billing.SubscriptionResponse'
         "401":
           description: Unauthorized
           schema:
@@ -23038,7 +23278,7 @@ paths:
           schema:
             additionalProperties:
               items:
-                $ref: '#/definitions/business.businessResponse'
+                $ref: '#/definitions/business.BusinessResponse'
               type: array
             type: object
         "401":
@@ -23076,7 +23316,7 @@ paths:
           description: Created
           schema:
             additionalProperties:
-              $ref: '#/definitions/business.businessResponse'
+              $ref: '#/definitions/business.BusinessResponse'
             type: object
         "400":
           description: Bad Request
@@ -23153,7 +23393,7 @@ paths:
           description: OK
           schema:
             additionalProperties:
-              $ref: '#/definitions/business.businessResponse'
+              $ref: '#/definitions/business.BusinessResponse'
             type: object
         "400":
           description: Bad Request
@@ -23203,7 +23443,7 @@ paths:
           description: OK
           schema:
             additionalProperties:
-              $ref: '#/definitions/business.businessResponse'
+              $ref: '#/definitions/business.BusinessResponse'
             type: object
         "400":
           description: Bad Request
@@ -24875,7 +25115,7 @@ paths:
   /v1/businesses/{businessDescriptor}/customers:
     get:
       description: Returns a paginated list of all customers for the authenticated
-        workspace
+        workspace with optional filters
       parameters:
       - description: Business descriptor
         in: path
@@ -24901,13 +25141,29 @@ paths:
         in: query
         name: search
         type: string
+      - description: Filter by country code (e.g., US, AE)
+        in: query
+        name: countryCode
+        type: string
+      - description: Filter by customers with or without orders
+        in: query
+        name: hasOrders
+        type: boolean
+      - collectionFormat: csv
+        description: Filter by social media platforms (instagram, tiktok, facebook,
+          x, snapchat, whatsapp)
+        in: query
+        items:
+          type: string
+        name: socialPlatforms
+        type: array
       produces:
       - application/json
       responses:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-customer_Customer'
+            $ref: '#/definitions/list.ListResponse-customer_CustomerResponse'
         "401":
           description: Unauthorized
           schema:
@@ -24943,7 +25199,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/customer.Customer'
+            $ref: '#/definitions/customer.CustomerResponse'
         "400":
           description: Bad Request
           schema:
@@ -25022,7 +25278,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/customer.Customer'
+            $ref: '#/definitions/customer.CustomerResponse'
         "401":
           description: Unauthorized
           schema:
@@ -25071,7 +25327,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/customer.Customer'
+            $ref: '#/definitions/customer.CustomerResponse'
         "400":
           description: Bad Request
           schema:
@@ -25122,7 +25378,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/customer.CustomerAddress'
+              $ref: '#/definitions/customer.CustomerAddressResponse'
             type: array
         "401":
           description: Unauthorized
@@ -25172,7 +25428,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/customer.CustomerAddress'
+            $ref: '#/definitions/customer.CustomerAddressResponse'
         "400":
           description: Bad Request
           schema:
@@ -25273,7 +25529,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/customer.CustomerAddress'
+            $ref: '#/definitions/customer.CustomerAddressResponse'
         "400":
           description: Bad Request
           schema:
@@ -25320,7 +25576,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/customer.CustomerNote'
+              $ref: '#/definitions/customer.CustomerNoteResponse'
             type: array
         "401":
           description: Unauthorized
@@ -25370,7 +25626,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/customer.CustomerNote'
+            $ref: '#/definitions/customer.CustomerNoteResponse'
         "400":
           description: Bad Request
           schema:
@@ -25634,7 +25890,10 @@ paths:
       - inventory
   /v1/businesses/{businessDescriptor}/inventory/products:
     get:
-      description: Returns a paginated list of products for the authenticated workspace/business
+      description: Returns a paginated list of products for the authenticated workspace/business.
+        Each product includes its variants. Supports filtering by category and stock
+        status, and searching across product name, variant name, variant SKU, and
+        category name.
       parameters:
       - description: Business descriptor
         in: path
@@ -25656,15 +25915,24 @@ paths:
           type: string
         name: orderBy
         type: array
-      - description: Search term for product name
+      - description: Search term (matches product name, variant name, variant SKU,
+          or category name)
         in: query
         name: search
+        type: string
+      - description: Filter by category ID
+        in: query
+        name: categoryId
+        type: string
+      - description: Filter by stock status (in_stock, low_stock, out_of_stock)
+        in: query
+        name: stockStatus
         type: string
       produces:
       - application/json
       responses:
         "200":
-          description: OK
+          description: Products with their variants included
           schema:
             $ref: '#/definitions/list.ListResponse-inventory_Product'
         "401":
@@ -26264,6 +26532,14 @@ paths:
           type: string
         name: paymentStatus
         type: array
+      - collectionFormat: csv
+        description: Filter by platform/channel (instagram, tiktok, facebook, x, snapchat,
+          whatsapp)
+        in: query
+        items:
+          type: string
+        name: socialPlatforms
+        type: array
       - description: Filter by customerId
         in: query
         name: customerId
@@ -26286,7 +26562,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/list.ListResponse-order_Order'
+            $ref: '#/definitions/list.ListResponse-order_OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26330,7 +26606,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26424,7 +26700,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26478,7 +26754,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26697,7 +26973,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26755,7 +27031,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26813,7 +27089,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "400":
           description: Bad Request
           schema:
@@ -26863,7 +27139,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/order.Order'
+            $ref: '#/definitions/order.OrderResponse'
         "401":
           description: Unauthorized
           schema:
@@ -26902,7 +27178,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/business.paymentMethodResponse'
+              $ref: '#/definitions/business.PaymentMethodResponse'
             type: array
         "401":
           description: Unauthorized
@@ -26954,7 +27230,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/business.paymentMethodResponse'
+            $ref: '#/definitions/business.PaymentMethodResponse'
         "400":
           description: Bad Request
           schema:
@@ -26996,7 +27272,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/business.shippingZoneResponse'
+              $ref: '#/definitions/business.ShippingZoneResponse'
             type: array
         "401":
           description: Unauthorized
@@ -27041,7 +27317,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/business.shippingZoneResponse'
+            $ref: '#/definitions/business.ShippingZoneResponse'
         "400":
           description: Bad Request
           schema:
@@ -27138,7 +27414,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/business.shippingZoneResponse'
+            $ref: '#/definitions/business.ShippingZoneResponse'
         "400":
           description: Bad Request
           schema:
@@ -27191,7 +27467,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/business.shippingZoneResponse'
+            $ref: '#/definitions/business.ShippingZoneResponse'
         "400":
           description: Bad Request
           schema:
@@ -27316,7 +27592,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/account.UserInvitation'
+              $ref: '#/definitions/account.UserInvitationResponse'
             type: array
         "401":
           description: Unauthorized
@@ -27352,7 +27628,7 @@ paths:
         "201":
           description: Created
           schema:
-            $ref: '#/definitions/account.UserInvitation'
+            $ref: '#/definitions/account.UserInvitationResponse'
         "400":
           description: Bad Request
           schema:
@@ -27943,7 +28219,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.User'
+            $ref: '#/definitions/account.UserResponse'
         "401":
           description: Unauthorized
           schema:
@@ -27974,7 +28250,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.User'
+            $ref: '#/definitions/account.UserResponse'
         "400":
           description: Bad Request
           schema:
@@ -28001,7 +28277,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.Workspace'
+            $ref: '#/definitions/account.WorkspaceResponse'
         "401":
           description: Unauthorized
           schema:
@@ -28029,7 +28305,7 @@ paths:
           description: OK
           schema:
             items:
-              $ref: '#/definitions/account.User'
+              $ref: '#/definitions/account.UserResponse'
             type: array
         "401":
           description: Unauthorized
@@ -28101,7 +28377,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.User'
+            $ref: '#/definitions/account.UserResponse'
         "401":
           description: Unauthorized
           schema:
@@ -28146,7 +28422,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/account.User'
+            $ref: '#/definitions/account.UserResponse'
         "400":
           description: Bad Request
           schema:
