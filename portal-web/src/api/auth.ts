@@ -201,7 +201,7 @@ export const authApi = {
     const validatedRequest = RequestEmailVerificationSchema.parse(request)
 
     // Make API call
-    await postVoid('v1/auth/request-email-verification', {
+    await postVoid('v1/auth/verify-email/request', {
       json: validatedRequest,
     })
   },

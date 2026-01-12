@@ -158,7 +158,7 @@ export function ResetPasswordPage() {
     }) => {
       await authApi.resetPassword({
         token,
-        password: value.password,
+        newPassword: value.password,
       })
 
       setPageStatus('success')

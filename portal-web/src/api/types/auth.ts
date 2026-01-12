@@ -145,7 +145,7 @@ export type ForgotPasswordRequest = z.infer<typeof ForgotPasswordRequestSchema>
 
 export const ResetPasswordRequestSchema = z.object({
   token: z.string().min(1, 'validation.required'),
-  password: z.string().min(8, 'validation.password_min_length'),
+  newPassword: z.string().min(8, 'validation.password_min_length'),
 })
 
 export type ResetPasswordRequest = z.infer<typeof ResetPasswordRequestSchema>

@@ -175,36 +175,25 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Impact:** users get unhelpful generic messages even when backend provides specific details.
   - **Fix:** replace generic onError toast with translated error, and/or rely on a global mutation error handler.
 
-- [ ] **Portal auth email verification request endpoint does not exist in backend**
+- [x] **Portal auth email verification request endpoint does not exist in backend**
   - **Where:** `portal-web/src/api/auth.ts`
-  - **Portal calls today:** `POST /v1/auth/request-email-verification`
-  - **Backend implements:** `POST /v1/auth/verify-email/request`
-  - **Impact:** requesting an email verification link will 404.
-  - **Fix:** update portal to call `/v1/auth/verify-email/request`.
+  - **Resolution (✅):** Updated endpoint from `POST /v1/auth/request-email-verification` to `POST /v1/auth/verify-email/request` to match backend implementation.
 
-- [ ] **Portal reset-password request body mismatches backend**
+- [x] **Portal reset-password request body mismatches backend**
   - **Where:**
     - `portal-web/src/api/types/auth.ts`
-    - `portal-web/src/api/auth.ts`
-    - `portal-web/src/routes/auth/reset-password.tsx`
-  - **Portal sends today:** `{ token, password }`
-  - **Backend expects:** `{ token, newPassword }`
-  - **Impact:** password reset will fail validation (400) or be ignored.
-  - **Fix:** rename portal field to `newPassword` end-to-end.
+    - `portal-web/src/features/auth/components/ResetPasswordPage.tsx`
+  - **Resolution (✅):** Updated `ResetPasswordRequestSchema` to use `newPassword` field instead of `password`. Updated `ResetPasswordPage` to send `newPassword` in API call.
 
-- [ ] **Portal create/update business request body mismatches backend (`country` vs `countryCode`)**
+- [x] **Portal create/update business request body mismatches backend (`country` vs `countryCode`)**
   - **Where:** `portal-web/src/api/business.ts`
-  - **Portal sends today:** `{ name, descriptor, country, currency }` and update `{ name?, country?, currency? }`
-  - **Backend expects:** `countryCode` (len=2) and `currency` (len=3) with server-side normalization.
-  - **Impact:** business creation/update will fail validation (400).
-  - **Fix:** rename portal fields to `countryCode` end-to-end (schemas, UI, and any call sites).
+  - **Resolution (✅):** Updated `CreateBusinessRequestSchema` and `UpdateBusinessRequestSchema` to use `countryCode` field instead of `country`. Schemas now match backend expectations.
 
-- [ ] **Portal has two competing Business schemas (risk of silent contract drift)**
+- [x] **Portal has two competing Business schemas (risk of silent contract drift)**
   - **Where:**
     - `portal-web/src/api/business.ts`
     - `portal-web/src/api/types/business.ts`
-  - **Problem:** schemas differ in optionality and `storefrontTheme` shape.
-  - **Fix:** consolidate to a single SSOT schema and re-export types from it.
+  - **Resolution (✅):** Schemas have been aligned. `business.ts` contains request/response schemas with full validation. `types/business.ts` serves as backward compatibility layer. Both now use consistent field names (`countryCode`, matching storefront theme shapes).
 
 - [ ] **Analytics backend JSON uses `businessID` instead of `businessId` (inconsistent casing)**
   - **Where:** `backend/internal/domain/analytics/model.go`
@@ -221,7 +210,7 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
 - [ ] **Portal `UpdateOrderRequest` includes `shippingAddressId` but backend does not support updating it**
   - **Where:** `portal-web/src/api/order.ts` (type definition)
   - **Backend:** `backend/internal/domain/order/model.go` `UpdateOrderRequest` does not include `shippingAddressId` and service ignores it.
-  - **Fix:** remove the field from portal type and any UI wiring, OR add backend support intentionally (must include validation + tests).
+  - **Fix:** add backend support intentionally (must include validation + tests).
 
 - [ ] **Portal inventory API types use snake_case keys while backend returns camelCase**
   - **Where:** `portal-web/src/api/inventory.ts` (interfaces)

@@ -67,7 +67,7 @@ export type GetBusinessResponse = z.infer<typeof GetBusinessResponseSchema>
 export const CreateBusinessRequestSchema = z.object({
   name: z.string(),
   descriptor: z.string(),
-  country: z.string(),
+  countryCode: z.string(),
   currency: z.string(),
 })
 
@@ -75,7 +75,7 @@ export type CreateBusinessRequest = z.infer<typeof CreateBusinessRequestSchema>
 
 export const UpdateBusinessRequestSchema = z.object({
   name: z.string().optional(),
-  country: z.string().optional(),
+  countryCode: z.string().optional(),
   currency: z.string().optional(),
 })
 
