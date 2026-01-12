@@ -13,10 +13,9 @@
 
 import { Edit, MapPin, Phone, Trash2 } from 'lucide-react'
 import { useTranslation } from 'react-i18next'
-import { useStore } from '@tanstack/react-store'
 
 import type { CustomerAddress } from '@/api/customer'
-import { metadataStore } from '@/stores/metadataStore'
+import { useCountriesQuery } from '@/api/metadata'
 
 interface AddressCardProps {
   address: CustomerAddress
@@ -34,7 +33,7 @@ export function AddressCard({
   const { i18n } = useTranslation()
   const { t: tCommon } = useTranslation('common')
   const { t: tCustomers } = useTranslation('customers')
-  const countries = useStore(metadataStore, (s) => s.countries)
+  const { data: countries = [] } = useCountriesQuery()
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
 
   const getCountryInfo = (countryCode: string) => {

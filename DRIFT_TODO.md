@@ -123,12 +123,10 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
 
 ## Medium priority (contract/type drift, correctness + maintenance)
 
-- [ ] **Portal state ownership is inconsistent (Query vs Store vs URL)**
+- [x] **Portal state ownership is inconsistent (Query vs Store vs URL)**
   - **SSOT target:** `.github/instructions/state-management.instructions.md`
   - **Auth drift:** `portal-web/src/stores/authStore.ts` writes `isInitialized` into store state, but `AuthState` does not declare it.
-    - **Impact:** store state shape becomes implicit/unstable; TypeScript should prevent this but currently doesn’t.
-    - **Fix:** either add `isInitialized` to `AuthState` + `initialState` (and use it consistently) OR remove all writes/reads of it.
-  - **Metadata drift:** `portal-web/src/stores/metadataStore.ts` persists an entire store state including a function (`loadCountries`). `JSON.stringify` drops functions, making persistence silently lossy.
+    - **Resolution (✅):** Removed undeclared `isInitialized` write from `login()` action. State shape now matches TypeScript interface.
     - **Impact:** persistence correctness issues + hard-to-debug runtime state; also encourages a second cache.
     - **Fix:** persist only serializable data (countries/currencies/lastFetched) or remove the store and use TanStack Query as the only cache.
   - **Query↔Store mirroring drift:** metadata is maintained both in TanStack Query and in `metadataStore` (dual caches).

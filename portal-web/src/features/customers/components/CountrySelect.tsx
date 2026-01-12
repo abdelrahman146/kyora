@@ -1,9 +1,8 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useStore } from '@tanstack/react-store'
 import type { FormSelectOption } from '@/components/form/FormSelect'
-import type { Country } from '@/stores/metadataStore'
-import { metadataStore } from '@/stores/metadataStore'
+import type { CountryMetadata } from '@/api/types/metadata'
+import { useCountriesQuery } from '@/api/metadata'
 import { FormSelect } from '@/components/form/FormSelect'
 
 export interface CountrySelectProps {
@@ -14,7 +13,7 @@ export interface CountrySelectProps {
   required?: boolean
   placeholder?: string
   searchable?: boolean
-  availableCountries?: Array<Country> // Optional filter: only show these countries
+  availableCountries?: Array<CountryMetadata> // Optional filter: only show these countries
 }
 
 /**
@@ -36,23 +35,15 @@ export function CountrySelect({
 }: CountrySelectProps) {
   const { i18n } = useTranslation()
   const { t: tCustomers } = useTranslation('customers')
-  const countries = useStore(metadataStore, (state) => state.countries)
-  const countriesStatus = useStore(metadataStore, (state) => state.status)
+  const { data: countries = [], isSuccess } = useCountriesQuery()
 
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
-  const countriesReady = countries.length > 0 || countriesStatus === 'loaded'
-
-  // Load countries on mount
-  useEffect(() => {
-    if (countriesStatus === 'idle') {
-      void metadataStore.state.loadCountries()
-    }
-  }, [countriesStatus])
+  const countriesReady = isSuccess && countries.length > 0
 
   const countryOptions: Array<FormSelectOption> = useMemo(() => {
     // Use filtered list if provided, otherwise use all countries
     const countriesToShow = availableCountries ?? countries
-    return countriesToShow.map((c: Country) => {
+    return countriesToShow.map((c: CountryMetadata) => {
       const label = `${c.flag ? `${c.flag} ` : ''}${isArabic ? c.nameAr : c.name}`
       return { value: c.code, label }
     })

@@ -1,8 +1,7 @@
-import { useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { useStore } from '@tanstack/react-store'
 import type { FormSelectOption } from '@/components/form/FormSelect'
-import { metadataStore } from '@/stores/metadataStore'
+import { useCountriesQuery } from '@/api/metadata'
 import { FormSelect } from '@/components/form/FormSelect'
 
 export interface PhoneCodeSelectProps {
@@ -33,18 +32,10 @@ export function PhoneCodeSelect({
 }: PhoneCodeSelectProps) {
   const { i18n } = useTranslation()
   const { t: tCustomers } = useTranslation('customers')
-  const countries = useStore(metadataStore, (state) => state.countries)
-  const countriesStatus = useStore(metadataStore, (state) => state.status)
+  const { data: countries = [], isSuccess } = useCountriesQuery()
 
   const isArabic = i18n.language.toLowerCase().startsWith('ar')
-  const countriesReady = countries.length > 0 || countriesStatus === 'loaded'
-
-  // Load countries on mount
-  useEffect(() => {
-    if (countriesStatus === 'idle') {
-      void metadataStore.state.loadCountries()
-    }
-  }, [countriesStatus])
+  const countriesReady = isSuccess && countries.length > 0
 
   const phoneCodeOptions: Array<FormSelectOption> = useMemo(() => {
     const seen = new Set<string>()

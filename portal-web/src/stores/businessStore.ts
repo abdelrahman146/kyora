@@ -6,12 +6,18 @@ import { createPersistencePlugin } from '@/lib/storePersistence'
 /**
  * Business Store State
  *
- * Manages business list, selected business, and UI preferences.
+ * Manages business list, UI preferences, and "last selected" business.
+ *
+ * IMPORTANT: The URL path param `$businessDescriptor` is the single source of
+ * truth for the currently active business in business-scoped pages.
+ * `selectedBusinessDescriptor` is persisted only as a convenience preference
+ * for redirects (e.g., from homepage to last visited business).
+ *
  * Only selectedBusinessDescriptor and sidebarCollapsed are persisted.
  */
 interface BusinessState {
   businesses: Array<Business>
-  selectedBusinessDescriptor: string | null
+  selectedBusinessDescriptor: string | null // Convenience preference, NOT source of truth
   sidebarCollapsed: boolean // Desktop: collapsed (icon-only) state
   sidebarOpen: boolean // Mobile: drawer open state
 }
@@ -27,7 +33,13 @@ const initialState: BusinessState = {
  * Business Store
  *
  * Manages business state using TanStack Store.
- * Persists selectedBusinessDescriptor and sidebarCollapsed to localStorage.
+ * Persists selectedBusinessDescriptor (for convenience redirects) and
+ * sidebarCollapsed (UI preference) to localStorage.
+ *
+ * IMPORTANT: Business-scoped routes use URL `$businessDescriptor` as the
+ * single source of truth. This store's `selectedBusinessDescriptor` is synced
+ * when navigating to business routes (via route loaders), but it is NOT the
+ * authoritative source during business page renders.
  *
  * Dev-only devtools integration via conditional import.
  */
@@ -80,10 +92,13 @@ export function setBusinesses(businesses: Array<Business>): void {
  * Select a business
  *
  * Updates selectedBusinessDescriptor and persists to localStorage.
+ * This is called by business route loaders to sync the store preference with
+ * the current URL `$businessDescriptor` param (the single source of truth).
+ *
  * Note: Query invalidation should be handled by the caller
  * (typically in the business route loader after this action).
  *
- * @param descriptor - Business descriptor to select
+ * @param descriptor - Business descriptor from URL to sync into store
  */
 export function selectBusiness(descriptor: string): void {
   businessStore.setState((state) => ({

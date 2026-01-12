@@ -3,11 +3,38 @@ import { get } from './client'
 import { ListCountriesResponseSchema } from './types/metadata'
 import type { CountryMetadata, ListCountriesResponse } from './types/metadata'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
-import {
-  extractCurrencies,
-  getMetadata,
-  setMetadata,
-} from '@/stores/metadataStore'
+
+/**
+ * Currency Info (derived from countries)
+ */
+export interface CurrencyInfo {
+  code: string
+  name: string
+  symbol: string
+}
+
+/**
+ * Extract unique currencies from countries
+ */
+function extractCurrencies(
+  countries: Array<CountryMetadata>,
+): Array<CurrencyInfo> {
+  const currencyMap = new Map<string, CurrencyInfo>()
+
+  for (const country of countries) {
+    if (!currencyMap.has(country.currencyCode)) {
+      currencyMap.set(country.currencyCode, {
+        code: country.currencyCode,
+        name: country.currencyLabel,
+        symbol: country.currencySymbol,
+      })
+    }
+  }
+
+  return Array.from(currencyMap.values()).sort((a, b) =>
+    a.code.localeCompare(b.code),
+  )
+}
 
 /**
  * Metadata API Client
@@ -32,69 +59,48 @@ export const metadataApi = {
  */
 export const metadataQueries = {
   /**
-   * Query options for fetching countries with dual-layer caching
+   * Query options for fetching countries
+   *
+   * Uses TanStack Query as the single source of truth with 24-hour cache.
+   * No localStorage persistence - Query cache handles everything.
    */
   countries: () =>
     queryOptions({
       queryKey: queryKeys.metadata.countries(),
       queryFn: async () => {
         const response = await metadataApi.listCountries()
-        const currencies = extractCurrencies(response.countries)
-
-        // Sync with metadataStore for additional persistence layer
-        setMetadata(response.countries, currencies)
-
         return response
       },
       staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
       gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
       select: (data) => data.countries,
-      // Try to use persisted data on mount
-      initialData: () => {
-        const metadata = getMetadata()
-        if (metadata.countries.length > 0) {
-          return { countries: metadata.countries }
-        }
-        return undefined
-      },
     }),
 
   /**
    * Query options for fetching currencies from countries data
+   *
+   * Derives currencies from countries endpoint.
+   * Uses TanStack Query as the single source of truth.
    */
   currencies: () =>
     queryOptions({
       queryKey: queryKeys.metadata.currencies(),
       queryFn: async () => {
         const response = await metadataApi.listCountries()
-        const currencies = extractCurrencies(response.countries)
-
-        // Sync with metadataStore
-        setMetadata(response.countries, currencies)
-
-        return currencies
+        return extractCurrencies(response.countries)
       },
       staleTime: STALE_TIME.TWENTY_FOUR_HOURS,
       gcTime: STALE_TIME.TWENTY_FOUR_HOURS,
-      // Try to use persisted data on mount
-      initialData: () => {
-        const metadata = getMetadata()
-        if (metadata.currencies.length > 0) {
-          return metadata.currencies
-        }
-        return undefined
-      },
     }),
 }
 
 /**
- * Query hook for countries metadata with dual-layer caching
+ * Query hook for countries metadata
  *
  * Fetches list of supported countries with currency info.
- * - TanStack Query cache: 24 hours
- * - localStorage persistence: 24 hours (via metadataStore)
+ * TanStack Query cache: 24 hours (stale time + gc time).
  *
- * Automatically syncs with metadataStore for additional persistence layer.
+ * This is the single source of truth for countries data.
  */
 export function useCountriesQuery() {
   return useQuery(metadataQueries.countries())
@@ -103,8 +109,10 @@ export function useCountriesQuery() {
 /**
  * Query hook for currencies metadata
  *
- * Extracts unique currencies from countries data.
- * Uses same caching strategy as countries query.
+ * Derives unique currencies from countries endpoint.
+ * TanStack Query cache: 24 hours (stale time + gc time).
+ *
+ * This is the single source of truth for currencies data.
  */
 export function useCurrenciesQuery() {
   return useQuery(metadataQueries.currencies())

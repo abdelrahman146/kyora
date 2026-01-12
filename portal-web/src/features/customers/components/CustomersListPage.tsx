@@ -25,7 +25,7 @@ import { ResourceListLayout } from '@/components/templates/ResourceListLayout'
 import { showErrorFromException, showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form/useKyoraForm'
-import { getMetadata } from '@/stores/metadataStore'
+import { useCountriesQuery } from '@/api/metadata'
 import { formatDateShort } from '@/lib/formatDate'
 import { CustomersSearchSchema } from '@/features/customers/schema/customersSearch'
 
@@ -58,6 +58,7 @@ export async function customersListLoader({
 export function CustomersListPage() {
   const { t: tCustomers } = useTranslation('customers')
   const { t: tCommon } = useTranslation('common')
+  const { data: countries = [] } = useCountriesQuery()
 
   const { businessDescriptor } = useParams({
     from: '/business/$businessDescriptor/customers/',
@@ -300,8 +301,7 @@ export function CustomersListPage() {
         label: tCustomers('country'),
         sortable: true,
         render: (customer) => {
-          const metadata = getMetadata()
-          const country = metadata.countries.find(
+          const country = countries.find(
             (c) =>
               c.code === customer.countryCode ||
               c.iso_code === customer.countryCode,
@@ -398,11 +398,13 @@ export function CustomersListPage() {
       },
     ],
     [
+      countries,
       currency,
       handleCustomerClick,
       handleDeleteClick,
       handleEditClick,
       tCustomers,
+      tCommon,
     ],
   )
 

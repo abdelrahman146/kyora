@@ -126,8 +126,7 @@ export async function login(email: string, password: string): Promise<void> {
   const user = await loginUser(email, password)
   setUser(user)
 
-  // Consider auth initialized after explicit login.
-  authStore.setState((s) => ({ ...s, isInitialized: true }))
+  // Mark initialization complete
   initPromise = Promise.resolve()
 }
 

@@ -4,7 +4,7 @@ import { Calendar, DollarSign, MapPin, Phone, ShoppingBag } from 'lucide-react'
 import type { Customer } from '@/api/customer'
 import { Avatar } from '@/components/atoms/Avatar'
 import { formatDateShort } from '@/lib/formatDate'
-import { getMetadata } from '@/stores/metadataStore'
+import { useCountriesQuery } from '@/api/metadata'
 
 export interface CustomerCardProps {
   customer: Customer
@@ -22,6 +22,7 @@ export function CustomerCard({
   currency = 'AED',
 }: CustomerCardProps) {
   const { t: tCustomers } = useTranslation('customers')
+  const { data: countries = [] } = useCountriesQuery()
 
   const getInitials = (name: string): string => {
     return name
@@ -47,8 +48,7 @@ export function CustomerCard({
     }).format(amount)
   }
 
-  const metadata = getMetadata()
-  const country = metadata.countries.find(
+  const country = countries.find(
     (c) =>
       c.code === customer.countryCode || c.iso_code === customer.countryCode,
   )
