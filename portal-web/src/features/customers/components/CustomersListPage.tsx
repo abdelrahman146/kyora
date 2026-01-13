@@ -351,7 +351,7 @@ export function CustomersListPage() {
       },
       {
         key: 'actions',
-        label: tCommon('actions'),
+        label: tCommon('actionsLabel'),
         align: 'center',
         width: '120px',
         render: (customer) => (

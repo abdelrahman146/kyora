@@ -351,7 +351,7 @@ export function InventoryListPage() {
     },
     {
       key: 'actions',
-      label: tCommon('actions'),
+      label: tCommon('actionsLabel'),
       render: (product: Product) => (
         <div className="flex gap-1">
           <button

@@ -231,7 +231,7 @@ export function OrderQuickActions({
           tabIndex={0}
           role="button"
           className="btn btn-ghost btn-sm btn-square"
-          aria-label={tCommon('actions')}
+          aria-label={tCommon('actionsLabel')}
         >
           <Zap size={18} />
         </button>
