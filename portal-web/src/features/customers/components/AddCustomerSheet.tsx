@@ -12,7 +12,7 @@ import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { FormSelect } from '@/components'
 import { useKyoraForm } from '@/lib/form'
 import { buildE164Phone } from '@/lib/phone'
-import { showErrorToast, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 
 export interface AddCustomerSheetProps {
   isOpen: boolean
@@ -110,9 +110,6 @@ export function AddCustomerSheet({
       }
       onClose()
     },
-    onError: (error) => {
-      showErrorToast(error.message)
-    },
   })
 
   const form = useKyoraForm({
@@ -126,20 +123,25 @@ export function AddCustomerSheet({
           ? buildE164Phone(phoneCode, phoneNumber)
           : undefined
 
-      await createMutation.mutateAsync({
-        name: value.name.trim(),
-        email: value.email.trim(),
-        gender: value.gender as CustomerGender,
-        countryCode: value.countryCode.trim().toUpperCase(),
-        phoneCode: normalizedPhone?.phoneCode,
-        phoneNumber: normalizedPhone?.phoneNumber,
-        instagramUsername: value.instagramUsername?.trim() || undefined,
-        facebookUsername: value.facebookUsername?.trim() || undefined,
-        tiktokUsername: value.tiktokUsername?.trim() || undefined,
-        snapchatUsername: value.snapchatUsername?.trim() || undefined,
-        xUsername: value.xUsername?.trim() || undefined,
-        whatsappNumber: value.whatsappNumber?.trim() || undefined,
-      })
+      try {
+        await createMutation.mutateAsync({
+          name: value.name.trim(),
+          email: value.email.trim(),
+          gender: value.gender as CustomerGender,
+          countryCode: value.countryCode.trim().toUpperCase(),
+          phoneCode: normalizedPhone?.phoneCode,
+          phoneNumber: normalizedPhone?.phoneNumber,
+          instagramUsername: value.instagramUsername?.trim() || undefined,
+          facebookUsername: value.facebookUsername?.trim() || undefined,
+          tiktokUsername: value.tiktokUsername?.trim() || undefined,
+          snapchatUsername: value.snapchatUsername?.trim() || undefined,
+          xUsername: value.xUsername?.trim() || undefined,
+          whatsappNumber: value.whatsappNumber?.trim() || undefined,
+        })
+      } catch {
+        // Global QueryClient mutation handler will toast.
+        return
+      }
     },
   })
 

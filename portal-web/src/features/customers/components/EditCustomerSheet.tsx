@@ -11,7 +11,7 @@ import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { FormSelect } from '@/components'
 import { useKyoraForm } from '@/lib/form'
 import { buildE164Phone } from '@/lib/phone'
-import { showErrorToast, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 
 export interface EditCustomerSheetProps {
   isOpen: boolean
@@ -104,9 +104,6 @@ export function EditCustomerSheet({
       }
       onClose()
     },
-    onError: (error) => {
-      showErrorToast(error.message)
-    },
   })
 
   const form = useKyoraForm({
@@ -120,23 +117,27 @@ export function EditCustomerSheet({
           ? buildE164Phone(phoneCode, phoneNumber)
           : undefined
 
-      await updateMutation.mutateAsync({
-        customerId: customer.id,
-        data: {
-          name: value.name.trim(),
-          email: value.email.trim(),
-          gender: value.gender as CustomerGender,
-          countryCode: value.countryCode.trim().toUpperCase(),
-          phoneCode: normalizedPhone?.phoneCode,
-          phoneNumber: normalizedPhone?.phoneNumber,
-          instagramUsername: value.instagramUsername?.trim() || undefined,
-          facebookUsername: value.facebookUsername?.trim() || undefined,
-          tiktokUsername: value.tiktokUsername?.trim() || undefined,
-          snapchatUsername: value.snapchatUsername?.trim() || undefined,
-          xUsername: value.xUsername?.trim() || undefined,
-          whatsappNumber: value.whatsappNumber?.trim() || undefined,
-        },
-      })
+      try {
+        await updateMutation.mutateAsync({
+          customerId: customer.id,
+          data: {
+            name: value.name.trim(),
+            email: value.email.trim(),
+            gender: value.gender as CustomerGender,
+            countryCode: value.countryCode.trim().toUpperCase(),
+            phoneCode: normalizedPhone?.phoneCode,
+            phoneNumber: normalizedPhone?.phoneNumber,
+            instagramUsername: value.instagramUsername?.trim() || undefined,
+            facebookUsername: value.facebookUsername?.trim() || undefined,
+            tiktokUsername: value.tiktokUsername?.trim() || undefined,
+            snapchatUsername: value.snapchatUsername?.trim() || undefined,
+            xUsername: value.xUsername?.trim() || undefined,
+            whatsappNumber: value.whatsappNumber?.trim() || undefined,
+          },
+        })
+      } catch {
+        // Global QueryClient error handler shows the error toast.
+      }
     },
   })
 

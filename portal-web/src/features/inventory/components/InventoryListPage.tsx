@@ -34,7 +34,6 @@ import {
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form/useKyoraForm'
 import { queryKeys } from '@/lib/queryKeys'
-import { translateErrorAsync } from '@/lib/translateError'
 import { formatDateShort } from '@/lib/formatDate'
 
 export function InventoryListPage() {
@@ -75,10 +74,6 @@ export function InventoryListPage() {
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         setSelectedProductId(null)
         setIsEditSheetOpen(false)
-      },
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tCommon)
-        toast.error(message)
       },
     },
   )

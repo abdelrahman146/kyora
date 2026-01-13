@@ -1,6 +1,6 @@
 import { Link, useNavigate, useParams } from '@tanstack/react-router'
 import { useQueryClient } from '@tanstack/react-query'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowLeft,
@@ -25,7 +25,13 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress, CustomerGender } from '@/api/customer'
 import type { Order } from '@/api/order'
-import { addressApi, addressQueries } from '@/api/address'
+import {
+  addressQueries,
+  useAddressesQuery,
+  useCreateAddressMutation,
+  useDeleteAddressMutation,
+  useUpdateAddressMutation,
+} from '@/api/address'
 import {
   customerQueries,
   useCreateCustomerNoteMutation,
@@ -33,7 +39,7 @@ import {
   useDeleteCustomerMutation,
   useDeleteCustomerNoteMutation,
 } from '@/api/customer'
-import { orderApi } from '@/api/order'
+import { useOrdersQuery } from '@/api/order'
 import { metadataQueries, useCountriesQuery } from '@/api/metadata'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/molecules/Dialog'
@@ -43,7 +49,7 @@ import { Notes } from '@/components/organisms/Notes'
 import { queryKeys } from '@/lib/queryKeys'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
-import { showErrorFromException, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 export async function customerDetailLoader({
@@ -89,8 +95,6 @@ export function CustomerDetailPage() {
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false)
   const [isDeleting, setIsDeleting] = useState(false)
 
-  const [addresses, setAddresses] = useState<Array<CustomerAddress>>([])
-  const [isLoadingAddresses, setIsLoadingAddresses] = useState(true)
   const [isAddressSheetOpen, setIsAddressSheetOpen] = useState(false)
   const [editingAddress, setEditingAddress] = useState<
     CustomerAddress | undefined
@@ -100,9 +104,6 @@ export function CustomerDetailPage() {
   )
   const [isDeletingAddress, setIsDeletingAddress] = useState(false)
   const [addressDeleteDialogOpen, setAddressDeleteDialogOpen] = useState(false)
-
-  const [recentOrders, setRecentOrders] = useState<Array<Order>>([])
-  const [isLoadingOrders, setIsLoadingOrders] = useState(true)
 
   const [isAddingNote, setIsAddingNote] = useState(false)
   const [isDeletingNote, setIsDeletingNote] = useState(false)
@@ -128,9 +129,6 @@ export function CustomerDetailPage() {
         search: { page: 1, pageSize: 20, sortOrder: 'desc' },
       })
     },
-    onError: (err) => {
-      void showErrorFromException(err, tCustomers)
-    },
   })
 
   const createNoteMutation = useCreateCustomerNoteMutation(
@@ -142,9 +140,6 @@ export function CustomerDetailPage() {
           queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
         })
         showSuccessToast(tCommon('notes.note_added'))
-      },
-      onError: (err) => {
-        void showErrorFromException(err, tCustomers)
       },
     },
   )
@@ -159,70 +154,37 @@ export function CustomerDetailPage() {
         })
         showSuccessToast(tCommon('notes.note_deleted'))
       },
-      onError: (err) => {
-        void showErrorFromException(err, tCustomers)
-      },
     },
   )
 
-  useEffect(() => {
-    let mounted = true
+  const addressesQuery = useAddressesQuery(businessDescriptor, customerId)
+  const addresses = addressesQuery.data ?? []
+  const isLoadingAddresses = addressesQuery.isLoading
 
-    const fetchAddresses = async () => {
-      try {
-        setIsLoadingAddresses(true)
-        const data = await addressApi.listAddresses(
-          businessDescriptor,
-          customerId,
-        )
-        if (!mounted) return
-        setAddresses(data)
-      } catch (err) {
-        if (!mounted) return
-        void showErrorFromException(err, tCustomers)
-      } finally {
-        if (mounted) {
-          setIsLoadingAddresses(false)
-        }
-      }
-    }
+  const recentOrdersQuery = useOrdersQuery(businessDescriptor, {
+    customerId,
+    page: 1,
+    pageSize: 5,
+    orderBy: ['-orderedAt'],
+  })
+  const recentOrders: Array<Order> = recentOrdersQuery.data?.items ?? []
+  const isLoadingOrders = recentOrdersQuery.isLoading
 
-    void fetchAddresses()
+  const createAddressMutation = useCreateAddressMutation(
+    businessDescriptor,
+    customerId,
+  )
 
-    return () => {
-      mounted = false
-    }
-  }, [businessDescriptor, customerId, i18n.language, tCustomers])
+  const updateAddressMutation = useUpdateAddressMutation(
+    businessDescriptor,
+    customerId,
+    editingAddress?.id ?? '',
+  )
 
-  useEffect(() => {
-    let mounted = true
-
-    const fetchOrders = async () => {
-      try {
-        setIsLoadingOrders(true)
-        const data = await orderApi.listOrders(businessDescriptor, {
-          customerId,
-          page: 1,
-          pageSize: 5,
-          orderBy: ['-orderedAt'],
-        })
-        if (!mounted) return
-        setRecentOrders(data.items)
-      } catch {
-        if (!mounted) return
-      } finally {
-        if (mounted) {
-          setIsLoadingOrders(false)
-        }
-      }
-    }
-
-    void fetchOrders()
-
-    return () => {
-      mounted = false
-    }
-  }, [businessDescriptor, customerId])
+  const deleteAddressMutation = useDeleteAddressMutation(
+    businessDescriptor,
+    customerId,
+  )
 
   const getInitials = (name: string): string => {
     return name
@@ -268,12 +230,18 @@ export function CustomerDetailPage() {
   }
 
   const handleDeleteCustomer = async () => {
+    let didSucceed = false
     try {
       setIsDeleting(true)
       await deleteMutation.mutateAsync(customerId)
+      didSucceed = true
+    } catch {
+      // Global QueryClient error handler shows the error toast.
     } finally {
       setIsDeleting(false)
-      setIsDeleteDialogOpen(false)
+      if (didSucceed) {
+        setIsDeleteDialogOpen(false)
+      }
     }
   }
 
@@ -295,21 +263,19 @@ export function CustomerDetailPage() {
   const handleDeleteAddressConfirm = async () => {
     if (!deletingAddressId) return
 
+    let didSucceed = false
     try {
       setIsDeletingAddress(true)
-      await addressApi.deleteAddress(
-        businessDescriptor,
-        customerId,
-        deletingAddressId,
-      )
-      setAddresses((prev) => prev.filter((a) => a.id !== deletingAddressId))
-      showSuccessToast(tCustomers('address.delete_success'))
-    } catch (err) {
-      void showErrorFromException(err, tCustomers)
+      await deleteAddressMutation.mutateAsync(deletingAddressId)
+      didSucceed = true
+    } catch {
+      // Global QueryClient error handler shows the error toast.
     } finally {
       setIsDeletingAddress(false)
-      setDeletingAddressId(null)
-      setAddressDeleteDialogOpen(false)
+      if (didSucceed) {
+        setDeletingAddressId(null)
+        setAddressDeleteDialogOpen(false)
+      }
     }
   }
 
@@ -317,6 +283,8 @@ export function CustomerDetailPage() {
     try {
       setIsAddingNote(true)
       await createNoteMutation.mutateAsync(content)
+    } catch {
+      // Global QueryClient error handler shows the error toast.
     } finally {
       setIsAddingNote(false)
     }
@@ -327,6 +295,8 @@ export function CustomerDetailPage() {
       setIsDeletingNote(true)
       setDeletingNoteId(noteId)
       await deleteNoteMutation.mutateAsync(noteId)
+    } catch {
+      // Global QueryClient error handler shows the error toast.
     } finally {
       setIsDeletingNote(false)
       setDeletingNoteId(null)
@@ -337,25 +307,10 @@ export function CustomerDetailPage() {
     data: CreateAddressRequest | UpdateAddressRequest,
   ): Promise<CustomerAddress> => {
     if (editingAddress) {
-      const updated = await addressApi.updateAddress(
-        businessDescriptor,
-        customerId,
-        editingAddress.id,
-        data as UpdateAddressRequest,
-      )
-      setAddresses((prev) =>
-        prev.map((a) => (a.id === updated.id ? updated : a)),
-      )
-      return updated
+      return updateAddressMutation.mutateAsync(data as UpdateAddressRequest)
     }
 
-    const created = await addressApi.createAddress(
-      businessDescriptor,
-      customerId,
-      data as CreateAddressRequest,
-    )
-    setAddresses((prev) => [...prev, created])
-    return created
+    return createAddressMutation.mutateAsync(data as CreateAddressRequest)
   }
 
   const handleWhatsAppClick = () => {
@@ -414,13 +369,13 @@ export function CustomerDetailPage() {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <StatCard
             label={tCustomers('orders_count')}
-            value={customer.ordersCount ?? 0}
+            value={customer.ordersCount}
             icon={<ShoppingBag size={24} className="text-success" />}
             variant="success"
           />
           <StatCard
             label={tCustomers('total_spent')}
-            value={formatCurrency(customer.totalSpent ?? 0, currency)}
+            value={formatCurrency(customer.totalSpent, currency)}
             icon={<ShoppingBag size={24} className="text-primary" />}
             variant="default"
           />

@@ -12,7 +12,6 @@ import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { singleVariantProductSchema } from '@/schemas/inventory'
 import { useCreateProductWithVariantsMutation } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface SingleVariantProductFormProps {
@@ -38,10 +37,6 @@ export function SingleVariantProductForm({
         toast.success(tInventory('product_created'))
         queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
         onSuccess()
-      },
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
       },
     },
   )
@@ -85,7 +80,12 @@ export function SingleVariantProductForm({
         ],
       }
 
-      await createMutation.mutateAsync(payload)
+      try {
+        await createMutation.mutateAsync(payload)
+      } catch {
+        // Global QueryClient mutation handler will toast.
+        return
+      }
     },
   })
 

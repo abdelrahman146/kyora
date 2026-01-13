@@ -9,7 +9,7 @@ import { formatDateShort } from '@/lib/formatDate'
 export interface Note {
   id: string
   content: string
-  CreatedAt: string
+  createdAt: string
 }
 
 export interface NotesProps {
@@ -265,9 +265,9 @@ export function Notes({
                   <div className="flex items-center justify-between gap-2 mb-2">
                     <time
                       className="text-xs text-base-content/60 font-medium"
-                      dateTime={note.CreatedAt}
+                      dateTime={note.createdAt}
                     >
-                      {formatDateShort(note.CreatedAt)}
+                      {formatDateShort(note.createdAt)}
                     </time>
 
                     {/* Delete Button - Always visible on touch devices, hover on desktop */}

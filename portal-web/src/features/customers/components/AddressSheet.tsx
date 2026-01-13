@@ -13,7 +13,6 @@ import { useCountriesQuery } from '@/api/metadata'
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { useKyoraForm } from '@/lib/form'
 import { buildE164Phone, parseE164Phone } from '@/lib/phone'
-import { showErrorToast, showSuccessToast } from '@/lib/toast'
 
 export interface AddressSheetProps {
   isOpen: boolean
@@ -112,7 +111,6 @@ export function AddressSheet({
             zipCode: value.zipCode,
           }
           await onSubmit(updateData)
-          showSuccessToast(tCustomers('address.update_success'))
         } else {
           const createData: CreateAddressRequest = {
             shippingZoneId: value.shippingZoneId,
@@ -125,11 +123,10 @@ export function AddressSheet({
             zipCode: value.zipCode,
           }
           await onSubmit(createData)
-          showSuccessToast(tCustomers('address.create_success'))
         }
         onClose()
       } catch (error) {
-        showErrorToast((error as Error).message)
+        // Global QueryClient error handler shows the error toast.
       }
     },
   })

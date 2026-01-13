@@ -11,7 +11,6 @@ import {
   useUpdateVariantMutation,
 } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface UpdateProductFormProps {
@@ -38,23 +37,11 @@ export function UpdateProductForm({
   const updateProductMutation = useUpdateProductMutation(
     businessDescriptor,
     product.id,
-    {
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
-      },
-    },
   )
 
   const updateVariantMutation = useUpdateVariantMutation(
     businessDescriptor,
     variant?.id || '',
-    {
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
-      },
-    },
   )
 
   const form = useKyoraForm({
@@ -70,34 +57,40 @@ export function UpdateProductForm({
       stockQuantityAlert: variant?.stockQuantityAlert || 0,
     },
     onSubmit: async ({ value }) => {
-      await updateProductMutation.mutateAsync({
-        name: value.name,
-        description: value.description || undefined,
-        photos: value.photos,
-        categoryId: value.categoryId,
-      })
-
-      if (variant) {
-        await updateVariantMutation.mutateAsync({
-          code: variant.code,
-          sku: value.sku || undefined,
+      try {
+        await updateProductMutation.mutateAsync({
+          name: value.name,
+          description: value.description || undefined,
           photos: value.photos,
-          costPrice: value.costPrice,
-          salePrice: value.salePrice,
-          stockQuantity:
-            typeof value.stockQuantity === 'string'
-              ? parseInt(value.stockQuantity, 10)
-              : value.stockQuantity,
-          stockQuantityAlert:
-            typeof value.stockQuantityAlert === 'string'
-              ? parseInt(value.stockQuantityAlert, 10)
-              : value.stockQuantityAlert,
+          categoryId: value.categoryId,
         })
-      }
 
-      toast.success(tInventory('product_updated'))
-      queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
-      onSuccess()
+        if (variant) {
+          await updateVariantMutation.mutateAsync({
+            code: variant.code,
+            sku: value.sku || undefined,
+            photos: value.photos,
+            costPrice: value.costPrice,
+            salePrice: value.salePrice,
+            stockQuantity:
+              typeof value.stockQuantity === 'string'
+                ? parseInt(value.stockQuantity, 10)
+                : value.stockQuantity,
+            stockQuantityAlert:
+              typeof value.stockQuantityAlert === 'string'
+                ? parseInt(value.stockQuantityAlert, 10)
+                : value.stockQuantityAlert,
+          })
+        }
+
+        toast.success(tInventory('product_updated'))
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.inventory.all,
+        })
+        onSuccess()
+      } catch {
+        // Global QueryClient error handler shows the error toast.
+      }
     },
   })
 

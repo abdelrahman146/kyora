@@ -33,6 +33,7 @@ export interface ListCustomersFilters {
 export interface CustomerAddress {
   id: string
   customerId: string
+  shippingZoneId?: string
   countryCode: string
   state: string
   city: string
@@ -74,6 +75,9 @@ export interface Customer {
   ordersCount: number
   totalSpent: number
   avatarUrl?: string
+
+  // Detail-only fields
+  notes?: Array<CustomerNote>
 }
 
 export interface ListResponse<T> {

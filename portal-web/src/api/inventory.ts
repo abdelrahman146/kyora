@@ -648,6 +648,25 @@ export function useUpdateVariantMutation(
   })
 }
 
+export interface UpdateVariantByIdRequest {
+  variantId: string
+  data: UpdateVariantRequest
+}
+
+/**
+ * Hook to update a variant when the variantId is only known at call time.
+ */
+export function useUpdateVariantByIdMutation(
+  businessDescriptor: string,
+  options?: UseMutationOptions<Variant, Error, UpdateVariantByIdRequest>,
+) {
+  return useMutation({
+    mutationFn: ({ variantId, data }: UpdateVariantByIdRequest) =>
+      inventoryApi.updateVariant(businessDescriptor, variantId, data),
+    ...options,
+  })
+}
+
 /**
  * Hook to delete a variant
  */
@@ -658,6 +677,20 @@ export function useDeleteVariantMutation(
 ) {
   return useMutation({
     mutationFn: () => inventoryApi.deleteVariant(businessDescriptor, variantId),
+    ...options,
+  })
+}
+
+/**
+ * Hook to delete a variant when the variantId is only known at call time.
+ */
+export function useDeleteVariantByIdMutation(
+  businessDescriptor: string,
+  options?: UseMutationOptions<void, Error, string>,
+) {
+  return useMutation({
+    mutationFn: (variantId: string) =>
+      inventoryApi.deleteVariant(businessDescriptor, variantId),
     ...options,
   })
 }

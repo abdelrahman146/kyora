@@ -9,12 +9,12 @@ import { useKyoraForm } from '@/lib/form'
 import { BusinessContext } from '@/lib/form/components/FileUploadField'
 import { multiVariantProductSchema } from '@/schemas/inventory'
 import {
-  inventoryApi,
   useCreateVariantMutation,
+  useDeleteVariantByIdMutation,
   useUpdateProductMutation,
+  useUpdateVariantByIdMutation,
 } from '@/api/inventory'
 import { queryKeys } from '@/lib/queryKeys'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface UpdateProductWithVariantsFormProps {
@@ -51,24 +51,18 @@ export function UpdateProductWithVariantsForm({
   const updateProductMutation = useUpdateProductMutation(
     businessDescriptor,
     product.id,
-    {
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
-      },
-    },
   )
 
   const createVariantMutation = useCreateVariantMutation(
     businessDescriptor,
     product.id,
-    {
-      onError: async (error) => {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
-      },
-    },
   )
+
+  const updateVariantByIdMutation =
+    useUpdateVariantByIdMutation(businessDescriptor)
+
+  const deleteVariantByIdMutation =
+    useDeleteVariantByIdMutation(businessDescriptor)
 
   const form = useKyoraForm({
     defaultValues: {
@@ -116,20 +110,23 @@ export function UpdateProductWithVariantsForm({
         const newVariants = variants.filter((variant) => !variant.id)
 
         for (const variant of existingVariants) {
-          await inventoryApi.updateVariant(businessDescriptor, variant.id, {
-            code: variant.code,
-            sku: variant.sku || undefined,
-            photos: variant.photos,
-            costPrice: variant.costPrice,
-            salePrice: variant.salePrice,
-            stockQuantity:
-              typeof variant.stockQuantity === 'string'
-                ? parseInt(variant.stockQuantity, 10)
-                : variant.stockQuantity,
-            stockQuantityAlert:
-              typeof variant.stockQuantityAlert === 'string'
-                ? parseInt(variant.stockQuantityAlert, 10)
-                : variant.stockQuantityAlert,
+          await updateVariantByIdMutation.mutateAsync({
+            variantId: variant.id,
+            data: {
+              code: variant.code,
+              sku: variant.sku || undefined,
+              photos: variant.photos,
+              costPrice: variant.costPrice,
+              salePrice: variant.salePrice,
+              stockQuantity:
+                typeof variant.stockQuantity === 'string'
+                  ? parseInt(variant.stockQuantity, 10)
+                  : variant.stockQuantity,
+              stockQuantityAlert:
+                typeof variant.stockQuantityAlert === 'string'
+                  ? parseInt(variant.stockQuantityAlert, 10)
+                  : variant.stockQuantityAlert,
+            },
           })
         }
 
@@ -153,21 +150,25 @@ export function UpdateProductWithVariantsForm({
         }
 
         for (const variantId of variantsToDelete) {
-          await inventoryApi.deleteVariant(businessDescriptor, variantId)
+          await deleteVariantByIdMutation.mutateAsync(variantId)
         }
 
         toast.success(tInventory('product_updated'))
-        queryClient.invalidateQueries({ queryKey: queryKeys.inventory.all })
+        void queryClient.invalidateQueries({
+          queryKey: queryKeys.inventory.all,
+        })
         onSuccess()
-      } catch (error) {
-        const message = await translateErrorAsync(error, tInventory)
-        toast.error(message)
+      } catch {
+        // Global QueryClient error handler shows the error toast.
       }
     },
   })
 
   const isLoading =
-    updateProductMutation.isPending || createVariantMutation.isPending
+    updateProductMutation.isPending ||
+    createVariantMutation.isPending ||
+    updateVariantByIdMutation.isPending ||
+    deleteVariantByIdMutation.isPending
 
   const handleDeleteVariant = (variantId: string) => {
     const currentVariants = form.getFieldValue('variants') as Array<{

@@ -16,7 +16,7 @@ import { useTranslation } from 'react-i18next'
 import { del, get, patch, post } from './client'
 import type { CustomerAddress } from './customer'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
-import { showErrorToast, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 
 // Request types
 export interface CreateAddressRequest {
@@ -148,7 +148,6 @@ export function useCreateAddressMutation(
 ) {
   const queryClient = useQueryClient()
   const { t: tCustomers } = useTranslation('customers')
-  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (data: CreateAddressRequest) =>
@@ -164,9 +163,6 @@ export function useCreateAddressMutation(
       })
       showSuccessToast(tCustomers('address.create_success'))
     },
-    onError: () => {
-      showErrorToast(tErrors('generic.unexpected'))
-    },
   })
 }
 
@@ -180,7 +176,6 @@ export function useUpdateAddressMutation(
 ) {
   const queryClient = useQueryClient()
   const { t: tCustomers } = useTranslation('customers')
-  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (data: UpdateAddressRequest) =>
@@ -194,9 +189,6 @@ export function useUpdateAddressMutation(
       })
       showSuccessToast(tCustomers('address.update_success'))
     },
-    onError: () => {
-      showErrorToast(tErrors('generic.unexpected'))
-    },
   })
 }
 
@@ -209,7 +201,6 @@ export function useDeleteAddressMutation(
 ) {
   const queryClient = useQueryClient()
   const { t: tCustomers } = useTranslation('customers')
-  const { t: tErrors } = useTranslation('errors')
 
   return useMutation({
     mutationFn: (addressId: string) =>
@@ -222,9 +213,6 @@ export function useDeleteAddressMutation(
         queryKey: queryKeys.customers.detail(businessDescriptor, customerId),
       })
       showSuccessToast(tCustomers('address.delete_success'))
-    },
-    onError: () => {
-      showErrorToast(tErrors('generic.unexpected'))
     },
   })
 }

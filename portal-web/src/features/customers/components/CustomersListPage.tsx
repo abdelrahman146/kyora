@@ -22,7 +22,7 @@ import {
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dialog } from '@/components/molecules/Dialog'
 import { ResourceListLayout } from '@/components/templates/ResourceListLayout'
-import { showErrorFromException, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form/useKyoraForm'
 import { useCountriesQuery } from '@/api/metadata'
@@ -144,9 +144,6 @@ export function CustomersListPage() {
       showSuccessToast(tCustomers('delete_success'))
       setIsDeleteDialogOpen(false)
       setSelectedCustomer(null)
-    },
-    onError: (error) => {
-      void showErrorFromException(error, tCustomers)
     },
   })
 

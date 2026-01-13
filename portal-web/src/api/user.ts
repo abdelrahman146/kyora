@@ -15,7 +15,7 @@ import { useTranslation } from 'react-i18next'
 import { get, patch } from './client'
 import type { User } from './types/auth'
 import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
-import { showErrorToast, showSuccessToast } from '@/lib/toast'
+import { showSuccessToast } from '@/lib/toast'
 
 export interface UpdateUserRequest {
   firstName?: string
@@ -89,9 +89,6 @@ export function useUpdateUserMutation() {
       // Update user in cache
       queryClient.setQueryData(queryKeys.user.current(), updatedUser)
       showSuccessToast(t('profile.updateSuccess'))
-    },
-    onError: () => {
-      showErrorToast(t('profile.updateError'))
     },
   })
 }

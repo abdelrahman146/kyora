@@ -212,12 +212,12 @@ Guiding rule: **backend is the source of truth for API contracts**. Portal-web s
   - **Impact:** inconsistent contributor behavior; higher chance of duplicated keys and missing locale parity checks.
   - **Fix:** either (A) migrate storefront to the same JSON namespace structure, or (B) document storefront as legacy and ensure validation covers both representations.
 
-- [ ] **Backend lacks stable machine-readable error codes for consistent translation mapping**
+- [x] **Backend lacks stable machine-readable error codes for consistent translation mapping**
   - **Where:** backend Problem JSON generally lacks an `extensions.code` (portal often maps by status and sometimes URL)
   - **Impact:** translation mappings become endpoint-specific and brittle; hard to provide precise, consistent localized messages.
   - **Fix:** standardize on a small set of stable error codes (e.g. `extensions.code`) and map them to `errors.*` keys in one place in portal.
 
-- [ ] **Portal TanStack Query has no global error handler (errors handled ad-hoc)**
+- [x] **Portal TanStack Query has no global error handler (errors handled ad-hoc)**
   - **Where:** `portal-web/src/main.tsx` (QueryClient config)
   - **Current behavior:** QueryClient defaultOptions exist, but there is no `QueryCache`/`MutationCache` `onError` that translates and shows a consistent toast for HTTP 4xx/5xx.
   - **Impact:** inconsistent UX; many mutations show generic errors; background queries may fail silently or surface inconsistent messages.

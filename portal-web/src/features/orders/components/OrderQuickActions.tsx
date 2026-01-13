@@ -13,7 +13,13 @@ import {
 import toast from 'react-hot-toast'
 
 import type { Order } from '@/api/order'
-import { orderApi, orderQueries } from '@/api/order'
+import {
+  orderQueries,
+  useDeleteOrderMutation,
+  useUpdateOrderMutation,
+  useUpdateOrderPaymentStatusMutation,
+  useUpdateOrderStatusMutation,
+} from '@/api/order'
 import { BottomSheet } from '@/components'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { useKyoraForm } from '@/lib/form'
@@ -38,6 +44,23 @@ export function OrderQuickActions({
   const [showAddressSheet, setShowAddressSheet] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
 
+  const updateStatusMutation = useUpdateOrderStatusMutation(
+    businessDescriptor,
+    order.id,
+  )
+  const updatePaymentStatusMutation = useUpdateOrderPaymentStatusMutation(
+    businessDescriptor,
+    order.id,
+  )
+  const updateOrderMutation = useUpdateOrderMutation(
+    businessDescriptor,
+    order.id,
+  )
+  const deleteOrderMutation = useDeleteOrderMutation(
+    businessDescriptor,
+    order.id,
+  )
+
   const statusFormId = `order-status-form-${formId}`
   const paymentFormId = `order-payment-form-${formId}`
   const addressFormId = `order-address-form-${formId}`
@@ -49,14 +72,12 @@ export function OrderQuickActions({
     onSubmit: async ({ value }) => {
       setIsUpdating(true)
       try {
-        await orderApi.updateOrderStatus(businessDescriptor, order.id, {
-          status: value.status,
-        })
+        await updateStatusMutation.mutateAsync({ status: value.status })
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
         toast.success(tOrders('status_updated'))
         setShowStatusSheet(false)
       } catch {
-        toast.error(tCommon('error_occurred'))
+        // Global QueryClient error handler shows the error toast.
       } finally {
         setIsUpdating(false)
       }
@@ -73,12 +94,12 @@ export function OrderQuickActions({
     onSubmit: async ({ value }) => {
       setIsUpdating(true)
       try {
-        await orderApi.updateOrderPaymentStatus(businessDescriptor, order.id, {
+        await updatePaymentStatusMutation.mutateAsync({
           paymentStatus: value.paymentStatus,
         })
         /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
         if (value.paymentStatus === 'paid' && value.paymentMethod) {
-          await orderApi.updateOrder(businessDescriptor, order.id, {
+          await updateOrderMutation.mutateAsync({
             items:
               order.items?.map((item) => ({
                 variantId: item.variantId,
@@ -92,7 +113,7 @@ export function OrderQuickActions({
         toast.success(tOrders('payment_status_updated'))
         setShowPaymentSheet(false)
       } catch {
-        toast.error(tCommon('error_occurred'))
+        // Global QueryClient error handler shows the error toast.
       } finally {
         setIsUpdating(false)
       }
@@ -106,7 +127,7 @@ export function OrderQuickActions({
     onSubmit: async ({ value }) => {
       setIsUpdating(true)
       try {
-        await orderApi.updateOrder(businessDescriptor, order.id, {
+        await updateOrderMutation.mutateAsync({
           shippingAddressId: value.shippingAddressId,
           items:
             order.items?.map((item) => ({
@@ -120,7 +141,7 @@ export function OrderQuickActions({
         toast.success(tOrders('shipping_address_updated'))
         setShowAddressSheet(false)
       } catch {
-        toast.error(tCommon('error_occurred'))
+        // Global QueryClient error handler shows the error toast.
       } finally {
         setIsUpdating(false)
       }
@@ -134,12 +155,12 @@ export function OrderQuickActions({
       )
     ) {
       try {
-        await orderApi.deleteOrder(businessDescriptor, order.id)
+        await deleteOrderMutation.mutateAsync()
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
         toast.success(tOrders('delete_success'))
         onDeleteSuccess?.()
       } catch {
-        toast.error(tCommon('error_occurred'))
+        // Global QueryClient error handler shows the error toast.
       }
     }
   }

@@ -9,7 +9,6 @@ import type { Category } from '@/api/inventory'
 import { useCategoriesQuery, useCreateCategoryMutation } from '@/api/inventory'
 import { FormSelect } from '@/components/form'
 import { queryKeys } from '@/lib/queryKeys'
-import { translateErrorAsync } from '@/lib/translateError'
 
 interface CategorySelectFieldProps extends Omit<
   SelectFieldProps<string>,
@@ -52,10 +51,6 @@ export function CategorySelectField({
         t('category_created', { ns: 'inventory', name: category.name }),
       )
     },
-    onError: async (error) => {
-      const message = await translateErrorAsync(error, t)
-      toast.error(message)
-    },
   })
 
   const options = useMemo(
@@ -89,10 +84,15 @@ export function CategorySelectField({
   const handleCreateCategory = async (name: string) => {
     const trimmed = name.trim()
     if (!trimmed || createCategoryMutation.isPending) return
-    await createCategoryMutation.mutateAsync({
-      name: trimmed,
-      descriptor: businessDescriptor,
-    })
+    try {
+      await createCategoryMutation.mutateAsync({
+        name: trimmed,
+        descriptor: businessDescriptor,
+      })
+    } catch {
+      // Global QueryClient mutation handler will toast.
+      return
+    }
   }
 
   return (
