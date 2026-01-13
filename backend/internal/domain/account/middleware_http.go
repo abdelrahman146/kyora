@@ -44,7 +44,7 @@ func EnforceValidActor(service *Service) gin.HandlerFunc {
 			return
 		}
 		if claims.AuthVersion != user.AuthVersion {
-			response.Error(c, problem.Unauthorized("invalid or expired token"))
+			response.Error(c, problem.Unauthorized("invalid or expired token").WithCode("account.invalid_token"))
 			return
 		}
 		l := logger.FromContext(c.Request.Context())
@@ -60,12 +60,12 @@ func ActorFromContext(c *gin.Context) (*User, error) {
 	user, exists := c.Get(ActorKey)
 	if !exists {
 		logger.FromContext(c.Request.Context()).Error("user not found in context, make sure EnforceValidActor middleware is applied")
-		return nil, problem.InternalError().WithError(errors.New("user not found in context"))
+		return nil, problem.InternalError().WithError(errors.New("user not found in context")).WithCode("account.context_missing")
 	}
 	if user, ok := user.(*User); ok {
 		return user, nil
 	}
-	return nil, problem.InternalError().WithError(errors.New("unable to cast user from context"))
+	return nil, problem.InternalError().WithError(errors.New("unable to cast user from context")).WithCode("account.context_invalid")
 }
 
 var WorkspaceKey = ctxkey.New("workspace")

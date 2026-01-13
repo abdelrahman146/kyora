@@ -133,7 +133,7 @@ func (p *S3CompatibleProvider) Head(ctx context.Context, key string) (*ObjectInf
 	if err != nil {
 		var nsk *types.NotFound
 		if errors.As(err, &nsk) {
-			return nil, ErrObjectNotFound(key)
+			return nil, ErrBlobObjectNotFound(key)
 		}
 		return nil, err
 	}

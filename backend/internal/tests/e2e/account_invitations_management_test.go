@@ -90,6 +90,12 @@ func (s *InvitationManagementSuite) TestInviteUser_DuplicateEmail() {
 
 	// Should return conflict because a pending invitation already exists for this email
 	s.Equal(http.StatusConflict, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.invitation_already_exists", code)
+
 	_ = user
 	_ = workspace
 }
@@ -111,6 +117,11 @@ func (s *InvitationManagementSuite) TestInviteUser_NoPermission() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusForbidden, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.permission_denied", code)
 }
 
 func (s *InvitationManagementSuite) TestGetWorkspaceInvitations_Success() {
@@ -206,6 +217,11 @@ func (s *InvitationManagementSuite) TestRevokeInvitation_NotFound() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusNotFound, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.invitation_not_found", code)
 }
 
 func (s *InvitationManagementSuite) TestRevokeInvitation_AlreadyAccepted() {
@@ -222,6 +238,12 @@ func (s *InvitationManagementSuite) TestRevokeInvitation_AlreadyAccepted() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusConflict, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.invitation_cannot_be_revoked", code)
+
 	var result map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp, &result))
 	s.Contains(result["detail"], "only pending invitations can be revoked")
@@ -247,6 +269,11 @@ func (s *InvitationManagementSuite) TestRevokeInvitation_CrossWorkspace_NotFound
 
 	// Must not reveal existence across workspaces
 	s.Equal(http.StatusNotFound, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.invitation_not_found", code)
 
 	// Ensure invitation was not modified
 	updatedInvitation, err := s.helper.GetInvitation(ctx, invitationB.ID)
@@ -352,6 +379,12 @@ func (s *InvitationAcceptanceSuite) TestAcceptInvitation_InvalidToken() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusUnauthorized, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.invalid_invitation_token", code)
+
 	var result map[string]interface{}
 	s.NoError(testutils.DecodeJSON(resp, &result))
 	s.Contains(result["detail"], "invalid or expired token")
@@ -369,6 +402,11 @@ func (s *InvitationAcceptanceSuite) TestAcceptInvitation_MissingToken() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("request.invalid_query_parameter", code)
 }
 
 func (s *InvitationAcceptanceSuite) TestAcceptInvitation_MissingPassword() {
@@ -389,6 +427,11 @@ func (s *InvitationAcceptanceSuite) TestAcceptInvitation_MissingPassword() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("request.invalid_body", code)
 }
 
 func (s *InvitationAcceptanceSuite) TestAcceptInvitation_ShortPassword() {
@@ -410,6 +453,11 @@ func (s *InvitationAcceptanceSuite) TestAcceptInvitation_ShortPassword() {
 	defer resp.Body.Close()
 
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("request.invalid_body", code)
 }
 
 func (s *InvitationAcceptanceSuite) TestAcceptInvitation_AlreadyAccepted() {

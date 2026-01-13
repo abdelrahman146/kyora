@@ -93,5 +93,8 @@ func (r Role) HasPermission(action Action, resource Resource) error {
 }
 
 func UnauthorizedError(action Action, resource Resource) error {
-	return problem.Forbidden(fmt.Sprintf("unauthorized to %s %s", action, resource)).With("action", action).With("resource", resource)
+	return problem.Forbidden(fmt.Sprintf("unauthorized to %s %s", action, resource)).
+		With("action", action).
+		With("resource", resource).
+		WithCode("account.permission_denied")
 }

@@ -55,6 +55,11 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_MissingToken() {
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("request.invalid_body", code)
 }
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidToken() {
@@ -65,6 +70,11 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidToken() {
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusNotFound, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("onboarding.session_not_found", code)
 }
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidStage() {
@@ -82,6 +92,11 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_InvalidStage() {
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("onboarding.invalid_stage", code)
 }
 
 func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_RateLimit() {
@@ -103,6 +118,12 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_RateLimit() {
 	resp2, err := s.client.Post("/v1/onboarding/email/otp", payload)
 	s.NoError(err)
 	s.Equal(http.StatusTooManyRequests, resp2.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp2)
+	s.NoError(err)
+	s.Equal("onboarding.otp_rate_limited", code)
+
 	var p2 struct {
 		Extensions map[string]any `json:"extensions"`
 	}
@@ -137,6 +158,11 @@ func (s *OnboardingEmailOTPSuite) TestSendEmailOTP_ExpiredSession() {
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("onboarding.session_expired", code)
 }
 
 func TestOnboardingEmailOTPSuite(t *testing.T) {

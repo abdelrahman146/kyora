@@ -25,6 +25,14 @@ func (p *Problem) With(key string, value any) *Problem {
 	return p
 }
 
+func (p *Problem) WithCode(code string) *Problem {
+	if p.Extensions == nil {
+		p.Extensions = make(map[string]any)
+	}
+	p.Extensions["code"] = code
+	return p
+}
+
 func (p *Problem) WithError(err error) *Problem {
 	p.err = err
 	return p

@@ -17,13 +17,13 @@ var (
 func EnforceAuthentication(c *gin.Context) {
 	jwtToken := JwtFromContext(c)
 	if jwtToken == "" {
-		response.Error(c, problem.Unauthorized("unauthorized"))
+		response.Error(c, problem.Unauthorized("unauthorized").WithCode("auth.unauthorized"))
 		return
 	}
 	// verify jwtToken
 	claims, err := ParseJwtToken(jwtToken)
 	if err != nil {
-		response.Error(c, problem.Unauthorized("unauthorized").WithError(err))
+		response.Error(c, problem.Unauthorized("unauthorized").WithError(err).WithCode("auth.invalid_token"))
 		return
 	}
 	c.Set(ClaimsKey, claims)
@@ -34,12 +34,12 @@ func ClaimsFromContext(c *gin.Context) (*CustomClaims, error) {
 	claimsVal, exists := c.Get(ClaimsKey)
 	if !exists {
 		logger.FromContext(c.Request.Context()).Error("claims not found in context, make sure EnforceAuthentication middleware is applied")
-		return nil, problem.InternalError().WithError(errors.New("claims not found in context"))
+		return nil, problem.InternalError().WithError(errors.New("claims not found in context")).WithCode("auth.context_missing")
 	}
 	claims, ok := claimsVal.(*CustomClaims)
 	if !ok {
 		logger.FromContext(c.Request.Context()).Error("unable to cast claims from context")
-		return nil, problem.InternalError().WithError(errors.New("unable to cast claims from context"))
+		return nil, problem.InternalError().WithError(errors.New("unable to cast claims from context")).WithCode("auth.context_invalid")
 	}
 	return claims, nil
 }

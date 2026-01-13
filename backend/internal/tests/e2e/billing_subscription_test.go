@@ -112,6 +112,11 @@ func (s *BillingSubscriptionSuite) TestSubscription_Create_ForbiddenForMember() 
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusForbidden, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("account.permission_denied", code)
 }
 
 func TestBillingSubscriptionSuite(t *testing.T) {

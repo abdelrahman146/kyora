@@ -7,7 +7,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
 
@@ -37,7 +36,7 @@ func parseDateParam(value string, field string) (time.Time, error) {
 	}
 	t, err := time.Parse(dateLayout, value)
 	if err != nil {
-		return time.Time{}, problem.BadRequest("invalid " + field + " date format, use YYYY-MM-DD").WithError(err)
+		return time.Time{}, ErrInvalidDateFormat(field, err)
 	}
 	return t, nil
 }
@@ -83,7 +82,7 @@ func (h *HttpHandler) GetDashboardMetrics(c *gin.Context) {
 
 	metrics, err := h.service.ComputeDashboardMetrics(c.Request.Context(), actor, biz)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 
@@ -122,7 +121,7 @@ func (h *HttpHandler) GetSalesAnalytics(c *gin.Context) {
 
 	var query salesAnalyticsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -144,13 +143,13 @@ func (h *HttpHandler) GetSalesAnalytics(c *gin.Context) {
 	}
 	from, to = defaultDateRange(from, to)
 	if to.Before(from) {
-		response.Error(c, problem.BadRequest("to must be on or after from").With("from", from.Format(dateLayout)).With("to", to.Format(dateLayout)))
+		response.Error(c, ErrInvalidDateRange(from.Format(dateLayout), to.Format(dateLayout)))
 		return
 	}
 
 	res, err := h.service.ComputeSalesAnalytics(c.Request.Context(), actor, biz, from, to)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 
@@ -189,7 +188,7 @@ func (h *HttpHandler) GetInventoryAnalytics(c *gin.Context) {
 
 	var query inventoryAnalyticsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -211,13 +210,13 @@ func (h *HttpHandler) GetInventoryAnalytics(c *gin.Context) {
 	}
 	from, to = defaultDateRange(from, to)
 	if to.Before(from) {
-		response.Error(c, problem.BadRequest("to must be on or after from").With("from", from.Format(dateLayout)).With("to", to.Format(dateLayout)))
+		response.Error(c, ErrInvalidDateRange(from.Format(dateLayout), to.Format(dateLayout)))
 		return
 	}
 
 	res, err := h.service.ComputeInventoryAnalytics(c.Request.Context(), actor, biz, from, to)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, res)
@@ -255,7 +254,7 @@ func (h *HttpHandler) GetCustomerAnalytics(c *gin.Context) {
 
 	var query customerAnalyticsQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -277,13 +276,13 @@ func (h *HttpHandler) GetCustomerAnalytics(c *gin.Context) {
 	}
 	from, to = defaultDateRange(from, to)
 	if to.Before(from) {
-		response.Error(c, problem.BadRequest("to must be on or after from").With("from", from.Format(dateLayout)).With("to", to.Format(dateLayout)))
+		response.Error(c, ErrInvalidDateRange(from.Format(dateLayout), to.Format(dateLayout)))
 		return
 	}
 
 	res, err := h.service.ComputeCustomerAnalytics(c.Request.Context(), actor, biz, from, to)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 
@@ -320,7 +319,7 @@ func (h *HttpHandler) GetFinancialPosition(c *gin.Context) {
 
 	var query reportAsOfQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -341,7 +340,7 @@ func (h *HttpHandler) GetFinancialPosition(c *gin.Context) {
 
 	res, err := h.service.ComputeFinancialPosition(c.Request.Context(), actor, biz, asOf)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, res)
@@ -371,7 +370,7 @@ func (h *HttpHandler) GetProfitAndLoss(c *gin.Context) {
 
 	var query reportAsOfQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -392,7 +391,7 @@ func (h *HttpHandler) GetProfitAndLoss(c *gin.Context) {
 
 	res, err := h.service.ComputeProfitAndLoss(c.Request.Context(), actor, biz, asOf)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, res)
@@ -422,7 +421,7 @@ func (h *HttpHandler) GetCashFlow(c *gin.Context) {
 
 	var query reportAsOfQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrInvalidQueryParams(err))
 		return
 	}
 
@@ -443,7 +442,7 @@ func (h *HttpHandler) GetCashFlow(c *gin.Context) {
 
 	res, err := h.service.ComputeCashFlow(c.Request.Context(), actor, biz, asOf)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrAnalyticsQueryFailed(err))
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, res)

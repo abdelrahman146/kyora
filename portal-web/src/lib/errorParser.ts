@@ -3,6 +3,9 @@ import type { HTTPError } from 'ky'
 /**
  * ProblemDetails interface based on RFC 7807
  * Matches the backend problem.Problem type from swagger.json
+ *
+ * All backend errors now include `extensions.code` for machine-readable error mapping.
+ * Example: { extensions: { code: "account.invalid_credentials" } }
  */
 export interface ProblemDetails {
   type?: string
@@ -19,7 +22,7 @@ export interface ProblemDetails {
 export interface ErrorResult {
   key: string
   ns?: string
-  params?: Record<string, string | number>
+  params?: Record<string, string | number | Record<string, unknown>>
   fallback?: string
 }
 
@@ -27,6 +30,10 @@ export interface ErrorResult {
  * Parses backend ProblemDetails error responses into translation keys
  * Returns an ErrorResult with the i18n key and optional interpolation params
  * Falls back to generic error keys if parsing fails
+ *
+ * Priority:
+ * 1. Use extensions.code if available → "errors.backend.<code>"
+ * 2. Fall back to status-based keys for graceful degradation
  */
 export async function parseProblemDetails(
   error: unknown,
@@ -56,32 +63,33 @@ export async function parseProblemDetails(
           ? (body as { detail: string }).detail
           : undefined
 
-      // Special-case: invalid credentials on login should show a friendly auth message.
-      // Backend returns 401 for invalid login, which is expected and should not be treated
-      // as a generic "unauthorized"/"session expired" error.
+      // Priority 1: Check for extensions.code (machine-readable error code)
       if (
-        httpError.response.status === 401 &&
-        typeof httpError.response.url === 'string' &&
-        httpError.response.url.endsWith('/v1/auth/login')
+        body &&
+        typeof body === 'object' &&
+        'extensions' in body &&
+        (body as { extensions?: unknown }).extensions &&
+        typeof (body as { extensions: unknown }).extensions === 'object'
       ) {
-        return { ns: 'errors', key: 'auth.invalid_credentials', fallback }
-      }
+        const extensions = (body as { extensions: Record<string, unknown> })
+          .extensions
+        if (extensions.code && typeof extensions.code === 'string') {
+          // Extract all extension properties except 'code' as details for translation
+          const { code, ...details } = extensions
 
-      // Special-case: onboarding verify email can return 409 when the email is already registered.
-      // Show a friendly message that nudges the user to login instead of a generic conflict.
-      if (
-        httpError.response.status === 409 &&
-        typeof httpError.response.url === 'string' &&
-        httpError.response.url.endsWith('/v1/onboarding/email/verify')
-      ) {
-        return {
-          ns: 'errors',
-          key: 'onboarding.email_already_exists',
-          fallback,
+          // Return "errors.backend.<code>" for i18n lookup
+          // Include details in params for flexible translations like:
+          // "you cannot update order status from {details.orderStatusBefore} to {details.orderStatusAfter}"
+          return {
+            ns: 'errors',
+            key: `backend.${code}`,
+            params: Object.keys(details).length > 0 ? { details } : undefined,
+            fallback,
+          }
         }
       }
 
-      // Return translation key based on status code
+      // Priority 2: Fall back to status code mapping for graceful degradation
       return {
         ...getStatusErrorKey(httpError.response.status),
         fallback,

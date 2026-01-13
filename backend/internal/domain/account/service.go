@@ -57,7 +57,7 @@ func (s *Service) GetWorkspaceUserByID(ctx context.Context, workspaceID, userID 
 		if database.IsRecordNotFound(err) {
 			return nil, ErrUserNotInWorkspace(err)
 		}
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 	return user, nil
 }
@@ -108,18 +108,18 @@ func (s *Service) issueTokensForUser(ctx context.Context, user *User, clientIP, 
 	if user.AuthVersion <= 0 {
 		user.AuthVersion = 1
 		if err := s.storage.user.UpdateOne(ctx, user); err != nil {
-			return nil, problem.InternalError().WithError(err)
+			return nil, ErrAccountOperationFailed(err)
 		}
 	}
 
 	accessToken, err := auth.NewJwtToken(user.ID, user.WorkspaceID, user.AuthVersion)
 	if err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	rawRefresh, err := auth.NewRefreshToken()
 	if err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 	hash := auth.HashRefreshToken(rawRefresh)
 
@@ -141,7 +141,7 @@ func (s *Service) issueTokensForUser(ctx context.Context, user *User, clientIP, 
 		sess.CreatedIP = "unknown"
 	}
 	if err := s.storage.CreateSession(ctx, sess); err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	return &RefreshResponse{Token: accessToken, RefreshToken: rawRefresh}, nil
@@ -206,7 +206,7 @@ func (s *Service) RefreshTokens(ctx context.Context, refreshToken, clientIP, use
 		if database.IsRecordNotFound(err) {
 			return nil, ErrInvalidOrExpiredToken(err)
 		}
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	user, err := s.GetUserByID(ctx, sess.UserID)
@@ -216,7 +216,7 @@ func (s *Service) RefreshTokens(ctx context.Context, refreshToken, clientIP, use
 
 	// Rotate token: revoke old first to minimize replay window.
 	if err := s.storage.RevokeSessionByTokenHash(ctx, hash); err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	return s.issueTokensForUser(ctx, user, clientIP, userAgent)
@@ -229,7 +229,7 @@ func (s *Service) Logout(ctx context.Context, refreshToken string) error {
 	}
 	hash := auth.HashRefreshToken(refreshToken)
 	if err := s.storage.RevokeSessionByTokenHash(ctx, hash); err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	return nil
 }
@@ -245,7 +245,7 @@ func (s *Service) LogoutAll(ctx context.Context, refreshToken string) error {
 		if database.IsRecordNotFound(err) {
 			return ErrInvalidOrExpiredToken(err)
 		}
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 
 	user, err := s.GetUserByID(ctx, sess.UserID)
@@ -256,11 +256,11 @@ func (s *Service) LogoutAll(ctx context.Context, refreshToken string) error {
 	// Immediately invalidate all access tokens.
 	user.AuthVersion++
 	if err := s.storage.user.UpdateOne(ctx, user); err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 
 	if err := s.storage.RevokeAllSessionsForUser(ctx, user.ID); err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	return nil
 }
@@ -276,10 +276,10 @@ func (s *Service) LogoutOtherDevices(ctx context.Context, refreshToken string) e
 		if database.IsRecordNotFound(err) {
 			return ErrInvalidOrExpiredToken(err)
 		}
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	if err := s.storage.RevokeOtherSessionsForUser(ctx, sess.UserID, hash); err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	return nil
 }
@@ -301,7 +301,7 @@ func (s *Service) CreateVerifyEmailToken(ctx context.Context, email string) (str
 		Email:       user.Email,
 	})
 	if err != nil {
-		return "", problem.InternalError().WithError(err)
+		return "", ErrAccountOperationFailed(err)
 	}
 
 	err = s.Notification.SendEmailVerificationEmail(ctx, user, token, expAt)
@@ -323,11 +323,11 @@ func (s *Service) VerifyEmail(ctx context.Context, token string) error {
 	user.IsEmailVerified = true
 	err = s.storage.user.UpdateOne(ctx, user)
 	if err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	err = s.storage.ConsumeVerifyEmailToken(token)
 	if err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	return nil
 }
@@ -349,7 +349,7 @@ func (s *Service) CreatePasswordResetToken(ctx context.Context, email string) (s
 		Email:       user.Email,
 	})
 	if err != nil {
-		return "", problem.InternalError().WithError(err)
+		return "", ErrAccountOperationFailed(err)
 	}
 
 	// Try to send email using the email integration
@@ -372,22 +372,22 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 	}
 	hashedPassword, err := hash.Password(newPassword)
 	if err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	user.Password = hashedPassword
 	user.AuthVersion++
 	err = s.storage.user.UpdateOne(ctx, user)
 	if err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 	err = s.storage.ConsumePasswordResetToken(token)
 	if err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 
 	// Revoke all sessions so password resets kick everyone out.
 	if err := s.storage.RevokeAllSessionsForUser(ctx, user.ID); err != nil {
-		return problem.InternalError().WithError(err)
+		return ErrAccountOperationFailed(err)
 	}
 
 	// Send password reset confirmation email
@@ -402,11 +402,11 @@ func (s *Service) ResetPassword(ctx context.Context, token, newPassword string) 
 func (s *Service) GetGoogleAuthURL(ctx context.Context) (url string, state string, err error) {
 	state, err = id.RandomString(24)
 	if err != nil {
-		return "", "", problem.InternalError().WithError(err)
+		return "", "", ErrAccountOperationFailed(err)
 	}
 	url, err = auth.GoogleGetAuthURL(ctx, state)
 	if err != nil {
-		return "", "", problem.InternalError().WithError(err)
+		return "", "", ErrAccountOperationFailed(err)
 	}
 	return url, state, nil
 }
@@ -414,7 +414,7 @@ func (s *Service) GetGoogleAuthURL(ctx context.Context) (url string, state strin
 func (s *Service) ExchangeGoogleCodeAndFetchUser(ctx context.Context, code string) (*auth.GoogleUserInfo, error) {
 	info, err := auth.GoogleExchangeAndFetchUser(ctx, code)
 	if err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 	return info, nil
 }
@@ -519,7 +519,7 @@ func (s *Service) InviteUserToWorkspace(ctx context.Context, actor *User, worksp
 	}
 
 	if err := s.storage.invitation.CreateOne(ctx, invitation); err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	// Create invitation token
@@ -531,7 +531,7 @@ func (s *Service) InviteUserToWorkspace(ctx context.Context, actor *User, worksp
 		InviterID:    actor.ID,
 	})
 	if err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	// Send invitation email
@@ -585,7 +585,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string, firstName,
 	// Hash password
 	hashedPassword, err := hash.Password(password)
 	if err != nil {
-		return nil, nil, problem.InternalError().WithError(err)
+		return nil, nil, ErrAccountOperationFailed(err)
 	}
 
 	var createdUser *User
@@ -649,7 +649,7 @@ func (s *Service) AcceptInvitationWithGoogleAuth(ctx context.Context, token stri
 
 	// Verify the Google email matches the invitation email
 	if googleUserInfo.Email != payload.Email {
-		return nil, nil, problem.Forbidden("Google account email does not match the invitation email")
+		return nil, nil, problem.Forbidden("Google account email does not match the invitation email").WithCode("account.email_mismatch")
 	}
 
 	// Find the invitation (scoped to token payload)
@@ -747,7 +747,7 @@ func (s *Service) UpdateUserRole(ctx context.Context, actor *User, workspace *Wo
 	// Update role
 	targetUser.Role = newRole
 	if err := s.storage.user.UpdateOne(ctx, targetUser); err != nil {
-		return nil, problem.InternalError().WithError(err)
+		return nil, ErrAccountOperationFailed(err)
 	}
 
 	return targetUser, nil
@@ -779,7 +779,7 @@ func (s *Service) RevokeInvitation(ctx context.Context, workspaceID string, invi
 	}
 
 	if invitation.Status != InvitationStatusPending {
-		return problem.Conflict("only pending invitations can be revoked")
+		return problem.Conflict("only pending invitations can be revoked").WithCode("account.cannot_revoke_invitation")
 	}
 
 	invitation.Status = InvitationStatusRevoked

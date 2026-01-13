@@ -13,7 +13,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/domain/business"
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
 
@@ -136,7 +135,7 @@ func (h *HttpHandler) CompleteMultipartUpload(c *gin.Context) {
 
 	assetID := c.Param("assetId")
 	if assetID == "" {
-		response.Error(c, problem.BadRequest("assetId is required"))
+		response.Error(c, ErrAssetIdRequired())
 		return
 	}
 
@@ -181,7 +180,7 @@ func (h *HttpHandler) CompleteMultipartUpload(c *gin.Context) {
 func (h *HttpHandler) GetPublicAsset(c *gin.Context) {
 	assetID := c.Param("assetId")
 	if assetID == "" {
-		response.Error(c, problem.BadRequest("assetId is required"))
+		response.Error(c, ErrAssetIdRequired())
 		return
 	}
 
@@ -203,7 +202,7 @@ func (h *HttpHandler) GetPublicAsset(c *gin.Context) {
 		return
 	}
 
-	response.Error(c, problem.NotFound("asset not accessible"))
+	response.Error(c, ErrAssetNotAccessible())
 }
 
 // serveLocalFile serves a local file with cache headers.
@@ -211,10 +210,10 @@ func (h *HttpHandler) serveLocalFile(c *gin.Context, asset *Asset) {
 	file, err := os.Open(asset.LocalFilePath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			response.Error(c, problem.NotFound("asset file not found"))
+			response.Error(c, ErrAssetFileNotFound())
 			return
 		}
-		response.Error(c, problem.InternalError())
+		response.Error(c, ErrAssetReadFailed(err))
 		return
 	}
 	defer file.Close()
@@ -222,21 +221,21 @@ func (h *HttpHandler) serveLocalFile(c *gin.Context, asset *Asset) {
 	// Get file info for Last-Modified and ETag
 	fileInfo, err := file.Stat()
 	if err != nil {
-		response.Error(c, problem.InternalError())
+		response.Error(c, ErrAssetReadFailed(err))
 		return
 	}
 
 	// Calculate ETag (MD5 hash of content)
 	hash := md5.New()
 	if _, err := io.Copy(hash, file); err != nil {
-		response.Error(c, problem.InternalError())
+		response.Error(c, ErrAssetReadFailed(err))
 		return
 	}
 	etag := fmt.Sprintf(`"%s"`, hex.EncodeToString(hash.Sum(nil)))
 
 	// Reset file pointer
 	if _, err := file.Seek(0, 0); err != nil {
-		response.Error(c, problem.InternalError())
+		response.Error(c, ErrAssetReadFailed(err))
 		return
 	}
 
@@ -285,13 +284,13 @@ func (h *HttpHandler) serveLocalFile(c *gin.Context, asset *Asset) {
 func (h *HttpHandler) UploadLocalContent(c *gin.Context) {
 	assetID := c.Param("assetId")
 	if assetID == "" {
-		response.Error(c, problem.BadRequest("assetId is required"))
+		response.Error(c, ErrAssetIdRequired())
 		return
 	}
 
 	contentType := c.GetHeader("Content-Type")
 	if contentType == "" {
-		response.Error(c, problem.BadRequest("Content-Type header is required"))
+		response.Error(c, ErrContentTypeRequired())
 		return
 	}
 

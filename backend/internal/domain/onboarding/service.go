@@ -249,7 +249,7 @@ func normalizeHumanName(field, v string) (string, error) {
 }
 
 func schemaValidationError(field, msg string) error {
-	return problem.BadRequest(msg).With("field", field)
+	return problem.BadRequest(msg).With("field", field).WithCode("onboarding.validation_error")
 }
 
 // SetOAuthIdentity stages identity from Google and generates a random password
@@ -468,17 +468,17 @@ func (s *Service) GetSession(ctx context.Context, sessionToken string) (*Onboard
 		}
 		return nil, err
 	}
-	
+
 	// Check expiry
 	if time.Now().After(sess.ExpiresAt) {
 		return nil, ErrSessionExpired(nil)
 	}
-	
+
 	// Check if already committed
 	if sess.Stage == StageCommitted || sess.CommittedAt != nil {
 		return nil, ErrSessionExpired(nil)
 	}
-	
+
 	return sess, nil
 }
 
@@ -492,11 +492,11 @@ func (s *Service) DeleteSession(ctx context.Context, sessionToken string) error 
 		}
 		return err
 	}
-	
-	// Don't allow deleting already committed sessions
-if sess.Stage == StageCommitted || sess.CommittedAt != nil {
-return ErrSessionAlreadyCommitted(nil)
-}
 
-return s.storage.DeleteSession(ctx, sess)
+	// Don't allow deleting already committed sessions
+	if sess.Stage == StageCommitted || sess.CommittedAt != nil {
+		return ErrSessionAlreadyCommitted(nil)
+	}
+
+	return s.storage.DeleteSession(ctx, sess)
 }

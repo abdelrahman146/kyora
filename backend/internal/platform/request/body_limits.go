@@ -25,7 +25,7 @@ func LimitBodySize(maxBytes int64) gin.HandlerFunc {
 		}
 
 		if c.Request.ContentLength > maxBytes {
-			response.Error(c, problem.PayloadTooLarge("request body too large"))
+			response.Error(c, problem.PayloadTooLarge("request body too large").WithCode("request.body_too_large"))
 			c.Abort()
 			return
 		}

@@ -15,7 +15,7 @@ import (
 func ValidBody(c *gin.Context, obj any) error {
 	if c.Request == nil || c.Request.Body == nil {
 		err := errors.New("request body is required")
-		response.Error(c, problem.BadRequest("invalid request body").WithError(err))
+		response.Error(c, problem.BadRequest("invalid request body").WithError(err).WithCode("request.invalid_body"))
 		return err
 	}
 
@@ -25,14 +25,14 @@ func ValidBody(c *gin.Context, obj any) error {
 	if err := dec.Decode(obj); err != nil {
 		var maxBytesErr *http.MaxBytesError
 		if errors.As(err, &maxBytesErr) {
-			response.Error(c, problem.PayloadTooLarge("request body too large").WithError(err))
+			response.Error(c, problem.PayloadTooLarge("request body too large").WithError(err).WithCode("request.body_too_large"))
 			return err
 		}
 
 		if errors.Is(err, io.EOF) {
 			err = errors.New("request body is required")
 		}
-		response.Error(c, problem.BadRequest("invalid request body").WithError(err))
+		response.Error(c, problem.BadRequest("invalid request body").WithError(err).WithCode("request.invalid_body"))
 		return err
 	}
 
@@ -42,13 +42,13 @@ func ValidBody(c *gin.Context, obj any) error {
 		if err == nil {
 			err = errors.New("invalid request body")
 		}
-		response.Error(c, problem.BadRequest("invalid request body").WithError(err))
+		response.Error(c, problem.BadRequest("invalid request body").WithError(err).WithCode("request.invalid_body"))
 		return err
 	}
 
 	if binding.Validator != nil {
 		if err := binding.Validator.ValidateStruct(obj); err != nil {
-			response.Error(c, problem.BadRequest("invalid request body").WithError(err))
+			response.Error(c, problem.BadRequest("invalid request body").WithError(err).WithCode("request.invalid_body"))
 			return err
 		}
 	}

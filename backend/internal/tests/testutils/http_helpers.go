@@ -187,3 +187,55 @@ func ReadBody(resp *http.Response) (string, error) {
 	}
 	return string(body), nil
 }
+
+// ProblemResponse represents an RFC7807 Problem JSON response
+type ProblemResponse struct {
+	Type       string                 `json:"type"`
+	Title      string                 `json:"title"`
+	Status     int                    `json:"status"`
+	Detail     string                 `json:"detail"`
+	Instance   string                 `json:"instance"`
+	Extensions map[string]interface{} `json:"extensions,omitempty"`
+}
+
+// DecodeErrorResponse decodes an error response and returns the Problem JSON.
+// Note: This reads the response body. Make sure to call this before closing resp.Body.
+func DecodeErrorResponse(resp *http.Response) (*ProblemResponse, error) {
+	// Read all content first
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return nil, err
+	}
+
+	var problem ProblemResponse
+	if err := json.Unmarshal(body, &problem); err != nil {
+		return nil, err
+	}
+	return &problem, nil
+}
+
+// GetErrorCode extracts the error code from a Problem JSON response.
+// Note: This reads the response body, so call it before closing resp.Body or
+// reading the body elsewhere.
+func GetErrorCode(resp *http.Response) (string, error) {
+	// Read all content first so we don't consume the body
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return "", err
+	}
+
+	// Restore the body so others can still read it if needed
+	resp.Body = io.NopCloser(bytes.NewBuffer(body))
+
+	var problem ProblemResponse
+	if err := json.Unmarshal(body, &problem); err != nil {
+		return "", err
+	}
+
+	if problem.Extensions != nil {
+		if code, ok := problem.Extensions["code"].(string); ok {
+			return code, nil
+		}
+	}
+	return "", nil
+}

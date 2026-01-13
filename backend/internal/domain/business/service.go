@@ -11,7 +11,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/bus"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/throttle"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
@@ -37,7 +36,7 @@ var businessDescriptorRegex = regexp.MustCompile(`^[a-z0-9][a-z0-9-]{1,62}$`)
 func normalizeBusinessDescriptor(v string) (string, error) {
 	v = strings.TrimSpace(strings.ToLower(v))
 	if v == "" {
-		return "", problem.BadRequest("descriptor is required").With("field", "descriptor")
+		return "", ErrDescriptorRequired()
 	}
 	if !businessDescriptorRegex.MatchString(v) {
 		return "", ErrInvalidBusinessDescriptor(v)
@@ -97,7 +96,7 @@ func (s *Service) GetBusinessByDescriptorForWorkspace(ctx context.Context, works
 func (s *Service) GetBusinessByStorefrontPublicID(ctx context.Context, storefrontPublicID string) (*Business, error) {
 	id := strings.TrimSpace(storefrontPublicID)
 	if id == "" {
-		return nil, problem.BadRequest("storefrontId is required")
+		return nil, ErrStorefrontIdRequired()
 	}
 	biz, err := s.storage.business.FindOne(ctx,
 		s.storage.business.ScopeEquals(BusinessSchema.StorefrontPublicID, id),
@@ -122,7 +121,7 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 		return nil, err
 	}
 	if input == nil {
-		return nil, problem.BadRequest("input is required")
+		return nil, ErrBusinessInputRequired()
 	}
 	normDescriptor, err := normalizeBusinessDescriptor(input.Descriptor)
 	if err != nil {
@@ -131,10 +130,10 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 	country := normalizeCountryCode(input.CountryCode)
 	currency := normalizeCurrency(input.Currency)
 	if len(country) != 2 {
-		return nil, problem.BadRequest("invalid countryCode").With("field", "countryCode")
+		return nil, ErrInvalidCountryCode()
 	}
 	if len(currency) != 3 {
-		return nil, problem.BadRequest("invalid currency").With("field", "currency")
+		return nil, ErrInvalidCurrency()
 	}
 	available, err := s.IsBusinessDescriptorAvailable(ctx, actor, normDescriptor)
 	if err != nil {
@@ -201,14 +200,14 @@ func (s *Service) CreateBusiness(ctx context.Context, actor *account.User, input
 
 func (s *Service) normalizeZoneCountries(in []string) (CountryCodeList, error) {
 	if len(in) == 0 {
-		return nil, problem.BadRequest("countries is required").With("field", "countries")
+		return nil, ErrCountriesRequired()
 	}
 	seen := make(map[string]struct{}, len(in))
 	out := make([]string, 0, len(in))
 	for _, c := range in {
 		cc := normalizeCountryCode(c)
 		if len(cc) != 2 {
-			return nil, problem.BadRequest("invalid country code").With("field", "countries")
+			return nil, ErrInvalidCountryCode()
 		}
 		if _, ok := seen[cc]; ok {
 			continue
@@ -217,7 +216,7 @@ func (s *Service) normalizeZoneCountries(in []string) (CountryCodeList, error) {
 		out = append(out, cc)
 	}
 	if len(out) == 0 {
-		return nil, problem.BadRequest("countries is required").With("field", "countries")
+		return nil, ErrCountriesRequired()
 	}
 	return CountryCodeList(out), nil
 }
@@ -234,7 +233,7 @@ func (s *Service) ListShippingZones(ctx context.Context, actor *account.User, bi
 // This is intended for public storefront use only.
 func (s *Service) ListShippingZonesPublic(ctx context.Context, biz *Business) ([]*ShippingZone, error) {
 	if biz == nil {
-		return nil, problem.BadRequest("business is required")
+		return nil, ErrBusinessDataRequired()
 	}
 	return s.storage.ListShippingZones(ctx, biz.ID)
 }
@@ -244,7 +243,7 @@ func (s *Service) GetShippingZoneByID(ctx context.Context, actor *account.User, 
 		return nil, err
 	}
 	if zoneID == "" {
-		return nil, problem.BadRequest("zoneId is required")
+		return nil, ErrZoneIdRequired()
 	}
 	zone, err := s.storage.GetShippingZoneByID(ctx, biz.ID, zoneID)
 	if err != nil {
@@ -261,20 +260,20 @@ func (s *Service) CreateShippingZone(ctx context.Context, actor *account.User, b
 		return nil, ErrBusinessRateLimited()
 	}
 	if req == nil {
-		return nil, problem.BadRequest("request is required")
+		return nil, ErrShippingZoneRequestRequired()
 	}
 	name := strings.TrimSpace(req.Name)
 	if name == "" {
-		return nil, problem.BadRequest("name is required").With("field", "name")
+		return nil, ErrShippingZoneNameRequired()
 	}
 	if len(name) > 80 {
-		return nil, problem.BadRequest("name is too long").With("field", "name")
+		return nil, ErrShippingZoneNameTooLong()
 	}
 	if req.ShippingCost.LessThan(decimal.Zero) {
-		return nil, problem.BadRequest("shippingCost cannot be negative").With("field", "shippingCost")
+		return nil, ErrShippingCostNegative()
 	}
 	if req.FreeShippingThreshold.LessThan(decimal.Zero) {
-		return nil, problem.BadRequest("freeShippingThreshold cannot be negative").With("field", "freeShippingThreshold")
+		return nil, ErrFreeShippingThresholdNegative()
 	}
 	countries, err := s.normalizeZoneCountries(req.Countries)
 	if err != nil {
@@ -305,7 +304,7 @@ func (s *Service) UpdateShippingZone(ctx context.Context, actor *account.User, b
 		return nil, ErrBusinessRateLimited()
 	}
 	if req == nil {
-		return nil, problem.BadRequest("request is required")
+		return nil, ErrShippingZoneRequestRequired()
 	}
 	zone, err := s.storage.GetShippingZoneByID(ctx, biz.ID, zoneID)
 	if err != nil {
@@ -314,10 +313,10 @@ func (s *Service) UpdateShippingZone(ctx context.Context, actor *account.User, b
 	if req.Name != nil {
 		name := strings.TrimSpace(*req.Name)
 		if name == "" {
-			return nil, problem.BadRequest("name cannot be empty").With("field", "name")
+			return nil, ErrShippingZoneNameEmpty()
 		}
 		if len(name) > 80 {
-			return nil, problem.BadRequest("name is too long").With("field", "name")
+			return nil, ErrShippingZoneNameTooLong()
 		}
 		zone.Name = name
 	}
@@ -330,13 +329,13 @@ func (s *Service) UpdateShippingZone(ctx context.Context, actor *account.User, b
 	}
 	if req.ShippingCost.Valid {
 		if req.ShippingCost.Decimal.LessThan(decimal.Zero) {
-			return nil, problem.BadRequest("shippingCost cannot be negative").With("field", "shippingCost")
+			return nil, ErrShippingCostNegative()
 		}
 		zone.ShippingCost = transformer.FromNullDecimal(req.ShippingCost)
 	}
 	if req.FreeShippingThreshold.Valid {
 		if req.FreeShippingThreshold.Decimal.LessThan(decimal.Zero) {
-			return nil, problem.BadRequest("freeShippingThreshold cannot be negative").With("field", "freeShippingThreshold")
+			return nil, ErrFreeShippingThresholdNegative()
 		}
 		zone.FreeShippingThreshold = transformer.FromNullDecimal(req.FreeShippingThreshold)
 	}
@@ -404,7 +403,7 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 		return nil, err
 	}
 	if input == nil {
-		return nil, problem.BadRequest("input is required")
+		return nil, ErrBusinessInputRequired()
 	}
 	business, err := s.GetBusinessByID(ctx, actor, id)
 	if err != nil {
@@ -439,14 +438,14 @@ func (s *Service) UpdateBusiness(ctx context.Context, actor *account.User, id st
 	if input.CountryCode != nil {
 		cc := normalizeCountryCode(*input.CountryCode)
 		if len(cc) != 2 {
-			return nil, problem.BadRequest("invalid countryCode").With("field", "countryCode")
+			return nil, ErrInvalidCountryCode()
 		}
 		business.CountryCode = cc
 	}
 	if input.Currency != nil {
 		cur := normalizeCurrency(*input.Currency)
 		if len(cur) != 3 {
-			return nil, problem.BadRequest("invalid currency").With("field", "currency")
+			return nil, ErrInvalidCurrency()
 		}
 		business.Currency = cur
 	}

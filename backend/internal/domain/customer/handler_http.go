@@ -9,7 +9,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/request"
 	"github.com/abdelrahman146/kyora/internal/platform/response"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/gin-gonic/gin"
 )
 
@@ -70,7 +69,7 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 
 	var query listCustomersQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
-		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		response.Error(c, ErrCustomerInvalidQueryParams(err))
 		return
 	}
 
@@ -89,7 +88,7 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 	if query.SearchTerm != "" {
 		term, err := list.NormalizeSearchTerm(query.SearchTerm)
 		if err != nil {
-			response.Error(c, problem.BadRequest("invalid search term"))
+			response.Error(c, ErrCustomerInvalidSearchTerm())
 			return
 		}
 		query.SearchTerm = term
@@ -105,7 +104,7 @@ func (h *HttpHandler) ListCustomers(c *gin.Context) {
 
 	customers, totalCount, err := h.service.ListCustomers(c.Request.Context(), actor, biz, listReq, filters)
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -138,7 +137,7 @@ func (h *HttpHandler) GetCustomer(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -154,14 +153,14 @@ func (h *HttpHandler) GetCustomer(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
 	// Get customer aggregations (orders count, total spent)
 	aggregations, err := h.service.storage.GetCustomerAggregations(c.Request.Context(), biz.ID, []string{customer.ID})
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -216,7 +215,7 @@ func (h *HttpHandler) CreateCustomer(c *gin.Context) {
 			response.Error(c, ErrCustomerDuplicateEmail(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -253,7 +252,7 @@ func (h *HttpHandler) UpdateCustomer(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -278,14 +277,14 @@ func (h *HttpHandler) UpdateCustomer(c *gin.Context) {
 			response.Error(c, ErrCustomerDuplicateEmail(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
 	// Get customer aggregations (orders count, total spent)
 	aggregations, err := h.service.storage.GetCustomerAggregations(c.Request.Context(), biz.ID, []string{customer.ID})
 	if err != nil {
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -323,7 +322,7 @@ func (h *HttpHandler) DeleteCustomer(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -339,7 +338,7 @@ func (h *HttpHandler) DeleteCustomer(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -372,7 +371,7 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -388,7 +387,7 @@ func (h *HttpHandler) ListCustomerAddresses(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -428,7 +427,7 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -449,7 +448,7 @@ func (h *HttpHandler) CreateCustomerAddress(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -486,7 +485,7 @@ func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 	customerID := c.Param("customerId")
 	addressID := c.Param("addressId")
 	if customerID == "" || addressID == "" {
-		response.Error(c, problem.BadRequest("customerId and addressId are required"))
+		response.Error(c, ErrCustomerAddressIdRequired())
 		return
 	}
 
@@ -507,7 +506,7 @@ func (h *HttpHandler) UpdateCustomerAddress(c *gin.Context) {
 			response.Error(c, ErrCustomerAddressNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -540,7 +539,7 @@ func (h *HttpHandler) DeleteCustomerAddress(c *gin.Context) {
 	customerID := c.Param("customerId")
 	addressID := c.Param("addressId")
 	if customerID == "" || addressID == "" {
-		response.Error(c, problem.BadRequest("customerId and addressId are required"))
+		response.Error(c, ErrCustomerAddressIdRequired())
 		return
 	}
 
@@ -556,7 +555,7 @@ func (h *HttpHandler) DeleteCustomerAddress(c *gin.Context) {
 			response.Error(c, ErrCustomerAddressNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -589,7 +588,7 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -605,7 +604,7 @@ func (h *HttpHandler) ListCustomerNotes(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -644,7 +643,7 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 
 	customerID := c.Param("customerId")
 	if customerID == "" {
-		response.Error(c, problem.BadRequest("customerId is required"))
+		response.Error(c, ErrCustomerIdRequired())
 		return
 	}
 
@@ -665,7 +664,7 @@ func (h *HttpHandler) CreateCustomerNote(c *gin.Context) {
 			response.Error(c, ErrCustomerNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 
@@ -698,7 +697,7 @@ func (h *HttpHandler) DeleteCustomerNote(c *gin.Context) {
 	customerID := c.Param("customerId")
 	noteID := c.Param("noteId")
 	if customerID == "" || noteID == "" {
-		response.Error(c, problem.BadRequest("customerId and noteId are required"))
+		response.Error(c, ErrCustomerNoteIdRequired())
 		return
 	}
 
@@ -714,7 +713,7 @@ func (h *HttpHandler) DeleteCustomerNote(c *gin.Context) {
 			response.Error(c, ErrCustomerNoteNotFound(err))
 			return
 		}
-		response.Error(c, problem.InternalError().WithError(err))
+		response.Error(c, ErrCustomerQueryFailed(err))
 		return
 	}
 

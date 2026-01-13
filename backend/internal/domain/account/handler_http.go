@@ -114,7 +114,7 @@ func (h *HttpHandler) LoginWithGoogle(c *gin.Context) {
 	// Try to find existing user
 	user, err := h.service.GetUserByEmail(c.Request.Context(), googleUserInfo.Email)
 	if err != nil {
-		response.Error(c, problem.Unauthorized("no account found with this Google email").WithError(err))
+		response.Error(c, problem.Unauthorized("no account found with this Google email").WithError(err).WithCode("account.google_no_account"))
 		return
 	}
 

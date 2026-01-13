@@ -299,6 +299,11 @@ func (s *OrderSuite) TestCreateOrder_WithShippingZone_RejectsCountryNotInZone() 
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusBadRequest, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("order.insufficient_stock", code)
 }
 
 func (s *OrderSuite) TestUpdateOrder_SetShippingZone_RecomputesShippingFee() {
@@ -426,6 +431,11 @@ func (s *OrderSuite) TestInsufficientStock() {
 	s.NoError(err)
 	defer resp.Body.Close()
 	s.Equal(http.StatusConflict, resp.StatusCode)
+
+	// Assert error code
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("order.variant_stock_conflict", code)
 
 	// Verify stock unchanged
 	updatedVariant, err := s.orderHelper.GetVariant(ctx, variant.ID)

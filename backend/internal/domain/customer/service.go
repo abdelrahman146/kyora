@@ -11,7 +11,6 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/types/atomic"
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
-	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/timeseries"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
 	"gorm.io/gorm"
@@ -103,18 +102,18 @@ func (s *Service) CreateCustomer(ctx context.Context, actor *account.User, biz *
 // It is designed for unauthenticated storefront flows.
 func (s *Service) UpsertCustomerByEmail(ctx context.Context, biz *business.Business, in *UpsertCustomerByEmailInput) (*Customer, error) {
 	if biz == nil {
-		return nil, problem.InternalError().With("reason", "business is required")
+		return nil, ErrBusinessRequired()
 	}
 	if in == nil {
-		return nil, problem.BadRequest("customer is required")
+		return nil, ErrCustomerDataRequired()
 	}
 	email := strings.TrimSpace(strings.ToLower(in.Email))
 	if email == "" {
-		return nil, problem.BadRequest("email is required").With("field", "email")
+		return nil, ErrCustomerEmailRequired()
 	}
 	name := strings.TrimSpace(in.Name)
 	if name == "" {
-		return nil, problem.BadRequest("name is required").With("field", "name")
+		return nil, ErrCustomerNameRequired()
 	}
 
 	existing, err := s.storage.customer.FindOne(ctx,
@@ -312,7 +311,7 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		if !req.HasExplicitOrderBy() {
 			rankExpr, err := database.WebSearchRankOrder(term, "customers.search_vector")
 			if err != nil {
-				return nil, 0, problem.InternalError().WithError(err)
+				return nil, 0, ErrCustomerQueryFailed(err)
 			}
 			listOpts = append(listOpts, s.storage.customer.WithOrderByExpr(rankExpr))
 		}

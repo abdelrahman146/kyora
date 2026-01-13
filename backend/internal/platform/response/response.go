@@ -16,11 +16,11 @@ func Error(c *gin.Context, err error) {
 	var p *problem.Problem
 	if !errors.As(err, &p) {
 		if database.IsRecordNotFound(err) {
-			p = problem.NotFound("resource not found").WithError(err)
+			p = problem.NotFound("resource not found").WithError(err).WithCode("resource.not_found")
 		} else if database.IsUniqueViolation(err) {
-			p = problem.Conflict("resource already exists").WithError(err)
+			p = problem.Conflict("resource already exists").WithError(err).WithCode("resource.conflict")
 		} else {
-			p = problem.InternalError().WithError(err)
+			p = problem.InternalError().WithError(err).WithCode("generic.internal")
 		}
 	}
 	if p.Instance == "" && c.Request != nil && c.Request.URL != nil {
