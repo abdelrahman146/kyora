@@ -58,7 +58,7 @@ export interface AddressSelectFieldProps {
 
 export function AddressSelectField(props: AddressSelectFieldProps) {
   const field = useFieldContext<string>()
-  const { t: tCommon } = useTranslation('common')
+  const { t: tCommon } = useTranslation('errors')
   const { t: tErrors } = useTranslation('errors')
 
   const {

@@ -270,12 +270,54 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 }
 
 func (s *Service) ListVariants(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Variant, error) {
-	return s.storage.variants.FindMany(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+	// Use qualified column name to avoid ambiguity when joining products table
+	baseScopes := []func(db *gorm.DB) *gorm.DB{
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
+	}
+
+	var listExtra []func(db *gorm.DB) *gorm.DB
+
+	// Add search support if search term is provided
+	if req.SearchTerm() != "" {
+		term := req.SearchTerm()
+		like := "%" + term + "%"
+
+		// Join products table for searching product names
+		baseScopes = append(baseScopes,
+			s.storage.variants.WithJoins("LEFT JOIN products ON products.id = variants.product_id AND products.deleted_at IS NULL"),
+			s.storage.variants.ScopeWhere(
+				"(variants.search_vector @@ websearch_to_tsquery('simple', ?) OR products.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.sku ILIKE ? OR variants.code ILIKE ?)",
+				term,
+				term,
+				like,
+				like,
+			),
+		)
+
+		// Add relevance ranking if no explicit order by is provided
+		if !req.HasExplicitOrderBy() {
+			rankExpr, err := database.WebSearchRankOrder(term, "variants.search_vector", "products.search_vector")
+			if err != nil {
+				return nil, err
+			}
+			listExtra = append(listExtra, s.storage.variants.WithOrderByExpr(rankExpr))
+		}
+	}
+
+	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)
+	findOpts = append(findOpts, listExtra...)
+	findOpts = append(findOpts,
 		s.storage.variants.WithPagination(req.Offset(), req.Limit()),
-		s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)),
-		s.storage.variants.WithPreload(ProductStruct),
 	)
+
+	// Only add parsed order by if we're not doing custom ranking
+	if req.SearchTerm() == "" || req.HasExplicitOrderBy() {
+		findOpts = append(findOpts, s.storage.variants.WithOrderBy(req.ParsedOrderBy(VariantSchema)))
+	}
+
+	findOpts = append(findOpts, s.storage.variants.WithPreload(ProductStruct))
+
+	return s.storage.variants.FindMany(ctx, findOpts...)
 }
 
 func (s *Service) GetProductVariants(ctx context.Context, actor *account.User, biz *business.Business, productID string) ([]*Variant, error) {
@@ -318,10 +360,31 @@ func (s *Service) CountProducts(ctx context.Context, actor *account.User, biz *b
 	)
 }
 
-func (s *Service) CountVariants(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
-	return s.storage.variants.Count(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
-	)
+func (s *Service) CountVariants(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) (int64, error) {
+	// Use qualified column name to avoid ambiguity when joining products table
+	baseScopes := []func(db *gorm.DB) *gorm.DB{
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
+	}
+
+	// Add search support if search term is provided
+	if req.SearchTerm() != "" {
+		term := req.SearchTerm()
+		like := "%" + term + "%"
+
+		// Join products table for searching product names
+		baseScopes = append(baseScopes,
+			s.storage.variants.WithJoins("LEFT JOIN products ON products.id = variants.product_id AND products.deleted_at IS NULL"),
+			s.storage.variants.ScopeWhere(
+				"(variants.search_vector @@ websearch_to_tsquery('simple', ?) OR products.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.sku ILIKE ? OR variants.code ILIKE ?)",
+				term,
+				term,
+				like,
+				like,
+			),
+		)
+	}
+
+	return s.storage.variants.Count(ctx, baseScopes...)
 }
 
 func (s *Service) CountCategories(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {

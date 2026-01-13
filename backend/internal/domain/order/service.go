@@ -72,6 +72,23 @@ func (s *Service) shippingFeeFromZone(subtotal, discount decimal.Decimal, zone *
 	return zone.ShippingCost
 }
 
+// computeDiscountAmount resolves the discount amount from CreateOrderRequest.
+// It prefers the new DiscountType/DiscountValue fields over the legacy Discount field.
+// Returns the computed discount amount and the normalized discount value for storage.
+func (s *Service) computeDiscountAmount(subtotal decimal.Decimal, req *CreateOrderRequest) decimal.Decimal {
+	// New fields take precedence.
+	if req.DiscountType != "" && !req.DiscountValue.IsZero() {
+		if req.DiscountType == DiscountTypePercent {
+			// Percent discount: subtotal * (discountValue / 100)
+			return subtotal.Mul(req.DiscountValue).Div(decimal.NewFromInt(100))
+		}
+		// Amount discount
+		return req.DiscountValue
+	}
+	// Fallback to legacy Discount field.
+	return req.Discount
+}
+
 func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*Order, error) {
 	// Basic abuse/double-submit protection (best-effort, cache-backed).
 	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:order:create:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second) {
@@ -92,6 +109,9 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 		// validate decimal fields (validator cannot handle decimal.Decimal with numeric comparisons)
 		if req.ShippingFee.LessThan(decimal.Zero) {
 			return problem.BadRequest("shippingFee cannot be negative")
+		}
+		if req.DiscountValue.LessThan(decimal.Zero) {
+			return problem.BadRequest("discountValue cannot be negative")
 		}
 		if req.Discount.LessThan(decimal.Zero) {
 			return problem.BadRequest("discount cannot be negative")
@@ -157,12 +177,16 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 		vatRate := biz.VatRate
 		subtotal := s.calculateSubtotal(orderItems)
 		cogs := s.calculateCOGS(orderItems)
+
+		// compute discount using new fields (DiscountType/DiscountValue) or legacy Discount field
+		discount := s.computeDiscountAmount(subtotal, req)
+
 		vat := s.calculateVAT(subtotal, vatRate)
 		shippingFee := req.ShippingFee
 		if zone != nil {
-			shippingFee = s.shippingFeeFromZone(subtotal, req.Discount, zone)
+			shippingFee = s.shippingFeeFromZone(subtotal, discount, zone)
 		}
-		total := s.calculateTotal(subtotal, vat, shippingFee, req.Discount)
+		total := s.calculateTotal(subtotal, vat, shippingFee, discount)
 
 		// generate order number with retry on conflict
 		var orderNumber string
@@ -183,7 +207,7 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 				VAT:               vat,
 				VATRate:           vatRate,
 				ShippingFee:       shippingFee,
-				Discount:          req.Discount,
+				Discount:          discount,
 				COGS:              cogs,
 				Total:             total,
 				Currency:          biz.Currency,
@@ -228,6 +252,39 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 		// adjust inventory levels
 		if err := s.adjustInventoryLevels(tctx, actor, biz, adjustments); err != nil {
 			return err
+		}
+
+		// Apply target status if provided (defaults: pending → target)
+		if req.Status != nil && *req.Status != OrderStatusPending {
+			sm := newOrderStateMachine(order)
+			if err := sm.transitionStateTo(*req.Status); err != nil {
+				return err
+			}
+			if err := s.storage.order.UpdateOne(tctx, order); err != nil {
+				return err
+			}
+		}
+
+		// Apply target payment status if provided (defaults: pending → target)
+		if req.PaymentStatus != nil && *req.PaymentStatus != OrderPaymentStatusPending {
+			sm := newOrderStateMachine(order)
+			if err := sm.transitionPaymentStatusTo(*req.PaymentStatus); err != nil {
+				return err
+			}
+			if err := s.storage.order.UpdateOne(tctx, order); err != nil {
+				return err
+			}
+		}
+
+		// Create note if provided
+		if strings.TrimSpace(req.Note) != "" {
+			note := &OrderNote{
+				OrderID: order.ID,
+				Content: strings.TrimSpace(req.Note),
+			}
+			if err := s.storage.orderNote.CreateOne(tctx, note); err != nil {
+				return err
+			}
 		}
 
 		// attach items to order for return
@@ -396,9 +453,6 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 		if req.ShippingFee.Valid && req.ShippingFee.Decimal.LessThan(decimal.Zero) {
 			return problem.BadRequest("shippingFee cannot be negative")
 		}
-		if req.Discount.Valid && req.Discount.Decimal.LessThan(decimal.Zero) {
-			return problem.BadRequest("discount cannot be negative")
-		}
 
 		// load order with items scoped by business
 		ord, err := s.storage.order.FindByID(tctx, id,
@@ -414,6 +468,48 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 		if req.Channel != "" {
 			ord.Channel = req.Channel
 		}
+
+		// Update shipping address if provided (only allowed before shipped)
+		if req.ShippingAddressID != nil {
+			// Validate order status allows address updates
+			switch ord.Status {
+			case OrderStatusShipped, OrderStatusFulfilled, OrderStatusCancelled, OrderStatusReturned:
+				return problem.BadRequest("cannot update shipping address after order has been shipped").With("orderId", ord.ID).With("status", ord.Status)
+			}
+
+			addressID := strings.TrimSpace(*req.ShippingAddressID)
+			if addressID == "" {
+				return problem.BadRequest("shippingAddressId cannot be empty")
+			}
+			// Validate address belongs to customer and business
+			if _, err := s.customer.GetCustomerAddressByID(tctx, actor, biz, ord.CustomerID, addressID); err != nil {
+				return err
+			}
+			ord.ShippingAddressID = addressID
+		}
+
+		// Update discount if DiscountType/DiscountValue provided
+		if req.DiscountType != "" {
+			if !req.DiscountValue.Valid {
+				return problem.BadRequest("discountValue is required when discountType is provided")
+			}
+			if req.DiscountValue.Decimal.LessThan(decimal.Zero) {
+				return problem.BadRequest("discountValue cannot be negative")
+			}
+
+			// Compute discount amount based on type
+			var discount decimal.Decimal
+			if req.DiscountType == DiscountTypePercent {
+				discount = ord.Subtotal.Mul(req.DiscountValue.Decimal).Div(decimal.NewFromInt(100))
+			} else {
+				discount = req.DiscountValue.Decimal
+			}
+			ord.Discount = discount
+		} else if req.Discount.Valid {
+			// Fallback to legacy Discount field for backward compatibility
+			ord.Discount = transformer.FromNullDecimal(req.Discount)
+		}
+
 		// shipping zone update takes precedence over manual shippingFee
 		if req.ShippingZoneID != nil {
 			zoneID := strings.TrimSpace(*req.ShippingZoneID)

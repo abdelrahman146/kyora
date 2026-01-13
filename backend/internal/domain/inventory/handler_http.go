@@ -443,7 +443,7 @@ func (h *HttpHandler) ListVariants(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	total, err := h.service.CountVariants(c.Request.Context(), actor, biz)
+	total, err := h.service.CountVariants(c.Request.Context(), actor, biz, listReq)
 	if err != nil {
 		response.Error(c, err)
 		return
@@ -874,7 +874,9 @@ func (h *HttpHandler) GetInventorySummary(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	variantsCount, err := h.service.CountVariants(c.Request.Context(), actor, biz)
+	// Count all variants without filters
+	emptyListReq := list.NewListRequest(1, 1, nil, "")
+	variantsCount, err := h.service.CountVariants(c.Request.Context(), actor, biz, emptyListReq)
 	if err != nil {
 		response.Error(c, err)
 		return

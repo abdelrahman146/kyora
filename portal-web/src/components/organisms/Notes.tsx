@@ -54,6 +54,7 @@ export function Notes({
   maxLength = 1000,
 }: NotesProps) {
   const { t } = useTranslation('common')
+  const { t: tErrors } = useTranslation('errors')
   const [isAddSheetOpen, setIsAddSheetOpen] = useState(false)
   const formId = useId()
 
@@ -74,8 +75,8 @@ export function Notes({
   const noteSchema = z.object({
     content: z
       .string()
-      .min(1, t('notes.validation.required'))
-      .max(maxLength, t('notes.validation.max_length', { max: maxLength })),
+      .min(1, tErrors('notes.required'))
+      .max(maxLength, tErrors('notes.max_length', { max: maxLength })),
   })
 
   // Empty state

@@ -470,23 +470,27 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
             )}
 
             <div className="flex items-center gap-1 shrink-0">
-              {clearable && selectedValues.length > 0 && !disabled && (
-                <span
-                  role="button"
-                  tabIndex={0}
-                  onClick={handleClear}
-                  onKeyDown={(e) => {
-                    if (e.key === 'Enter' || e.key === ' ') {
-                      e.preventDefault()
-                      handleClear(e as unknown as React.MouseEvent)
-                    }
-                  }}
-                  className="p-1 hover:bg-base-200 rounded-md transition-colors cursor-pointer"
-                  aria-label={tCommon('clear_selection')}
-                >
-                  <X className="w-4 h-4" />
-                </span>
-              )}
+              {clearable &&
+                selectedValues.length > 0 &&
+                !disabled &&
+                // Only show clear button if there's actually a selected value (not empty string)
+                selectedValues.some((v) => v !== '') && (
+                  <span
+                    role="button"
+                    tabIndex={0}
+                    onClick={handleClear}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        handleClear(e as unknown as React.MouseEvent)
+                      }
+                    }}
+                    className="p-1 hover:bg-base-200 rounded-md transition-colors cursor-pointer"
+                    aria-label={tCommon('clear_selection')}
+                  >
+                    <X className="w-4 h-4" />
+                  </span>
+                )}
               <ChevronDown
                 className={cn(
                   'w-5 h-5 transition-transform duration-200',

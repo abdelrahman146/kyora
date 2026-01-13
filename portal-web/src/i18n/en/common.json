@@ -6,6 +6,8 @@
   "delete": "Delete",
   "create": "Create",
   "update": "Update",
+  "increment": "Increase",
+  "decrement": "Decrease",
   "search": "Search",
   "filter": "Filter",
   "sort": "Sort",
@@ -173,17 +175,7 @@
     "keyboard_shortcut_hint": "to save",
     "adding": "Adding...",
     "note_added": "Note added successfully",
-    "note_deleted": "Note deleted successfully",
-    "validation": {
-      "required": "Please write a note",
-      "max_length": "Note cannot exceed {{max}} characters"
-    }
-  },
-  "validation": {
-    "required": "This field is required",
-    "invalid_email": "Invalid email address",
-    "min_length": "Must be at least {{min}} characters",
-    "max_length": "Must not exceed {{max}} characters"
+    "note_deleted": "Note deleted successfully"
   },
   "date": {
     "date": "Date",
@@ -215,5 +207,7 @@
   "profile": {
     "updateSuccess": "Profile updated successfully",
     "updateError": "Failed to update profile"
-  }
+  },
+  "price": "Price",
+  "stock": "Stock"
 }

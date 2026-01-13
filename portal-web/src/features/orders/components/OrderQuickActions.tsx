@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import { useQueryClient } from '@tanstack/react-query'
 import {
   CreditCard,
+  Edit,
   ExternalLink,
   MapPin,
   MessageCircle,
@@ -11,6 +12,8 @@ import {
   Zap,
 } from 'lucide-react'
 import toast from 'react-hot-toast'
+
+import { EditOrderSheet } from './EditOrderSheet'
 
 import type { Order } from '@/api/order'
 import {
@@ -42,7 +45,43 @@ export function OrderQuickActions({
   const [showStatusSheet, setShowStatusSheet] = useState(false)
   const [showPaymentSheet, setShowPaymentSheet] = useState(false)
   const [showAddressSheet, setShowAddressSheet] = useState(false)
+  const [showEditSheet, setShowEditSheet] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
+
+  // State machine: Valid status transitions
+  const getValidStatusTransitions = (
+    currentStatus: Order['status'],
+  ): Array<Order['status']> => {
+    const transitions: Record<Order['status'], Array<Order['status']>> = {
+      pending: ['placed', 'cancelled'],
+      placed: ['ready_for_shipment', 'cancelled'],
+      ready_for_shipment: ['shipped', 'cancelled'],
+      shipped: ['fulfilled', 'returned'],
+      fulfilled: ['returned'],
+      cancelled: [],
+      returned: [],
+    }
+    return transitions[currentStatus]
+  }
+
+  // State machine: Valid payment status transitions
+  const getValidPaymentTransitions = (
+    currentPaymentStatus: Order['paymentStatus'],
+  ): Array<Order['paymentStatus']> => {
+    const transitions: Record<
+      Order['paymentStatus'],
+      Array<Order['paymentStatus']>
+    > = {
+      pending: ['paid', 'failed'],
+      paid: ['refunded'],
+      failed: ['paid'],
+      refunded: [],
+    }
+    return transitions[currentPaymentStatus]
+  }
+
+  const validStatusOptions = getValidStatusTransitions(order.status)
+  const validPaymentOptions = getValidPaymentTransitions(order.paymentStatus)
 
   const updateStatusMutation = useUpdateOrderStatusMutation(
     businessDescriptor,
@@ -243,6 +282,18 @@ export function OrderQuickActions({
             <button
               type="button"
               onClick={() => {
+                setShowEditSheet(true)
+              }}
+            >
+              <Edit size={18} />
+              {tCommon('edit')}
+            </button>
+          </li>
+          <div className="divider my-1" />
+          <li>
+            <button
+              type="button"
+              onClick={() => {
                 setShowStatusSheet(true)
               }}
             >
@@ -313,7 +364,7 @@ export function OrderQuickActions({
             <statusForm.SubmitButton
               form={statusFormId}
               variant="primary"
-              disabled={isUpdating}
+              disabled={isUpdating || validStatusOptions.length === 0}
               className="w-full"
             >
               {isUpdating ? tCommon('loading') : tCommon('update')}
@@ -321,25 +372,37 @@ export function OrderQuickActions({
           }
         >
           <statusForm.FormRoot id={statusFormId} className="space-y-4">
-            <statusForm.AppField name="status">
-              {(field) => (
-                <field.RadioField
-                  label={tOrders('status')}
-                  options={[
-                    { value: 'pending', label: tOrders('status_pending') },
-                    { value: 'placed', label: tOrders('status_placed') },
-                    {
-                      value: 'ready_for_shipment',
-                      label: tOrders('status_ready_for_shipment'),
-                    },
-                    { value: 'shipped', label: tOrders('status_shipped') },
-                    { value: 'fulfilled', label: tOrders('status_fulfilled') },
-                    { value: 'cancelled', label: tOrders('status_cancelled') },
-                    { value: 'returned', label: tOrders('status_returned') },
-                  ]}
-                />
-              )}
-            </statusForm.AppField>
+            {/* Current Status Info */}
+            <div className="rounded-lg bg-base-200 p-3">
+              <div className="text-sm">
+                <span className="text-base-content/70">
+                  {tOrders('current_status')}:{' '}
+                </span>
+                <span className="font-medium">
+                  {tOrders(`status_${order.status}`)}
+                </span>
+              </div>
+            </div>
+
+            {validStatusOptions.length > 0 ? (
+              <statusForm.AppField name="status">
+                {(field) => (
+                  <field.RadioField
+                    label={tOrders('new_status')}
+                    options={validStatusOptions.map((status) => ({
+                      value: status,
+                      label: tOrders(`status_${status}`),
+                    }))}
+                  />
+                )}
+              </statusForm.AppField>
+            ) : (
+              <div className="alert alert-info">
+                <span className="text-sm">
+                  {tOrders('no_status_transitions_available')}
+                </span>
+              </div>
+            )}
           </statusForm.FormRoot>
         </BottomSheet>
       </statusForm.AppForm>
@@ -353,7 +416,7 @@ export function OrderQuickActions({
             <paymentForm.SubmitButton
               form={paymentFormId}
               variant="primary"
-              disabled={isUpdating}
+              disabled={isUpdating || validPaymentOptions.length === 0}
               className="w-full"
             >
               {isUpdating ? tCommon('loading') : tCommon('update')}
@@ -361,81 +424,94 @@ export function OrderQuickActions({
           }
         >
           <paymentForm.FormRoot id={paymentFormId} className="space-y-4">
-            <paymentForm.AppField name="paymentStatus">
-              {(field) => (
-                <field.RadioField
-                  label={tOrders('payment_status')}
-                  options={[
-                    {
-                      value: 'pending',
-                      label: tOrders('payment_status_pending'),
-                    },
-                    { value: 'paid', label: tOrders('payment_status_paid') },
-                    {
-                      value: 'failed',
-                      label: tOrders('payment_status_failed'),
-                    },
-                    {
-                      value: 'refunded',
-                      label: tOrders('payment_status_refunded'),
-                    },
-                  ]}
-                />
-              )}
-            </paymentForm.AppField>
+            {/* Current Payment Status Info */}
+            <div className="rounded-lg bg-base-200 p-3">
+              <div className="text-sm">
+                <span className="text-base-content/70">
+                  {tOrders('current_payment_status')}:{' '}
+                </span>
+                <span className="font-medium">
+                  {tOrders(`payment_status_${order.paymentStatus}`)}
+                </span>
+              </div>
+            </div>
 
-            <paymentForm.Subscribe
-              selector={(state) => state.values.paymentStatus}
-            >
-              {(paymentStatus) =>
-                paymentStatus === 'paid' && (
-                  <>
-                    <paymentForm.AppField name="paymentMethod">
-                      {(field) => (
-                        <field.SelectField
-                          label={tOrders('payment_method')}
-                          placeholder={tOrders('select_payment_method')}
-                          options={[
-                            {
-                              value: 'cash_on_delivery',
-                              label: tOrders('payment_method_cod'),
-                            },
-                            {
-                              value: 'bank_transfer',
-                              label: tOrders('payment_method_bank'),
-                            },
-                            {
-                              value: 'credit_card',
-                              label: tOrders('payment_method_card'),
-                            },
-                            {
-                              value: 'paypal',
-                              label: tOrders('payment_method_paypal'),
-                            },
-                            {
-                              value: 'tamara',
-                              label: tOrders('payment_method_tamara'),
-                            },
-                            {
-                              value: 'tabby',
-                              label: tOrders('payment_method_tabby'),
-                            },
-                          ]}
-                        />
-                      )}
-                    </paymentForm.AppField>
-                    <paymentForm.AppField name="paymentReference">
-                      {(field) => (
-                        <field.TextField
-                          label={tOrders('payment_reference')}
-                          placeholder={tOrders('payment_reference_placeholder')}
-                        />
-                      )}
-                    </paymentForm.AppField>
-                  </>
-                )
-              }
-            </paymentForm.Subscribe>
+            {validPaymentOptions.length > 0 ? (
+              <>
+                <paymentForm.AppField name="paymentStatus">
+                  {(field) => (
+                    <field.RadioField
+                      label={tOrders('new_payment_status')}
+                      options={validPaymentOptions.map((status) => ({
+                        value: status,
+                        label: tOrders(`payment_status_${status}`),
+                      }))}
+                    />
+                  )}
+                </paymentForm.AppField>
+
+                <paymentForm.Subscribe
+                  selector={(state) => state.values.paymentStatus}
+                >
+                  {(paymentStatus) =>
+                    paymentStatus === 'paid' && (
+                      <>
+                        <paymentForm.AppField name="paymentMethod">
+                          {(field) => (
+                            <field.SelectField
+                              label={tOrders('payment_method')}
+                              placeholder={tOrders('select_payment_method')}
+                              options={[
+                                {
+                                  value: 'cash_on_delivery',
+                                  label: tOrders('payment_method_cod'),
+                                },
+                                {
+                                  value: 'bank_transfer',
+                                  label: tOrders('payment_method_bank'),
+                                },
+                                {
+                                  value: 'credit_card',
+                                  label: tOrders('payment_method_card'),
+                                },
+                                {
+                                  value: 'paypal',
+                                  label: tOrders('payment_method_paypal'),
+                                },
+                                {
+                                  value: 'tamara',
+                                  label: tOrders('payment_method_tamara'),
+                                },
+                                {
+                                  value: 'tabby',
+                                  label: tOrders('payment_method_tabby'),
+                                },
+                              ]}
+                            />
+                          )}
+                        </paymentForm.AppField>
+                        <paymentForm.AppField name="paymentReference">
+                          {(field) => (
+                            <field.TextField
+                              label={tOrders('payment_reference')}
+                              placeholder={tOrders(
+                                'payment_reference_placeholder',
+                              )}
+                            />
+                          )}
+                        </paymentForm.AppField>
+                      </>
+                    )
+                  }
+                </paymentForm.Subscribe>
+              </>
+            ) : (
+              <div className="alert alert-info">
+                <span className="text-sm">
+                  {tOrders('no_payment_transitions_available')}
+                </span>
+              </div>
+            )}
 
             <div className="bg-base-200 rounded-lg p-3 space-y-1">
               <div className="flex justify-between text-sm">
@@ -479,6 +555,15 @@ export function OrderQuickActions({
           </addressForm.FormRoot>
         </BottomSheet>
       </addressForm.AppForm>
+
+      <EditOrderSheet
+        isOpen={showEditSheet}
+        onClose={() => setShowEditSheet(false)}
+        order={order}
+        onUpdated={async () => {
+          await queryClient.invalidateQueries({ queryKey: orderQueries.all })
+        }}
+      />
     </>
   )
 }

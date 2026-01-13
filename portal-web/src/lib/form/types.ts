@@ -171,6 +171,30 @@ export interface CustomerSelectFieldProps extends BaseFieldProps {
 }
 
 /**
+ * Product variant select field specific props
+ */
+export interface ProductVariantSelectFieldProps extends BaseFieldProps {
+  /** Business descriptor for fetching products/variants */
+  businessDescriptor: string
+  /** Placeholder text for the select */
+  placeholder?: string
+  /** Whether to show variant details (price, stock) below field */
+  showDetails?: boolean
+  /** Callback when variant is selected (for auto-filling prices, etc.) */
+  onVariantSelect?: (variant: {
+    id: string
+    productId: string
+    productName: string
+    variantName: string
+    salePrice: string
+    costPrice: string
+    stockQuantity: number
+  }) => void
+  /** Callback when field is cleared */
+  onClear?: () => void
+}
+
+/**
  * Textarea specific props
  */
 export interface TextareaFieldProps extends BaseFieldProps {

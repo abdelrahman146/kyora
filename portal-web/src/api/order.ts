@@ -167,17 +167,22 @@ export interface CreateOrderItemRequest {
   unitPrice: string
   unitCost?: string
 }
-
+export type DiscountType = 'amount' | 'percent'
 export interface CreateOrderRequest {
   customerId: string
   channel: string
   shippingAddressId: string
   shippingZoneId?: string
   shippingFee?: string
-  discount?: string
+  discount?: string // Legacy field for backward compatibility
+  discountType?: DiscountType
+  discountValue?: string
   paymentMethod?: OrderPaymentMethod
   paymentReference?: string
   orderedAt?: string
+  status?: OrderStatus
+  paymentStatus?: OrderPaymentStatus
+  note?: string
   items: Array<CreateOrderItemRequest>
 }
 
@@ -186,7 +191,9 @@ export interface UpdateOrderRequest {
   shippingZoneId?: string
   shippingFee?: string
   channel?: string
-  discount?: string
+  discount?: string // Legacy field for backward compatibility
+  discountType?: DiscountType
+  discountValue?: string
   orderedAt?: string
   items?: Array<CreateOrderItemRequest>
 }

@@ -100,6 +100,22 @@ export type ShippingZone = z.infer<typeof ShippingZoneSchema>
 
 export const ListShippingZonesResponseSchema = z.array(ShippingZoneSchema)
 
+/**
+ * Payment Method Types
+ */
+export const PaymentMethodSchema = z.object({
+  descriptor: z.string(),
+  name: z.string(),
+  enabled: z.boolean(),
+  feeType: z.enum(['percentage', 'fixed']).optional().nullable(),
+  feeValue: z.string().optional().nullable(),
+  effectiveFeePercentage: z.string().optional().nullable(),
+})
+
+export type PaymentMethod = z.infer<typeof PaymentMethodSchema>
+
+export const ListPaymentMethodsResponseSchema = z.array(PaymentMethodSchema)
+
 export type ListShippingZonesResponse = z.infer<
   typeof ListShippingZonesResponseSchema
 >
@@ -170,6 +186,17 @@ export const businessApi = {
     )
     return ListShippingZonesResponseSchema.parse(response)
   },
+  /**
+   * List payment methods for a business
+   */
+  async listPaymentMethods(
+    businessDescriptor: string,
+  ): Promise<Array<PaymentMethod>> {
+    const response = await get<unknown>(
+      `v1/businesses/${businessDescriptor}/payment-methods`,
+    )
+    return ListPaymentMethodsResponseSchema.parse(response)
+  },
 }
 
 /**
@@ -212,6 +239,18 @@ export const businessQueries = {
       staleTime: STALE_TIME.FIVE_MINUTES,
       enabled: !!businessDescriptor,
     }),
+
+  /**
+   * Query options for fetching payment methods
+   * @param businessDescriptor - Business descriptor/slug
+   */
+  paymentMethods: (businessDescriptor: string) =>
+    queryOptions({
+      queryKey: queryKeys.businesses.paymentMethods(businessDescriptor),
+      queryFn: () => businessApi.listPaymentMethods(businessDescriptor),
+      staleTime: STALE_TIME.FIVE_MINUTES,
+      enabled: !!businessDescriptor,
+    }),
 }
 
 /**
@@ -245,7 +284,21 @@ export function useShippingZonesQuery(
 }
 
 /**
- * 
+ * Query to fetch payment methods for a business
+ *
+ * StaleTime: 5 minutes (semi-static, changes when methods are updated)
+ * @param businessDescriptor - Business descriptor/slug
+ * @param enabled - Whether to enable the query (default: true)
+ */
+export function usePaymentMethodsQuery(
+  businessDescriptor: string,
+  enabled: boolean = true,
+) {
+  return useQuery({
+    ...businessQueries.paymentMethods(businessDescriptor),
+    enabled: enabled && !!businessDescriptor,
+  })
+}
 
 /**
  * Query to fetch a specific business

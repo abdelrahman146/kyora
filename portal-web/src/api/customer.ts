@@ -298,6 +298,7 @@ export const customerQueries = {
  *
  * StaleTime: 30 seconds (business-critical data)
  * Business-scoped: Invalidated on business switch
+ * @param enabled - Whether to enable the query (default: true)
  */
 export function useCustomersQuery(
   businessDescriptor: string,
@@ -310,8 +311,12 @@ export function useCustomersQuery(
     hasOrders?: boolean
     socialPlatforms?: Array<SocialPlatform>
   },
+  enabled: boolean = true,
 ) {
-  return useQuery(customerQueries.list(businessDescriptor, params))
+  return useQuery({
+    ...customerQueries.list(businessDescriptor, params),
+    enabled: enabled && !!businessDescriptor,
+  })
 }
 
 /**

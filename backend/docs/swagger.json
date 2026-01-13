@@ -13770,6 +13770,22 @@
                     "type": "string"
                 },
                 "discount": {
+                    "description": "Legacy discount field (amount-based). Still supported for backward compatibility.",
+                    "type": "number"
+                },
+                "discountType": {
+                    "description": "New discount fields (preferred). When provided, these take precedence over Discount.",
+                    "enum": [
+                        "amount",
+                        "percent"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/order.DiscountType"
+                        }
+                    ]
+                },
+                "discountValue": {
                     "type": "number"
                 },
                 "items": {
@@ -13777,6 +13793,10 @@
                     "items": {
                         "$ref": "#/definitions/order.CreateOrderItemRequest"
                     }
+                },
+                "note": {
+                    "description": "Optional single note content. If provided, a note will be created as part of order creation.",
+                    "type": "string"
                 },
                 "orderedAt": {
                     "type": "string"
@@ -13799,6 +13819,20 @@
                 "paymentReference": {
                     "$ref": "#/definitions/sql.NullString"
                 },
+                "paymentStatus": {
+                    "description": "Optional target payment status (advanced). If provided, backend will attempt to apply it atomically.",
+                    "enum": [
+                        "pending",
+                        "paid",
+                        "failed",
+                        "refunded"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/order.OrderPaymentStatus"
+                        }
+                    ]
+                },
                 "shippingAddressId": {
                     "type": "string"
                 },
@@ -13807,8 +13841,36 @@
                 },
                 "shippingZoneId": {
                     "type": "string"
+                },
+                "status": {
+                    "description": "Optional target order status (advanced). If provided, backend will attempt to apply it atomically.",
+                    "enum": [
+                        "pending",
+                        "placed",
+                        "ready_for_shipment",
+                        "shipped",
+                        "fulfilled",
+                        "cancelled",
+                        "returned"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/order.OrderStatus"
+                        }
+                    ]
                 }
             }
+        },
+        "order.DiscountType": {
+            "type": "string",
+            "enum": [
+                "amount",
+                "percent"
+            ],
+            "x-enum-varnames": [
+                "DiscountTypeAmount",
+                "DiscountTypePercent"
+            ]
         },
         "order.OrderItemProductResponse": {
             "type": "object",
@@ -14095,6 +14157,26 @@
                     "type": "string"
                 },
                 "discount": {
+                    "description": "Legacy discount field (amount-based). Still supported for backward compatibility.",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/decimal.NullDecimal"
+                        }
+                    ]
+                },
+                "discountType": {
+                    "description": "New discount fields (preferred). When provided, these take precedence over Discount.",
+                    "enum": [
+                        "amount",
+                        "percent"
+                    ],
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/order.DiscountType"
+                        }
+                    ]
+                },
+                "discountValue": {
                     "$ref": "#/definitions/decimal.NullDecimal"
                 },
                 "items": {
@@ -14104,6 +14186,9 @@
                     }
                 },
                 "orderedAt": {
+                    "type": "string"
+                },
+                "shippingAddressId": {
                     "type": "string"
                 },
                 "shippingFee": {

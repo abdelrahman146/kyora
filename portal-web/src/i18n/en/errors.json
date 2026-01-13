@@ -60,7 +60,12 @@
     "outside_business_hours": "Time must be within business hours (9 AM - 5 PM).",
     "positive_number": "Must be a positive number.",
     "min_zero": "Must be zero or greater.",
+    "min_value": "Must be at least {{min}}.",
+    "max_value": "Must not exceed {{max}}.",
+    "invalid_price": "Invalid price format.",
+    "invalid_number": "Must be a valid number.",
     "integer": "Must be a whole number.",
+    "integer_only": "Must be a whole number.",
     "max_photos": "Maximum 10 photos allowed.",
     "at_least_one_variant": "At least one variant is required.",
     "max_variants": "Maximum 50 variants allowed.",
@@ -87,6 +92,10 @@
     "countTooLow": "Not enough items matching the criteria.",
     "countTooHigh": "Too many items matching the criteria.",
     "noPrimary": "At least one item must be marked as primary."
+  },
+  "notes": {
+    "required": "Please write a note.",
+    "max_length": "Note cannot exceed {{max}} characters."
   },
   "auth": {
     "invalid_credentials": "Invalid email or password.",

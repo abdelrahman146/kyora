@@ -127,12 +127,17 @@ export const addressQueries = {
 
 /**
  * Query to fetch customer addresses
+ * @param enabled - Whether to enable the query (default: true)
  */
 export function useAddressesQuery(
   businessDescriptor: string,
   customerId: string,
+  enabled: boolean = true,
 ) {
-  return useQuery(addressQueries.list(businessDescriptor, customerId))
+  return useQuery({
+    ...addressQueries.list(businessDescriptor, customerId),
+    enabled: enabled && !!businessDescriptor && !!customerId,
+  })
 }
 
 /**

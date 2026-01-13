@@ -150,6 +150,24 @@ func (h *OrderTestHelper) GetVariant(ctx context.Context, variantID string) (*in
 	return variantRepo.FindByID(ctx, variantID)
 }
 
+// CreateTestAddress creates an additional address for a customer
+func (h *OrderTestHelper) CreateTestAddress(ctx context.Context, customerID, street, city, country string) (*customer.CustomerAddress, error) {
+	addressRepo := database.NewRepository[customer.CustomerAddress](h.db)
+	addr := &customer.CustomerAddress{
+		CustomerID:  customerID,
+		CountryCode: country,
+		State:       city,
+		City:        city,
+		Street:      transformer.ToNullableString(street),
+		PhoneCode:   "+1",
+		PhoneNumber: "9876543210",
+	}
+	if err := addressRepo.CreateOne(ctx, addr); err != nil {
+		return nil, err
+	}
+	return addr, nil
+}
+
 // CountOrders counts orders for a business
 func (h *OrderTestHelper) CountOrders(ctx context.Context, businessID string) (int64, error) {
 	orderRepo := database.NewRepository[order.Order](h.db)

@@ -44,7 +44,7 @@ import { FormSelect } from '@/components/form/FormSelect'
 export function CustomerSelectField(props: CustomerSelectFieldProps) {
   const field = useFieldContext<string>()
   const { t: tErrors } = useTranslation('errors')
-  const { t: tCommon } = useTranslation('common')
+  const { t: tCommon } = useTranslation('errors')
 
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState('')
@@ -142,10 +142,13 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
 
   return (
     <div className="form-control w-full">
-      {/* Label */}
+      {/* Label - Matches TextField pattern */}
       {props.label && (
-        <label className="label pb-2">
-          <span className="label-text font-medium">{props.label}</span>
+        <label className="label">
+          <span className="label-text text-base-content/70 font-medium">
+            {props.label}
+            {props.required && <span className="text-error ms-1">*</span>}
+          </span>
         </label>
       )}
 
@@ -157,11 +160,7 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
         searchable
         searchValue={customerSearchQuery}
         onSearchChange={setCustomerSearchQuery}
-        placeholder={
-          selectedCustomer
-            ? selectedCustomer.name
-            : props.placeholder || tCommon('select')
-        }
+        placeholder={props.placeholder || tCommon('select')}
         clearable
         onClear={handleClear}
         disabled={props.disabled || field.state.meta.isValidating}

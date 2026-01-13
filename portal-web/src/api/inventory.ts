@@ -332,6 +332,45 @@ export const inventoryApi = {
   },
 
   /**
+   * List all variants across all products in a business
+   */
+  async listAllVariants(
+    businessDescriptor: string,
+    params?: {
+      search?: string
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ): Promise<ListVariantsResponse> {
+    const searchParams = new URLSearchParams()
+    if (params?.search) searchParams.set('search', params.search)
+    if (params?.page) searchParams.set('page', params.page.toString())
+    if (params?.pageSize)
+      searchParams.set('pageSize', params.pageSize.toString())
+    if (params?.orderBy && params.orderBy.length > 0) {
+      params.orderBy.forEach((o) => searchParams.append('orderBy', o))
+    }
+
+    const query = searchParams.toString() ? `?${searchParams.toString()}` : ''
+    return get<ListVariantsResponse>(
+      `v1/businesses/${businessDescriptor}/inventory/variants${query}`,
+    )
+  },
+
+  /**
+   * Get a single variant by ID
+   */
+  async getVariant(
+    businessDescriptor: string,
+    variantId: string,
+  ): Promise<Variant> {
+    return get<Variant>(
+      `v1/businesses/${businessDescriptor}/inventory/variants/${variantId}`,
+    )
+  },
+
+  /**
    * Create a new variant for a product
    */
   async createVariant(
@@ -459,6 +498,42 @@ export const inventoryQueries = {
       staleTime: STALE_TIME.ONE_MINUTE,
       enabled: !!businessDescriptor,
     }),
+
+  /**
+   * List all variants query
+   */
+  variants: (
+    businessDescriptor: string,
+    params?: {
+      search?: string
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) =>
+    queryOptions({
+      queryKey: queryKeys.inventory.variants(businessDescriptor, {
+        search: params?.search,
+        page: params?.page,
+        limit: params?.pageSize,
+        orderBy: params?.orderBy,
+      }),
+      queryFn: () => inventoryApi.listAllVariants(businessDescriptor, params),
+      staleTime: STALE_TIME.ONE_MINUTE,
+      enabled: !!businessDescriptor,
+      placeholderData: keepPreviousData,
+    }),
+
+  /**
+   * Get variant detail query
+   */
+  variant: (businessDescriptor: string, variantId: string) =>
+    queryOptions({
+      queryKey: queryKeys.inventory.variant(businessDescriptor, variantId),
+      queryFn: () => inventoryApi.getVariant(businessDescriptor, variantId),
+      staleTime: STALE_TIME.ONE_MINUTE,
+      enabled: !!businessDescriptor && !!variantId,
+    }),
 }
 
 /**
@@ -467,6 +542,7 @@ export const inventoryQueries = {
 
 /**
  * Hook to list products
+ * @param enabled - Whether to enable the query (default: true)
  */
 export function useProductsQuery(
   businessDescriptor: string,
@@ -478,8 +554,12 @@ export function useProductsQuery(
     categoryId?: string
     stockStatus?: 'in_stock' | 'low_stock' | 'out_of_stock'
   },
+  enabled: boolean = true,
 ) {
-  return useQuery(inventoryQueries.list(businessDescriptor, params))
+  return useQuery({
+    ...inventoryQueries.list(businessDescriptor, params),
+    enabled: enabled && !!businessDescriptor,
+  })
 }
 
 /**
@@ -504,6 +584,33 @@ export function useInventorySummaryQuery(
   topLimit?: number,
 ) {
   return useQuery(inventoryQueries.summary(businessDescriptor, topLimit))
+}
+
+/**
+ * Hook to list all variants across all products
+ * @param enabled - Whether to enable the query (default: true)
+ */
+export function useVariantsQuery(
+  businessDescriptor: string,
+  params?: {
+    search?: string
+    page?: number
+    pageSize?: number
+    orderBy?: Array<string>
+  },
+  enabled: boolean = true,
+) {
+  return useQuery({
+    ...inventoryQueries.variants(businessDescriptor, params),
+    enabled: enabled && !!businessDescriptor,
+  })
+}
+
+/**
+ * Hook to get a single variant by ID
+ */
+export function useVariantQuery(businessDescriptor: string, variantId: string) {
+  return useQuery(inventoryQueries.variant(businessDescriptor, variantId))
 }
 
 /**

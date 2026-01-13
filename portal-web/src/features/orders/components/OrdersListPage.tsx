@@ -16,6 +16,7 @@ import { OrdersSearchSchema } from '../schema/ordersSearch'
 import { OrderCard } from './OrderCard'
 import { OrderQuickActions } from './OrderQuickActions'
 import { OrderReviewSheet } from './OrderReviewSheet'
+import { CreateOrderSheet } from './CreateOrderSheet'
 import type { OrdersSearch } from '../schema/ordersSearch'
 import type { DateRange } from 'react-day-picker'
 
@@ -45,6 +46,7 @@ export function OrdersListPage() {
 
   const queryClient = useQueryClient()
   const [reviewOrder, setReviewOrder] = useState<Order | null>(null)
+  const [isCreateOrderOpen, setIsCreateOrderOpen] = useState(false)
 
   const orderByArray = search.sortBy
     ? [`${search.sortOrder === 'desc' ? '-' : ''}${search.sortBy}`]
@@ -146,7 +148,9 @@ export function OrdersListPage() {
     })
   }
 
-  const handleAddOrder = () => {}
+  const handleAddOrder = () => {
+    setIsCreateOrderOpen(true)
+  }
 
   const handleViewClick = (order: Order) => {
     setReviewOrder(order)
@@ -608,6 +612,16 @@ export function OrdersListPage() {
         order={reviewOrder}
         isOpen={reviewOrder !== null}
         onClose={() => setReviewOrder(null)}
+      />
+
+      <CreateOrderSheet
+        isOpen={isCreateOrderOpen}
+        onClose={() => setIsCreateOrderOpen(false)}
+        onCreated={async () => {
+          await queryClient.invalidateQueries({
+            queryKey: orderQueries.list(businessDescriptor)._def,
+          })
+        }}
       />
     </>
   )

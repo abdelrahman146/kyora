@@ -692,6 +692,403 @@ func (s *OrderSuite) TestListOrders_Search_CrossWorkspaceIsolation() {
 	s.Equal(float64(1), r2["totalCount"])
 }
 
+func (s *OrderSuite) TestCreateOrderWithPercentDiscount() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order with 10% discount
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"discountType":      "percent",
+		"discountValue":     10, // 10% discount
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  2,
+				"unitPrice": 200, // subtotal = 400
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+
+	// Verify discount is 10% of 400 = 40
+	subtotal := created["subtotal"].(string)
+	s.Equal("400", subtotal)
+	discount := created["discount"].(string)
+	s.Equal("40", discount) // 10% of 400
+
+	// VAT is 14% on subtotal = 400 * 0.14 = 56
+	vat := created["vat"].(string)
+	s.Equal("56", vat)
+
+	// Total should be: subtotal + vat - discount = 400 + 56 - 40 = 416
+	total := created["total"].(string)
+	s.Equal("416", total)
+}
+
+func (s *OrderSuite) TestCreateOrderWithAmountDiscount() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order with 50 fixed amount discount
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"discountType":      "amount",
+		"discountValue":     50,
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  2,
+				"unitPrice": 200, // subtotal = 400
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+
+	// Verify discount is exactly 50
+	discount := created["discount"].(string)
+	s.Equal("50", discount)
+
+	// VAT is 14% on subtotal = 400 * 0.14 = 56
+	vat := created["vat"].(string)
+	s.Equal("56", vat)
+
+	// Total should be: subtotal + vat - discount = 400 + 56 - 50 = 406
+	total := created["total"].(string)
+	s.Equal("406", total)
+}
+
+func (s *OrderSuite) TestCreateOrderWithTargetStatus() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order directly in "placed" status
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"status":            "placed",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+
+	// Verify status is "placed" and placedAt is set
+	s.Equal(string(order.OrderStatusPlaced), created["status"])
+	s.NotNil(created["placedAt"])
+}
+
+func (s *OrderSuite) TestCreateOrderWithTargetPaymentStatus() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order with status=placed and paymentStatus=paid in one call
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"status":            "placed",
+		"paymentStatus":     "paid",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+
+	// Verify payment status is "paid" and paidAt is set
+	s.Equal(string(order.OrderPaymentStatusPaid), created["paymentStatus"])
+	s.NotNil(created["paidAt"])
+}
+
+func (s *OrderSuite) TestCreateOrderWithNote() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order with a note
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"note":              "Customer requested gift wrapping",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusCreated, resp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &created))
+	orderID := created["id"].(string)
+
+	// Verify note was created by checking the database
+	noteCount, err := s.orderHelper.CountOrderNotes(ctx, orderID)
+	s.NoError(err)
+	s.Equal(int64(1), noteCount)
+}
+
+func (s *OrderSuite) TestUpdateOrderShippingAddress() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr1, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	// Create second address
+	addr2, err := s.orderHelper.CreateTestAddress(ctx, cust.ID, "456 Second St", "City", "Country")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order with first address
+	createPayload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr1.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	createResp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", createPayload, token)
+	s.NoError(err)
+	defer createResp.Body.Close()
+	s.Equal(http.StatusCreated, createResp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(createResp, &created))
+	orderID := created["id"].(string)
+	s.Equal(addr1.ID, created["shippingAddressId"])
+
+	// Update to second address (allowed before shipped)
+	updatePayload := map[string]interface{}{
+		"shippingAddressId": addr2.ID,
+	}
+
+	updateResp, err := s.orderHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/orders/%s", orderID), updatePayload, token)
+	s.NoError(err)
+	defer updateResp.Body.Close()
+	s.Equal(http.StatusOK, updateResp.StatusCode)
+
+	var updated map[string]interface{}
+	s.NoError(testutils.DecodeJSON(updateResp, &updated))
+	s.Equal(addr2.ID, updated["shippingAddressId"])
+}
+
+func (s *OrderSuite) TestUpdateOrderShippingAddress_AfterShipped_ShouldFail() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr1, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	addr2, err := s.orderHelper.CreateTestAddress(ctx, cust.ID, "456 Second St", "City", "Country")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	// Create order and transition to shipped
+	createPayload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr1.ID,
+		"channel":           "instagram",
+		"status":            "placed",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  1,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	createResp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders", createPayload, token)
+	s.NoError(err)
+	defer createResp.Body.Close()
+	s.Equal(http.StatusCreated, createResp.StatusCode)
+
+	var created map[string]interface{}
+	s.NoError(testutils.DecodeJSON(createResp, &created))
+	orderID := created["id"].(string)
+
+	// Transition to shipped
+	statusPayload := map[string]interface{}{
+		"status": "shipped",
+	}
+	statusResp, err := s.orderHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/orders/%s/status", orderID), statusPayload, token)
+	s.NoError(err)
+	defer statusResp.Body.Close()
+	s.Equal(http.StatusOK, statusResp.StatusCode)
+
+	// Try to update address after shipped (should fail)
+	updatePayload := map[string]interface{}{
+		"shippingAddressId": addr2.ID,
+	}
+
+	updateResp, err := s.orderHelper.Client.AuthenticatedRequest("PATCH", fmt.Sprintf("/v1/businesses/test-biz/orders/%s", orderID), updatePayload, token)
+	s.NoError(err)
+	defer updateResp.Body.Close()
+	s.Equal(http.StatusBadRequest, updateResp.StatusCode)
+
+	var errResp map[string]interface{}
+	s.NoError(testutils.DecodeJSON(updateResp, &errResp))
+	s.Contains(strings.ToLower(errResp["detail"].(string)), "cannot update shipping address after")
+}
+
 func TestOrderSuite(t *testing.T) {
 	if testServer == nil {
 		t.Skip("Test server not initialized")

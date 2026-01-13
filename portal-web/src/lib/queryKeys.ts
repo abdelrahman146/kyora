@@ -75,6 +75,8 @@ export const businesses = {
     [...businesses.all, 'detail', descriptor] as const,
   shippingZones: (descriptor: string) =>
     [...businesses.all, 'shipping-zones', descriptor] as const,
+  paymentMethods: (descriptor: string) =>
+    [...businesses.all, 'payment-methods', descriptor] as const,
 } as const
 
 // Legacy export for backwards compatibility
@@ -178,6 +180,17 @@ export const inventory = {
   details: () => [...inventory.all, 'detail'] as const,
   detail: (businessDescriptor: string, productId: string) =>
     [...inventory.details(), businessDescriptor, productId] as const,
+  variants: (
+    businessDescriptor: string,
+    filters?: {
+      search?: string
+      page?: number
+      limit?: number
+      orderBy?: Array<string>
+    },
+  ) => [...inventory.all, 'variants', businessDescriptor, filters] as const,
+  variant: (businessDescriptor: string, variantId: string) =>
+    [...inventory.all, 'variant', businessDescriptor, variantId] as const,
 } as const
 
 /**

@@ -2877,11 +2877,27 @@ definitions:
       customerId:
         type: string
       discount:
+        description: Legacy discount field (amount-based). Still supported for backward
+          compatibility.
+        type: number
+      discountType:
+        allOf:
+        - $ref: '#/definitions/order.DiscountType'
+        description: New discount fields (preferred). When provided, these take precedence
+          over Discount.
+        enum:
+        - amount
+        - percent
+      discountValue:
         type: number
       items:
         items:
           $ref: '#/definitions/order.CreateOrderItemRequest'
         type: array
+      note:
+        description: Optional single note content. If provided, a note will be created
+          as part of order creation.
+        type: string
       orderedAt:
         type: string
       paymentMethod:
@@ -2896,18 +2912,49 @@ definitions:
         - tabby
       paymentReference:
         $ref: '#/definitions/sql.NullString'
+      paymentStatus:
+        allOf:
+        - $ref: '#/definitions/order.OrderPaymentStatus'
+        description: Optional target payment status (advanced). If provided, backend
+          will attempt to apply it atomically.
+        enum:
+        - pending
+        - paid
+        - failed
+        - refunded
       shippingAddressId:
         type: string
       shippingFee:
         type: number
       shippingZoneId:
         type: string
+      status:
+        allOf:
+        - $ref: '#/definitions/order.OrderStatus'
+        description: Optional target order status (advanced). If provided, backend
+          will attempt to apply it atomically.
+        enum:
+        - pending
+        - placed
+        - ready_for_shipment
+        - shipped
+        - fulfilled
+        - cancelled
+        - returned
     required:
     - channel
     - customerId
     - items
     - shippingAddressId
     type: object
+  order.DiscountType:
+    enum:
+    - amount
+    - percent
+    type: string
+    x-enum-varnames:
+    - DiscountTypeAmount
+    - DiscountTypePercent
   order.OrderItemProductResponse:
     properties:
       id:
@@ -3104,12 +3151,27 @@ definitions:
       channel:
         type: string
       discount:
+        allOf:
+        - $ref: '#/definitions/decimal.NullDecimal'
+        description: Legacy discount field (amount-based). Still supported for backward
+          compatibility.
+      discountType:
+        allOf:
+        - $ref: '#/definitions/order.DiscountType'
+        description: New discount fields (preferred). When provided, these take precedence
+          over Discount.
+        enum:
+        - amount
+        - percent
+      discountValue:
         $ref: '#/definitions/decimal.NullDecimal'
       items:
         items:
           $ref: '#/definitions/order.CreateOrderItemRequest'
         type: array
       orderedAt:
+        type: string
+      shippingAddressId:
         type: string
       shippingFee:
         $ref: '#/definitions/decimal.NullDecimal'

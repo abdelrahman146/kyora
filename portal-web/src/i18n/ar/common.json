@@ -6,6 +6,8 @@
   "delete": "حذف",
   "create": "إنشاء",
   "update": "تحديث",
+  "increment": "زيادة",
+  "decrement": "نقصان",
   "search": "بحث",
   "filter": "تصفية",
   "sort": "ترتيب",
@@ -173,17 +175,7 @@
     "keyboard_shortcut_hint": "للحفظ",
     "adding": "جارٍ الإضافة...",
     "note_added": "تم إضافة الملاحظة بنجاح",
-    "note_deleted": "تم حذف الملاحظة بنجاح",
-    "validation": {
-      "required": "الرجاء كتابة ملاحظة",
-      "max_length": "لا يمكن أن تتجاوز الملاحظة {{max}} حرفًا"
-    }
-  },
-  "validation": {
-    "required": "هذا الحقل مطلوب",
-    "invalid_email": "البريد الإلكتروني غير صالح",
-    "min_length": "يجب أن يكون على الأقل {{min}} أحرف",
-    "max_length": "يجب أن لا يتجاوز {{max}} حرف"
+    "note_deleted": "تم حذف الملاحظة بنجاح"
   },
   "date": {
     "date": "التاريخ",
@@ -215,5 +207,7 @@
   "profile": {
     "updateSuccess": "تم تحديث الملف الشخصي بنجاح",
     "updateError": "فشل تحديث الملف الشخصي"
-  }
+  },
+  "price": "السعر",
+  "stock": "المخزون"
 }
