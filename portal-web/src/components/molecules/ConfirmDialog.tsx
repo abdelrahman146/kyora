@@ -1,5 +1,5 @@
-import { Dialog } from './Dialog'
 import { Button } from '../atoms/Button'
+import { Dialog } from './Dialog'
 
 export interface ConfirmDialogProps {
   isOpen: boolean

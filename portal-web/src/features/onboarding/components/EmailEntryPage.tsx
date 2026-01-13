@@ -3,7 +3,7 @@ import { useLoaderData, useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
-import { authApi } from '@/api/auth'
+import { useGoogleAuthUrlMutation } from '@/api/auth'
 import { useStartSessionMutation } from '@/api/onboarding'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
@@ -19,6 +19,8 @@ export function EmailEntryPage() {
   const { plan: planDescriptor } = useSearch({ from: '/onboarding/email' })
 
   const [oauthError, setOauthError] = useState<Error | null>(null)
+
+  const googleAuthUrlMutation = useGoogleAuthUrlMutation()
 
   const startSessionMutation = useStartSessionMutation({
     onSuccess: async (response) => {
@@ -45,7 +47,7 @@ export function EmailEntryPage() {
   const handleGoogleSignIn = async () => {
     try {
       setOauthError(null)
-      const { url } = await authApi.getGoogleAuthUrl()
+      const { url } = await googleAuthUrlMutation.mutateAsync()
 
       sessionStorage.setItem('kyora_onboarding_plan', planDescriptor)
       window.location.href = url

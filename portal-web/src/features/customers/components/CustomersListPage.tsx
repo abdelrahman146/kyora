@@ -321,7 +321,7 @@ export function CustomersListPage() {
         align: 'center',
         render: (customer) => (
           <div className="badge badge-success badge-sm">
-            {customer.ordersCount ?? 0}
+            {customer.ordersCount}
           </div>
         ),
       },
@@ -331,7 +331,7 @@ export function CustomersListPage() {
         sortable: true,
         align: 'end',
         render: (customer) => {
-          const spent = customer.totalSpent ?? 0
+          const spent = customer.totalSpent
           return (
             <span className="font-semibold">
               {currency} {spent.toFixed(2)}
@@ -524,8 +524,8 @@ export function CustomersListPage() {
             <CustomerCard
               customer={customer}
               onClick={handleCustomerClick}
-              ordersCount={customer.ordersCount ?? 0}
-              totalSpent={customer.totalSpent ?? 0}
+              ordersCount={customer.ordersCount}
+              totalSpent={customer.totalSpent}
               currency={currency}
             />
             <div className="absolute top-2 end-2 flex gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

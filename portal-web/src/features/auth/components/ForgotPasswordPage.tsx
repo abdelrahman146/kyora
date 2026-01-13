@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { ArrowLeft, CheckCircle, Mail } from 'lucide-react'
 import { z } from 'zod'
 
-import { authApi } from '@/api/auth'
+import { useForgotPasswordMutation } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useKyoraForm } from '@/lib/form'
@@ -16,12 +16,14 @@ export function ForgotPasswordPage() {
   const [isSuccess, setIsSuccess] = useState(false)
   const [submittedEmail, setSubmittedEmail] = useState('')
 
+  const forgotPasswordMutation = useForgotPasswordMutation()
+
   const form = useKyoraForm({
     defaultValues: {
       email: '',
     },
     onSubmit: async ({ value }: { value: { email: string } }) => {
-      await authApi.forgotPassword(value)
+      await forgotPasswordMutation.mutateAsync(value)
       setSubmittedEmail(value.email)
       setIsSuccess(true)
     },

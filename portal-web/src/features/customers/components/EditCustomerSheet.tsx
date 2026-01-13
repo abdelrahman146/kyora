@@ -71,7 +71,7 @@ export type EditCustomerFormValues = z.infer<typeof editCustomerSchema>
 function getDefaultValues(customer: Customer): EditCustomerFormValues {
   return {
     name: customer.name,
-    email: customer.email ?? '',
+    email: customer.email,
     gender: customer.gender,
     countryCode: customer.countryCode,
     phoneCode: customer.phoneCode ?? '',

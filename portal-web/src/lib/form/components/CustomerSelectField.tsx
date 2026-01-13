@@ -32,14 +32,13 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { useQuery } from '@tanstack/react-query'
 import { useTranslation } from 'react-i18next'
 
 import { useFieldContext } from '../contexts'
 import type { CustomerSelectFieldProps } from '../types'
 import type { Customer } from '@/api/customer'
 import type { FormSelectOption } from '@/components/form/FormSelect'
-import { customerApi } from '@/api/customer'
+import { useCustomerQuery, useCustomersQuery } from '@/api/customer'
 import { FormSelect } from '@/components/form/FormSelect'
 
 export function CustomerSelectField(props: CustomerSelectFieldProps) {
@@ -49,9 +48,7 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
 
   const [customerSearchQuery, setCustomerSearchQuery] = useState('')
   const [debouncedCustomerSearch, setDebouncedCustomerSearch] = useState('')
-  const [selectedCustomer, setSelectedCustomer] = useState<Customer | null>(
-    null,
-  )
+  const [isOpen, setIsOpen] = useState(false)
 
   // Debounce customer search query
   useEffect(() => {
@@ -61,37 +58,36 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
     return () => clearTimeout(timer)
   }, [customerSearchQuery])
 
-  // Fetch customers for autocomplete
-  const { data: customersData } = useQuery({
-    queryKey: [
-      'customers',
-      'search',
-      props.businessDescriptor,
-      debouncedCustomerSearch,
-    ],
-    queryFn: async () => {
-      return customerApi.listCustomers(props.businessDescriptor, {
-        search: debouncedCustomerSearch || undefined,
-        pageSize: 10,
-      })
-    },
-    enabled: true, // Always fetch customers (even with empty search)
-  })
+  const listParams = useMemo(
+    () => ({
+      search: debouncedCustomerSearch || undefined,
+      page: 1,
+      pageSize: 10,
+    }),
+    [debouncedCustomerSearch],
+  )
 
-  // Load selected customer by ID when field value exists
+  const customersQuery = useCustomersQuery(props.businessDescriptor, listParams)
+  const customersData = customersQuery.data
+
+  const selectedCustomerQuery = useCustomerQuery(
+    props.businessDescriptor,
+    field.state.value,
+  )
+
+  const selectedCustomer = useMemo<Customer | null>(() => {
+    const fromList = customersData?.items.find(
+      (c) => c.id === field.state.value,
+    )
+    return fromList ?? selectedCustomerQuery.data ?? null
+  }, [customersData?.items, field.state.value, selectedCustomerQuery.data])
+
   useEffect(() => {
-    if (field.state.value && !selectedCustomer) {
-      customerApi
-        .getCustomer(props.businessDescriptor, field.state.value)
-        .then((customer) => {
-          setSelectedCustomer(customer)
-          setCustomerSearchQuery(customer.name)
-        })
-        .catch(() => {
-          setSelectedCustomer(null)
-        })
-    }
-  }, [field.state.value, props.businessDescriptor, selectedCustomer])
+    if (isOpen) return
+    if (!field.state.value) return
+    if (!selectedCustomer) return
+    setCustomerSearchQuery(selectedCustomer.name)
+  }, [field.state.value, isOpen, selectedCustomer])
 
   // Transform customers to select options
   const customerOptions = useMemo<Array<FormSelectOption<string>>>(() => {
@@ -135,14 +131,12 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
     field.handleChange(id)
     const customer = customersData?.items.find((c) => c.id === id)
     if (customer) {
-      setSelectedCustomer(customer)
       setCustomerSearchQuery(customer.name)
     }
   }
 
   const handleClear = () => {
     field.handleChange('')
-    setSelectedCustomer(null)
     setCustomerSearchQuery('')
   }
 
@@ -173,9 +167,11 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
         disabled={props.disabled || field.state.meta.isValidating}
         error={showError ? error : undefined}
         onOpen={() => {
+          setIsOpen(true)
           setCustomerSearchQuery('')
         }}
         onClose={() => {
+          setIsOpen(false)
           if (selectedCustomer) {
             setCustomerSearchQuery(selectedCustomer.name)
           }

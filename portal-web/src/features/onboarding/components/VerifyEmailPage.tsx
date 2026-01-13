@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { Check, Mail, User } from 'lucide-react'
 import { z } from 'zod'
 
-import { authApi } from '@/api/auth'
+import { useGoogleAuthUrlMutation } from '@/api/auth'
 import { useSendOTPMutation, useVerifyEmailMutation } from '@/api/onboarding'
 import { Button } from '@/components/atoms/Button'
 import { OTPInput, ResendCountdownButton } from '@/components'
@@ -41,6 +41,8 @@ export function VerifyEmailPage() {
     '',
     '',
   ])
+
+  const googleAuthUrlMutation = useGoogleAuthUrlMutation()
 
   const sendOTPMutation = useSendOTPMutation({
     onSuccess: (response) => {
@@ -155,7 +157,7 @@ export function VerifyEmailPage() {
   const handleGoogleOAuth = async () => {
     try {
       setOauthError(null)
-      const { url } = await authApi.getGoogleAuthUrl()
+      const { url } = await googleAuthUrlMutation.mutateAsync()
       sessionStorage.setItem('kyora_onboarding_google_session', sessionToken)
       window.location.href = url
     } catch (err) {

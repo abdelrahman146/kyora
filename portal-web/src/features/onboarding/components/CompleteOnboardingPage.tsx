@@ -7,7 +7,7 @@ import {
   useCompleteOnboardingMutation,
   useDeleteSessionMutation,
 } from '@/api/onboarding'
-import { setTokens } from '@/api/client'
+import { setTokens } from '@/lib/auth'
 import { setUser } from '@/stores/authStore'
 
 export function CompleteOnboardingPage() {

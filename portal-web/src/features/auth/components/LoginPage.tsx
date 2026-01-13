@@ -5,7 +5,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { LoginFormData } from '@/schemas/auth'
 import { authStore, login } from '@/stores/authStore'
-import { authApi } from '@/api/auth'
+import { useGoogleAuthUrlMutation } from '@/api/auth'
 import { translateErrorAsync } from '@/lib/translateError'
 import { LoginForm } from '@/features/auth/components/LoginForm'
 import { LanguageSwitcher } from '@/features/language/components/LanguageSwitcher'
@@ -16,8 +16,10 @@ export function LoginPage() {
   const { redirect } = useSearch({ from: '/auth/login' })
   const { t: tAuth } = useTranslation('auth')
   const { t: tCommon } = useTranslation('common')
-  const [isGoogleLoading, setIsGoogleLoading] = useState(false)
   const [googleErrorMessage, setGoogleErrorMessage] = useState<string>('')
+
+  const googleAuthUrlMutation = useGoogleAuthUrlMutation()
+  const isGoogleLoading = googleAuthUrlMutation.isPending
 
   // Don't show loading spinner during login - LoginForm handles its own loading state
   // Only show loading when initializing auth on page load
@@ -46,11 +48,10 @@ export function LoginPage() {
 
   const handleGoogleLogin = async () => {
     try {
-      setIsGoogleLoading(true)
       setGoogleErrorMessage('')
 
       // Get OAuth URL from backend
-      const { url } = await authApi.getGoogleAuthUrl()
+      const { url } = await googleAuthUrlMutation.mutateAsync()
 
       // Prepare state parameter with redirect destination
       const state = encodeURIComponent(JSON.stringify({ from: redirect }))
@@ -59,7 +60,6 @@ export function LoginPage() {
       // Redirect to Google OAuth
       window.location.href = oauthUrl
     } catch (error) {
-      setIsGoogleLoading(false)
       const message = await translateErrorAsync(error, tAuth)
       setGoogleErrorMessage(message)
     }

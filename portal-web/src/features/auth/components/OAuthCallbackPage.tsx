@@ -3,7 +3,7 @@ import { useNavigate, useSearch } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 
-import { authApi } from '@/api/auth'
+import { useLoginWithGoogleMutation } from '@/api/auth'
 import { translateErrorAsync } from '@/lib/translateError'
 
 export function OAuthCallbackPage() {
@@ -12,6 +12,8 @@ export function OAuthCallbackPage() {
     from: '/auth/oauth/callback',
   })
   const { t: tAuth } = useTranslation('auth')
+
+  const googleLoginMutation = useLoginWithGoogleMutation()
 
   const [status, setStatus] = useState<'loading' | 'success' | 'error'>(
     'loading',
@@ -48,7 +50,7 @@ export function OAuthCallbackPage() {
         }
 
         // Exchange code for tokens (this automatically saves tokens and user)
-        await authApi.loginWithGoogle({ code })
+        await googleLoginMutation.mutateAsync({ code })
 
         setStatus('success')
 
@@ -63,7 +65,15 @@ export function OAuthCallbackPage() {
     }
 
     void handleCallback()
-  }, [code, state, error, error_description, navigate, tAuth])
+  }, [
+    code,
+    state,
+    error,
+    error_description,
+    navigate,
+    tAuth,
+    googleLoginMutation,
+  ])
 
   const handleRetry = async () => {
     await navigate({

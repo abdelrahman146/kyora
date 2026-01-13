@@ -1,3 +1,5 @@
+import { useMutation } from '@tanstack/react-query'
+
 import {
   clearTokens,
   get,
@@ -32,6 +34,8 @@ import type {
   ResetPasswordRequest,
   VerifyEmailRequest,
 } from './types/auth'
+
+import type { UseMutationOptions } from '@tanstack/react-query'
 
 /**
  * Authentication API Service
@@ -244,4 +248,58 @@ export const authApi = {
     }
     return this.logoutAll({ refreshToken })
   },
+}
+
+/**
+ * Mutation Hooks
+ *
+ * UI code must consume auth endpoints via TanStack Query mutations.
+ */
+
+export function useLoginMutation(
+  options?: UseMutationOptions<LoginResponse, Error, LoginRequest>,
+) {
+  return useMutation({
+    mutationFn: (credentials: LoginRequest) => authApi.login(credentials),
+    ...options,
+  })
+}
+
+export function useForgotPasswordMutation(
+  options?: UseMutationOptions<void, Error, ForgotPasswordRequest>,
+) {
+  return useMutation({
+    mutationFn: (request: ForgotPasswordRequest) =>
+      authApi.forgotPassword(request),
+    ...options,
+  })
+}
+
+export function useResetPasswordMutation(
+  options?: UseMutationOptions<void, Error, ResetPasswordRequest>,
+) {
+  return useMutation({
+    mutationFn: (request: ResetPasswordRequest) =>
+      authApi.resetPassword(request),
+    ...options,
+  })
+}
+
+export function useLoginWithGoogleMutation(
+  options?: UseMutationOptions<LoginResponse, Error, GoogleLoginRequest>,
+) {
+  return useMutation({
+    mutationFn: (request: GoogleLoginRequest) =>
+      authApi.loginWithGoogle(request),
+    ...options,
+  })
+}
+
+export function useGoogleAuthUrlMutation(
+  options?: UseMutationOptions<{ url: string }, Error, void>,
+) {
+  return useMutation({
+    mutationFn: () => authApi.getGoogleAuthUrl(),
+    ...options,
+  })
 }

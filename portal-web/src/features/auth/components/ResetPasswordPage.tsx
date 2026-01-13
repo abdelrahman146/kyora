@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next'
 import { AlertCircle, CheckCircle, Loader2 } from 'lucide-react'
 import { z } from 'zod'
 
-import { authApi } from '@/api/auth'
+import { useResetPasswordMutation } from '@/api/auth'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
 
@@ -16,6 +16,8 @@ export function ResetPasswordPage() {
   const { t: tAuth } = useTranslation('auth')
   const [pageStatus, setPageStatus] = useState<PageStatus>('loading')
   const [errorMessage, setErrorMessage] = useState('')
+
+  const resetPasswordMutation = useResetPasswordMutation()
 
   useEffect(() => {
     if (!token) {
@@ -156,7 +158,7 @@ export function ResetPasswordPage() {
     }: {
       value: { password: string; confirmPassword: string }
     }) => {
-      await authApi.resetPassword({
+      await resetPasswordMutation.mutateAsync({
         token,
         newPassword: value.password,
       })

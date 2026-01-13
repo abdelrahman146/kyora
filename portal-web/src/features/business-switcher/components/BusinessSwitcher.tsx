@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useStore } from '@tanstack/react-store'
 import { useNavigate } from '@tanstack/react-router'
@@ -7,7 +7,7 @@ import { Building2, Check, ChevronDown, Loader2 } from 'lucide-react'
 import type { Business } from '@/stores/businessStore'
 import { Avatar } from '@/components/atoms/Avatar'
 import { Dropdown } from '@/components/molecules/Dropdown'
-import { businessApi } from '@/api/business'
+import { useBusinessesQuery } from '@/api/business'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { getThumbnailUrl } from '@/lib/assetUrl'
 import { cn } from '@/lib/utils'
@@ -28,39 +28,22 @@ export function BusinessSwitcher() {
     (b) => b.descriptor === selectedBusinessDescriptor,
   )
 
-  const [isLoading, setIsLoading] = useState(false)
+  const businessesQuery = useBusinessesQuery()
 
   useEffect(() => {
-    const loadBusinesses = async () => {
-      if (businesses.length > 0) return
+    if (businesses.length > 0) return
+    const fetched = businessesQuery.data?.businesses ?? []
+    if (fetched.length === 0) return
 
-      setIsLoading(true)
-      try {
-        const fetchedBusinesses = await businessApi.listBusinesses()
-        businessStore.setState((state) => ({
-          ...state,
-          businesses: fetchedBusinesses.businesses,
-        }))
+    businessStore.setState((state) => ({
+      ...state,
+      businesses: fetched,
+      selectedBusinessDescriptor:
+        state.selectedBusinessDescriptor ?? fetched[0]?.descriptor,
+    }))
+  }, [businesses.length, businessesQuery.data, selectedBusinessDescriptor])
 
-        if (
-          !selectedBusinessDescriptor &&
-          fetchedBusinesses.businesses.length > 0
-        ) {
-          businessStore.setState((state) => ({
-            ...state,
-            selectedBusinessDescriptor:
-              fetchedBusinesses.businesses[0].descriptor,
-          }))
-        }
-      } catch {
-        // Silent fail - component will handle empty state
-      } finally {
-        setIsLoading(false)
-      }
-    }
-
-    void loadBusinesses()
-  }, [businesses.length, selectedBusinessDescriptor])
+  const isLoading = businesses.length === 0 && businessesQuery.isLoading
 
   const handleSelectBusiness = (businessDescriptor: string) => {
     businessStore.setState((state) => ({
