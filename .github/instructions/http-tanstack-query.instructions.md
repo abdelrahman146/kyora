@@ -47,7 +47,8 @@ This doc is the SSOT for how `portal-web/**` must call the backend.
 Important behavior:
 
 - **401 refresh flow** is implemented in Ky `afterResponse`, excluding `/v1/auth/*`.
-- **Problem JSON parsing** is done in Ky `beforeError` by calling `parseProblemDetails()` and storing a translation key/fallback into `error.message`.
+- **Problem JSON parsing** is done in Ky `beforeError` by calling `parseProblemDetails()`.
+  - `error.message` may be set to a safe fallback string, but user-facing messages must still go through `translateErrorAsync` (single source of truth).
 
 ### 1.2 TanStack Query integration
 
@@ -118,6 +119,19 @@ Policy:
 - **Queries:** global onError should be conservative.
   - Queries can be background (prefetch/refetch) and should not spam toasts.
   - Prefer letting route error boundaries / inline UI handle query errors.
+
+### 2.5 Global toast behavior (current implementation)
+
+The global handlers are implemented in `portal-web/src/main.tsx` via `QueryCache` and `MutationCache`.
+
+Rules:
+
+- Abort/cancel errors are ignored globally.
+- Query error toasts are **deduped** by `queryHash` for 30s to prevent spam from refetch loops.
+- Both queries and mutations support an opt-out meta flag:
+  - set `meta: { errorToast: 'off' }` to suppress the global toast.
+
+Use the shared helper `portal-web/src/lib/toast.ts` (`showErrorFromException`) which translates via `translateErrorAsync`.
 
 **Local (per-hook) onError is allowed only when you need special behavior**, such as:
 

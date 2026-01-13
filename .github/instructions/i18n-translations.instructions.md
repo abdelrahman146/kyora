@@ -39,7 +39,7 @@ This doc exists because translation mistakes are a common failure mode (wrong na
 
 5. **No legacy translation buckets.**
 
-- Do not add or keep keys in catch-all buckets like `translation.json`.
+- Do not create or keep keys in catch-all buckets (e.g. a `translation.json`).
 - The target state is: only explicit feature namespaces (see below), and every key lives in exactly one namespace.
 
 ---
@@ -59,9 +59,13 @@ Loaded namespaces include:
 - `analytics` → `portal-web/src/i18n/{en,ar}/analytics.json`
 - `inventory` → `portal-web/src/i18n/{en,ar}/inventory.json`
 - `orders` → `portal-web/src/i18n/{en,ar}/orders.json`
-- `translation` (defaultNS) → `portal-web/src/i18n/{en,ar}/translation.json`
+- `auth` → `portal-web/src/i18n/{en,ar}/auth.json`
+- `dashboard` → `portal-web/src/i18n/{en,ar}/dashboard.json`
+- `customers` → `portal-web/src/i18n/{en,ar}/customers.json`
+- `pagination` → `portal-web/src/i18n/{en,ar}/pagination.json`
+- `home` → `portal-web/src/i18n/{en,ar}/home.json`
 
-**Migration target (no legacy):** remove the `translation` namespace entirely and split any remaining keys into explicit namespaces (e.g. `auth`, `dashboard`, `customers`), then load them via `portal-web/src/i18n/init.ts`.
+Default namespace is `common`.
 
 ### 1.2 SSOT rule for code: always use an explicit namespace
 
@@ -162,11 +166,12 @@ Log an item in `DRIFT_TODO.md` when you find any of these:
 
 ## 6) Why agents fail “first time” (root cause)
 
-Portal-web currently contains **competing translation structures**:
+Portal-web is namespace-only.
 
-- A dedicated `common` namespace file (`common.json`), AND
-- A nested `common` object inside the default `translation` namespace (`translation.json`).
+If an agent or contributor adds a catch-all bucket (or uses `useTranslation()` without specifying a namespace), it usually causes:
 
-This makes it easy for an agent to implement `t('common.save')` (wrong for `common` namespace usage) instead of `useTranslation('common'); t('save')`.
+- wrong namespace lookups
+- duplicated meaning across namespaces
+- missing locale parity
 
-SSOT fix: new code must always be explicit about namespaces, and translation data must not be duplicated.
+SSOT fix: always use explicit namespaces and keep each meaning in exactly one namespace.

@@ -135,8 +135,11 @@ portal-web/
 │   ├── components/             # UI components (Atomic Design)
 │   │   ├── atoms/              # Buttons, inputs, badges
 │   │   ├── molecules/          # SearchInput, BottomSheet
-│   │   ├── organisms/          # LoginForm, FilterButton
-│   │   └── templates/          # Page layouts
+│   │   ├── organisms/          # App chrome + reusable composites (resource-agnostic)
+│   │   ├── templates/          # Page layouts
+│   │   ├── charts/             # Shared Chart.js wrappers
+│   │   ├── form/               # Shared generic form controls
+│   │   └── icons/              # Custom icons (rare)
 │   ├── features/               # Feature modules (SSOT: portal-web-code-structure.instructions.md)
 │   ├── hooks/                  # Custom hooks
 │   │   ├── useAuth.ts
@@ -161,8 +164,7 @@ portal-web/
 │   ├── stores/                 # TanStack Store instances
 │   │   ├── authStore.ts
 │   │   ├── businessStore.ts
-│   │   ├── metadataStore.ts
-│   │   └── onboardingStore.ts
+│   │   └── (no other stores by default)
 │   ├── types/                  # TypeScript types
 │   └── main.tsx                # Entry point
 ├── public/                     # Static assets
@@ -350,14 +352,7 @@ await invalidateCustomerQueries(customerId);
 - Sidebar UI state
 - Persists preferences to `localStorage` via `createPersistencePlugin`
 
-3. **metadataStore** (`src/stores/metadataStore.ts`)
-
-   - Countries/currencies cache
-   - Persisted to `localStorage`
-
-4. **onboardingStore** (`src/stores/onboardingStore.ts`)
-   - Onboarding wizard state
-   - Persisted to `sessionStorage`
+If a future store is added, it must follow `.github/instructions/state-management.instructions.md` and avoid duplicating TanStack Query cache.
 
 **Store Pattern:**
 
@@ -470,7 +465,7 @@ Kyora initializes i18next at module load time and:
 
 Key settings used by the app today:
 
-- `defaultNS: "translation"`
+- `defaultNS: "common"`
 - `fallbackLng: "en"`
 - Explicit namespaces list (`ns`) and explicit `resources` imports
 
@@ -480,7 +475,6 @@ Translations live in `src/i18n/<locale>/<namespace>.json` and are registered in 
 
 Current namespaces:
 
-- `translation` (default)
 - `common`
 - `errors`
 - `onboarding`
@@ -488,20 +482,22 @@ Current namespaces:
 - `analytics`
 - `inventory`
 - `orders`
+- `auth`
+- `dashboard`
+- `customers`
+- `pagination`
+- `home`
 
-### Key Conventions (Match Existing Code)
+### Canonical Usage
 
-There are two patterns in use; follow the pattern of the namespace you are editing:
+Portal-web is namespace-only.
 
-1. `translation` namespace: dotted keys backed by nested objects
+- Always bind a translator to a namespace:
+  - `const { t: tCommon } = useTranslation("common")`
+  - `const { t: tOrders } = useTranslation("orders")`
+  - `const { t: tErrors } = useTranslation("errors")`
 
-- Example key usage: `t("dashboard.title")`, `t("common.save")`
-- Example file shape: `src/i18n/en/translation.json` contains `{ "dashboard": { "title": "..." } }`
-
-2. Feature namespaces (e.g. `inventory`, `orders`): flat, snake_case keys
-
-- Example key usage:
-  - `const { t } = useTranslation("inventory"); t("product_deleted")`
+See `.github/instructions/i18n-translations.instructions.md` for the SSOT rules (no hardcoded strings, locale parity, no duplication).
 
 ### Canonical Usage (Enforced)
 

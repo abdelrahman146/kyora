@@ -37,6 +37,7 @@ Canonical shape:
   "type": "about:blank",
   "instance": "/v1/...",
   "extensions": {
+    "code": "request.invalid_body",
     "field": "email"
   }
 }
@@ -45,7 +46,8 @@ Canonical shape:
 Notes:
 
 - `instance` is set automatically in `response.Error` from the request path when missing.
-- `extensions` is optional; domains may add structured context (e.g. `field`, `action`, `resource`, `assetId`).
+- `extensions.code` is **required** and must be stable + machine-readable.
+- Other `extensions` are optional; domains may add structured context (e.g. `field`, `action`, `resource`, `assetId`).
 - Internal errors are attached via `WithError(err)` but **never serialized**.
 
 ### 1.2 How errors are emitted
@@ -58,6 +60,14 @@ Notes:
   - DB unique violation → `409 Conflict` (`resource already exists`)
   - everything else → `500 Internal Server Error` (generic detail)
 
+**Code rule (strict):** all errors must include `extensions.code`.
+
+- Domain errors: call `problem.*(...).WithCode("<area>.<reason>")`.
+- Normalized errors in `response.Error` already include stable codes:
+  - `resource.not_found`
+  - `resource.conflict`
+  - `generic.internal`
+
 Do not write ad-hoc error responses in handlers (no `c.JSON(status, ...)` for errors).
 
 ### 1.3 Request body validation (JSON)
@@ -65,7 +75,7 @@ Do not write ad-hoc error responses in handlers (no `c.JSON(status, ...)` for er
 `backend/internal/platform/request/valid_body.go` is the SSOT for JSON body handling:
 
 - Uses `json.Decoder` with `DisallowUnknownFields()`.
-- Invalid JSON / missing body / unknown fields → `400 Bad Request` with `detail: "invalid request body"`.
+- Invalid JSON / missing body / unknown fields → `400 Bad Request` with `detail: "invalid request body"` and `extensions.code: "request.invalid_body"`.
 - Oversized bodies (via `http.MaxBytesReader`) → `413 Payload Too Large`.
 - Gin struct validation errors (`binding.Validator.ValidateStruct`) currently also map to `400 Bad Request` with the same generic detail.
 
@@ -133,6 +143,12 @@ UI pattern:
 - In `catch`, call `translateErrorAsync(error, t)` and show a toast or inline message.
 - Do not show raw backend errors directly; always go through i18n.
 
+**Mapping rule (strict):** portal-web maps backend codes to i18n keys as:
+
+- `extensions.code = "customer.not_found"` → `errors.backend.customer.not_found`
+
+This mapping is implemented in `portal-web/src/lib/errorParser.ts`.
+
 ### 2.3 Failure scenarios to handle explicitly
 
 Handle these consistently in UI:
@@ -163,7 +179,7 @@ Frontend guidance:
 
 These are current backend↔portal misalignments that affect error UX:
 
-- Portal includes `parseValidationErrors()` expecting `extensions.errors | validationErrors | fieldErrors`, but backend does not emit those maps today.
-- Backend maps Gin struct validation errors to a generic `400 invalid request body` without exposing which fields failed.
+- Portal includes `parseValidationErrors()` expecting `extensions.errors | validationErrors | fieldErrors`, but backend does not emit a full field→message map today.
+- Backend maps Gin struct validation errors to a generic `400 invalid request body` (code: `request.invalid_body`) without exposing which fields failed.
 
 If you change either side, keep this document updated and log new drift in `DRIFT_TODO.md`.

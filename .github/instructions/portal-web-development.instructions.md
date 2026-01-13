@@ -234,31 +234,30 @@ function ProductsRoute() {
 For example, update UI labels in the route/component examples:
 
 ```tsx
-const { t } = useTranslation()
+const { t } = useTranslation("inventory");
 
-<h1 className="text-2xl font-bold">{t("products.title")}</h1>
+<h1 className="text-2xl font-bold">{t("title")}</h1>
 
 <button onClick={() => setIsAddOpen(true)} className="btn btn-primary">
-  {t("products.add")}
+  {t("add_product")}
 </button>
 ```
 
 Translations live in `src/i18n/<locale>/<namespace>.json`.
 
-Choose the right place based on existing patterns:
+Choose the right place based on existing patterns (portal-web is namespace-only):
 
-- General UI text: add under `src/i18n/*/translation.json` (default namespace, dotted keys)
-- Feature-heavy screens: add to a feature namespace file (e.g. `src/i18n/*/inventory.json`) using flat snake_case keys
-- Validation and API error messages: `src/i18n/*/errors.json` (see forms.instructions.md for key prefixes)
+- Shared UI primitives: `src/i18n/*/common.json`
+- Feature-specific UI strings: `src/i18n/*/<feature>.json` (e.g. `inventory.json`, `orders.json`, `customers.json`)
+- Errors and API error messaging: `src/i18n/*/errors.json`
 
-Example (default namespace):
+Example (feature namespace):
 
 ```json
-// src/i18n/en/translation.json
+// src/i18n/en/inventory.json
 {
-  "inventory": {
-    "title": "Inventory"
-  }
+  "title": "Inventory",
+  "add_product": "Add product"
 }
 ```
 
@@ -267,9 +266,11 @@ Usage:
 ```tsx
 import { useTranslation } from "react-i18next";
 
-const { t } = useTranslation();
-return <h1>{t("inventory.title")}</h1>;
+const { t } = useTranslation("inventory");
+return <h1>{t("title")}</h1>;
 ```
+
+See `.github/instructions/i18n-translations.instructions.md` for the SSOT rules (explicit namespaces, locale parity, no duplication).
 
 #### 8. Add a New Namespace (Only If Needed)
 

@@ -99,13 +99,17 @@ If nested objects are not intended, return only IDs and omit the relation fields
 Per domain, keep:
 
 - request DTOs in the domain model file (already common): `CreateXRequest`, `UpdateXRequest`
-- response DTOs in a dedicated file, e.g.:
-  - `backend/internal/domain/<domain>/dto.go`
+- response types in a dedicated file:
+  - `backend/internal/domain/<domain>/model_response.go`
 
 Mapping patterns:
 
-- `func (m *Model) ToDTO() ModelDTO`
-- or `func ToModelDTO(m *Model) ModelDTO`
+- `func ToXResponse(m *X) XResponse`
+- `func ToXResponses(items []*X) []XResponse`
+
+Naming rule:
+
+- Use `XResponse` types (no `DTO` suffix).
 
 DTO fields must:
 
@@ -139,8 +143,8 @@ This runs:
 
 Because portal-web often types based on Swagger:
 
-- `@Success` should reference the **DTO** type, not the GORM model.
-- If the handler returns `list.ListResponse[CustomerDTO]`, Swagger should reflect that.
+- `@Success` should reference the **response type** (`<domain>.<XResponse>`), not the GORM model.
+- If the handler returns `list.ListResponse[customer.CustomerResponse]`, Swagger should reflect that.
 
 Rule: if you change a response shape, regenerate OpenAPI (`make openapi`) and update portal types/schemas.
 
