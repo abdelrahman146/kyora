@@ -15,6 +15,15 @@ tools:
     "agent",
     "todo",
   ]
+handoffs:
+  - label: Run SSOT Audit
+    agent: SSOT Compliance Auditor
+    prompt: "Audit the produced domain spec for SSOT alignment. Produce a report: what’s aligned, what’s missing/misaligned, what must be fixed in the spec vs what indicates instruction drift (SSOT update needed). Do not update instruction files during the audit."
+    send: false
+  - label: Sync AI Instructions
+    agent: AI Architect
+    prompt: "Update Kyora’s AI layer if the spec introduces new repeatable conventions (templates, checklists, endpoint patterns). Prefer adding/updating a skill under .github/skills/ when it’s a repeatable workflow."
+    send: false
 infer: false
 ---
 
@@ -497,11 +506,12 @@ Define what needs E2E test coverage:
 
 ## Required Reading
 
-1. **Backend Architecture**: [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md)
+1. **Backend Architecture**: [../instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md)
 2. **Existing Domains** (for patterns):
-   - Orders: [.github/instructions/orders.instructions.md](.github/instructions/orders.instructions.md)
-   - Inventory: [.github/instructions/inventory.instructions.md](.github/instructions/inventory.instructions.md)
-   - Billing: [.github/instructions/billing.instructions.md](.github/instructions/billing.instructions.md)
+
+- Orders: [../instructions/orders.instructions.md](../instructions/orders.instructions.md)
+- Inventory: [../instructions/inventory.instructions.md](../instructions/inventory.instructions.md)
+- Billing: [../instructions/billing.instructions.md](../instructions/billing.instructions.md)
 
 ## Quality Standards
 

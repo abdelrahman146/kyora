@@ -16,6 +16,15 @@ tools:
     "agent",
     "todo",
   ]
+handoffs:
+  - label: Run SSOT Audit
+    agent: SSOT Compliance Auditor
+    prompt: "Audit the portal-web change set for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in code vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
+    send: false
+  - label: Sync AI Instructions
+    agent: AI Architect
+    prompt: "Sync Kyora’s Copilot AI layer with the portal-web changes just made. Update only the minimal relevant .github/instructions/*.instructions.md or skills; avoid duplication/conflicts."
+    send: false
 ---
 
 # Portal-Web Specialist — React + TanStack Expert for Kyora
@@ -302,23 +311,23 @@ if (error) return <ErrorMessage error={error} /> // Global handler does this!
 
 Before starting work:
 
-1. **Architecture**: [.github/instructions/portal-web-architecture.instructions.md](.github/instructions/portal-web-architecture.instructions.md)
-2. **Code Structure**: [.github/instructions/portal-web-code-structure.instructions.md](.github/instructions/portal-web-code-structure.instructions.md)
-3. **UX Guidelines**: [.github/instructions/portal-web-ui-guidelines.instructions.md](.github/instructions/portal-web-ui-guidelines.instructions.md)
-4. **Forms System**: [.github/instructions/forms.instructions.md](.github/instructions/forms.instructions.md)
-5. **HTTP + TanStack Query**: [.github/instructions/http-tanstack-query.instructions.md](.github/instructions/http-tanstack-query.instructions.md)
-6. **State Management**: [.github/instructions/state-management.instructions.md](.github/instructions/state-management.instructions.md)
-7. **UI Implementation**: [.github/instructions/ui-implementation.instructions.md](.github/instructions/ui-implementation.instructions.md)
-8. **Design Tokens**: [.github/instructions/design-tokens.instructions.md](.github/instructions/design-tokens.instructions.md)
-9. **i18n**: [.github/instructions/i18n-translations.instructions.md](.github/instructions/i18n-translations.instructions.md)
+1. **Architecture**: [../instructions/portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
+2. **Code Structure**: [../instructions/portal-web-code-structure.instructions.md](../instructions/portal-web-code-structure.instructions.md)
+3. **UX Guidelines**: [../instructions/portal-web-ui-guidelines.instructions.md](../instructions/portal-web-ui-guidelines.instructions.md)
+4. **Forms System**: [../instructions/forms.instructions.md](../instructions/forms.instructions.md)
+5. **HTTP + TanStack Query**: [../instructions/http-tanstack-query.instructions.md](../instructions/http-tanstack-query.instructions.md)
+6. **State Management**: [../instructions/state-management.instructions.md](../instructions/state-management.instructions.md)
+7. **UI Implementation**: [../instructions/ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md)
+8. **Design Tokens**: [../instructions/design-tokens.instructions.md](../instructions/design-tokens.instructions.md)
+9. **i18n**: [../instructions/i18n-translations.instructions.md](../instructions/i18n-translations.instructions.md)
 
 For specific features:
 
-- **Charts**: [.github/instructions/charts.instructions.md](.github/instructions/charts.instructions.md)
-- **Orders**: [.github/instructions/orders.instructions.md](.github/instructions/orders.instructions.md)
-- **Inventory**: [.github/instructions/inventory.instructions.md](.github/instructions/inventory.instructions.md)
-- **Customers**: [.github/instructions/customer.instructions.md](.github/instructions/customer.instructions.md)
-- **Analytics**: [.github/instructions/analytics.instructions.md](.github/instructions/analytics.instructions.md)
+- **Charts**: [../instructions/charts.instructions.md](../instructions/charts.instructions.md)
+- **Orders**: [../instructions/orders.instructions.md](../instructions/orders.instructions.md)
+- **Inventory**: [../instructions/inventory.instructions.md](../instructions/inventory.instructions.md)
+- **Customers**: [../instructions/customer.instructions.md](../instructions/customer.instructions.md)
+- **Analytics**: [../instructions/analytics.instructions.md](../instructions/analytics.instructions.md)
 
 ## Quality Standards
 

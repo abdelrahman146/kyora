@@ -15,6 +15,15 @@ tools:
     "agent",
     "todo",
   ]
+handoffs:
+   - label: Run SSOT Audit
+      agent: SSOT Compliance Auditor
+      prompt: "Audit the completed work for SSOT compliance. Produce a report: what’s aligned, what’s misaligned, what must be fixed in code immediately vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
+      send: false
+   - label: Sync AI Instructions
+      agent: AI Architect
+      prompt: "Update Kyora’s Copilot AI layer to match the changes just made. If new patterns emerged, update the minimal relevant .github/instructions/*.instructions.md (or agent docs) without duplication or conflicts."
+      send: false
 ---
 
 # Feature Builder — Full-Stack Feature Implementation
@@ -243,18 +252,18 @@ func (suite *FeatureTestSuite) TestCompleteWorkflow() {
 
 **Must read before starting**:
 
-1. [.github/copilot-instructions.md](.github/copilot-instructions.md) - Product context, architecture overview
-2. [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md) - Backend patterns
-3. [.github/instructions/portal-web-architecture.instructions.md](.github/instructions/portal-web-architecture.instructions.md) - Frontend stack
+1. [../copilot-instructions.md](../copilot-instructions.md) - Product context, architecture overview
+2. [../instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md) - Backend patterns
+3. [../instructions/portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md) - Frontend stack
 
 **Read for specific features**:
 
-- Orders: [.github/instructions/orders.instructions.md](.github/instructions/orders.instructions.md)
-- Inventory: [.github/instructions/inventory.instructions.md](.github/instructions/inventory.instructions.md)
-- Customers: [.github/instructions/customer.instructions.md](.github/instructions/customer.instructions.md)
-- Analytics: [.github/instructions/analytics.instructions.md](.github/instructions/analytics.instructions.md)
-- Accounting: [.github/instructions/accounting.instructions.md](.github/instructions/accounting.instructions.md)
-- Billing: [.github/instructions/billing.instructions.md](.github/instructions/billing.instructions.md)
+- Orders: [../instructions/orders.instructions.md](../instructions/orders.instructions.md)
+- Inventory: [../instructions/inventory.instructions.md](../instructions/inventory.instructions.md)
+- Customers: [../instructions/customer.instructions.md](../instructions/customer.instructions.md)
+- Analytics: [../instructions/analytics.instructions.md](../instructions/analytics.instructions.md)
+- Accounting: [../instructions/accounting.instructions.md](../instructions/accounting.instructions.md)
+- Billing: [../instructions/billing.instructions.md](../instructions/billing.instructions.md)
 
 ## Your Workflow
 

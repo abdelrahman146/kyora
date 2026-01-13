@@ -16,6 +16,15 @@ tools:
     "agent",
     "todo",
   ]
+handoffs:
+    - label: Run SSOT Audit
+        agent: SSOT Compliance Auditor
+        prompt: "Audit the new/updated E2E tests for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in tests vs what indicates instruction drift (SSOT update needed). Do not modify tests or instruction files during the audit."
+        send: false
+    - label: Sync AI Instructions
+        agent: AI Architect
+        prompt: "If the E2E workflow introduced new repeatable patterns, update the minimal relevant .github skill/instruction files so future tests follow the same approach. Keep scope to .github/**." 
+        send: false
 ---
 
 # E2E Test Specialist — Testcontainers Expert for Kyora
@@ -416,8 +425,8 @@ func (suite *FeatureTestSuite) TestDeleteOrder_RemovesFromDatabase() {
 
 ## Required Reading
 
-1. **Testing Guidelines**: [.github/instructions/backend-testing.instructions.md](.github/instructions/backend-testing.instructions.md)
-2. **Backend Patterns**: [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md)
+1. **Testing Guidelines**: [../instructions/backend-testing.instructions.md](../instructions/backend-testing.instructions.md)
+2. **Backend Patterns**: [../instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md)
 
 ## Quality Standards
 

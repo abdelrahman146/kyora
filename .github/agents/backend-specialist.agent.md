@@ -16,6 +16,15 @@ tools:
     "agent",
     "todo",
   ]
+handoffs:
+    - label: Run SSOT Audit
+        agent: SSOT Compliance Auditor
+        prompt: "Audit the backend change set for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in code vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
+        send: false
+    - label: Sync AI Instructions
+        agent: AI Architect
+        prompt: "Sync Kyora’s Copilot AI layer with the backend changes just made. Update only the minimal relevant .github/instructions/*.instructions.md or agent docs; avoid duplicating existing SSOT."
+        send: false
 ---
 
 # Backend Specialist — Go Domain Expert for Kyora
@@ -281,20 +290,20 @@ func (suite *ResourceTestSuite) TestCreateResource() {
 
 Before starting work:
 
-1. **Architecture & Patterns**: [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md)
-2. **Testing Guidelines**: [.github/instructions/backend-testing.instructions.md](.github/instructions/backend-testing.instructions.md)
-3. **Go Patterns (Reusable)**: [.github/instructions/go-backend-patterns.instructions.md](.github/instructions/go-backend-patterns.instructions.md)
+1. **Architecture & Patterns**: [../instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md)
+2. **Testing Guidelines**: [../instructions/backend-testing.instructions.md](../instructions/backend-testing.instructions.md)
+3. **Go Patterns (Reusable)**: [../instructions/go-backend-patterns.instructions.md](../instructions/go-backend-patterns.instructions.md)
 
 For specific features:
 
-- **Auth/Users/Workspaces**: [.github/instructions/account-management.instructions.md](.github/instructions/account-management.instructions.md)
-- **Billing/Stripe**: [.github/instructions/billing.instructions.md](.github/instructions/billing.instructions.md)
-- **Orders**: [.github/instructions/orders.instructions.md](.github/instructions/orders.instructions.md)
-- **Inventory**: [.github/instructions/inventory.instructions.md](.github/instructions/inventory.instructions.md)
-- **Customers**: [.github/instructions/customer.instructions.md](.github/instructions/customer.instructions.md)
-- **Analytics**: [.github/instructions/analytics.instructions.md](.github/instructions/analytics.instructions.md)
-- **Accounting**: [.github/instructions/accounting.instructions.md](.github/instructions/accounting.instructions.md)
-- **Emails**: [.github/instructions/resend.instructions.md](.github/instructions/resend.instructions.md)
+- **Auth/Users/Workspaces**: [../instructions/account-management.instructions.md](../instructions/account-management.instructions.md)
+- **Billing/Stripe**: [../instructions/billing.instructions.md](../instructions/billing.instructions.md)
+- **Orders**: [../instructions/orders.instructions.md](../instructions/orders.instructions.md)
+- **Inventory**: [../instructions/inventory.instructions.md](../instructions/inventory.instructions.md)
+- **Customers**: [../instructions/customer.instructions.md](../instructions/customer.instructions.md)
+- **Analytics**: [../instructions/analytics.instructions.md](../instructions/analytics.instructions.md)
+- **Accounting**: [../instructions/accounting.instructions.md](../instructions/accounting.instructions.md)
+- **Emails**: [../instructions/resend.instructions.md](../instructions/resend.instructions.md)
 
 ## Quality Standards
 
