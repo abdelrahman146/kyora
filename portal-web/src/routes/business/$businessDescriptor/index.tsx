@@ -3,7 +3,7 @@ import { BusinessDashboardPage } from '@/features/dashboard/components/BusinessD
 
 export const Route = createFileRoute('/business/$businessDescriptor/')({
   staticData: {
-    titleKey: 'dashboard.title',
+    titleKey: 'pages.dashboard',
   },
   component: BusinessDashboardPage,
 })

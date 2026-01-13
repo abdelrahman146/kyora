@@ -27,7 +27,7 @@ This is the SSOT for how code must be organized in `portal-web/**`.
   - `Route = createFileRoute(...)({ ... })` config
   - `validateSearch` Zod schema
   - `loader` / `beforeLoad` / `loaderDeps`
-  - `staticData` (e.g. title keys)
+  - `staticData` (e.g. title keys; route page titles must use `common.pages.*` — see `.github/instructions/i18n-translations.instructions.md`)
   - a thin `component` wrapper that renders a Feature Page component
 - Route files must not:
   - implement “page UI” (tables/cards/sheets/layouts)

@@ -84,6 +84,18 @@
   "privacy": "Privacy Policy",
   "terms": "Terms of Service",
   "support": "Support",
+  "pages": {
+    "dashboard": "Dashboard",
+    "inventory": "Inventory",
+    "customers": "Customers",
+    "customer_details": "Customer Details",
+    "orders": "Orders",
+    "analytics": "Analytics",
+    "accounting": "Accounting",
+    "billing": "Billing",
+    "team": "Team",
+    "settings": "Settings"
+  },
   "customer": {
     "customers": "Customers",
     "customer": "Customer",

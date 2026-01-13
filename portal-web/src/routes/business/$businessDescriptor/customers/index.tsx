@@ -24,7 +24,7 @@ export const Route = createFileRoute(
   '/business/$businessDescriptor/customers/',
 )({
   staticData: {
-    titleKey: 'customers.title',
+    titleKey: 'pages.customers',
   },
   validateSearch: (search): CustomersSearch => {
     return CustomersSearchSchema.parse(search)

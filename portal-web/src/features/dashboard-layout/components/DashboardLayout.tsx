@@ -17,6 +17,7 @@ export interface DashboardLayoutProps {
 }
 
 export function DashboardLayout({ title, children }: DashboardLayoutProps) {
+  const { t } = useTranslation('common')
   const { t: tDashboard } = useTranslation('dashboard')
   const matches = useMatches()
   const isDesktop = useMediaQuery('(min-width: 768px)')
@@ -34,8 +35,9 @@ export function DashboardLayout({ title, children }: DashboardLayoutProps) {
         : undefined
       : undefined
 
+  // All page titles are centralized in common.pages namespace
   const resolvedTitle =
-    title ?? (derivedTitleKey ? tDashboard(derivedTitleKey) : undefined)
+    title ?? (derivedTitleKey ? t(derivedTitleKey) : undefined)
 
   // Close sidebar when switching to desktop
   useEffect(() => {

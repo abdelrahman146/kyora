@@ -23,7 +23,7 @@ export const Route = createFileRoute(
   '/business/$businessDescriptor/customers/$customerId',
 )({
   staticData: {
-    titleKey: 'customers.details_title',
+    titleKey: 'pages.customer_details',
   },
 
   loader: async ({ context, params }) => {

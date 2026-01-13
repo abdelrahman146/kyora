@@ -119,6 +119,18 @@ const { t: tOrders } = useTranslation("orders");
 
 - Avoid passing `ns` per call in UI code.
 
+- Avoid passing `ns` per call in UI code.
+
+#### 3.1.1 Route page titles (SSOT)
+
+Route-level page titles must be **centralized** under `common.pages` so they can be reused everywhere (Header title, breadcrumbs, etc.).
+
+- In route files, set `staticData.titleKey` to a key like `pages.inventory` (no namespace prefix).
+- Add the corresponding translations in:
+  - `portal-web/src/i18n/en/common.json` under `pages`
+  - `portal-web/src/i18n/ar/common.json` under `pages`
+- Do not point route titles at feature namespaces (e.g. `inventory.title`, `customers.title`). Feature `title` keys can still exist for within-feature UI, but route titles must use `common.pages.*`.
+
 ### 3.2 In shared utilities (toasts, error helpers)
 
 Some shared utilities cannot easily know the namespace at compile time.
@@ -160,6 +172,7 @@ Log an item in `DRIFT_TODO.md` when you find any of these:
 - A key exists in `en` but not in `ar` (or vice versa).
 - A file duplicates the same key (or duplicates the same content across namespaces).
 - UI code uses `useTranslation()` without a namespace (new code), or uses `t('common.*')`/`t('errors.*')` patterns that rely on conflicting structures.
+- A route uses `staticData.titleKey` outside `common.pages.*` (route titles must be `pages.<slug>`).
 - Storefront or portal diverges in translation system in a way that causes duplication or missing keys.
 
 ---

@@ -84,6 +84,18 @@
   "address": "العنوان",
   "select_address": "اختر العنوان",
   "error_occurred": "حدث خطأ ما",
+  "pages": {
+    "dashboard": "لوحة التحكم",
+    "inventory": "المخزون",
+    "customers": "العملاء",
+    "customer_details": "تفاصيل العميل",
+    "orders": "الطلبات",
+    "analytics": "التحليلات",
+    "accounting": "المحاسبة",
+    "billing": "الفواتير",
+    "team": "الفريق",
+    "settings": "الإعدادات"
+  },
   "customer": {
     "customers": "العملاء",
     "customer": "عميل",
