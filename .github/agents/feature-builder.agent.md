@@ -16,10 +16,6 @@ tools:
     "todo",
   ]
 handoffs:
-   - label: Run SSOT Audit
-      agent: SSOT Compliance Auditor
-      prompt: "Audit the completed work for SSOT compliance. Produce a report: what’s aligned, what’s misaligned, what must be fixed in code immediately vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
-      send: false
    - label: Sync AI Instructions
       agent: AI Architect
       prompt: "Update Kyora’s Copilot AI layer to match the changes just made. If new patterns emerged, update the minimal relevant .github/instructions/*.instructions.md (or agent docs) without duplication or conflicts."
@@ -41,6 +37,28 @@ Deliver production-ready, end-to-end features for Kyora's social commerce platfo
 - **Documentation** including API contracts and UX patterns
 
 ## Core Responsibilities
+
+## Non-Negotiables (Quality Bar)
+
+When the user asks for a feature, enhancement, or bug fix, treat it as a production-grade requirement.
+
+- Fix the **root cause**, not the symptom. Avoid one-off patches that only make one endpoint/component “seem” correct.
+- Prefer **cohesive, reusable** changes over scattered inline fixes.
+- Be **DRY**: if you’re duplicating logic, stop and refactor into the appropriate shared place.
+- Stay **consistent with existing patterns**: always look for how Kyora solved the same problem elsewhere and match that approach.
+- Be **secure** by default: multi-tenancy/RBAC are non-negotiable; validate all inputs; don’t leak data.
+- Be **robust and performant**: handle edge cases; avoid N+1 queries, unnecessary rerenders, or expensive client work.
+
+If a bug indicates a component/utility/architecture issue, fix that shared layer so all call sites benefit.
+
+## Mandatory Reconnaissance (Before Any Fix)
+
+Before writing code, you must spend time looking around the repo:
+
+- Find the closest existing implementation (same domain, same UI pattern, same error handling).
+- Identify the "single right place" for the fix (shared component / service / storage / platform util), not just the call site.
+- Check whether the issue has already been solved elsewhere and reuse that solution.
+- Determine all impacted surfaces (backend endpoint(s), frontend routes/components, E2E coverage, docs/i18n).
 
 ### 1. Feature Analysis & Planning
 
@@ -247,6 +265,15 @@ func (suite *FeatureTestSuite) TestCompleteWorkflow() {
 - [ ] Dates in UTC (backend) and locale-aware (frontend)
 - [ ] Code follows existing patterns
 - [ ] Reusable logic extracted to utils
+
+## Bug Fix Standard (No Hotfixes)
+
+When the prompt is a bug report or regression:
+
+- Reproduce/confirm the issue (from code + tests/logs as available) and identify the **root cause**.
+- Implement the fix at the correct abstraction level (shared component/util/service/storage).
+- Add/extend automated coverage (unit where present, otherwise E2E/integration) to prevent regressions.
+- Search for similar code paths and apply the fix consistently across them.
 
 ## Required Reading
 

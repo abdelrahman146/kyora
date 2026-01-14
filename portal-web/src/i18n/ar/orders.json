@@ -121,5 +121,12 @@
   "current_payment_status": "حالة الدفع الحالية",
   "new_payment_status": "حالة الدفع الجديدة",
   "no_status_transitions_available": "لا توجد تحولات حالة متاحة. وصل هذا الطلب إلى حالة نهائية.",
-  "no_payment_transitions_available": "لا توجد تحولات حالة دفع متاحة. وصل هذا الدفع إلى حالة نهائية."
+  "no_payment_transitions_available": "لا توجد تحولات حالة دفع متاحة. وصل هذا الدفع إلى حالة نهائية.",
+  "no_shipping_zone_applicable": "لم يتم العثور على منطقة شحن لهذا العنوان",
+  "zone_name": "المنطقة",
+  "shipping_cost": "تكلفة الشحن",
+  "free_shipping_threshold": "شحن مجاني فوق",
+  "countries_covered": "الدول",
+  "inferred_shipping_zone": "منطقة الشحن المستنتجة",
+  "address_required_first": "يرجى تحديد عنوان الشحن أولاً"
 }

@@ -7,10 +7,14 @@ infer: false
 model: GPT-5.2 (copilot)
 tools: ["vscode", "read", "search", "edit", "todo", "agent"]
 handoffs:
+  - label: Draft UI/UX Spec
+    agent: UI/UX Designer
+    prompt: "Create an implementation-ready UX spec for this BRD. Output a `brds/UX-YYYY-MM-DD-<slug>.md` referencing the BRD."
+    send: false
   - label: Draft Implementation Plan
     agent: Engineering Manager
-    prompt: "Turn the BRD into an engineering plan (milestones, backend/portal-web work, risks, test strategy). Keep it SSOT-aligned and ready for execution."
-    send: true
+    prompt: "Turn the BRD into an engineering plan (milestones, backend/portal-web work, risks, test strategy). Keep it SSOT-aligned and ready for execution"
+    send: false
 ---
 
 # Product Manager — Kyora (Customer-First)

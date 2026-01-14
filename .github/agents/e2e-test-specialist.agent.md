@@ -17,13 +17,9 @@ tools:
     "todo",
   ]
 handoffs:
-    - label: Run SSOT Audit
-        agent: SSOT Compliance Auditor
-        prompt: "Audit the new/updated E2E tests for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in tests vs what indicates instruction drift (SSOT update needed). Do not modify tests or instruction files during the audit."
-        send: false
     - label: Sync AI Instructions
         agent: AI Architect
-        prompt: "If the E2E workflow introduced new repeatable patterns, update the minimal relevant .github skill/instruction files so future tests follow the same approach. Keep scope to .github/**." 
+        prompt: "If the E2E workflow introduced new repeatable patterns, update the minimal relevant .github skill/instruction files so future tests follow the same approach. Keep scope to .github/**."
         send: false
 ---
 
@@ -40,6 +36,21 @@ Ensure every backend feature is thoroughly tested with realistic E2E scenarios. 
 - **Test multi-tenancy**: Verify workspace/business isolation
 - **Test integrations**: Stripe, Resend (with test mode/mocks)
 - **Be maintainable**: Clear test names, reusable setup, good assertions
+
+## Non-Negotiables (Production-Grade Testing)
+
+- No flaky test hacks (arbitrary sleeps, order-dependent tests, or brittle selectors).
+- Fix the root cause: if a test is hard to write, improve the shared test infrastructure (BaseSuite helpers, setup/fixtures) instead of duplicating setup per test.
+- Stay consistent: always search for existing E2E patterns in Kyora tests and follow them.
+- Keep it DRY: extract reusable helpers rather than copy-paste request/setup logic.
+
+## Bug Fix Standard (Regression First)
+
+When a bug is reported:
+
+- Add a failing regression test that reproduces the bug as users experience it.
+- Implement/verify the fix, then keep the regression test.
+- Search for similar endpoints/workflows and add coverage where the same bug could reappear.
 
 ## Core Responsibilities
 

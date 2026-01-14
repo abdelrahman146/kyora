@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { MapPin } from 'lucide-react'
 
@@ -8,9 +8,11 @@ import { useUpdateOrderMutation } from '@/api/order'
 import { useAddressesQuery } from '@/api/address'
 import { useShippingZonesQuery } from '@/api/business'
 import { BottomSheet } from '@/components'
+import { ShippingZoneInfo } from '@/components/organisms/ShippingZoneInfo'
 import { showSuccessToast } from '@/lib/toast'
 import { businessStore } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form'
+import { inferShippingZoneFromAddress } from '@/lib/shippingZone'
 
 export interface EditOrderSheetProps {
   isOpen: boolean
@@ -30,6 +32,10 @@ export function EditOrderSheet({
 
   const businessDescriptor =
     businessStore.state.selectedBusinessDescriptor || ''
+
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [selectedAddress, setSelectedAddress] =
+    useState<CustomerAddress | null>(null)
 
   const { data: addressesData } = useAddressesQuery(
     businessDescriptor,
@@ -70,7 +76,6 @@ export function EditOrderSheet({
     defaultValues: {
       shippingAddressId: order?.shippingAddress?.id || '',
       shippingZoneId: order?.shippingZone?.id || '',
-      shippingFee: order?.shippingFee || '',
       discountType: getDiscountType(),
       discountValue: getDiscountValue(),
     },
@@ -80,7 +85,6 @@ export function EditOrderSheet({
       const payload: UpdateOrderRequest = {
         shippingAddressId: value.shippingAddressId || undefined,
         shippingZoneId: value.shippingZoneId || undefined,
-        shippingFee: value.shippingFee || undefined,
         discountType:
           value.discountValue && value.discountValue.trim() !== ''
             ? value.discountType
@@ -96,17 +100,68 @@ export function EditOrderSheet({
 
   useEffect(() => {
     if (order && isOpen) {
-      form.setFieldValue('shippingAddressId', order.shippingAddress?.id || '')
+      const addressId = order.shippingAddress?.id || ''
+      form.setFieldValue('shippingAddressId', addressId)
       form.setFieldValue('shippingZoneId', order.shippingZone?.id || '')
-      form.setFieldValue('shippingFee', order.shippingFee || '')
       form.setFieldValue('discountType', getDiscountType())
       form.setFieldValue('discountValue', getDiscountValue())
+
+      // Initialize selected address state
+      setSelectedAddressId(addressId)
+      if (addressId && addressesData) {
+        const address = addressesData.find(
+          (a: CustomerAddress) => a.id === addressId,
+        )
+        setSelectedAddress(address || null)
+      }
     }
-  }, [order, isOpen])
+  }, [order, isOpen, addressesData])
+
+  // Handle address selection changes and auto-infer shipping zone
+  useEffect(() => {
+    const addressId = form.getFieldValue('shippingAddressId')
+
+    if (addressId !== selectedAddressId) {
+      setSelectedAddressId(addressId)
+
+      if (addressId && addressesData && addressesData.length > 0) {
+        // Find the selected address
+        const address = addressesData.find(
+          (a: CustomerAddress) => a.id === addressId,
+        )
+        setSelectedAddress(address || null)
+
+        if (address && shippingZones.length > 0) {
+          // Auto-infer shipping zone from address
+          const inferredZone = inferShippingZoneFromAddress(
+            address,
+            shippingZones,
+          )
+          if (inferredZone) {
+            form.setFieldValue('shippingZoneId', inferredZone.id)
+          } else {
+            form.setFieldValue('shippingZoneId', '')
+          }
+        }
+      } else {
+        // Address cleared - reset zone
+        setSelectedAddress(null)
+        form.setFieldValue('shippingZoneId', '')
+      }
+    }
+  }, [
+    form.getFieldValue('shippingAddressId'),
+    selectedAddressId,
+    addressesData,
+    shippingZones,
+    form,
+  ])
 
   useEffect(() => {
     if (!isOpen) {
       form.reset()
+      setSelectedAddressId('')
+      setSelectedAddress(null)
     }
   }, [isOpen])
 
@@ -117,17 +172,10 @@ export function EditOrderSheet({
 
   if (!order) return null
 
-  const addressOptions =
-    addressesData?.map((addr: CustomerAddress) => ({
-      value: addr.id,
-      label: `${addr.street}, ${addr.city}`,
-    })) || []
-
   // Determine which fields are editable based on order status
   const isShipped = ['shipped', 'fulfilled', 'returned'].includes(order.status)
   const isCancelled = order.status === 'cancelled'
   const canEditAddress = !isShipped && !isCancelled
-  const canEditShipping = !isCancelled
   const canEditDiscount = !isCancelled
 
   return (
@@ -146,7 +194,11 @@ export function EditOrderSheet({
             >
               {tCommon('cancel')}
             </button>
-            <form.SubmitButton variant="primary" className="flex-1">
+            <form.SubmitButton
+              form="edit-order-form"
+              variant="primary"
+              className="flex-1"
+            >
               {updateMutation.isPending
                 ? tOrders('update_submitting')
                 : tOrders('update_submit')}
@@ -159,7 +211,7 @@ export function EditOrderSheet({
         closeOnEscape={!updateMutation.isPending}
         contentClassName="space-y-6"
       >
-        <form.FormRoot className="space-y-6">
+        <form.FormRoot id="edit-order-form" className="space-y-6">
           <form.FormError />
 
           {/* Order Info (Read-only) */}
@@ -202,49 +254,49 @@ export function EditOrderSheet({
           </div>
 
           {/* Shipping Address (Editable pre-shipped) */}
-          {canEditAddress && addressOptions.length > 0 && (
+          {canEditAddress && order.customer && (
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-base-content/70" />
-                <h3 className="font-semibold">{tOrders('shipping_address')}</h3>
+                <h3 className="font-semibold text-start">{tOrders('shipping_address')}</h3>
               </div>
 
               <form.AppField name="shippingAddressId">
                 {(field) => (
-                  <field.SelectField
+                  <field.AddressSelectField
                     label={tOrders('select_address')}
-                    options={addressOptions}
-                    searchable
-                    clearable
+                    businessDescriptor={businessDescriptor}
+                    customerId={order.customer!.id}
+                    placeholder={tOrders('search_address')}
                   />
                 )}
               </form.AppField>
-            </div>
-          )}
 
-          {/* Shipping Zone */}
-          {canEditShipping && shippingZones.length > 0 && (
-            <form.AppField name="shippingZoneId">
-              {(field) => (
-                <field.SelectField
-                  label={tOrders('shipping_zone')}
-                  options={[
-                    { value: '', label: tCommon('none') },
-                    ...shippingZones.map((zone) => ({
-                      value: zone.id,
-                      label: zone.name,
-                    })),
-                  ]}
-                  clearable
-                />
+              {/* Inferred Shipping Zone (Read-only Display) */}
+              {selectedAddress && shippingZones.length > 0 && (
+                <form.Subscribe
+                  selector={(state) => state.values.shippingZoneId}
+                >
+                  {(shippingZoneId) => {
+                    const inferredZone = shippingZones.find(
+                      (z) => z.id === shippingZoneId,
+                    )
+                    return (
+                      <ShippingZoneInfo
+                        zone={inferredZone}
+                        currency={inferredZone?.currency}
+                      />
+                    )
+                  }}
+                </form.Subscribe>
               )}
-            </form.AppField>
+            </div>
           )}
 
           {/* Discount */}
           {canEditDiscount && (
             <div className="space-y-3">
-              <h3 className="font-semibold">{tOrders('discount')}</h3>
+              <h3 className="font-semibold text-start">{tOrders('discount')}</h3>
               <div className="grid grid-cols-2 gap-3">
                 <form.AppField name="discountType">
                   {(field) => (
@@ -261,17 +313,31 @@ export function EditOrderSheet({
                   )}
                 </form.AppField>
 
-                <form.AppField name="discountValue">
-                  {(field) => (
-                    <field.TextField
-                      label={tOrders('discount_value')}
-                      type="text"
-                      inputMode="decimal"
-                      dir="ltr"
-                      placeholder="0"
-                    />
+                <form.Subscribe selector={(state) => state.values.discountType}>
+                  {(discountType) => (
+                    <form.AppField name="discountValue">
+                      {(field) =>
+                        discountType === 'amount' ? (
+                          <field.PriceField
+                            label={tOrders('discount_value')}
+                            placeholder="0"
+                          />
+                        ) : (
+                          <field.TextField
+                            label={tOrders('discount_value')}
+                            type="text"
+                            inputMode="decimal"
+                            placeholder="0"
+                            dir="ltr"
+                            endIcon={
+                              <span className="text-base-content/70">%</span>
+                            }
+                          />
+                        )
+                      }
+                    </form.AppField>
                   )}
-                </form.AppField>
+                </form.Subscribe>
               </div>
             </div>
           )}

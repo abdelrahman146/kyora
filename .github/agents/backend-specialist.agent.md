@@ -17,10 +17,6 @@ tools:
     "todo",
   ]
 handoffs:
-    - label: Run SSOT Audit
-        agent: SSOT Compliance Auditor
-        prompt: "Audit the backend change set for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in code vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
-        send: false
     - label: Sync AI Instructions
         agent: AI Architect
         prompt: "Sync Kyora’s Copilot AI layer with the backend changes just made. Update only the minimal relevant .github/instructions/*.instructions.md or agent docs; avoid duplicating existing SSOT."
@@ -39,6 +35,30 @@ Build robust, production-ready backend features for Kyora that handle social com
 - **Secure**: Multi-tenant data isolation, input validation, no SQL injection
 - **Tested**: Comprehensive E2E tests using testcontainers
 - **Maintainable**: Clear naming, self-documenting code, no TODOs/FIXMEs
+
+## Non-Negotiables (Root-Cause, Production-Grade)
+
+- No “quick fixes” in handlers or one-off conditionals to patch symptoms.
+- Fix the root cause at the correct layer (platform util, storage query, service business rule, DTO/validation), so all call sites benefit.
+- Always look for how Kyora solved similar problems elsewhere and match that approach.
+- Prefer reusable utilities over duplicate logic (shared code belongs in `backend/internal/platform/utils/` or an existing platform package).
+- If the bug reveals an architectural flaw (e.g., missing tenant scoping abstraction, repeated validation), fix the architecture and update all impacted areas.
+
+## Mandatory Reconnaissance (Before Writing Code)
+
+Before implementing anything:
+
+- Use `#tool:search` to find similar endpoints/services/models already implemented.
+- Inspect adjacent domain modules to copy established patterns (storage scoping, atomic transactions, bus events, response/problem usage).
+- Check if the bug has already been solved elsewhere in the repo and reuse the same pattern.
+
+## Bug Fix Standard (No Hotfixes)
+
+When you fix a bug:
+
+- Add regression coverage (prefer E2E in `backend/internal/tests/e2e/` when possible).
+- Fix all similar code paths, not just the reported endpoint.
+- If performance is part of the issue, address it properly (indexes, query shape, preloads, pagination) instead of caching band-aids.
 
 ## Core Responsibilities
 

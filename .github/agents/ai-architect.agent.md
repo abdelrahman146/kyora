@@ -5,29 +5,7 @@ target: vscode
 argument-hint: "Improve/create Copilot agents, instructions, prompts, or skills under .github/. Mention the target file(s) and desired behavior."
 infer: false
 model: GPT-5.2 (copilot)
-tools:
-   [
-      "vscode",
-      "read",
-      "edit",
-      "search",
-      "web",
-      "agent",
-      "todo",
-   ]
-handoffs:
-   - label: Run SSOT Audit
-      agent: SSOT Compliance Auditor
-      prompt: "Audit the current change set for SSOT compliance. Produce a structured report: Aligned vs Misaligned, severity (Blocker/High/Medium/Low), what must be fixed in code vs what indicates instruction drift (SSOT update needed), and a recommended next handoff. Do not modify code or instruction files during the audit."
-      send: false
-   - label: Create/Update Skill
-      agent: AI Architect
-      prompt: "Create or update a .github/skills/<skill-name>/SKILL.md (and any referenced assets) for the workflow we discussed. Follow Kyora AI infra rules and keep the skill discoverable and safe."
-      send: false
-   - label: Draft New Agent
-      agent: AI Architect
-      prompt: "Draft a new .github/agents/<name>.agent.md for the workflow we discussed. Use least-privilege tools, strong boundaries, and include handoffs when useful."
-      send: false
+tools: ["vscode", "read", "edit", "search", "web", "agent", "todo"]
 ---
 
 # AI Architect — Kyora AI Infrastructure Maintainer

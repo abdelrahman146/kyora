@@ -29,3 +29,15 @@ Example:
 ## Template
 
 Start from [BRD_TEMPLATE.md](BRD_TEMPLATE.md).
+
+## UX specs (optional)
+
+For larger or UI-heavy work, we also store implementation-ready UX specs that Engineering Manager can plan against.
+
+Naming:
+
+- `brds/UX-YYYY-MM-DD-<short-slug>.md`
+
+Template:
+
+- Start from [UX_TEMPLATE.md](UX_TEMPLATE.md).

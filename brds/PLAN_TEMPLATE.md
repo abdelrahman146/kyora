@@ -38,17 +38,52 @@ List anything that requires explicit approval:
 - Data model:
 - Security/tenancy:
 
-## 3) Work breakdown (handoff-ready)
+## 3) Step-based execution plan (handoff-ready)
 
-### Milestone 1 (shippable)
+Execution protocol:
+- Feature Builder will implement **one step per request**.
+- Each step below is sized to be completed “perfectly” in a single AI request.
+- Do not start Step N+1 before Step N is merged/verified.
+
+### Step Index
+
+- Step 0 — Repo alignment + DRY map
+- Step 1 — <first thin slice>
+- Step 2 — <next thin slice>
+- ...
+
+### Step 0 — Repo alignment + DRY map (required)
 
 - Goal:
-- Backend tasks:
-- Portal-web tasks:
-- Tests:
-- Rollout notes:
+- Scope (in/out):
+- Repo Recon (Evidence):
+  - Portal-web entry points:
+  - Backend entry points:
+- Code Structure & Reuse:
+  - New files (if any) + reuse scope:
+  - Modified files grouped by responsibility:
+  - Do-Not-Duplicate list:
+- Tasks:
+  - Backend:
+  - Portal-web:
+  - Tests:
+- Verification:
+- Definition of done:
 
-### Milestone 2 (shippable)
+### Step 1 — <step title>
+
+- Goal (user-visible outcome):
+- Scope (explicitly in/out):
+- Targets (files/symbols/endpoints):
+- Tasks (detailed checklist):
+  - Backend:
+  - Portal-web:
+  - Tests:
+- Edge cases + error handling:
+- Verification checklist:
+- Definition of done:
+
+### Step 2 — <step title>
 
 - ...
 

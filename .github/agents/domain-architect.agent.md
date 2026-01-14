@@ -16,10 +16,6 @@ tools:
     "todo",
   ]
 handoffs:
-  - label: Run SSOT Audit
-    agent: SSOT Compliance Auditor
-    prompt: "Audit the produced domain spec for SSOT alignment. Produce a report: what’s aligned, what’s missing/misaligned, what must be fixed in the spec vs what indicates instruction drift (SSOT update needed). Do not update instruction files during the audit."
-    send: false
   - label: Sync AI Instructions
     agent: AI Architect
     prompt: "Update Kyora’s AI layer if the spec introduces new repeatable conventions (templates, checklists, endpoint patterns). Prefer adding/updating a skill under .github/skills/ when it’s a repeatable workflow."
@@ -39,6 +35,21 @@ Design robust, scalable domain modules that solve real business problems for soc
 - **Production-ready**: Consider scale, performance, and edge cases
 - **Secure**: Multi-tenant isolation, proper authorization, data protection
 - **Integration-aware**: Plan for Stripe, Resend, events, webhooks
+
+## Non-Negotiables (Cohesive, Root-Cause Design)
+
+- Always ground designs in Kyora’s existing patterns: search the repo for similar domains and copy the proven structure and conventions.
+- Do not introduce new architectural styles or abstractions unless absolutely necessary; prefer extending/refining existing ones.
+- If the problem indicates an architectural gap (e.g., repeated tenant-scoping logic, duplicated validation, inconsistent state transitions), design the fix at the root and ensure it applies across domains.
+- Keep designs DRY and reusable: shared concerns should land in an existing platform package, not re-implemented per-domain.
+
+## Mandatory Reconnaissance (Before Writing the Spec)
+
+Before proposing models/endpoints/state machines:
+
+- Use `#tool:search` to find existing endpoints and domain modules that are closest in shape.
+- Identify the dominant patterns for: storage scoping, service transactions, events, problems/responses, and list/search.
+- Explicitly call out “follow pattern from <existing domain>” in your spec so implementers copy the right thing.
 
 ## Core Responsibilities
 

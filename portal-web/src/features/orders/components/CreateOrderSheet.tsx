@@ -12,12 +12,15 @@ import type {
 } from '@/api/order'
 import { useAddressesQuery } from '@/api/address'
 import { useCustomersQuery } from '@/api/customer'
+import type { CustomerAddress } from '@/api/customer'
 import { useCreateOrderMutation } from '@/api/order'
 import { usePaymentMethodsQuery, useShippingZonesQuery } from '@/api/business'
 import { BottomSheet } from '@/components'
+import { ShippingZoneInfo } from '@/components/organisms/ShippingZoneInfo'
 import { useKyoraForm } from '@/lib/form'
 import { showSuccessToast } from '@/lib/toast'
 import { businessStore } from '@/stores/businessStore'
+import { inferShippingZoneFromAddress } from '@/lib/shippingZone'
 
 export interface CreateOrderSheetProps {
   isOpen: boolean
@@ -60,6 +63,9 @@ export function CreateOrderSheet({
     businessStore.state.selectedBusinessDescriptor || ''
 
   const [selectedCustomerId, setSelectedCustomerId] = useState<string>('')
+  const [selectedAddressId, setSelectedAddressId] = useState<string>('')
+  const [selectedAddress, setSelectedAddress] =
+    useState<CustomerAddress | null>(null)
 
   useCustomersQuery(
     businessDescriptor,
@@ -69,7 +75,11 @@ export function CreateOrderSheet({
     },
     isOpen,
   )
-  useAddressesQuery(businessDescriptor, selectedCustomerId, isOpen)
+  const { data: addresses = [] } = useAddressesQuery(
+    businessDescriptor,
+    selectedCustomerId,
+    isOpen,
+  )
   const { data: paymentMethods = [] } = usePaymentMethodsQuery(
     businessDescriptor,
     isOpen,
@@ -93,7 +103,6 @@ export function CreateOrderSheet({
       shippingAddressId: '',
       channel: 'instagram' as string,
       shippingZoneId: '' as string,
-      shippingFee: '' as string,
       discountType: 'amount' as DiscountType,
       discountValue: '' as string,
       paymentMethod: '' as string,
@@ -116,7 +125,6 @@ export function CreateOrderSheet({
         shippingAddressId: value.shippingAddressId,
         channel: value.channel,
         shippingZoneId: value.shippingZoneId || undefined,
-        shippingFee: value.shippingFee || undefined,
         discountType:
           value.discountValue && value.discountValue.trim() !== ''
             ? value.discountType
@@ -162,12 +170,55 @@ export function CreateOrderSheet({
     const customerId = form.getFieldValue('customerId')
     if (customerId !== selectedCustomerId) {
       setSelectedCustomerId(customerId)
-      // Reset address when customer changes
+      // Reset address and shipping zone when customer changes
       if (customerId) {
         form.setFieldValue('shippingAddressId', '')
+        form.setFieldValue('shippingZoneId', '')
+        setSelectedAddressId('')
+        setSelectedAddress(null)
       }
     }
   }, [form.getFieldValue('customerId'), selectedCustomerId, form])
+
+  // Handle address selection and auto-infer shipping zone
+  useEffect(() => {
+    const addressId = form.getFieldValue('shippingAddressId')
+
+    if (addressId !== selectedAddressId) {
+      setSelectedAddressId(addressId)
+
+      if (addressId && addresses.length > 0) {
+        // Find the selected address
+        const address = addresses.find(
+          (a: CustomerAddress) => a.id === addressId,
+        )
+        setSelectedAddress(address || null)
+
+        if (address && shippingZones.length > 0) {
+          // Auto-infer shipping zone from address
+          const inferredZone = inferShippingZoneFromAddress(
+            address,
+            shippingZones,
+          )
+          if (inferredZone) {
+            form.setFieldValue('shippingZoneId', inferredZone.id)
+          } else {
+            form.setFieldValue('shippingZoneId', '')
+          }
+        }
+      } else {
+        // Address cleared - reset zone
+        setSelectedAddress(null)
+        form.setFieldValue('shippingZoneId', '')
+      }
+    }
+  }, [
+    form.getFieldValue('shippingAddressId'),
+    selectedAddressId,
+    addresses,
+    shippingZones,
+    form,
+  ])
 
   const safeClose = () => {
     if (createMutation.isPending) return
@@ -192,7 +243,11 @@ export function CreateOrderSheet({
             >
               {tCommon('cancel')}
             </button>
-            <form.SubmitButton variant="primary" className="flex-1">
+            <form.SubmitButton
+              form="create-order-form"
+              variant="primary"
+              className="flex-1"
+            >
               {createMutation.isPending
                 ? tOrders('create_submitting')
                 : tOrders('create_submit')}
@@ -205,14 +260,14 @@ export function CreateOrderSheet({
         closeOnEscape={!createMutation.isPending}
         contentClassName="space-y-6"
       >
-        <form.FormRoot className="space-y-6">
+        <form.FormRoot id="create-order-form" className="space-y-6">
           <form.FormError />
 
           {/* Customer Selection */}
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <User size={18} className="text-base-content/70" />
-              <h3 className="font-semibold">{tOrders('customer')}</h3>
+              <h3 className="font-semibold text-start">{tOrders('customer')}</h3>
             </div>
 
             <form.AppField
@@ -237,7 +292,7 @@ export function CreateOrderSheet({
             <div className="space-y-3">
               <div className="flex items-center gap-2">
                 <MapPin size={18} className="text-base-content/70" />
-                <h3 className="font-semibold">{tOrders('shipping_address')}</h3>
+                <h3 className="font-semibold text-start">{tOrders('shipping_address')}</h3>
               </div>
 
               <form.AppField
@@ -256,6 +311,25 @@ export function CreateOrderSheet({
                   />
                 )}
               </form.AppField>
+
+              {/* Inferred Shipping Zone (Read-only Display) */}
+              {selectedAddress && shippingZones.length > 0 && (
+                <form.Subscribe
+                  selector={(state) => state.values.shippingZoneId}
+                >
+                  {(shippingZoneId) => {
+                    const inferredZone = shippingZones.find(
+                      (z) => z.id === shippingZoneId,
+                    )
+                    return (
+                      <ShippingZoneInfo
+                        zone={inferredZone}
+                        currency={inferredZone?.currency}
+                      />
+                    )
+                  }}
+                </form.Subscribe>
+              )}
             </div>
           )}
 
@@ -283,7 +357,7 @@ export function CreateOrderSheet({
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
                 <Package size={18} className="text-base-content/70" />
-                <h3 className="font-semibold">{tOrders('items')}</h3>
+                <h3 className="font-semibold text-start">{tOrders('items')}</h3>
               </div>
               <button
                 type="button"
@@ -419,28 +493,9 @@ export function CreateOrderSheet({
             </form.Subscribe>
           </div>
 
-          {/* Shipping Zone */}
-          {shippingZones.length > 0 && (
-            <form.AppField name="shippingZoneId">
-              {(field) => (
-                <field.SelectField
-                  label={tOrders('shipping_zone')}
-                  options={[
-                    { value: '', label: tCommon('none') },
-                    ...shippingZones.map((zone) => ({
-                      value: zone.id,
-                      label: zone.name,
-                    })),
-                  ]}
-                  clearable
-                />
-              )}
-            </form.AppField>
-          )}
-
           {/* Discount */}
           <div className="space-y-3">
-            <h3 className="font-semibold">{tOrders('discount')}</h3>
+            <h3 className="font-semibold text-start">{tOrders('discount')}</h3>
             <div className="grid grid-cols-2 gap-3">
               <form.AppField name="discountType">
                 {(field) => (
@@ -486,7 +541,7 @@ export function CreateOrderSheet({
           <div className="space-y-3">
             <div className="flex items-center gap-2">
               <CreditCard size={18} className="text-base-content/70" />
-              <h3 className="font-semibold">{tOrders('payment_details')}</h3>
+              <h3 className="font-semibold text-start">{tOrders('payment_details')}</h3>
             </div>
 
             {enabledPaymentMethods.length > 0 && (

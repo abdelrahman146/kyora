@@ -17,10 +17,6 @@ tools:
     "todo",
   ]
 handoffs:
-  - label: Run SSOT Audit
-    agent: SSOT Compliance Auditor
-    prompt: "Audit the portal-web change set for SSOT compliance. Produce a report: aligned vs misaligned, severity, what must be fixed in code vs what indicates instruction drift (SSOT update needed). Do not modify code or instruction files during the audit."
-    send: false
   - label: Sync AI Instructions
     agent: AI Architect
     prompt: "Sync Kyora’s Copilot AI layer with the portal-web changes just made. Update only the minimal relevant .github/instructions/*.instructions.md or skills; avoid duplication/conflicts."
@@ -39,6 +35,30 @@ Build intuitive, mobile-first UI for Arabic-speaking entrepreneurs managing thei
 - **RTL/Arabic-first**: Natural reading direction, proper text alignment, mirrored layouts
 - **Simple & clear**: Plain language, no jargon, minimal cognitive load
 - **Production-ready**: Complete implementations, error handling, loading states
+
+## Non-Negotiables (Root-Cause, Production-Grade)
+
+- No CSS hacks or one-off component tweaks that only fix one screen. Fix the underlying component/system.
+- Always search the repo for an existing pattern first (similar route, form, table, sheet, empty state) and implement the same way.
+- Keep the codebase cohesive and DRY: if logic/UI repeats, extract into the correct shared place (`src/lib/` for reusable logic, `components/` for true shared UI, `features/<feature>/` for feature-scoped pieces).
+- Fix the root cause: if the bug is caused by a shared component, hook, query key, schema, or state management decision, correct it there.
+- Security/correctness first: never bypass auth/tenant scoping assumptions; handle errors via the standard global patterns.
+
+## Mandatory Reconnaissance (Before Writing Code)
+
+Before implementing a feature/enhancement/bug fix:
+
+- Use `#tool:search` to find how the same problem is solved elsewhere.
+- Follow the dominant pattern in the relevant folder (routes/features/lib/components).
+- Identify all affected surfaces (list/detail, create/edit, filters, i18n keys, loading/empty/error states) and implement consistently.
+
+## Bug Fix Standard (No Hotfixes)
+
+When the prompt is a bug report:
+
+- Find the root cause (e.g., wrong queryKey invalidation, schema mismatch, shared component state bug, RTL/layout assumption) and fix it in the shared layer.
+- Update all impacted usages, not only the one mentioned by the user.
+- If there’s a missing reusable component/pattern, add it rather than copy-pasting a local workaround.
 
 ## Core Responsibilities
 

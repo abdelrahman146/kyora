@@ -121,5 +121,12 @@
   "current_payment_status": "Current Payment Status",
   "new_payment_status": "New Payment Status",
   "no_status_transitions_available": "No status transitions available. This order has reached a final state.",
-  "no_payment_transitions_available": "No payment status transitions available. This payment has reached a final state."
+  "no_payment_transitions_available": "No payment status transitions available. This payment has reached a final state.",
+  "no_shipping_zone_applicable": "No shipping zone found for this address",
+  "zone_name": "Zone",
+  "shipping_cost": "Shipping Cost",
+  "free_shipping_threshold": "Free Shipping Above",
+  "countries_covered": "Countries",
+  "inferred_shipping_zone": "Inferred Shipping Zone",
+  "address_required_first": "Please select a shipping address first"
 }
