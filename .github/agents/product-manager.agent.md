@@ -4,7 +4,7 @@ description: "Kyora product manager agent. Turns stakeholder requests into custo
 target: vscode
 argument-hint: "Describe a customer problem or feature idea in plain terms. I will ask a few clarifying questions and produce a BRD under /brds with status tracking."
 infer: false
-model: GPT-5.2 (copilot)
+model: Gemini 3 Pro (Preview) (copilot)
 tools: ["vscode", "read", "search", "edit", "todo", "agent"]
 handoffs:
   - label: Draft UI/UX Spec

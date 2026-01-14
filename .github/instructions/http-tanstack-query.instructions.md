@@ -1,6 +1,6 @@
 ---
 description: Portal Web HTTP layer + TanStack Query SSOT (queries, mutations, global error handling)
-applyTo: "portal-web/src/api/**,portal-web/src/lib/queryKeys.ts,portal-web/src/lib/queryInvalidation.ts,portal-web/src/main.tsx,portal-web/src/router.tsx,portal-web/src/routes/**,portal-web/src/components/**"
+applyTo: "portal-web/**"
 ---
 
 # Portal Web HTTP + TanStack Query (SSOT)

@@ -1,6 +1,6 @@
 ---
 description: i18n & Translations SSOT (portal-web + storefront-web + backend-facing rules)
-applyTo: "portal-web/src/i18n/**,portal-web/src/routes/**,portal-web/src/components/**,portal-web/src/lib/**,storefront-web/src/i18n/**,storefront-web/src/pages/**,storefront-web/src/components/**,backend/internal/platform/types/problem/**,backend/internal/platform/response/**,backend/internal/domain/**/handler_http.go"
+applyTo: "portal-web/**"
 ---
 
 # i18n & Translations (SSOT)

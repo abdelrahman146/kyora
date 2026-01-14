@@ -1,6 +1,6 @@
 ---
 description: Go Backend Project Patterns (Kyora-style, reusable)
-applyTo: "backend/**/*.go,backend/**/*_test.go,admin-backend/**/*.go,admin-backend/**/*_test.go,admin-backend-api/**/*.go,admin-backend-api/**/*_test.go"
+applyTo: "backend/**"
 ---
 
 # Go Backend Project Patterns (Reusable SSOT)
@@ -83,7 +83,7 @@ Pattern:
 Strict rules:
 
 - Never log secrets (tokens, API keys, refresh tokens).
-- Enrich logs with actor/tenant context *after* authentication.
+- Enrich logs with actor/tenant context _after_ authentication.
 
 ## Request validation (strict JSON)
 

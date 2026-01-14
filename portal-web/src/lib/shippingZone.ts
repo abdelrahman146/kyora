@@ -99,7 +99,7 @@ export function formatShippingZoneInfo(
  */
 export function getZoneCountries(
   zone: ShippingZone | null | undefined,
-): string[] {
+): Array<string> {
   if (!zone) {
     return []
   }

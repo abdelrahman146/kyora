@@ -112,6 +112,7 @@ export function CategorySelectField({
         createCategoryMutation.isPending ||
         field.state.meta.isValidating
       }
+      isLoading={isLoading}
       onClose={field.handleBlur}
       aria-invalid={!field.state.meta.isValid && field.state.meta.isTouched}
       aria-describedby={showError ? `${field.name}-error` : undefined}

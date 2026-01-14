@@ -168,6 +168,8 @@ export interface CustomerSelectFieldProps extends BaseFieldProps {
   businessDescriptor: string
   /** Placeholder text for the select */
   placeholder?: string
+  /** Callback when customer selection changes (for resetting dependent fields) */
+  onCustomerChange?: (customerId: string | null) => void
 }
 
 /**

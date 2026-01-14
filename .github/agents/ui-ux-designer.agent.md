@@ -4,7 +4,7 @@ description: "Kyora UI/UX design specialist. Turns a BRD into a complete, implem
 target: vscode
 argument-hint: "Provide a BRD path (preferred). I will inspect existing portal-web UI patterns/components, then write a UX spec doc (screens, flows, states, reuse map) for Engineering Manager."
 infer: false
-model: GPT-5.2 (copilot)
+model: Gemini 3 Pro (Preview) (copilot)
 tools: ["vscode", "read", "search", "edit", "todo"]
 handoffs:
   - label: Create Engineering Plan

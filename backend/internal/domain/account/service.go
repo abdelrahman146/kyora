@@ -555,7 +555,7 @@ func (s *Service) AcceptInvitation(ctx context.Context, token string, firstName,
 	// Get invitation payload from token
 	payload, err := s.storage.GetWorkspaceInvitationToken(token)
 	if err != nil {
-		return nil, nil, ErrInvalidOrExpiredToken(err)
+		return nil, nil, ErrInvalidInvitationToken(err)
 	}
 
 	// Find the invitation (scoped to token payload)
@@ -644,7 +644,7 @@ func (s *Service) AcceptInvitationWithGoogleAuth(ctx context.Context, token stri
 	// Get invitation payload from token
 	payload, err := s.storage.GetWorkspaceInvitationToken(token)
 	if err != nil {
-		return nil, nil, ErrInvalidOrExpiredToken(err)
+		return nil, nil, ErrInvalidInvitationToken(err)
 	}
 
 	// Verify the Google email matches the invitation email
@@ -779,7 +779,7 @@ func (s *Service) RevokeInvitation(ctx context.Context, workspaceID string, invi
 	}
 
 	if invitation.Status != InvitationStatusPending {
-		return problem.Conflict("only pending invitations can be revoked").WithCode("account.cannot_revoke_invitation")
+		return ErrInvitationCannotBeRevoked(nil)
 	}
 
 	invitation.Status = InvitationStatusRevoked

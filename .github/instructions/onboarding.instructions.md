@@ -1,6 +1,6 @@
 ---
 description: "Kyora onboarding SSOT (backend + portal-web): stages, endpoint contracts, routing, polling, and do/don't rules"
-applyTo: "backend/internal/domain/onboarding/**,portal-web/src/routes/onboarding/**,portal-web/src/api/onboarding.ts,portal-web/src/api/types/onboarding.ts,portal-web/src/lib/onboarding.ts"
+applyTo: "**/*"
 ---
 
 # Kyora Onboarding SSOT (Backend + Portal Web)

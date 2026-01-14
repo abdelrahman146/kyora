@@ -54,6 +54,8 @@ export interface AddressSelectFieldProps {
   required?: boolean
   /** Additional CSS classes */
   className?: string
+  /** Callback when address selection changes (for auto-inferring shipping zone) */
+  onAddressChange?: (addressId: string | null) => void
 }
 
 export function AddressSelectField(props: AddressSelectFieldProps) {
@@ -96,6 +98,12 @@ export function AddressSelectField(props: AddressSelectFieldProps) {
       ? tErrors(errorMessage, { defaultValue: errorMessage })
       : errorMessage?.message
 
+  const handleAddressChange = (value: string | Array<string>) => {
+    const addressId = Array.isArray(value) ? value[0] : value
+    field.handleChange(addressId)
+    props.onAddressChange?.(addressId || null)
+  }
+
   return (
     <div className={className}>
       <FormSelect
@@ -103,7 +111,7 @@ export function AddressSelectField(props: AddressSelectFieldProps) {
         placeholder={placeholder}
         options={addressOptions}
         value={field.state.value}
-        onChange={(value) => field.handleChange(value as string)}
+        onChange={handleAddressChange}
         error={translatedError}
         disabled={disabled || isLoading}
         required={required}

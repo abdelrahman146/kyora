@@ -1,6 +1,6 @@
 ---
 description: "Kyora orders SSOT (backend + portal-web): endpoints, list/search, status/payment state machines, inventory adjustments, plan gates"
-applyTo: "backend/internal/domain/order/**,backend/internal/domain/storefront/**,backend/internal/server/routes.go,backend/internal/tests/e2e/order*_test.go,portal-web/src/api/order.ts,portal-web/src/routes/business/$businessDescriptor/orders/**,portal-web/src/components/**Order*.tsx"
+applyTo: "**/*"
 ---
 
 # Kyora Orders — Single Source of Truth (SSOT)

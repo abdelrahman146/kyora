@@ -1,6 +1,6 @@
 ---
 description: Backend Testing Guidelines — E2E, Unit, Integration, Coverage
-applyTo: "backend/internal/tests/**,backend/**/*_test.go"
+applyTo: "backend/**"
 ---
 
 # Backend Testing Guidelines

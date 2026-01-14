@@ -89,6 +89,122 @@ func (s *Service) computeDiscountAmount(subtotal decimal.Decimal, req *CreateOrd
 	return req.Discount
 }
 
+// PreviewOrder validates the payload and computes totals without persisting or mutating inventory.
+func (s *Service) PreviewOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*OrderPreview, error) {
+	// Basic abuse/double-submit protection (best-effort, cache-backed).
+	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:order:preview:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second) {
+		return nil, ErrOrderRateLimited()
+	}
+
+	if req == nil || len(req.Items) == 0 {
+		return nil, ErrEmptyOrderItems()
+	}
+	if req.ShippingFee.LessThan(decimal.Zero) {
+		return nil, problem.BadRequest("shippingFee cannot be negative")
+	}
+	if req.DiscountValue.LessThan(decimal.Zero) {
+		return nil, problem.BadRequest("discountValue cannot be negative")
+	}
+	if req.Discount.LessThan(decimal.Zero) {
+		return nil, problem.BadRequest("discount cannot be negative")
+	}
+
+	if _, err := s.customer.GetCustomerByID(ctx, actor, biz, req.CustomerID); err != nil {
+		return nil, err
+	}
+	addr, err := s.customer.GetCustomerAddressByID(ctx, actor, biz, req.CustomerID, req.ShippingAddressID)
+	if err != nil {
+		return nil, err
+	}
+
+	orderItems, adjustments, err := s.prepareOrderItems(ctx, actor, biz, req.Items)
+	if err != nil {
+		return nil, err
+	}
+
+	var shippingZoneID *string
+	var zone *business.ShippingZone
+	if req.ShippingZoneID != nil {
+		zoneVal := strings.TrimSpace(*req.ShippingZoneID)
+		if zoneVal != "" {
+			shippingZoneID = &zoneVal
+		}
+	}
+	if shippingZoneID != nil {
+		if s.business == nil {
+			return nil, problem.InternalError().With("reason", "business service not configured")
+		}
+		z, err := s.business.GetShippingZoneByID(ctx, actor, biz, *shippingZoneID)
+		if err != nil {
+			return nil, err
+		}
+		if z.Currency != biz.Currency {
+			return nil, problem.BadRequest("shipping zone currency must match business currency")
+		}
+		addrCountry := strings.TrimSpace(strings.ToUpper(addr.CountryCode))
+		if addrCountry == "" || !z.Countries.Contains(addrCountry) {
+			return nil, ErrShippingZoneCountryMismatch(z.ID, addrCountry)
+		}
+		zone = z
+	}
+
+	paymentMethod := req.PaymentMethod
+	if paymentMethod == "" {
+		paymentMethod = OrderPaymentMethodBankTransfer
+	}
+	if s.business != nil {
+		enabled, _, _, err := s.business.GetEffectivePaymentMethodFee(ctx, biz.ID, business.PaymentMethodDescriptor(paymentMethod))
+		if err != nil {
+			return nil, err
+		}
+		if !enabled {
+			return nil, problem.BadRequest("payment method is disabled for this business").With("paymentMethod", paymentMethod)
+		}
+	}
+
+	subtotal := s.calculateSubtotal(orderItems)
+	cogs := s.calculateCOGS(orderItems)
+	vatRate := biz.VatRate
+	discount := s.computeDiscountAmount(subtotal, req)
+	vat := s.calculateVAT(subtotal, vatRate)
+	shippingFee := req.ShippingFee
+	if zone != nil {
+		shippingFee = s.shippingFeeFromZone(subtotal, discount, zone)
+	}
+	total := s.calculateTotal(subtotal, vat, shippingFee, discount)
+
+	if err := s.ensureInventorySufficient(adjustments); err != nil {
+		return nil, err
+	}
+
+	previewItems := make([]OrderPreviewItem, len(orderItems))
+	for i, it := range orderItems {
+		previewItems[i] = OrderPreviewItem{
+			VariantID: it.VariantID,
+			ProductID: it.ProductID,
+			Quantity:  it.Quantity,
+			UnitPrice: it.UnitPrice,
+			UnitCost:  it.UnitCost,
+			Total:     it.Total,
+			TotalCost: it.TotalCost,
+		}
+	}
+
+	return &OrderPreview{
+		Subtotal:       subtotal,
+		VAT:            vat,
+		VATRate:        vatRate,
+		ShippingFee:    shippingFee,
+		Discount:       discount,
+		COGS:           cogs,
+		Total:          total,
+		Currency:       biz.Currency,
+		ShippingZoneID: shippingZoneID,
+		PaymentMethod:  paymentMethod,
+		Items:          previewItems,
+	}, nil
+}
+
 func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *business.Business, req *CreateOrderRequest) (*Order, error) {
 	// Basic abuse/double-submit protection (best-effort, cache-backed).
 	if !throttle.Allow(s.storage.cache, fmt.Sprintf("rl:order:create:%s:%s", biz.ID, actor.ID), time.Minute, 30, 1*time.Second) {
@@ -152,7 +268,7 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 			}
 			addrCountry := strings.TrimSpace(strings.ToUpper(addr.CountryCode))
 			if addrCountry == "" || !z.Countries.Contains(addrCountry) {
-				return problem.BadRequest("shipping zone does not include destination country").With("countryCode", addrCountry).With("zoneId", z.ID)
+				return ErrShippingZoneCountryMismatch(z.ID, addrCountry)
 			}
 			zone = z
 		}
@@ -531,7 +647,7 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 				}
 				addrCountry := strings.TrimSpace(strings.ToUpper(addr.CountryCode))
 				if addrCountry == "" || !zone.Countries.Contains(addrCountry) {
-					return problem.BadRequest("shipping zone does not include destination country").With("countryCode", addrCountry).With("zoneId", zone.ID)
+					return ErrShippingZoneCountryMismatch(zone.ID, addrCountry)
 				}
 				ord.ShippingFee = s.shippingFeeFromZone(ord.Subtotal, ord.Discount, zone)
 			} else {
@@ -666,6 +782,17 @@ func (s *Service) adjustInventoryLevels(ctx context.Context, actor *account.User
 // Use this when order items are removed/cancelled and stock must be returned.
 func (s *Service) restockInventoryLevels(ctx context.Context, actor *account.User, biz *business.Business, adjustments []itemVariant) error {
 	return s.applyInventoryAdjustments(ctx, actor, biz, adjustments, +1)
+}
+
+// ensureInventorySufficient validates inventory availability without mutating stock.
+func (s *Service) ensureInventorySufficient(adjustments []itemVariant) error {
+	for _, adj := range adjustments {
+		newStock := adj.variant.StockQuantity - adj.qty
+		if newStock < 0 {
+			return ErrInsufficientStock(adj.variant, adj.qty)
+		}
+	}
+	return nil
 }
 
 // applyInventoryAdjustments applies a signed delta to stock quantity:

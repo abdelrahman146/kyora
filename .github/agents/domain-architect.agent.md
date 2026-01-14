@@ -2,7 +2,7 @@
 name: Domain Architect
 description: "Designs new domain modules for Kyora backend. Plans data models, API contracts, business logic, state machines, and integration points before implementation."
 target: vscode
-model: Claude Sonnet 4.5
+model: Claude Sonnet 4.5 (copilot)
 tools:
   [
     "vscode",

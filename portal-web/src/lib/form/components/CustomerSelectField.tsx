@@ -133,11 +133,13 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
     if (customer) {
       setCustomerSearchQuery(customer.name)
     }
+    props.onCustomerChange?.(id || null)
   }
 
   const handleClear = () => {
     field.handleChange('')
     setCustomerSearchQuery('')
+    props.onCustomerChange?.(null)
   }
 
   return (
@@ -165,6 +167,7 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
         onClear={handleClear}
         disabled={props.disabled || field.state.meta.isValidating}
         error={showError ? error : undefined}
+        isLoading={customersQuery.isFetching}
         onOpen={() => {
           setIsOpen(true)
           setCustomerSearchQuery('')

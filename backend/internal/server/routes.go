@@ -358,6 +358,7 @@ func registerBusinessScopedRoutes(
 			billing.EnforcePlanFeatureRestriction(billing.PlanSchema.OrderManagement),
 		)
 		{
+			manageOrders.POST("/preview", orderHandler.PreviewOrder)
 			manageOrders.POST("",
 				billing.EnforcePlanWorkspaceLimits(billing.PlanSchema.MaxOrdersPerMonth, billingService.CountMonthlyOrdersForPlanLimit),
 				orderHandler.CreateOrder,

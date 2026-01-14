@@ -94,6 +94,32 @@ type OrderNoteResponse struct {
 	UpdatedAt time.Time `json:"updatedAt"`
 }
 
+// OrderPreviewResponse is the API response for order preview calculations.
+type OrderPreviewResponse struct {
+	Subtotal       decimal.Decimal            `json:"subtotal"`
+	VAT            decimal.Decimal            `json:"vat"`
+	VATRate        decimal.Decimal            `json:"vatRate"`
+	ShippingFee    decimal.Decimal            `json:"shippingFee"`
+	Discount       decimal.Decimal            `json:"discount"`
+	COGS           decimal.Decimal            `json:"cogs"`
+	Total          decimal.Decimal            `json:"total"`
+	Currency       string                     `json:"currency"`
+	ShippingZoneID *string                    `json:"shippingZoneId,omitempty"`
+	PaymentMethod  OrderPaymentMethod         `json:"paymentMethod"`
+	Items          []OrderPreviewItemResponse `json:"items"`
+}
+
+// OrderPreviewItemResponse is the per-item breakdown in preview responses.
+type OrderPreviewItemResponse struct {
+	VariantID string          `json:"variantId"`
+	ProductID string          `json:"productId"`
+	Quantity  int             `json:"quantity"`
+	UnitPrice decimal.Decimal `json:"unitPrice"`
+	UnitCost  decimal.Decimal `json:"unitCost"`
+	Total     decimal.Decimal `json:"total"`
+	TotalCost decimal.Decimal `json:"totalCost"`
+}
+
 // ToOrderResponse converts Order model to OrderResponse
 func ToOrderResponse(ord *Order) OrderResponse {
 	if ord == nil {
@@ -248,6 +274,44 @@ func ToOrderNoteResponses(notes []*OrderNote) []OrderNoteResponse {
 	responses := make([]OrderNoteResponse, len(notes))
 	for i, note := range notes {
 		responses[i] = ToOrderNoteResponse(note)
+	}
+	return responses
+}
+
+// ToOrderPreviewResponse maps an OrderPreview to its API response shape.
+func ToOrderPreviewResponse(preview *OrderPreview) OrderPreviewResponse {
+	if preview == nil {
+		return OrderPreviewResponse{}
+	}
+
+	return OrderPreviewResponse{
+		Subtotal:       preview.Subtotal,
+		VAT:            preview.VAT,
+		VATRate:        preview.VATRate,
+		ShippingFee:    preview.ShippingFee,
+		Discount:       preview.Discount,
+		COGS:           preview.COGS,
+		Total:          preview.Total,
+		Currency:       preview.Currency,
+		ShippingZoneID: preview.ShippingZoneID,
+		PaymentMethod:  preview.PaymentMethod,
+		Items:          ToOrderPreviewItemResponses(preview.Items),
+	}
+}
+
+// ToOrderPreviewItemResponses maps preview items to API response items.
+func ToOrderPreviewItemResponses(items []OrderPreviewItem) []OrderPreviewItemResponse {
+	responses := make([]OrderPreviewItemResponse, len(items))
+	for i, item := range items {
+		responses[i] = OrderPreviewItemResponse{
+			VariantID: item.VariantID,
+			ProductID: item.ProductID,
+			Quantity:  item.Quantity,
+			UnitPrice: item.UnitPrice,
+			UnitCost:  item.UnitCost,
+			Total:     item.Total,
+			TotalCost: item.TotalCost,
+		}
 	}
 	return responses
 }

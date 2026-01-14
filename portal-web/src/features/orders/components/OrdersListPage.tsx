@@ -619,7 +619,7 @@ export function OrdersListPage() {
         onClose={() => setIsCreateOrderOpen(false)}
         onCreated={async () => {
           await queryClient.invalidateQueries({
-            queryKey: orderQueries.list(businessDescriptor)._def,
+            queryKey: orderQueries.all,
           })
         }}
       />

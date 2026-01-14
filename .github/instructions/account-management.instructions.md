@@ -1,6 +1,6 @@
 ---
 description: "Kyora account management SSOT (backend + portal-web): auth sessions, tokens, users/workspaces, invitations, RBAC + plan gates"
-applyTo: "backend/internal/domain/account/**,backend/internal/server/routes.go,portal-web/src/api/auth.ts,portal-web/src/api/user.ts,portal-web/src/api/types/auth.ts,portal-web/src/api/client.ts,portal-web/src/lib/auth.ts,portal-web/src/routes/auth/**,portal-web/src/lib/routeGuards.ts"
+applyTo: "**/*"
 ---
 
 # Kyora Account Management — Single Source of Truth (SSOT)

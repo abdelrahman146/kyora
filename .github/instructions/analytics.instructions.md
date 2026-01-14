@@ -1,6 +1,6 @@
 ---
 description: "Kyora analytics SSOT (backend + portal-web): dashboards, sales/inventory/customer analytics, financial reports, date-range semantics"
-applyTo: "backend/internal/domain/analytics/**,backend/internal/server/routes.go,backend/internal/platform/types/timeseries/**,portal-web/src/api/analytics.ts,portal-web/src/api/types/analytics.ts,portal-web/src/routes/business/$businessDescriptor/analytics/**,portal-web/src/components/organisms/Sidebar.tsx,portal-web/src/components/atoms/ChartCard.tsx,portal-web/src/components/atoms/ChartEmptyState.tsx"
+applyTo: "**/*"
 ---
 
 # Kyora Analytics — Single Source of Truth (SSOT)

@@ -1,6 +1,6 @@
 ---
 description: Errors & Failure Handling SSOT (backend + portal-web)
-applyTo: "backend/internal/platform/types/problem/**,backend/internal/platform/response/**,backend/internal/platform/request/**,backend/internal/platform/auth/**,portal-web/src/api/client.ts,portal-web/src/lib/errorParser.ts,portal-web/src/lib/translateError.ts"
+applyTo: "**/*"
 ---
 
 # Errors & Failure Handling (SSOT)

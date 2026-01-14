@@ -682,7 +682,7 @@ func (h *HttpHandler) RevokeInvitation(c *gin.Context) {
 func (h *HttpHandler) AcceptInvitation(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
-		response.Error(c, problem.BadRequest("token is required"))
+		response.Error(c, problem.BadRequest("token is required").WithCode("request.invalid_query_parameter"))
 		return
 	}
 
@@ -730,13 +730,13 @@ func (h *HttpHandler) AcceptInvitation(c *gin.Context) {
 func (h *HttpHandler) AcceptInvitationWithGoogle(c *gin.Context) {
 	token := c.Query("token")
 	if token == "" {
-		response.Error(c, problem.BadRequest("token is required"))
+		response.Error(c, problem.BadRequest("token is required").WithCode("request.invalid_query_parameter"))
 		return
 	}
 
 	code := c.Query("code")
 	if code == "" {
-		response.Error(c, problem.BadRequest("code is required"))
+		response.Error(c, problem.BadRequest("code is required").WithCode("request.invalid_query_parameter"))
 		return
 	}
 

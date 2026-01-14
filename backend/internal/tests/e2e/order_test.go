@@ -257,6 +257,121 @@ func (s *OrderSuite) TestCreateOrder_WithShippingZone_ComputesShippingFee() {
 	s.Equal("0", fmt.Sprint(created2["shippingFee"]))
 }
 
+func (s *OrderSuite) TestPreviewOrder_ComputesTotalsWithoutStockChange() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Test Product",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 10)
+	s.NoError(err)
+
+	zone, err := s.orderHelper.CreateTestShippingZone(ctx, biz.ID, "EG Local", []string{"EG"}, decimal.NewFromInt(25), decimal.NewFromInt(500))
+	s.NoError(err)
+
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"shippingZoneId":    zone.ID,
+		"discountType":      "percent",
+		"discountValue":     10,
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  2,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders/preview", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusOK, resp.StatusCode)
+
+	var preview map[string]interface{}
+	s.NoError(testutils.DecodeJSON(resp, &preview))
+
+	s.Equal("400", preview["subtotal"].(string))
+	s.Equal("40", preview["discount"].(string))
+	s.Equal("56", preview["vat"].(string))
+	s.Equal("25", fmt.Sprint(preview["shippingFee"]))
+	s.Equal("441", preview["total"].(string))
+	s.Equal(string(order.OrderPaymentMethodBankTransfer), preview["paymentMethod"])
+
+	items, ok := preview["items"].([]interface{})
+	s.True(ok)
+	s.Len(items, 1)
+	first, ok := items[0].(map[string]interface{})
+	s.True(ok)
+	s.Equal(2, int(first["quantity"].(float64)))
+	s.Equal("200", fmt.Sprint(first["unitPrice"]))
+	s.Equal("400", fmt.Sprint(first["total"]))
+
+	variantAfter, err := s.orderHelper.GetVariant(ctx, variant.ID)
+	s.NoError(err)
+	s.Equal(10, variantAfter.StockQuantity)
+}
+
+func (s *OrderSuite) TestPreviewOrder_InsufficientStock() {
+	ctx := context.Background()
+	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
+	s.NoError(err)
+	s.NoError(s.accountHelper.CreateTestSubscription(ctx, ws.ID))
+
+	biz, err := s.orderHelper.CreateTestBusiness(ctx, ws.ID, "test-biz")
+	s.NoError(err)
+
+	cust, addr, err := s.orderHelper.CreateTestCustomer(ctx, biz.ID, "customer@example.com", "Test Customer")
+	s.NoError(err)
+
+	cat, err := s.orderHelper.CreateTestCategory(ctx, biz.ID, "Electronics", "electronics")
+	s.NoError(err)
+
+	_, variant, err := s.orderHelper.CreateTestProduct(ctx, biz.ID, cat.ID, "Limited Stock",
+		decimal.NewFromFloat(100), decimal.NewFromFloat(200), 1)
+	s.NoError(err)
+
+	payload := map[string]interface{}{
+		"customerId":        cust.ID,
+		"shippingAddressId": addr.ID,
+		"channel":           "instagram",
+		"items": []map[string]interface{}{
+			{
+				"variantId": variant.ID,
+				"quantity":  5,
+				"unitPrice": 200,
+				"unitCost":  100,
+			},
+		},
+	}
+
+	resp, err := s.orderHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/orders/preview", payload, token)
+	s.NoError(err)
+	defer resp.Body.Close()
+	s.Equal(http.StatusConflict, resp.StatusCode)
+
+	code, err := testutils.GetErrorCode(resp)
+	s.NoError(err)
+	s.Equal("order.insufficient_stock", code)
+
+	variantAfter, err := s.orderHelper.GetVariant(ctx, variant.ID)
+	s.NoError(err)
+	s.Equal(1, variantAfter.StockQuantity)
+}
+
 func (s *OrderSuite) TestCreateOrder_WithShippingZone_RejectsCountryNotInZone() {
 	ctx := context.Background()
 	_, ws, token, err := s.accountHelper.CreateTestUser(ctx, "admin@example.com", "Password123!", "Admin", "User", role.RoleAdmin)
@@ -303,7 +418,7 @@ func (s *OrderSuite) TestCreateOrder_WithShippingZone_RejectsCountryNotInZone() 
 	// Assert error code
 	code, err := testutils.GetErrorCode(resp)
 	s.NoError(err)
-	s.Equal("order.insufficient_stock", code)
+	s.Equal("order.shipping_zone_country_mismatch", code)
 }
 
 func (s *OrderSuite) TestUpdateOrder_SetShippingZone_RecomputesShippingFee() {
@@ -435,7 +550,7 @@ func (s *OrderSuite) TestInsufficientStock() {
 	// Assert error code
 	code, err := testutils.GetErrorCode(resp)
 	s.NoError(err)
-	s.Equal("order.variant_stock_conflict", code)
+	s.Equal("order.insufficient_stock", code)
 
 	// Verify stock unchanged
 	updatedVariant, err := s.orderHelper.GetVariant(ctx, variant.ID)

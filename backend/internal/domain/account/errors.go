@@ -30,6 +30,10 @@ func ErrInvitationAlreadyAccepted(err error) *problem.Problem {
 	return problem.Conflict("invitation has already been accepted").WithError(err).WithCode("account.invitation_already_accepted")
 }
 
+func ErrInvitationCannotBeRevoked(err error) *problem.Problem {
+	return problem.Conflict("only pending invitations can be revoked").WithError(err).WithCode("account.invitation_cannot_be_revoked")
+}
+
 func ErrCannotUpdateOwnRole(err error) *problem.Problem {
 	return problem.Forbidden("you cannot update your own role").WithError(err).WithCode("account.cannot_update_own_role")
 }
@@ -44,6 +48,10 @@ func ErrUserNotInWorkspace(err error) *problem.Problem {
 
 func ErrAuthRateLimited(err error) *problem.Problem {
 	return problem.TooManyRequests("too many requests").WithError(err).WithCode("account.rate_limited")
+}
+
+func ErrInvalidInvitationToken(err error) *problem.Problem {
+	return problem.Unauthorized("invalid or expired token").WithError(err).WithCode("account.invalid_invitation_token")
 }
 
 func ErrAccountOperationFailed(err error) *problem.Problem {

@@ -185,6 +185,7 @@ export function ProductVariantSelectField(
         onClear={handleClear}
         disabled={props.disabled || field.state.meta.isValidating}
         error={showError ? error : undefined}
+        isLoading={variantsQuery.isFetching}
         onOpen={() => {
           setIsOpen(true)
           setVariantSearchQuery('')

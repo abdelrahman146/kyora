@@ -1,6 +1,6 @@
 ---
 description: Portal Web state management SSOT (TanStack Store vs Router vs Query vs Form)
-applyTo: "portal-web/src/stores/**,portal-web/src/routes/**,portal-web/src/components/**,portal-web/src/hooks/**,portal-web/src/main.tsx,portal-web/src/router.tsx"
+applyTo: portal-web/**
 ---
 
 # Portal Web State Management (SSOT)

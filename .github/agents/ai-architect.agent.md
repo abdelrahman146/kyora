@@ -4,7 +4,7 @@ description: "Maintains Kyora’s Copilot AI infrastructure (.github agents, pro
 target: vscode
 argument-hint: "Improve/create Copilot agents, instructions, prompts, or skills under .github/. Mention the target file(s) and desired behavior."
 infer: false
-model: GPT-5.2 (copilot)
+model: Gemini 3 Pro (Preview) (copilot)
 tools: ["vscode", "read", "edit", "search", "web", "agent", "todo"]
 ---
 

@@ -2,7 +2,7 @@
 name: Feature Builder
 description: "Full-stack feature implementation agent. Builds complete Kyora features from backend (Go/GORM) to frontend (React/TanStack), ensuring consistency, multi-tenancy, and E2E test coverage."
 target: vscode
-model: Claude Sonnet 4.5
+model: Claude Sonnet 4.5 (copilot)
 tools:
   [
     "vscode",

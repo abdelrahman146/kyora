@@ -1,6 +1,6 @@
 ---
 description: Asset Upload (backend contract + frontend integration flow)
-applyTo: "backend/internal/domain/asset/**,backend/internal/platform/types/asset/**,backend/internal/server/routes.go,backend/internal/tests/e2e/asset_upload_test.go,portal-web/src/api/assets.ts,portal-web/src/api/types/asset.ts,portal-web/src/types/asset.ts,portal-web/src/lib/upload/**,portal-web/src/lib/assetUrl.ts"
+applyTo: "**/*"
 ---
 
 # Asset Upload System

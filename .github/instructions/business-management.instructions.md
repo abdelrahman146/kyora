@@ -1,6 +1,6 @@
 ---
 description: "Kyora business management SSOT (backend + portal-web): businesses, descriptors, archive, shipping zones, payment methods, tenant scoping"
-applyTo: "backend/internal/domain/business/**,backend/internal/server/routes.go,portal-web/src/api/business.ts,portal-web/src/api/types/business.ts,portal-web/src/stores/businessStore.ts,portal-web/src/routes/business/$businessDescriptor.tsx,portal-web/src/routes/business/$businessDescriptor/index.tsx"
+applyTo: "**/*"
 ---
 
 # Kyora Business Management — Single Source of Truth (SSOT)

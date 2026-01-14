@@ -128,5 +128,17 @@
   "free_shipping_threshold": "شحن مجاني فوق",
   "countries_covered": "الدول",
   "inferred_shipping_zone": "منطقة الشحن المستنتجة",
-  "address_required_first": "يرجى تحديد عنوان الشحن أولاً"
+  "address_required_first": "يرجى تحديد عنوان الشحن أولاً",
+  "live_summary": "ملخص مباشر",
+  "preview_status_idle": "أضف البيانات لعرض المعاينة",
+  "preview_status_running": "جاري حساب المعاينة...",
+  "preview_status_ready": "المعاينة جاهزة",
+  "preview_status_error": "فشلت المعاينة",
+  "preview_status_stale": "تحديث المعاينة مطلوب",
+  "preview_last_updated": "تم التحديث {{time}}",
+  "preview_error_banner": "تعذر حساب الإجمالي. تحقق من المنتجات أو الشحن أو طريقة الدفع.",
+  "preview_missing_requirements": "أضف العميل والعنوان ومنتجاً واحداً على الأقل لعرض الإجمالي.",
+  "preview_totals_hint": "المعاينة تستخدم نفس قواعد الإرسال النهائي.",
+  "preview_submit_disabled": "احسب المعاينة لتفعيل الإنشاء",
+  "free_shipping": "شحن مجاني"
 }

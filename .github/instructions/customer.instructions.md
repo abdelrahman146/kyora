@@ -1,6 +1,6 @@
 ---
 description: "Kyora customer management SSOT (backend + portal-web): customers, addresses, notes, search/filters, RBAC, tenant isolation"
-applyTo: "backend/internal/domain/customer/**,backend/internal/server/routes.go,backend/internal/tests/e2e/customer_*_test.go,portal-web/src/api/customer.ts,portal-web/src/api/address.ts,portal-web/src/routes/business/$businessDescriptor/customers/**,portal-web/src/components/organisms/customers/**,portal-web/src/lib/queryKeys.ts"
+applyTo: "**/*"
 ---
 
 # Kyora Customer Management SSOT (Backend + Portal Web)

@@ -233,6 +233,52 @@ func (h *HttpHandler) GetOrderByNumber(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, ToOrderResponse(ord))
 }
 
+// PreviewOrder validates an order payload and returns computed totals without creating the order.
+//
+// @Summary      Preview order totals
+// @Description  Validates the order payload and returns computed totals without creating an order or adjusting inventory
+// @Tags         order
+// @Accept       json
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        body body CreateOrderRequest true "Order preview"
+// @Success      200 {object} order.OrderPreviewResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      403 {object} problem.Problem
+// @Failure      404 {object} problem.Problem
+// @Failure      409 {object} problem.Problem
+// @Failure      429 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/orders/preview [post]
+// @Security     BearerAuth
+func (h *HttpHandler) PreviewOrder(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	biz, err := h.getBusinessForRequest(c, actor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	var req CreateOrderRequest
+	if err := request.ValidBody(c, &req); err != nil {
+		return
+	}
+	if len(req.Items) > 100 {
+		response.Error(c, problem.BadRequest("too many order items").With("max", 100))
+		return
+	}
+	preview, err := h.service.PreviewOrder(c.Request.Context(), actor, biz, &req)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+	response.SuccessJSON(c, http.StatusOK, ToOrderPreviewResponse(preview))
+}
+
 // CreateOrder creates a new order.
 //
 // @Summary      Create order

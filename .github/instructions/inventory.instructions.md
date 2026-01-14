@@ -1,6 +1,6 @@
 ---
 description: "Kyora inventory SSOT (backend + portal-web): products, variants, categories, stock semantics, search/sort, summary, RBAC"
-applyTo: "backend/internal/domain/inventory/**,backend/internal/server/routes.go,backend/internal/tests/e2e/inventory_*_test.go,portal-web/src/api/inventory.ts,portal-web/src/routes/business/$businessDescriptor/inventory/**,portal-web/src/components/organisms/**Product**.tsx,portal-web/src/components/organisms/forms/**Variant**.tsx,portal-web/src/lib/inventoryUtils.ts,portal-web/src/lib/queryKeys.ts"
+applyTo: "**/*"
 ---
 
 # Kyora Inventory SSOT (Backend + Portal Web)

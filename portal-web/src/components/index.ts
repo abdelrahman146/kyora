@@ -1,6 +1,12 @@
 // Atoms
 export { Button, type ButtonProps } from './atoms/Button'
 export { Badge, type BadgeProps } from './atoms/Badge'
+export {
+  Pill,
+  type PillProps,
+  type PillVariant,
+  type PillSize,
+} from './atoms/Pill'
 export { Avatar, type AvatarProps } from './atoms/Avatar'
 export { ErrorBoundary, type ErrorBoundaryProps } from './atoms/ErrorBoundary'
 export { Skeleton, type SkeletonProps } from './atoms/Skeleton'

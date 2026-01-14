@@ -128,5 +128,17 @@
   "free_shipping_threshold": "Free Shipping Above",
   "countries_covered": "Countries",
   "inferred_shipping_zone": "Inferred Shipping Zone",
-  "address_required_first": "Please select a shipping address first"
+  "address_required_first": "Please select a shipping address first",
+  "live_summary": "Live Summary",
+  "preview_status_idle": "Add details to preview",
+  "preview_status_running": "Calculating preview...",
+  "preview_status_ready": "Preview ready",
+  "preview_status_error": "Preview failed",
+  "preview_status_stale": "Update preview",
+  "preview_last_updated": "Updated {{time}}",
+  "preview_error_banner": "We couldn't calculate totals. Check items, shipping, or payment method.",
+  "preview_missing_requirements": "Add a customer, address, and at least one item to see totals.",
+  "preview_totals_hint": "Preview uses the same rules as final submission.",
+  "preview_submit_disabled": "Preview totals to enable create",
+  "free_shipping": "Free shipping"
 }

@@ -140,6 +140,30 @@ export interface Order {
   updatedAt: string
 }
 
+export interface OrderPreviewItem {
+  variantId: string
+  productId: string
+  quantity: number
+  unitPrice: string
+  unitCost: string
+  total: string
+  totalCost: string
+}
+
+export interface OrderPreview {
+  subtotal: string
+  vat: string
+  vatRate: string
+  shippingFee: string
+  discount: string
+  cogs: string
+  total: string
+  currency: string
+  shippingZoneId?: string
+  paymentMethod: OrderPaymentMethod
+  items: Array<OrderPreviewItem>
+}
+
 export interface ListResponse<T> {
   hasMore: boolean
   items: Array<T>
@@ -294,6 +318,21 @@ export const orderApi = {
   },
 
   /**
+   * Preview an order without persisting or allocating stock
+   */
+  async previewOrder(
+    businessDescriptor: string,
+    data: CreateOrderRequest,
+  ): Promise<OrderPreview> {
+    return post<OrderPreview>(
+      `v1/businesses/${businessDescriptor}/orders/preview`,
+      {
+        json: data,
+      },
+    )
+  },
+
+  /**
    * Update existing order
    */
   async updateOrder(
@@ -437,6 +476,9 @@ export const orderQueries = {
       queryFn: () => orderApi.getOrder(businessDescriptor, orderId),
       staleTime: STALE_TIME.THIRTY_SECONDS,
     }),
+  previews: () => [...orderQueries.all, 'preview'] as const,
+  preview: (businessDescriptor: string) =>
+    [...orderQueries.previews(), businessDescriptor] as const,
 }
 
 /**
@@ -509,6 +551,17 @@ export function useUpdateOrderPaymentStatusMutation(
   return useMutation({
     mutationFn: (data: UpdateOrderPaymentStatusRequest) =>
       orderApi.updateOrderPaymentStatus(businessDescriptor, orderId, data),
+    ...options,
+  })
+}
+
+export function usePreviewOrderMutation(
+  businessDescriptor: string,
+  options?: UseMutationOptions<OrderPreview, Error, CreateOrderRequest>,
+) {
+  return useMutation({
+    mutationFn: (data: CreateOrderRequest) =>
+      orderApi.previewOrder(businessDescriptor, data),
     ...options,
   })
 }

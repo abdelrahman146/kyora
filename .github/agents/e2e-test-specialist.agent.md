@@ -2,7 +2,7 @@
 name: E2E Test Specialist
 description: "Expert in backend E2E testing for Kyora. Writes comprehensive testcontainers-based test suites covering authentication, multi-tenancy, business logic, and external integrations."
 target: vscode
-model: Claude Sonnet 4.5
+model: Claude Sonnet 4.5 (copilot)
 tools:
   [
     "vscode",

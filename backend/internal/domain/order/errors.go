@@ -23,6 +23,13 @@ func ErrInsufficientStock(variant *inventory.Variant, requestedQty int) error {
 		WithCode("order.insufficient_stock")
 }
 
+func ErrShippingZoneCountryMismatch(zoneID, countryCode string) error {
+	return problem.BadRequest("shipping zone does not include destination country").
+		With("countryCode", countryCode).
+		With("zoneId", zoneID).
+		WithCode("order.shipping_zone_country_mismatch")
+}
+
 // ErrEmptyOrderItems indicates that no items were provided in the order request
 func ErrEmptyOrderItems() error {
 	return problem.BadRequest("order must include at least one item").WithCode("order.empty_items")

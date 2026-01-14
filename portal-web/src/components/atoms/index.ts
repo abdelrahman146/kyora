@@ -9,6 +9,7 @@
 export { ErrorBoundary } from './ErrorBoundary'
 export { Button, type ButtonProps } from './Button'
 export { Badge, type BadgeProps } from './Badge'
+export { Pill, type PillProps, type PillVariant, type PillSize } from './Pill'
 export {
   Skeleton,
   SkeletonText,

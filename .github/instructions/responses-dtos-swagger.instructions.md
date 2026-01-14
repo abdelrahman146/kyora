@@ -1,6 +1,6 @@
 ---
 description: Responses, DTOs & Swagger Generation SSOT (backend + portal-web)
-applyTo: "backend/internal/platform/response/**,backend/internal/platform/types/list/**,backend/internal/domain/**/handler_http.go,backend/internal/domain/**/model*.go,backend/docs/swagger.json,backend/docs/swagger.yaml,backend/main.go,Makefile,portal-web/src/api/**,portal-web/src/api/types/**"
+applyTo: "**/*"
 ---
 
 # Responses, DTOs & Swagger (SSOT)

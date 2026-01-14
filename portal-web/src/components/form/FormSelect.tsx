@@ -72,6 +72,8 @@ export interface FormSelectProps<T = string> {
   createOptionLabel?: (label: string) => string
   /** Loading state while creating a new option */
   isCreatingOption?: boolean
+  /** Loading state for options (e.g., backend search in progress) */
+  isLoading?: boolean
   id?: string
   disabled?: boolean
   required?: boolean
@@ -116,6 +118,7 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       onCreateOption,
       createOptionLabel,
       isCreatingOption,
+      isLoading,
     }: FormSelectProps<T>,
     ref: React.ForwardedRef<HTMLDivElement>,
   ) => {
@@ -140,20 +143,28 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
       return []
     })()
 
-    // Search management
+    // Determine if using external (backend) search
+    const isExternalSearch = Boolean(externalOnSearchChange)
+
+    // Search management (only used for internal/client-side filtering)
     const {
       searchQuery: internalSearchQuery,
       setSearchQuery: setInternalSearchQuery,
-      filteredOptions,
+      filteredOptions: clientFilteredOptions,
       clearSearch,
     } = useSelectSearch({
       options,
-      searchable,
+      // Only enable client-side filtering if NOT using external search
+      searchable: searchable && !isExternalSearch,
     })
 
     // Use external search if provided, otherwise use internal
     const searchQuery = externalSearchValue ?? internalSearchQuery
     const setSearchQuery = externalOnSearchChange ?? setInternalSearchQuery
+
+    // For external search, use options directly (already filtered by backend)
+    // For internal search, use client-side filtered options
+    const filteredOptions = isExternalSearch ? options : clientFilteredOptions
 
     const normalizedSearchQuery = searchQuery.trim()
     const hasExactOption = normalizedSearchQuery
@@ -624,7 +635,11 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                         </li>
                       )}
 
-                      {filteredOptions.length === 0 && !canCreateOption ? (
+                      {isLoading ? (
+                        <li className="p-6 flex justify-center">
+                          <span className="loading loading-spinner loading-md text-primary" />
+                        </li>
+                      ) : filteredOptions.length === 0 && !canCreateOption ? (
                         <li className="p-6 text-center text-base-content/50">
                           {tCommon('no_options_found')}
                         </li>
@@ -767,7 +782,11 @@ export const FormSelect = forwardRef<HTMLDivElement, FormSelectProps>(
                     </li>
                   )}
 
-                  {filteredOptions.length === 0 && !canCreateOption ? (
+                  {isLoading ? (
+                    <li className="p-4 flex justify-center">
+                      <span className="loading loading-spinner loading-sm text-primary" />
+                    </li>
+                  ) : filteredOptions.length === 0 && !canCreateOption ? (
                     <li className="p-4 text-center text-base-content/50">
                       {tCommon('no_options_found')}
                     </li>

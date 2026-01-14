@@ -1,6 +1,6 @@
 ---
 description: Billing SSOT — Plans, Subscriptions, Invoices, Webhooks (Backend + Portal-Web guidance)
-applyTo: "backend/internal/domain/billing/**,backend/internal/server/routes.go,backend/internal/domain/onboarding/service.go,backend/internal/domain/onboarding/handler_http.go,backend/internal/domain/onboarding/handler_bus.go,backend/internal/platform/bus/events.go,portal-web/src/api/onboarding.ts,portal-web/src/routes/onboarding/payment.tsx,portal-web/src/routes/onboarding/plan.tsx,portal-web/src/routes/billing/**,portal-web/src/api/billing.ts,portal-web/src/api/types/billing.ts"
+applyTo: "**/*"
 ---
 
 # Billing — Single Source of Truth (SSOT)
