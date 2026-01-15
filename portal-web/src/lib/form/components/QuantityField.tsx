@@ -38,6 +38,8 @@ export interface QuantityFieldProps extends BaseFieldProps {
   helperText?: string
   /** Full width (default: true) */
   fullWidth?: boolean
+  /** Optional suffix element shown inline after the input (e.g., "/ 10" for stock) */
+  suffix?: React.ReactNode
 }
 
 export function QuantityField({
@@ -50,6 +52,7 @@ export function QuantityField({
   max = Infinity,
   step = 1,
   fullWidth = true,
+  suffix,
 }: QuantityFieldProps) {
   const field = useFieldContext<number>()
   const { t } = useTranslation('errors')
@@ -95,21 +98,28 @@ export function QuantityField({
         </label>
       )}
 
-      <QuantityInput
-        id={inputId}
-        name={field.name}
-        value={field.state.value}
-        onChange={field.handleChange}
-        onBlur={field.handleBlur}
-        min={min}
-        max={max}
-        step={step}
-        disabled={disabled || field.state.meta.isValidating}
-        required={required}
-        incrementLabel={tCommon('increment')}
-        decrementLabel={tCommon('decrement')}
-        error={showError}
-      />
+      <div className="flex items-center gap-2">
+        <QuantityInput
+          id={inputId}
+          name={field.name}
+          value={field.state.value}
+          onChange={field.handleChange}
+          onBlur={field.handleBlur}
+          min={min}
+          max={max}
+          step={step}
+          disabled={disabled || field.state.meta.isValidating}
+          required={required}
+          incrementLabel={tCommon('increment')}
+          decrementLabel={tCommon('decrement')}
+          error={showError}
+        />
+        {suffix && (
+          <span className="text-sm text-base-content/60 whitespace-nowrap">
+            {suffix}
+          </span>
+        )}
+      </div>
 
       {hasError && (
         <label className="label">

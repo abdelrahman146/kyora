@@ -406,7 +406,7 @@ func (s *Service) CreatePendingOrder(ctx context.Context, storefrontPublicID, id
 			State:       req.ShippingAddress.State,
 			City:        req.ShippingAddress.City,
 			PhoneCode:   req.ShippingAddress.PhoneCode,
-			Phone:       req.ShippingAddress.PhoneNumber,
+			PhoneNumber: req.ShippingAddress.PhoneNumber,
 			Street:      req.ShippingAddress.Street,
 			ZipCode:     req.ShippingAddress.ZipCode,
 		})

@@ -29,6 +29,8 @@ type OrderResponse struct {
 	VATRate            decimal.Decimal                   `json:"vatRate"`
 	ShippingFee        decimal.Decimal                   `json:"shippingFee"`
 	Discount           decimal.Decimal                   `json:"discount"`
+	DiscountType       DiscountType                      `json:"discountType,omitempty"`
+	DiscountValue      decimal.Decimal                   `json:"discountValue,omitempty"`
 	COGS               decimal.Decimal                   `json:"cogs"`
 	Total              decimal.Decimal                   `json:"total"`
 	Currency           string                            `json:"currency"`
@@ -165,6 +167,8 @@ func ToOrderResponse(ord *Order) OrderResponse {
 		VATRate:            ord.VATRate,
 		ShippingFee:        ord.ShippingFee,
 		Discount:           ord.Discount,
+		DiscountType:       ord.DiscountType,
+		DiscountValue:      ord.DiscountValue,
 		COGS:               ord.COGS,
 		Total:              ord.Total,
 		Currency:           ord.Currency,

@@ -60,7 +60,7 @@ func (sm *orderStateMachine) transitionPaymentStatusTo(newStatus OrderPaymentSta
 	if !sm.canTransitionPaymentStatusTo(newStatus) {
 		return ErrOrderPaymentStatusUpdateNotAllowed(sm.order.ID, sm.order.PaymentStatus, newStatus)
 	}
-	allowedOrderStatuses := []OrderStatus{OrderStatusPlaced, OrderStatusShipped, OrderStatusFulfilled}
+	allowedOrderStatuses := []OrderStatus{OrderStatusPlaced, OrderStatusReadyForShipment, OrderStatusShipped, OrderStatusFulfilled}
 	if !slices.Contains(allowedOrderStatuses, sm.order.Status) {
 		return ErrOrderPaymentStatusUpdateNotAllowedForOrderStatus(sm.order.ID, sm.order.Status, newStatus)
 	}

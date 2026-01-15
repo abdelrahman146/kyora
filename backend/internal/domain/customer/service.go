@@ -522,7 +522,7 @@ func (s *Service) CreateCustomerAddress(ctx context.Context, actor *account.User
 		ZipCode:     transformer.ToNullableString(req.ZipCode),
 		CountryCode: countryCode,
 		PhoneCode:   req.PhoneCode,
-		PhoneNumber: req.Phone,
+		PhoneNumber: req.PhoneNumber,
 	}
 	err = s.storage.customerAddress.CreateOne(ctx, address)
 	if err != nil {

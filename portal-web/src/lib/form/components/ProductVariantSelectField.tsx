@@ -62,6 +62,12 @@ export function ProductVariantSelectField(
     return () => clearTimeout(timer)
   }, [variantSearchQuery])
 
+  // Clear both search states immediately when dropdown opens
+  const handleSearchReset = () => {
+    setVariantSearchQuery('')
+    setDebouncedVariantSearch('')
+  }
+
   const listParams = useMemo(
     () => ({
       search: debouncedVariantSearch || undefined,
@@ -185,10 +191,10 @@ export function ProductVariantSelectField(
         onClear={handleClear}
         disabled={props.disabled || field.state.meta.isValidating}
         error={showError ? error : undefined}
-        isLoading={variantsQuery.isFetching}
+        isLoading={variantsQuery.isPending && !variantsData}
         onOpen={() => {
           setIsOpen(true)
-          setVariantSearchQuery('')
+          handleSearchReset()
         }}
         onClose={() => {
           setIsOpen(false)

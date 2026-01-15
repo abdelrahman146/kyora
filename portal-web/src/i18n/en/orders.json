@@ -116,6 +116,10 @@
   "update_submitting": "Updating...",
   "edit_restriction_shipped": "Shipping address cannot be changed after the order has been shipped.",
   "edit_restriction_cancelled": "Cancelled orders cannot be modified.",
+  "editing_limited": "Editing Limited",
+  "editing_limited_status": "Some fields are locked due to order status",
+  "items_locked_notice": "Items and prices cannot be changed for this order status.",
+  "payment_locked_notice": "Payment details cannot be changed after payment is completed.",
   "current_status": "Current Status",
   "new_status": "New Status",
   "current_payment_status": "Current Payment Status",
@@ -140,5 +144,16 @@
   "preview_missing_requirements": "Add a customer, address, and at least one item to see totals.",
   "preview_totals_hint": "Preview uses the same rules as final submission.",
   "preview_submit_disabled": "Preview totals to enable create",
-  "free_shipping": "Free shipping"
+  "preview_retry": "Try again",
+  "free_shipping": "Free shipping",
+  "add_new_customer": "New Customer",
+  "add_new_address": "New Address",
+  "item_picker_add": "Add Item",
+  "item_picker_edit": "Edit Item",
+  "item_picker_save": "Add to Order",
+  "item_picker_update": "Update Item",
+  "item_unit_price": "Unit Price",
+  "original_price": "Original price",
+  "price": "Price",
+  "stock": "Stock"
 }

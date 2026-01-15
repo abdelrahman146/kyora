@@ -35,6 +35,7 @@
     "select_phone_code": "Select phone code",
     "phone_number": "Phone Number",
     "phone_placeholder": "e.g. 501234567",
+    "additional_details_section": "Additional Details (Optional)",
     "social_media_section": "Social Media (Optional)",
     "social_media_hint": "Add social media handles to connect with customers",
     "instagram": "Instagram",
@@ -121,6 +122,9 @@
     "countries_plural": "{{count}} countries",
     "no_zones_message": "No shipping zones configured yet.",
     "configure_zones_link": "Configure shipping zones",
-    "filtered_by_zone": "Countries filtered by selected shipping zone"
+    "filtered_by_zone": "Countries filtered by selected shipping zone",
+    "location_section": "Location",
+    "details_section": "Address Details",
+    "contact_section": "Contact"
   }
 }

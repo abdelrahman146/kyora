@@ -93,9 +93,9 @@ export type ListCustomersResponse = ListResponse<Customer>
 
 export interface CreateCustomerRequest {
   name: string
-  email: string
-  phoneCode?: string
-  phoneNumber?: string
+  email?: string
+  phoneCode: string
+  phoneNumber: string
   countryCode: string
   whatsappNumber?: string
   gender?: CustomerGender

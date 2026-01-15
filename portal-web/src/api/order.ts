@@ -117,6 +117,8 @@ export interface Order {
   vatRate: string
   shippingFee: string
   discount: string
+  discountType?: DiscountType
+  discountValue?: string
   cogs: string
   total: string
   currency: string

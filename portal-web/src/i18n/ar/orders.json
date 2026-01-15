@@ -116,6 +116,10 @@
   "update_submitting": "جاري التحديث...",
   "edit_restriction_shipped": "لا يمكن تغيير عنوان الشحن بعد شحن الطلب.",
   "edit_restriction_cancelled": "لا يمكن تعديل الطلبات الملغية.",
+  "editing_limited": "تعديل محدود",
+  "editing_limited_status": "بعض الحقول مقفلة بسبب حالة الطلب",
+  "items_locked_notice": "لا يمكن تغيير المنتجات والأسعار لحالة الطلب هذه.",
+  "payment_locked_notice": "لا يمكن تغيير تفاصيل الدفع بعد إتمام الدفع.",
   "current_status": "الحالة الحالية",
   "new_status": "الحالة الجديدة",
   "current_payment_status": "حالة الدفع الحالية",
@@ -140,5 +144,16 @@
   "preview_missing_requirements": "أضف العميل والعنوان ومنتجاً واحداً على الأقل لعرض الإجمالي.",
   "preview_totals_hint": "المعاينة تستخدم نفس قواعد الإرسال النهائي.",
   "preview_submit_disabled": "احسب المعاينة لتفعيل الإنشاء",
-  "free_shipping": "شحن مجاني"
+  "preview_retry": "حاول مرة أخرى",
+  "free_shipping": "شحن مجاني",
+  "add_new_customer": "عميل جديد",
+  "add_new_address": "عنوان جديد",
+  "item_picker_add": "إضافة منتج",
+  "item_picker_edit": "تعديل المنتج",
+  "item_picker_save": "إضافة للطلب",
+  "item_picker_update": "تحديث المنتج",
+  "item_unit_price": "سعر الوحدة",
+  "original_price": "السعر الأصلي",
+  "price": "السعر",
+  "stock": "المخزون"
 }

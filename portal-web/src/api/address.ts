@@ -20,18 +20,16 @@ import { showSuccessToast } from '@/lib/toast'
 
 // Request types
 export interface CreateAddressRequest {
-  shippingZoneId: string
   countryCode: string
   state: string
   city: string
   phoneCode: string
-  phone: string
+  phoneNumber: string
   street?: string
   zipCode?: string
 }
 
 export interface UpdateAddressRequest {
-  shippingZoneId?: string
   street?: string
   city?: string
   state?: string

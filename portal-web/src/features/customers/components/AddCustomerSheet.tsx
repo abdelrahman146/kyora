@@ -2,6 +2,7 @@ import { useEffect, useId, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
+import { AdditionalDetailsInputs } from './AdditionalDetailsInputs'
 import { CountrySelect } from './CountrySelect'
 import { PhoneCodeSelect } from './PhoneCodeSelect'
 import { SocialMediaInputs } from './SocialMediaInputs'
@@ -9,7 +10,6 @@ import type { Customer, CustomerGender } from '@/api/customer'
 import { useCreateCustomerMutation } from '@/api/customer'
 import { useCountriesQuery } from '@/api/metadata'
 import { BottomSheet } from '@/components/molecules/BottomSheet'
-import { FormSelect } from '@/components'
 import { useKyoraForm } from '@/lib/form'
 import { buildE164Phone } from '@/lib/phone'
 import { showSuccessToast } from '@/lib/toast'
@@ -22,64 +22,63 @@ export interface AddCustomerSheetProps {
   onCreated?: (customer: Customer) => void | Promise<void>
 }
 
-const addCustomerSchema = z
-  .object({
-    name: z.string().trim().min(1, 'validation.required'),
-    email: z
-      .string()
-      .trim()
-      .min(1, 'validation.required')
-      .email('validation.invalid_email'),
-    gender: z.enum(['male', 'female', 'other'], {
-      message: 'validation.required',
-    }),
-    countryCode: z
-      .string()
-      .trim()
-      .min(1, 'validation.required')
-      .refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
-    phoneCode: z
-      .string()
-      .trim()
-      .refine(
-        (v) => v === '' || /^\+?\d{1,4}$/.test(v),
-        'validation.invalid_phone_code',
-      ),
-    phoneNumber: z
-      .string()
-      .trim()
-      .refine(
-        (v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v),
-        'validation.invalid_phone',
-      ),
-    instagramUsername: z.string().trim().optional(),
-    facebookUsername: z.string().trim().optional(),
-    tiktokUsername: z.string().trim().optional(),
-    snapchatUsername: z.string().trim().optional(),
-    xUsername: z.string().trim().optional(),
-    whatsappNumber: z.string().trim().optional(),
-  })
-  .refine(
-    (values) => {
-      const hasPhoneNumber = values.phoneNumber.trim() !== ''
-      return !hasPhoneNumber || values.phoneCode.trim() !== ''
-    },
-    { message: 'validation.required', path: ['phoneCode'] },
-  )
+const customerSchema = z.object({
+  name: z.string().trim().min(1, 'validation.required'),
+  // Optional fields - email can be empty string or valid email
+  email: z
+    .string()
+    .trim()
+    .refine(
+      (v) => v === '' || z.string().email().safeParse(v).success,
+      'validation.invalid_email',
+    ),
+  // Optional - string field where empty means not set, validated values are 'male', 'female', 'other'
+  gender: z
+    .string()
+    .refine(
+      (v) => v === '' || ['male', 'female', 'other'].includes(v),
+      'validation.invalid_gender',
+    ),
+  countryCode: z
+    .string()
+    .trim()
+    .min(1, 'validation.required')
+    .refine((v) => /^[A-Za-z]{2}$/.test(v), 'validation.invalid_country'),
+  // Required - phone fields
+  phoneCode: z
+    .string()
+    .trim()
+    .min(1, 'validation.required')
+    .refine((v) => /^\+?\d{1,4}$/.test(v), 'validation.invalid_phone_code'),
+  phoneNumber: z
+    .string()
+    .trim()
+    .min(1, 'validation.required')
+    .refine((v) => /^[0-9\-\s()]{6,20}$/.test(v), 'validation.invalid_phone'),
+  // Social media - all optional
+  instagramUsername: z.string().trim().optional(),
+  facebookUsername: z.string().trim().optional(),
+  tiktokUsername: z.string().trim().optional(),
+  snapchatUsername: z.string().trim().optional(),
+  xUsername: z.string().trim().optional(),
+  whatsappNumber: z.string().trim().optional(),
+})
 
-export type AddCustomerFormValues = z.infer<typeof addCustomerSchema>
+export type AddCustomerFormValues = z.infer<typeof customerSchema>
 
 function getDefaultValues(businessCountryCode: string): AddCustomerFormValues {
   return {
     name: '',
     email: '',
-    gender: 'other',
+    gender: '', // Optional - empty means not set
     countryCode: businessCountryCode,
     phoneCode: '',
     phoneNumber: '',
     instagramUsername: '',
     facebookUsername: '',
     tiktokUsername: '',
+    snapchatUsername: '',
+    xUsername: '',
     whatsappNumber: '',
   }
 }
@@ -118,33 +117,35 @@ export function AddCustomerSheet({
       const phoneCode = value.phoneCode.trim()
       const phoneNumber = value.phoneNumber.trim()
 
-      const normalizedPhone =
-        phoneNumber !== '' && phoneCode !== ''
-          ? buildE164Phone(phoneCode, phoneNumber)
+      const normalizedPhone = buildE164Phone(phoneCode, phoneNumber)
+
+      // Handle optional email - only send if not empty
+      const email = value.email.trim() || undefined
+
+      // Handle optional gender - transform '' to undefined
+      const gender =
+        value.gender && value.gender !== ''
+          ? (value.gender as CustomerGender)
           : undefined
 
-      try {
-        await createMutation.mutateAsync({
-          name: value.name.trim(),
-          email: value.email.trim(),
-          gender: value.gender as CustomerGender,
-          countryCode: value.countryCode.trim().toUpperCase(),
-          phoneCode: normalizedPhone?.phoneCode,
-          phoneNumber: normalizedPhone?.phoneNumber,
-          instagramUsername: value.instagramUsername?.trim() || undefined,
-          facebookUsername: value.facebookUsername?.trim() || undefined,
-          tiktokUsername: value.tiktokUsername?.trim() || undefined,
-          snapchatUsername: value.snapchatUsername?.trim() || undefined,
-          xUsername: value.xUsername?.trim() || undefined,
-          whatsappNumber: value.whatsappNumber?.trim() || undefined,
-        })
-      } catch {
-        // Global QueryClient mutation handler will toast.
-        return
-      }
+      await createMutation.mutateAsync({
+        name: value.name.trim(),
+        email,
+        gender,
+        countryCode: value.countryCode.trim().toUpperCase(),
+        phoneCode: normalizedPhone.phoneCode,
+        phoneNumber: normalizedPhone.phoneNumber,
+        instagramUsername: value.instagramUsername?.trim() || undefined,
+        facebookUsername: value.facebookUsername?.trim() || undefined,
+        tiktokUsername: value.tiktokUsername?.trim() || undefined,
+        snapchatUsername: value.snapchatUsername?.trim() || undefined,
+        xUsername: value.xUsername?.trim() || undefined,
+        whatsappNumber: value.whatsappNumber?.trim() || undefined,
+      })
     },
   })
 
+  // Auto-populate phone code based on selected country
   useEffect(() => {
     if (!isOpen) return
     if (!countriesReady) return
@@ -153,6 +154,7 @@ export function AddCustomerSheet({
     form.setFieldValue('phoneCode', selected.phonePrefix)
   }, [isOpen, countriesReady, countries, selectedCountryCode, form])
 
+  // Reset form when sheet closes
   useEffect(() => {
     if (!isOpen) {
       form.reset()
@@ -205,6 +207,7 @@ export function AddCustomerSheet({
           className="space-y-4"
           aria-busy={createMutation.isPending}
         >
+          {/* Name field */}
           <form.AppField
             name="name"
             validators={{
@@ -221,86 +224,7 @@ export function AddCustomerSheet({
             )}
           </form.AppField>
 
-          <form.AppField
-            name="email"
-            validators={{
-              onBlur: z
-                .string()
-                .trim()
-                .min(1, 'validation.required')
-                .email('validation.invalid_email'),
-            }}
-          >
-            {(field) => (
-              <field.TextField
-                type="email"
-                label={tCustomers('form.email')}
-                placeholder={tCustomers('form.email_placeholder')}
-                autoComplete="email"
-                required
-              />
-            )}
-          </form.AppField>
-
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <form.AppField
-              name="countryCode"
-              validators={{
-                onBlur: z
-                  .string()
-                  .trim()
-                  .min(1, 'validation.required')
-                  .refine(
-                    (v) => /^[A-Za-z]{2}$/.test(v),
-                    'validation.invalid_country',
-                  ),
-              }}
-            >
-              {(field: any) => (
-                <CountrySelect
-                  value={field.state.value}
-                  onChange={(value: string) => {
-                    field.handleChange(value)
-                    setSelectedCountryCode(value)
-                  }}
-                  disabled={createMutation.isPending}
-                  required
-                />
-              )}
-            </form.AppField>
-
-            <form.AppField
-              name="gender"
-              validators={{
-                onBlur: z.enum(['male', 'female', 'other'], {
-                  message: 'validation.required',
-                }),
-              }}
-            >
-              {(field: any) => (
-                <FormSelect<CustomerGender>
-                  label={tCustomers('form.gender')}
-                  options={[
-                    { value: 'male', label: tCustomers('form.gender_male') },
-                    {
-                      value: 'female',
-                      label: tCustomers('form.gender_female'),
-                    },
-                    { value: 'other', label: tCustomers('form.gender_other') },
-                  ]}
-                  value={field.state.value}
-                  onChange={(value: CustomerGender | Array<CustomerGender>) => {
-                    const singleValue = Array.isArray(value) ? value[0] : value
-                    field.handleChange(singleValue)
-                  }}
-                  required
-                  disabled={createMutation.isPending}
-                  placeholder={tCustomers('form.select_gender')}
-                />
-              )}
-            </form.AppField>
-          </div>
-
+          {/* Phone fields - Required */}
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <form.AppField
               name="phoneCode"
@@ -308,17 +232,19 @@ export function AddCustomerSheet({
                 onBlur: z
                   .string()
                   .trim()
+                  .min(1, 'validation.required')
                   .refine(
-                    (v) => v === '' || /^\+?\d{1,4}$/.test(v),
+                    (v) => /^\+?\d{1,4}$/.test(v),
                     'validation.invalid_phone_code',
                   ),
               }}
             >
-              {(field: any) => (
+              {(field) => (
                 <PhoneCodeSelect
                   value={field.state.value}
                   onChange={(value: string) => field.handleChange(value)}
                   disabled={createMutation.isPending}
+                  required
                 />
               )}
             </form.AppField>
@@ -330,8 +256,9 @@ export function AddCustomerSheet({
                   onBlur: z
                     .string()
                     .trim()
+                    .min(1, 'validation.required')
                     .refine(
-                      (v) => v === '' || /^[0-9\-\s()]{6,20}$/.test(v),
+                      (v) => /^[0-9\-\s()]{6,20}$/.test(v),
                       'validation.invalid_phone',
                     ),
                 }}
@@ -342,36 +269,83 @@ export function AddCustomerSheet({
                     label={tCustomers('form.phone_number')}
                     placeholder={tCustomers('form.phone_placeholder')}
                     autoComplete="tel"
+                    required
                   />
                 )}
               </form.AppField>
             </div>
           </div>
 
-          <form.Subscribe selector={(state: any) => state.values}>
-            {(values: any) => (
+          {/* Country - Required */}
+          <form.AppField
+            name="countryCode"
+            validators={{
+              onBlur: z
+                .string()
+                .trim()
+                .min(1, 'validation.required')
+                .refine(
+                  (v) => /^[A-Za-z]{2}$/.test(v),
+                  'validation.invalid_country',
+                ),
+            }}
+          >
+            {(field) => (
+              <CountrySelect
+                value={field.state.value}
+                onChange={(value: string) => {
+                  field.handleChange(value)
+                  setSelectedCountryCode(value)
+                }}
+                disabled={createMutation.isPending}
+                required
+              />
+            )}
+          </form.AppField>
+
+          {/* Additional Details (Email, Gender) - Optional collapsible */}
+          <form.Subscribe selector={(state) => state.values}>
+            {(values) => (
+              <AdditionalDetailsInputs
+                email={values.email || ''}
+                onEmailChange={(value: string) =>
+                  form.setFieldValue('email', value)
+                }
+                gender={(values.gender as CustomerGender | '') || ''}
+                onGenderChange={(value: CustomerGender | '') =>
+                  form.setFieldValue('gender', value as string)
+                }
+                disabled={createMutation.isPending}
+                defaultExpanded={false}
+              />
+            )}
+          </form.Subscribe>
+
+          {/* Social Media */}
+          <form.Subscribe selector={(state) => state.values}>
+            {(values) => (
               <SocialMediaInputs
-                instagramUsername={values.instagramUsername}
+                instagramUsername={values.instagramUsername || ''}
                 onInstagramChange={(value: string) =>
                   form.setFieldValue('instagramUsername', value)
                 }
-                facebookUsername={values.facebookUsername}
+                facebookUsername={values.facebookUsername || ''}
                 onFacebookChange={(value: string) =>
                   form.setFieldValue('facebookUsername', value)
                 }
-                tiktokUsername={values.tiktokUsername}
+                tiktokUsername={values.tiktokUsername || ''}
                 onTiktokChange={(value: string) =>
                   form.setFieldValue('tiktokUsername', value)
                 }
-                snapchatUsername={values.snapchatUsername}
+                snapchatUsername={values.snapchatUsername || ''}
                 onSnapchatChange={(value: string) =>
                   form.setFieldValue('snapchatUsername', value)
                 }
-                xUsername={values.xUsername}
+                xUsername={values.xUsername || ''}
                 onXChange={(value: string) =>
                   form.setFieldValue('xUsername', value)
                 }
-                whatsappNumber={values.whatsappNumber}
+                whatsappNumber={values.whatsappNumber || ''}
                 onWhatsappChange={(value: string) =>
                   form.setFieldValue('whatsappNumber', value)
                 }

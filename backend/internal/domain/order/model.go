@@ -95,6 +95,8 @@ type Order struct {
 	VATRate            decimal.Decimal           `gorm:"column:vat_rate;type:numeric;not null;default:0" json:"vatRate"`
 	ShippingFee        decimal.Decimal           `gorm:"column:shipping_fee;type:numeric;not null;default:0" json:"shippingFee"`
 	Discount           decimal.Decimal           `gorm:"column:discount;type:numeric;not null;default:0" json:"discount"`
+	DiscountType       DiscountType              `gorm:"column:discount_type;type:text" json:"discountType,omitempty"`
+	DiscountValue      decimal.Decimal           `gorm:"column:discount_value;type:numeric;default:0" json:"discountValue,omitempty"`
 	COGS               decimal.Decimal           `gorm:"column:cogs;type:numeric;not null;default:0" json:"cogs"`
 	Total              decimal.Decimal           `gorm:"column:total;type:numeric;not null;default:0" json:"total"`
 	Currency           string                    `gorm:"column:currency;type:text;not null" json:"currency"`

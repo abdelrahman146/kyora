@@ -1773,9 +1773,9 @@ definitions:
         type: string
       countryCode:
         type: string
-      phone:
-        type: string
       phoneCode:
+        type: string
+      phoneNumber:
         type: string
       state:
         type: string
@@ -1786,8 +1786,8 @@ definitions:
     required:
     - city
     - countryCode
-    - phone
     - phoneCode
+    - phoneNumber
     - state
     type: object
   customer.CreateCustomerNoteRequest:
@@ -1832,8 +1832,9 @@ definitions:
         type: string
     required:
     - countryCode
-    - email
     - name
+    - phoneCode
+    - phoneNumber
     type: object
   customer.Customer:
     properties:
@@ -3049,6 +3050,50 @@ definitions:
     - OrderPaymentStatusPaid
     - OrderPaymentStatusFailed
     - OrderPaymentStatusRefunded
+  order.OrderPreviewItemResponse:
+    properties:
+      productId:
+        type: string
+      quantity:
+        type: integer
+      total:
+        type: number
+      totalCost:
+        type: number
+      unitCost:
+        type: number
+      unitPrice:
+        type: number
+      variantId:
+        type: string
+    type: object
+  order.OrderPreviewResponse:
+    properties:
+      cogs:
+        type: number
+      currency:
+        type: string
+      discount:
+        type: number
+      items:
+        items:
+          $ref: '#/definitions/order.OrderPreviewItemResponse'
+        type: array
+      paymentMethod:
+        $ref: '#/definitions/order.OrderPaymentMethod'
+      shippingFee:
+        type: number
+      shippingZoneId:
+        type: string
+      subtotal:
+        type: number
+      total:
+        type: number
+      vat:
+        type: number
+      vatRate:
+        type: number
+    type: object
   order.OrderResponse:
     properties:
       businessId:
@@ -3068,6 +3113,10 @@ definitions:
       customerId:
         type: string
       discount:
+        type: number
+      discountType:
+        $ref: '#/definitions/order.DiscountType'
+      discountValue:
         type: number
       failedAt:
         type: string
@@ -27236,6 +27285,64 @@ paths:
       security:
       - BearerAuth: []
       summary: Get order by order number
+      tags:
+      - order
+  /v1/businesses/{businessDescriptor}/orders/preview:
+    post:
+      consumes:
+      - application/json
+      description: Validates the order payload and returns computed totals without
+        creating an order or adjusting inventory
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: Order preview
+        in: body
+        name: body
+        required: true
+        schema:
+          $ref: '#/definitions/order.CreateOrderRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/order.OrderPreviewResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "403":
+          description: Forbidden
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "404":
+          description: Not Found
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "409":
+          description: Conflict
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "429":
+          description: Too Many Requests
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: Preview order totals
       tags:
       - order
   /v1/businesses/{businessDescriptor}/payment-methods:

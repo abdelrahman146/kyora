@@ -156,18 +156,17 @@ Execution protocol:
 - Refer to `brds/UX-2026-01-14-order-form-revamp.md` whenever you need more clarity about UI/UX
 - Refer to `brds/BRD-2026-01-14-order-form-revamp` whenever you need more about the business requirements.
 
-### Step 6 — i18n, analytics, polish
+### Step 6 — i18n, polish
 
-- Goal: Add/align translation keys, analytics events, and UX polish states.
-- Scope: In: i18n keys per UX inventory; analytics events from BRD; minor UI polish (badges, skeletons, banners). Out: net-new features.
+- Goal: Add/align translation keys, and UX polish states.
+- Scope: In: i18n keys per UX inventory; minor UI polish (badges, skeletons, banners). Out: net-new features.
 - Targets: `portal-web/src/i18n/{en,ar}/orders.json` (+ common/customers/address); analytics hook points in create/edit flows.
 - Tasks:
   - Add new keys listed in UX spec; ensure en/ar parity; avoid duplication; route titles remain under common if touched.
-  - Emit events: `order_form_open`, `order_form_add_customer_inline`, `order_form_add_address_inline`, `order_form_dry_run`, `order_form_submit_success`, `order_form_submit_error` (with category) via existing analytics helper if available.
   - Polish states: empty/loading/error visuals per spec; badge for free shipping; preview stale timer (30s).
 - Edge cases: avoid breaking existing translations; ensure namespace usage explicit.
-- Verification: i18n build passes; manual check en/ar; analytics calls fire in devtools (if instrumented); UI shows polish elements.
-- Definition of done: Keys added with parity; analytics events wired; polish items visible.
+- Verification: i18n build passes; manual check en/ar; UI shows polish elements.
+- Definition of done: Keys added with parity; polish items visible.
 - Refer to `brds/UX-2026-01-14-order-form-revamp.md` whenever you need more clarity about UI/UX
 - Refer to `brds/BRD-2026-01-14-order-form-revamp` whenever you need more about the business requirements.
 

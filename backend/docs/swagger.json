@@ -6880,6 +6880,94 @@
                 }
             }
         },
+        "/v1/businesses/{businessDescriptor}/orders/preview": {
+            "post": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Validates the order payload and returns computed totals without creating an order or adjusting inventory",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "order"
+                ],
+                "summary": "Preview order totals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Order preview",
+                        "name": "body",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/order.CreateOrderRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/order.OrderPreviewResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "403": {
+                        "description": "Forbidden",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "404": {
+                        "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflict",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "429": {
+                        "description": "Too Many Requests",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
         "/v1/businesses/{businessDescriptor}/orders/{orderId}": {
             "get": {
                 "security": [
@@ -12114,8 +12202,8 @@
             "required": [
                 "city",
                 "countryCode",
-                "phone",
                 "phoneCode",
+                "phoneNumber",
                 "state"
             ],
             "properties": {
@@ -12125,10 +12213,10 @@
                 "countryCode": {
                     "type": "string"
                 },
-                "phone": {
+                "phoneCode": {
                     "type": "string"
                 },
-                "phoneCode": {
+                "phoneNumber": {
                     "type": "string"
                 },
                 "state": {
@@ -12157,8 +12245,9 @@
             "type": "object",
             "required": [
                 "countryCode",
-                "email",
-                "name"
+                "name",
+                "phoneCode",
+                "phoneNumber"
             ],
             "properties": {
                 "countryCode": {
@@ -14007,6 +14096,73 @@
                 "OrderPaymentStatusRefunded"
             ]
         },
+        "order.OrderPreviewItemResponse": {
+            "type": "object",
+            "properties": {
+                "productId": {
+                    "type": "string"
+                },
+                "quantity": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "totalCost": {
+                    "type": "number"
+                },
+                "unitCost": {
+                    "type": "number"
+                },
+                "unitPrice": {
+                    "type": "number"
+                },
+                "variantId": {
+                    "type": "string"
+                }
+            }
+        },
+        "order.OrderPreviewResponse": {
+            "type": "object",
+            "properties": {
+                "cogs": {
+                    "type": "number"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "discount": {
+                    "type": "number"
+                },
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/order.OrderPreviewItemResponse"
+                    }
+                },
+                "paymentMethod": {
+                    "$ref": "#/definitions/order.OrderPaymentMethod"
+                },
+                "shippingFee": {
+                    "type": "number"
+                },
+                "shippingZoneId": {
+                    "type": "string"
+                },
+                "subtotal": {
+                    "type": "number"
+                },
+                "total": {
+                    "type": "number"
+                },
+                "vat": {
+                    "type": "number"
+                },
+                "vatRate": {
+                    "type": "number"
+                }
+            }
+        },
         "order.OrderResponse": {
             "type": "object",
             "properties": {
@@ -14035,6 +14191,12 @@
                     "type": "string"
                 },
                 "discount": {
+                    "type": "number"
+                },
+                "discountType": {
+                    "$ref": "#/definitions/order.DiscountType"
+                },
+                "discountValue": {
                     "type": "number"
                 },
                 "failedAt": {

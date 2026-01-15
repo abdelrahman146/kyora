@@ -35,6 +35,7 @@
     "select_phone_code": "اختر مفتاح الدولة",
     "phone_number": "رقم الهاتف",
     "phone_placeholder": "مثال: 501234567",
+    "additional_details_section": "تفاصيل إضافية (اختياري)",
     "social_media_section": "وسائل التواصل (اختياري)",
     "social_media_hint": "أضف حسابات التواصل الاجتماعي للتواصل مع العملاء",
     "instagram": "إنستغرام",
@@ -121,6 +122,9 @@
     "countries_plural": "{{count}} دول",
     "no_zones_message": "لم يتم تكوين مناطق الشحن بعد.",
     "configure_zones_link": "تكوين مناطق الشحن",
-    "filtered_by_zone": "الدول المُرشحة حسب منطقة الشحن المحددة"
+    "filtered_by_zone": "الدول المُرشحة حسب منطقة الشحن المحددة",
+    "location_section": "الموقع",
+    "details_section": "تفاصيل العنوان",
+    "contact_section": "التواصل"
   }
 }

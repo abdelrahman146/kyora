@@ -74,13 +74,13 @@ func (s *Service) shippingFeeFromZone(subtotal, discount decimal.Decimal, zone *
 
 // computeDiscountAmount resolves the discount amount from CreateOrderRequest.
 // It prefers the new DiscountType/DiscountValue fields over the legacy Discount field.
-// Returns the computed discount amount and the normalized discount value for storage.
+// Returns the computed discount amount (rounded to 2 decimals for percentage discounts).
 func (s *Service) computeDiscountAmount(subtotal decimal.Decimal, req *CreateOrderRequest) decimal.Decimal {
 	// New fields take precedence.
 	if req.DiscountType != "" && !req.DiscountValue.IsZero() {
 		if req.DiscountType == DiscountTypePercent {
-			// Percent discount: subtotal * (discountValue / 100)
-			return subtotal.Mul(req.DiscountValue).Div(decimal.NewFromInt(100))
+			// Percent discount: subtotal * (discountValue / 100), rounded to 2 decimals.
+			return subtotal.Mul(req.DiscountValue).Div(decimal.NewFromInt(100)).Round(2)
 		}
 		// Amount discount
 		return req.DiscountValue
@@ -324,6 +324,8 @@ func (s *Service) CreateOrder(ctx context.Context, actor *account.User, biz *bus
 				VATRate:           vatRate,
 				ShippingFee:       shippingFee,
 				Discount:          discount,
+				DiscountType:      req.DiscountType,
+				DiscountValue:     req.DiscountValue,
 				COGS:              cogs,
 				Total:             total,
 				Currency:          biz.Currency,
@@ -613,17 +615,22 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 				return problem.BadRequest("discountValue cannot be negative")
 			}
 
-			// Compute discount amount based on type
+			// Compute discount amount based on type (rounded to 2 decimals for percentage)
 			var discount decimal.Decimal
 			if req.DiscountType == DiscountTypePercent {
-				discount = ord.Subtotal.Mul(req.DiscountValue.Decimal).Div(decimal.NewFromInt(100))
+				discount = ord.Subtotal.Mul(req.DiscountValue.Decimal).Div(decimal.NewFromInt(100)).Round(2)
 			} else {
 				discount = req.DiscountValue.Decimal
 			}
 			ord.Discount = discount
+			ord.DiscountType = req.DiscountType
+			ord.DiscountValue = req.DiscountValue.Decimal
 		} else if req.Discount.Valid {
 			// Fallback to legacy Discount field for backward compatibility
+			// Clear the typed fields when using legacy discount
 			ord.Discount = transformer.FromNullDecimal(req.Discount)
+			ord.DiscountType = DiscountTypeAmount
+			ord.DiscountValue = transformer.FromNullDecimal(req.Discount)
 		}
 
 		// shipping zone update takes precedence over manual shippingFee
@@ -820,7 +827,8 @@ func (s *Service) calculateSubtotal(items []*OrderItem) decimal.Decimal {
 	for _, it := range items {
 		subtotal = subtotal.Add(it.Total)
 	}
-	return subtotal
+	// Round to 2 decimals (money precision)
+	return subtotal.Round(2)
 }
 
 func (s *Service) calculateCOGS(items []*OrderItem) decimal.Decimal {
@@ -828,15 +836,18 @@ func (s *Service) calculateCOGS(items []*OrderItem) decimal.Decimal {
 	for _, it := range items {
 		cogs = cogs.Add(it.TotalCost)
 	}
-	return cogs
+	// Round to 2 decimals (money precision)
+	return cogs.Round(2)
 }
 
 func (s *Service) calculateTotal(subtotal, vat, shippingFee, discount decimal.Decimal) decimal.Decimal {
-	return subtotal.Add(vat).Add(shippingFee).Sub(discount)
+	// Round to 2 decimals (money precision)
+	return subtotal.Add(vat).Add(shippingFee).Sub(discount).Round(2)
 }
 
 func (s *Service) calculateVAT(subtotal, vatRate decimal.Decimal) decimal.Decimal {
-	return subtotal.Mul(vatRate)
+	// Round to 2 decimals (money precision)
+	return subtotal.Mul(vatRate).Round(2)
 }
 
 func (s *Service) deleteOrderItems(ctx context.Context, actor *account.User, biz *business.Business, orderID string) error {
@@ -880,16 +891,16 @@ func (s *Service) prepareOrderItems(ctx context.Context, actor *account.User, bi
 		if reqItem.UnitCost.LessThan(decimal.Zero) {
 			return nil, nil, problem.BadRequest("unitCost cannot be negative").With("variantId", reqItem.VariantID)
 		}
-		// Create order item
+		// Create order item (round line totals to 2 decimals for money precision)
 		orderItem := &OrderItem{
 			VariantID: reqItem.VariantID,
 			ProductID: variant.ProductID,
 			Currency:  biz.Currency,
 			Quantity:  reqItem.Quantity,
-			UnitPrice: reqItem.UnitPrice,
-			UnitCost:  reqItem.UnitCost,
-			Total:     reqItem.UnitPrice.Mul(decimal.NewFromInt(int64(reqItem.Quantity))),
-			TotalCost: reqItem.UnitCost.Mul(decimal.NewFromInt(int64(reqItem.Quantity))),
+			UnitPrice: reqItem.UnitPrice.Round(2),
+			UnitCost:  reqItem.UnitCost.Round(2),
+			Total:     reqItem.UnitPrice.Mul(decimal.NewFromInt(int64(reqItem.Quantity))).Round(2),
+			TotalCost: reqItem.UnitCost.Mul(decimal.NewFromInt(int64(reqItem.Quantity))).Round(2),
 		}
 		orderItems = append(orderItems, orderItem)
 

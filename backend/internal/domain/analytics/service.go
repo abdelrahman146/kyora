@@ -268,7 +268,7 @@ func (s *Service) ComputeCustomerAnalytics(ctx context.Context, actor *account.U
 		return nil, err
 	}
 	if uniquePurchasers > 0 {
-		analytics.AverageRevenuePerCustomer = totalRevenue.Div(decimal.NewFromInt(uniquePurchasers))
+		analytics.AverageRevenuePerCustomer = totalRevenue.Div(decimal.NewFromInt(uniquePurchasers)).Round(2)
 	} else {
 		analytics.AverageRevenuePerCustomer = decimal.Zero
 	}
@@ -279,7 +279,7 @@ func (s *Service) ComputeCustomerAnalytics(ctx context.Context, actor *account.U
 		return nil, err
 	}
 	if newCustomers > 0 {
-		analytics.CustomerAcquisitionCost = marketingSpend.Div(decimal.NewFromInt(newCustomers))
+		analytics.CustomerAcquisitionCost = marketingSpend.Div(decimal.NewFromInt(newCustomers)).Round(2)
 	} else {
 		analytics.CustomerAcquisitionCost = decimal.Zero
 	}
@@ -297,7 +297,7 @@ func (s *Service) ComputeCustomerAnalytics(ctx context.Context, actor *account.U
 		averageOrderFrequencey = decimal.NewFromInt(totalOrdersCount).Div(decimal.NewFromInt(uniquePurchasers))
 	}
 	// Customer Lifetime Value (CLV) = Average Order Value  x  Average Purchase Frequency
-	analytics.CustomerLifetimeValue = averageOrderValue.Mul(averageOrderFrequencey)
+	analytics.CustomerLifetimeValue = averageOrderValue.Mul(averageOrderFrequencey).Round(2)
 
 	// Average purchase frequency in the period = total orders / unique purchasers
 	analytics.AverageCustomerPurchaseFrequency = averageOrderFrequencey

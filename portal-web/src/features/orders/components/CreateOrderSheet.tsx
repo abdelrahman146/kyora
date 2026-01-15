@@ -1,11 +1,21 @@
-import { useEffect } from 'react'
+import { useEffect, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
-import { CreditCard, MapPin, Package, Plus, Trash2, User } from 'lucide-react'
+import {
+  CreditCard,
+  MapPin,
+  Package,
+  Plus,
+  Trash2,
+  User,
+  UserPlus,
+} from 'lucide-react'
 
+import { ItemPickerSheet } from './ItemPickerSheet'
 import { PreviewStatusPill } from './PreviewStatusPill'
 import { LiveSummaryCard } from './LiveSummaryCard'
 import { OrderPreviewManager } from './OrderPreviewManager'
+import type { OrderItem } from './ItemPickerSheet'
 import type { OrderFormValues } from './OrderPreviewManager'
 import type {
   CreateOrderRequest,
@@ -17,13 +27,16 @@ import type {
 import type { ShippingZone } from '@/api/business'
 import { useAddressesQuery } from '@/api/address'
 import { useCustomersQuery } from '@/api/customer'
+import { useVariantsQuery } from '@/api/inventory'
 import { useCreateOrderMutation } from '@/api/order'
 import { usePaymentMethodsQuery, useShippingZonesQuery } from '@/api/business'
 import { BottomSheet } from '@/components'
 import { ShippingZoneInfo } from '@/components/organisms/ShippingZoneInfo'
+import { AddCustomerSheet } from '@/features/customers/components/AddCustomerSheet'
+import { StandaloneAddressSheet } from '@/features/customers/components/StandaloneAddressSheet'
 import { useKyoraForm } from '@/lib/form'
 import { showSuccessToast } from '@/lib/toast'
-import { businessStore } from '@/stores/businessStore'
+import { businessStore, getSelectedBusiness } from '@/stores/businessStore'
 import { inferShippingZoneFromAddress } from '@/lib/shippingZone'
 
 export interface CreateOrderSheetProps {
@@ -60,6 +73,7 @@ interface AddressSectionContentProps {
   businessDescriptor: string
   customerId: string
   shippingZones: Array<ShippingZone>
+  onAddAddressClick: () => void
 }
 
 /**
@@ -71,6 +85,7 @@ function AddressSectionContent({
   businessDescriptor,
   customerId,
   shippingZones,
+  onAddAddressClick,
 }: AddressSectionContentProps) {
   const { t: tOrders } = useTranslation('orders')
 
@@ -83,11 +98,21 @@ function AddressSectionContent({
 
   return (
     <div className="space-y-3">
-      <div className="flex items-center gap-2">
-        <MapPin size={18} className="text-base-content/70" />
-        <h3 className="font-semibold text-start">
-          {tOrders('shipping_address')}
-        </h3>
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-2">
+          <MapPin size={18} className="text-base-content/70" />
+          <h3 className="font-semibold text-start">
+            {tOrders('shipping_address')}
+          </h3>
+        </div>
+        <button
+          type="button"
+          className="btn btn-ghost btn-xs gap-1"
+          onClick={onAddAddressClick}
+        >
+          <Plus size={14} />
+          {tOrders('add_new_address')}
+        </button>
       </div>
 
       <form.AppField
@@ -168,6 +193,16 @@ export function CreateOrderSheet({
 
   const businessDescriptor =
     businessStore.state.selectedBusinessDescriptor || ''
+  const selectedBusiness = getSelectedBusiness()
+  const businessCountryCode = selectedBusiness?.countryCode ?? 'SA'
+
+  // Inline sheet states
+  const [isInlineCustomerOpen, setIsInlineCustomerOpen] = useState(false)
+  const [isInlineAddressOpen, setIsInlineAddressOpen] = useState(false)
+  const [itemPickerState, setItemPickerState] = useState<{
+    isOpen: boolean
+    editIndex: number | null
+  }>({ isOpen: false, editIndex: null })
 
   // Fetch lookup data
   useCustomersQuery(
@@ -184,6 +219,12 @@ export function CreateOrderSheet({
   )
   const { data: shippingZones = [] } = useShippingZonesQuery(
     businessDescriptor,
+    isOpen,
+  )
+  // Fetch variants for displaying item names (get a broad list)
+  const { data: variantsData } = useVariantsQuery(
+    businessDescriptor,
+    { page: 1, pageSize: 100 },
     isOpen,
   )
 
@@ -244,17 +285,57 @@ export function CreateOrderSheet({
     },
   })
 
-  const addItem = () => {
-    form.pushFieldValue('items', {
-      variantId: '',
-      quantity: 1,
-      unitPrice: '',
-      unitCost: '',
-    })
-  }
-
   const removeItem = (index: number) => {
     form.removeFieldValue('items', index)
+  }
+
+  // Item picker handlers
+  const openItemPicker = (editIndex: number | null = null) => {
+    setItemPickerState({ isOpen: true, editIndex })
+  }
+
+  const closeItemPicker = () => {
+    setItemPickerState({ isOpen: false, editIndex: null })
+  }
+
+  const handleItemSave = (item: OrderItem) => {
+    if (itemPickerState.editIndex !== null) {
+      // Update existing item
+      form.setFieldValue(
+        `items[${itemPickerState.editIndex}].variantId`,
+        item.variantId,
+      )
+      form.setFieldValue(
+        `items[${itemPickerState.editIndex}].quantity`,
+        item.quantity,
+      )
+      form.setFieldValue(
+        `items[${itemPickerState.editIndex}].unitPrice`,
+        item.unitPrice,
+      )
+      form.setFieldValue(
+        `items[${itemPickerState.editIndex}].unitCost`,
+        item.unitCost,
+      )
+    } else {
+      // Add new item
+      const currentItems = form.state.values.items
+      // If first item is empty placeholder, replace it
+      if (currentItems.length === 1 && currentItems[0].variantId === '') {
+        form.setFieldValue('items[0].variantId', item.variantId)
+        form.setFieldValue('items[0].quantity', item.quantity)
+        form.setFieldValue('items[0].unitPrice', item.unitPrice)
+        form.setFieldValue('items[0].unitCost', item.unitCost)
+      } else {
+        form.pushFieldValue('items', item)
+      }
+    }
+  }
+
+  const handleItemRemove = () => {
+    if (itemPickerState.editIndex !== null) {
+      removeItem(itemPickerState.editIndex)
+    }
   }
 
   // Reset form when sheet closes - only react to isOpen changes
@@ -270,6 +351,13 @@ export function CreateOrderSheet({
   }
 
   const enabledPaymentMethods = paymentMethods.filter((pm) => pm.enabled)
+
+  // Helper to get variant name for display in item cards
+  const getVariantName = (variantId: string): string => {
+    if (!variantId || !variantsData?.items) return ''
+    const variant = variantsData.items.find((v) => v.id === variantId)
+    return variant?.name ?? ''
+  }
 
   return (
     <form.AppForm>
@@ -348,11 +436,24 @@ export function CreateOrderSheet({
                     <div className="grid gap-4 lg:grid-cols-[1.6fr,1fr]">
                       <div className="space-y-4">
                         <div className="rounded-xl border border-base-300 bg-base-100 p-4 space-y-4">
-                          <div className="flex items-center gap-2">
-                            <User size={18} className="text-base-content/70" />
-                            <h3 className="font-semibold text-start">
-                              {tOrders('customer')}
-                            </h3>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <User
+                                size={18}
+                                className="text-base-content/70"
+                              />
+                              <h3 className="font-semibold text-start">
+                                {tOrders('customer')}
+                              </h3>
+                            </div>
+                            <button
+                              type="button"
+                              className="btn btn-ghost btn-xs gap-1"
+                              onClick={() => setIsInlineCustomerOpen(true)}
+                            >
+                              <UserPlus size={14} />
+                              {tOrders('add_new_customer')}
+                            </button>
                           </div>
 
                           <form.AppField
@@ -387,6 +488,9 @@ export function CreateOrderSheet({
                                   businessDescriptor={businessDescriptor}
                                   customerId={customerId}
                                   shippingZones={shippingZones}
+                                  onAddAddressClick={() =>
+                                    setIsInlineAddressOpen(true)
+                                  }
                                 />
                               ) : null
                             }
@@ -425,140 +529,72 @@ export function CreateOrderSheet({
                             <button
                               type="button"
                               className="btn btn-ghost btn-sm"
-                              onClick={addItem}
+                              onClick={() => openItemPicker(null)}
                             >
                               <Plus size={16} />
                               {tOrders('add_item')}
                             </button>
                           </div>
 
+                          {/* Simplified Item Cards */}
                           <form.Subscribe
                             selector={(state) => state.values.items}
                           >
                             {(items) =>
-                              items.map((_, index: number) => (
-                                <div
-                                  key={index}
-                                  className="rounded-lg bg-base-200 p-4 space-y-3"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-sm font-medium">
-                                      {tOrders('item')} {index + 1}
-                                    </span>
-                                    {items.length > 1 && (
-                                      <button
-                                        type="button"
-                                        className="btn btn-ghost btn-sm btn-circle"
-                                        onClick={() => removeItem(index)}
-                                      >
-                                        <Trash2 size={16} />
-                                      </button>
-                                    )}
+                              items.map((item, index: number) => {
+                                const variantName = getVariantName(
+                                  item.variantId,
+                                )
+                                const hasProduct = !!item.variantId
+
+                                return (
+                                  <div
+                                    key={index}
+                                    className="rounded-lg bg-base-200 p-3 cursor-pointer hover:bg-base-300 transition-colors"
+                                    onClick={() => openItemPicker(index)}
+                                    role="button"
+                                    tabIndex={0}
+                                    onKeyDown={(e) => {
+                                      if (e.key === 'Enter' || e.key === ' ') {
+                                        e.preventDefault()
+                                        openItemPicker(index)
+                                      }
+                                    }}
+                                  >
+                                    <div className="flex items-center justify-between">
+                                      <div className="flex-1 min-w-0">
+                                        {hasProduct ? (
+                                          <>
+                                            <div className="text-sm font-medium text-base-content truncate">
+                                              {variantName}
+                                            </div>
+                                            <div className="text-xs text-base-content/60">
+                                              {tOrders('quantity')}:{' '}
+                                              {item.quantity} × {item.unitPrice}
+                                            </div>
+                                          </>
+                                        ) : (
+                                          <div className="text-sm text-base-content/60 italic">
+                                            {tOrders('item_picker_add')}
+                                          </div>
+                                        )}
+                                      </div>
+                                      {items.length > 1 && (
+                                        <button
+                                          type="button"
+                                          className="btn btn-ghost btn-sm btn-circle ms-2"
+                                          onClick={(e) => {
+                                            e.stopPropagation()
+                                            removeItem(index)
+                                          }}
+                                        >
+                                          <Trash2 size={16} />
+                                        </button>
+                                      )}
+                                    </div>
                                   </div>
-
-                                  <form.AppField
-                                    name={`items[${index}].variantId`}
-                                    validators={{
-                                      onBlur: z
-                                        .string()
-                                        .min(1, 'validation.required'),
-                                    }}
-                                  >
-                                    {(field) => (
-                                      <field.ProductVariantSelectField
-                                        label={tOrders('product')}
-                                        businessDescriptor={businessDescriptor}
-                                        placeholder={tOrders('search_product')}
-                                        required
-                                        showDetails={false}
-                                        onVariantSelect={(variant: {
-                                          id: string
-                                          productId: string
-                                          productName: string
-                                          variantName: string
-                                          salePrice: string
-                                          costPrice: string
-                                          stockQuantity: number
-                                        }) => {
-                                          form.setFieldValue(
-                                            `items[${index}].unitPrice`,
-                                            variant.salePrice,
-                                          )
-                                          form.setFieldValue(
-                                            `items[${index}].unitCost`,
-                                            variant.costPrice,
-                                          )
-                                          form.setFieldMeta(
-                                            `items[${index}].variantId`,
-                                            (prev) => ({
-                                              ...prev,
-                                              stockQuantity:
-                                                variant.stockQuantity,
-                                            }),
-                                          )
-
-                                          const currentQuantity =
-                                            form.getFieldValue(
-                                              `items[${index}].quantity`,
-                                            ) || 1
-                                          if (
-                                            currentQuantity >
-                                            variant.stockQuantity
-                                          ) {
-                                            form.setFieldValue(
-                                              `items[${index}].quantity`,
-                                              variant.stockQuantity,
-                                            )
-                                          }
-                                        }}
-                                      />
-                                    )}
-                                  </form.AppField>
-
-                                  <form.AppField
-                                    name={`items[${index}].quantity`}
-                                    validators={{
-                                      onBlur: z.coerce
-                                        .number()
-                                        .int()
-                                        .min(1, 'validation.min_value')
-                                        .max(10000, 'validation.max_value'),
-                                    }}
-                                  >
-                                    {(field) => (
-                                      <form.Subscribe
-                                        selector={(state) => {
-                                          const variantField = state.fieldMeta[
-                                            `items[${index}].variantId`
-                                          ] as any
-                                          return variantField?.stockQuantity
-                                        }}
-                                      >
-                                        {(stockQuantity) => {
-                                          const maxQuantity =
-                                            stockQuantity || 10000
-
-                                          return (
-                                            <field.QuantityField
-                                              label={tOrders('quantity')}
-                                              min={1}
-                                              max={maxQuantity}
-                                              required
-                                              helperText={
-                                                stockQuantity !== undefined
-                                                  ? tOrders('available_stock', {
-                                                      count: stockQuantity,
-                                                    })
-                                                  : undefined
-                                              }
-                                            />
-                                          )
-                                        }}
-                                      </form.Subscribe>
-                                    )}
-                                  </form.AppField>
-                                </div>
-                              ))
+                                )
+                              })
                             }
                           </form.Subscribe>
 
@@ -727,6 +763,67 @@ export function CreateOrderSheet({
               )
             }}
           </OrderPreviewManager>
+        )}
+      </form.Subscribe>
+
+      {/* Inline Customer Creation Sheet */}
+      <AddCustomerSheet
+        isOpen={isInlineCustomerOpen}
+        onClose={() => setIsInlineCustomerOpen(false)}
+        businessDescriptor={businessDescriptor}
+        businessCountryCode={businessCountryCode}
+        onCreated={(customer) => {
+          form.setFieldValue('customerId', customer.id)
+          // Clear address when customer changes
+          form.setFieldValue('shippingAddressId', '')
+          form.setFieldValue('shippingZoneId', '')
+        }}
+      />
+
+      {/* Inline Address Creation Sheet */}
+      <form.Subscribe selector={(state) => state.values.customerId}>
+        {(customerId) => (
+          <StandaloneAddressSheet
+            isOpen={isInlineAddressOpen}
+            onClose={() => setIsInlineAddressOpen(false)}
+            businessDescriptor={businessDescriptor}
+            customerId={customerId}
+            businessCountryCode={businessCountryCode}
+            onCreated={(address) => {
+              form.setFieldValue('shippingAddressId', address.id)
+              // Auto-infer shipping zone
+              if (shippingZones.length > 0) {
+                const inferredZone = inferShippingZoneFromAddress(
+                  address,
+                  shippingZones,
+                )
+                form.setFieldValue('shippingZoneId', inferredZone?.id || '')
+              }
+            }}
+          />
+        )}
+      </form.Subscribe>
+
+      {/* Item Picker Sheet */}
+      <form.Subscribe selector={(state) => state.values.items}>
+        {(items) => (
+          <ItemPickerSheet
+            isOpen={itemPickerState.isOpen}
+            onClose={closeItemPicker}
+            businessDescriptor={businessDescriptor}
+            existingItem={
+              itemPickerState.editIndex !== null
+                ? items[itemPickerState.editIndex]
+                : undefined
+            }
+            currentItems={items}
+            onSave={handleItemSave}
+            onRemove={
+              itemPickerState.editIndex !== null && items.length > 1
+                ? handleItemRemove
+                : undefined
+            }
+          />
         )}
       </form.Subscribe>
     </form.AppForm>

@@ -120,14 +120,16 @@ export function QuantityInput({
   const canIncrement = value < max
 
   return (
-    <div className={cn('flex items-center gap-2', className)}>
+    <div className={cn('inline-flex items-center gap-1', className)}>
       {/* Decrement Button */}
       <button
         type="button"
         className={cn(
-          'btn btn-circle',
-          'h-[44px] w-[44px] min-h-[44px]',
-          !canDecrement || disabled ? 'btn-disabled' : 'btn-primary',
+          'btn btn-circle btn-sm',
+          'h-10 w-10 min-h-10',
+          !canDecrement || disabled
+            ? 'btn-disabled bg-base-200'
+            : 'btn-ghost bg-base-200 hover:bg-base-300',
         )}
         onClick={handleDecrement}
         disabled={!canDecrement || disabled}
@@ -136,7 +138,7 @@ export function QuantityInput({
         <Minus size={16} />
       </button>
 
-      {/* Value Input - Matches FormInput height (50px) */}
+      {/* Value Input - Compact width, same height as buttons */}
       <input
         id={id}
         name={name}
@@ -149,8 +151,8 @@ export function QuantityInput({
         disabled={disabled}
         required={required}
         className={cn(
-          'input input-bordered w-full text-center font-medium',
-          'h-[50px] text-base',
+          'input input-bordered text-center font-medium',
+          'h-10 w-20 px-2 text-base',
           'transition-all duration-200',
           'focus:outline-none focus:border-primary focus:ring-2 focus:ring-primary/20',
           hasError &&
@@ -166,9 +168,11 @@ export function QuantityInput({
       <button
         type="button"
         className={cn(
-          'btn btn-circle',
-          'h-[44px] w-[44px] min-h-[44px]',
-          !canIncrement || disabled ? 'btn-disabled' : 'btn-primary',
+          'btn btn-circle btn-sm',
+          'h-10 w-10 min-h-10',
+          !canIncrement || disabled
+            ? 'btn-disabled bg-base-200'
+            : 'btn-primary',
         )}
         onClick={handleIncrement}
         disabled={!canIncrement || disabled}

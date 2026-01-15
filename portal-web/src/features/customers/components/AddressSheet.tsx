@@ -1,28 +1,43 @@
+/**
+ * AddressSheet Component
+ *
+ * A callback-based sheet for creating/editing customer addresses.
+ * Uses `onSubmit` callback for create/update operations.
+ * The parent component handles the mutation and success behavior.
+ *
+ * For standalone usage (e.g., in order creation), use StandaloneAddressSheet
+ * which wraps this component and handles mutations internally.
+ */
+
 import { Link } from '@tanstack/react-router'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { z } from 'zod'
 
-import { ShippingZoneSelect } from './ShippingZoneSelect'
 import { CountrySelect } from './CountrySelect'
 import { PhoneCodeSelect } from './PhoneCodeSelect'
+import { ShippingZoneSelect } from './ShippingZoneSelect'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress } from '@/api/customer'
 import { useShippingZonesQuery } from '@/api/business'
 import { useCountriesQuery } from '@/api/metadata'
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { useKyoraForm } from '@/lib/form'
-import { buildE164Phone, parseE164Phone } from '@/lib/phone'
+import { parseE164Phone } from '@/lib/phone'
 
 export interface AddressSheetProps {
   isOpen: boolean
   onClose: () => void
+  businessDescriptor: string
   onSubmit: (
     data: CreateAddressRequest | UpdateAddressRequest,
   ) => Promise<CustomerAddress>
+  /** Existing address for edit mode. If undefined, creates a new address */
   address?: CustomerAddress
+  /** Custom submit button label */
   submitLabel?: string
-  businessDescriptor: string
+  /** Whether the sheet is currently submitting (controlled externally) */
+  isSubmitting?: boolean
 }
 
 const addressSchema = z.object({
@@ -41,10 +56,11 @@ type FormData = z.infer<typeof addressSchema>
 export function AddressSheet({
   isOpen,
   onClose,
+  businessDescriptor,
   onSubmit,
   address,
   submitLabel,
-  businessDescriptor,
+  isSubmitting: externalIsSubmitting,
 }: AddressSheetProps) {
   const { t: tCustomers } = useTranslation('customers')
   const { t: tCommon } = useTranslation('common')
@@ -96,68 +112,72 @@ export function AddressSheet({
   const form = useKyoraForm({
     defaultValues,
     onSubmit: async ({ value }) => {
-      try {
-        const phoneData = buildE164Phone(value.phoneCode, value.phoneNumber)
-
-        if (address) {
-          const updateData: UpdateAddressRequest = {
-            shippingZoneId: value.shippingZoneId,
-            countryCode: value.countryCode,
-            state: value.state,
-            city: value.city,
-            phoneCode: value.phoneCode,
-            phoneNumber: value.phoneNumber,
-            street: value.street,
-            zipCode: value.zipCode,
-          }
-          await onSubmit(updateData)
-        } else {
-          const createData: CreateAddressRequest = {
-            shippingZoneId: value.shippingZoneId,
-            countryCode: value.countryCode,
-            state: value.state,
-            city: value.city,
-            phoneCode: value.phoneCode,
-            phone: phoneData.e164,
-            street: value.street,
-            zipCode: value.zipCode,
-          }
-          await onSubmit(createData)
+      if (address) {
+        // Update mode
+        const updateData: UpdateAddressRequest = {
+          countryCode: value.countryCode,
+          state: value.state,
+          city: value.city,
+          phoneCode: value.phoneCode,
+          phoneNumber: value.phoneNumber,
+          street: value.street,
+          zipCode: value.zipCode,
         }
-        onClose()
-      } catch (error) {
-        // Global QueryClient error handler shows the error toast.
+        await onSubmit(updateData)
+      } else {
+        // Create mode
+        const createData: CreateAddressRequest = {
+          countryCode: value.countryCode,
+          state: value.state,
+          city: value.city,
+          phoneCode: value.phoneCode,
+          phoneNumber: value.phoneNumber,
+          street: value.street,
+          zipCode: value.zipCode,
+        }
+        await onSubmit(createData)
       }
+      onClose()
     },
   })
 
-  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [formIsSubmitting, setFormIsSubmitting] = useState(false)
   const [isDirty, setIsDirty] = useState(false)
 
   useEffect(() => {
     const unsubscribe = form.store.subscribe(() => {
-      setIsSubmitting(form.store.state.isSubmitting)
+      setFormIsSubmitting(form.store.state.isSubmitting)
       setIsDirty(form.store.state.isDirty)
     })
     return unsubscribe
   }, [form])
 
+  // Reset when sheet closes
   useEffect(() => {
-    if (isOpen) {
+    if (!isOpen) {
       form.reset()
-      form.setFieldValue('shippingZoneId', address?.shippingZoneId ?? '')
-      form.setFieldValue('countryCode', address?.countryCode ?? '')
-      form.setFieldValue('state', address?.state ?? '')
-      form.setFieldValue('city', address?.city ?? '')
-      form.setFieldValue('phoneCode', initialPhoneData.phoneCode)
-      form.setFieldValue('phoneNumber', initialPhoneData.phoneNumber)
-      form.setFieldValue('street', address?.street ?? '')
-      form.setFieldValue('zipCode', address?.zipCode ?? '')
       setSelectedZoneId(address?.shippingZoneId ?? '')
       setSelectedCountryCode(address?.countryCode ?? '')
     }
+  }, [isOpen, address, form])
+
+  // Re-populate when sheet opens with existing address
+  useEffect(() => {
+    if (!isOpen) return
+
+    form.setFieldValue('shippingZoneId', address?.shippingZoneId ?? '')
+    form.setFieldValue('countryCode', address?.countryCode ?? '')
+    form.setFieldValue('state', address?.state ?? '')
+    form.setFieldValue('city', address?.city ?? '')
+    form.setFieldValue('phoneCode', initialPhoneData.phoneCode)
+    form.setFieldValue('phoneNumber', initialPhoneData.phoneNumber)
+    form.setFieldValue('street', address?.street ?? '')
+    form.setFieldValue('zipCode', address?.zipCode ?? '')
+    setSelectedZoneId(address?.shippingZoneId ?? '')
+    setSelectedCountryCode(address?.countryCode ?? '')
   }, [isOpen, address, initialPhoneData, form])
 
+  // Clear country when zone changes and country not in new zone
   useEffect(() => {
     if (
       selectedZoneId &&
@@ -174,6 +194,7 @@ export function AddressSheet({
     }
   }, [selectedZoneId, selectedCountryCode, availableCountries, form])
 
+  // Sync phone code when country changes
   useEffect(() => {
     if (selectedCountryCode && countriesReady) {
       const country = countries.find((c) => c.code === selectedCountryCode)
@@ -183,23 +204,40 @@ export function AddressSheet({
     }
   }, [selectedCountryCode, countries, countriesReady, form])
 
+  const isPending = externalIsSubmitting || formIsSubmitting
+
+  const safeClose = () => {
+    if (isPending) return
+    onClose()
+  }
+
+  const getTitle = () => {
+    return address
+      ? tCustomers('address.edit_title')
+      : tCustomers('address.add_title')
+  }
+
+  const getSubmitLabel = () => {
+    if (isPending) {
+      return <span className="loading loading-spinner loading-sm" />
+    }
+    if (submitLabel) return submitLabel
+    return address ? tCommon('update') : tCommon('add')
+  }
+
   return (
     <form.AppForm>
       <BottomSheet
         isOpen={isOpen}
-        onClose={onClose}
-        title={
-          address
-            ? tCustomers('address.edit_title')
-            : tCustomers('address.add_title')
-        }
+        onClose={safeClose}
+        title={getTitle()}
         footer={
           <div className="flex gap-2">
             <button
               type="button"
               className="btn btn-ghost flex-1"
-              onClick={onClose}
-              disabled={isSubmitting}
+              onClick={safeClose}
+              disabled={isPending}
             >
               {tCommon('cancel')}
             </button>
@@ -209,26 +247,30 @@ export function AddressSheet({
               disabled={address ? !isDirty : false}
               form={`address-form-${formId}`}
             >
-              {isSubmitting && (
-                <span className="loading loading-spinner loading-sm" />
-              )}
-              {submitLabel ?? (address ? tCommon('update') : tCommon('add'))}
+              {getSubmitLabel()}
             </form.SubmitButton>
           </div>
         }
+        side="end"
+        size="md"
+        closeOnOverlayClick={!isPending}
+        closeOnEscape={!isPending}
+        contentClassName="space-y-4"
+        ariaLabel={getTitle()}
       >
         <form.FormRoot
           id={`address-form-${formId}`}
           className="space-y-4"
-          aria-busy={isSubmitting}
+          aria-busy={isPending}
         >
+          {/* Shipping Zone */}
           <form.AppField
             name="shippingZoneId"
             validators={{
               onBlur: addressSchema.shape.shippingZoneId,
             }}
           >
-            {(field: any) => (
+            {(field) => (
               <ShippingZoneSelect
                 value={field.state.value}
                 onChange={(value: string) => {
@@ -255,13 +297,14 @@ export function AddressSheet({
             </div>
           )}
 
+          {/* Country */}
           <form.AppField
             name="countryCode"
             validators={{
               onBlur: z.string().length(2, 'validation.country_required'),
             }}
           >
-            {(field: any) => (
+            {(field) => (
               <>
                 <CountrySelect
                   value={field.state.value}
@@ -284,21 +327,7 @@ export function AddressSheet({
             )}
           </form.AppField>
 
-          <form.AppField
-            name="state"
-            validators={{
-              onBlur: z.string().min(1, 'validation.state_required'),
-            }}
-          >
-            {(field) => (
-              <field.TextField
-                label={tCustomers('form.state')}
-                placeholder={tCustomers('form.state_placeholder')}
-                required
-              />
-            )}
-          </form.AppField>
-
+          {/* City and State */}
           <form.AppField
             name="city"
             validators={{
@@ -314,6 +343,22 @@ export function AddressSheet({
             )}
           </form.AppField>
 
+          <form.AppField
+            name="state"
+            validators={{
+              onBlur: z.string().min(1, 'validation.state_required'),
+            }}
+          >
+            {(field) => (
+              <field.TextField
+                label={tCustomers('form.state')}
+                placeholder={tCustomers('form.state_placeholder')}
+                required
+              />
+            )}
+          </form.AppField>
+
+          {/* Street and Zip Code */}
           <form.AppField name="street">
             {(field) => (
               <field.TextField
@@ -332,37 +377,42 @@ export function AddressSheet({
             )}
           </form.AppField>
 
-          <form.AppField
-            name="phoneCode"
-            validators={{
-              onBlur: z.string().min(1, 'validation.phone_code_required'),
-            }}
-          >
-            {(field: any) => (
-              <PhoneCodeSelect
-                value={field.state.value}
-                onChange={(value: string) => field.handleChange(value)}
-                disabled
-                required
-              />
-            )}
-          </form.AppField>
+          {/* Phone */}
+          <div className="space-y-4">
+            <form.AppField
+              name="phoneCode"
+              validators={{
+                onBlur: z.string().min(1, 'validation.phone_code_required'),
+              }}
+            >
+              {(field) => (
+                <PhoneCodeSelect
+                  value={field.state.value}
+                  onChange={(value: string) => field.handleChange(value)}
+                  disabled
+                  required
+                />
+              )}
+            </form.AppField>
 
-          <form.AppField
-            name="phoneNumber"
-            validators={{
-              onBlur: z.string().min(1, 'validation.phone_required'),
-            }}
-          >
-            {(field) => (
-              <field.TextField
-                type="tel"
-                label={tCustomers('form.phone_number')}
-                placeholder={tCustomers('form.phone_placeholder')}
-                required
-              />
-            )}
-          </form.AppField>
+            <form.AppField
+              name="phoneNumber"
+              validators={{
+                onBlur: z.string().min(1, 'validation.phone_required'),
+              }}
+            >
+              {(field) => (
+                <field.TextField
+                  type="tel"
+                  label={tCustomers('form.phone_number')}
+                  placeholder={tCustomers('form.phone_placeholder')}
+                  dir="ltr"
+                  inputMode="tel"
+                  required
+                />
+              )}
+            </form.AppField>
+          </div>
         </form.FormRoot>
       </BottomSheet>
     </form.AppForm>

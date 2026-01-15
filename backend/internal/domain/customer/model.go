@@ -34,8 +34,8 @@ type Customer struct {
 	Business          *business.Business `gorm:"foreignKey:BusinessID;references:ID" json:"business,omitempty"`
 	Name              string             `gorm:"column:name;type:text;not null" json:"name"`
 	CountryCode       string             `gorm:"column:country_code;type:text;not null" json:"countryCode"`
-	Gender            CustomerGender     `gorm:"column:gender;type:text;not null" json:"gender"`
-	Email             nullable.String    `gorm:"column:email;type:text;not null;uniqueIndex:idx_business_email" json:"email"`
+	Gender            CustomerGender     `gorm:"column:gender;type:text" json:"gender,omitempty"`
+	Email             nullable.String    `gorm:"column:email;type:text;uniqueIndex:idx_business_email" json:"email,omitempty"`
 	PhoneNumber       nullable.String    `gorm:"column:phone_number;type:text" json:"phoneNumber,omitempty"`
 	PhoneCode         nullable.String    `gorm:"column:phone_code;type:text" json:"phoneCode,omitempty"`
 	TikTokUsername    nullable.String    `gorm:"column:tiktok_username;type:text" json:"tiktokUsername,omitempty"`
@@ -104,16 +104,16 @@ type CreateCustomerRequest struct {
 	Name              string         `json:"name" binding:"required"`
 	Gender            CustomerGender `json:"gender" binding:"omitempty,oneof=male female other"`
 	CountryCode       string         `json:"countryCode" binding:"required,len=2"`
-	Email             string         `json:"email" binding:"required,email"`
-	PhoneNumber       string         `json:"phoneNumber" binding:"omitempty"`
-	PhoneCode         string         `json:"phoneCode" binding:"omitempty"`
+	Email             string         `json:"email" binding:"omitempty,email"`
+	PhoneNumber       string         `json:"phoneNumber" binding:"required"`
+	PhoneCode         string         `json:"phoneCode" binding:"required"`
 	TikTokUsername    string         `json:"tiktokUsername" binding:"omitempty"`
 	InstagramUsername string         `json:"instagramUsername" binding:"omitempty"`
 	FacebookUsername  string         `json:"facebookUsername" binding:"omitempty"`
 	XUsername         string         `json:"xUsername" binding:"omitempty"`
 	SnapchatUsername  string         `json:"snapchatUsername" binding:"omitempty"`
-	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
 	WhatsappNumber    string         `json:"whatsappNumber" binding:"omitempty"`
+	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
 }
 
 type UpdateCustomerRequest struct {
@@ -199,7 +199,7 @@ type CreateCustomerAddressRequest struct {
 	State       string `json:"state" binding:"required"`
 	City        string `json:"city" binding:"required"`
 	PhoneCode   string `json:"phoneCode" binding:"required"`
-	Phone       string `json:"phone" binding:"required"`
+	PhoneNumber string `json:"phoneNumber" binding:"required"`
 	Street      string `json:"street" binding:"omitempty"`
 	ZipCode     string `json:"zipCode" binding:"omitempty"`
 }

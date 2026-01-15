@@ -58,6 +58,12 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
     return () => clearTimeout(timer)
   }, [customerSearchQuery])
 
+  // Clear both search states immediately when dropdown opens
+  const handleSearchReset = () => {
+    setCustomerSearchQuery('')
+    setDebouncedCustomerSearch('')
+  }
+
   const listParams = useMemo(
     () => ({
       search: debouncedCustomerSearch || undefined,
@@ -167,10 +173,10 @@ export function CustomerSelectField(props: CustomerSelectFieldProps) {
         onClear={handleClear}
         disabled={props.disabled || field.state.meta.isValidating}
         error={showError ? error : undefined}
-        isLoading={customersQuery.isFetching}
+        isLoading={customersQuery.isPending && !customersData}
         onOpen={() => {
           setIsOpen(true)
-          setCustomerSearchQuery('')
+          handleSearchReset()
         }}
         onClose={() => {
           setIsOpen(false)

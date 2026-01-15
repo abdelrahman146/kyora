@@ -855,7 +855,7 @@ func seedCustomersAndAddresses(ctx context.Context, svc *customer.Service, owner
 				ZipCode:     fmt.Sprintf("%05d", rng.Intn(99999)),
 				CountryCode: country,
 				PhoneCode:   "+1",
-				Phone:       fmt.Sprintf("555%06d", rng.Intn(999999)),
+				PhoneNumber: fmt.Sprintf("555%06d", rng.Intn(999999)),
 			})
 			if err != nil {
 				return err
