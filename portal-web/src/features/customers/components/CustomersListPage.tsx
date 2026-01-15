@@ -560,7 +560,7 @@ export function CustomersListPage() {
         totalItems={totalItems}
         onPageChange={handlePageChange}
         onPageSizeChange={handlePageSizeChange}
-        itemsName={tCustomers('customers').toLowerCase()}
+        itemsName={tCustomers('title').toLowerCase()}
         skeleton={<CustomerListSkeleton />}
       />
 

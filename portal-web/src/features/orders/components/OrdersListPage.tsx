@@ -605,7 +605,7 @@ export function OrdersListPage() {
             }),
           })
         }}
-        itemsName={tOrders('orders')}
+        itemsName={tOrders('title')}
       />
 
       <OrderReviewSheet

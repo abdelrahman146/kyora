@@ -44,7 +44,7 @@ export function Pagination({
   showPageSizeSelector = true,
   itemsName = 'items',
 }: PaginationProps) {
-  const { t, i18n } = useTranslation()
+  const { t: tPagination, i18n } = useTranslation('pagination')
   const isRTL = i18n.dir() === 'rtl'
   const startItem = (currentPage - 1) * pageSize + 1
   const endItem = Math.min(currentPage * pageSize, totalItems)
@@ -90,7 +90,7 @@ export function Pagination({
       {/* Info & Page Size Selector */}
       <div className="flex items-center gap-4 text-sm text-base-content/70">
         <span>
-          {t('pagination.showing', {
+          {tPagination('showing', {
             start: startItem,
             end: endItem,
             total: totalItems,
@@ -100,14 +100,14 @@ export function Pagination({
 
         {showPageSizeSelector && onPageSizeChange && (
           <div className="flex items-center gap-2">
-            <span>{t('pagination.show')}</span>
+            <span>{tPagination('show')}</span>
             <select
               value={pageSize}
               onChange={(e) => {
                 onPageSizeChange(Number(e.target.value))
               }}
               className="select select-sm select-bordered"
-              aria-label={t('pagination.itemsPerPage')}
+              aria-label={tPagination('itemsPerPage')}
             >
               {pageSizeOptions.map((size) => (
                 <option key={size} value={size}>
@@ -129,7 +129,7 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className="btn btn-sm join-item"
-          aria-label={t('pagination.firstPage')}
+          aria-label={tPagination('pagination.firstPage')}
         >
           {isRTL ? <ChevronsRight size={16} /> : <ChevronsLeft size={16} />}
         </button>
@@ -142,7 +142,7 @@ export function Pagination({
           }}
           disabled={currentPage === 1}
           className="btn btn-sm join-item"
-          aria-label={t('pagination.previousPage')}
+          aria-label={tPagination('pagination.previousPage')}
         >
           {isRTL ? <ChevronRight size={16} /> : <ChevronLeft size={16} />}
         </button>
@@ -172,7 +172,7 @@ export function Pagination({
               className={`btn btn-sm join-item ${
                 currentPage === page ? 'btn-active' : ''
               }`}
-              aria-label={t('pagination.page', { number: page })}
+              aria-label={tPagination('pagination.page', { number: page })}
               aria-current={currentPage === page ? 'page' : undefined}
             >
               {page}
@@ -188,7 +188,7 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages}
           className="btn btn-sm join-item"
-          aria-label={t('pagination.nextPage')}
+          aria-label={tPagination('pagination.nextPage')}
         >
           {isRTL ? <ChevronLeft size={16} /> : <ChevronRight size={16} />}
         </button>
@@ -201,7 +201,7 @@ export function Pagination({
           }}
           disabled={currentPage === totalPages}
           className="btn btn-sm join-item"
-          aria-label={t('pagination.lastPage')}
+          aria-label={tPagination('pagination.lastPage')}
         >
           {isRTL ? <ChevronsLeft size={16} /> : <ChevronsRight size={16} />}
         </button>
