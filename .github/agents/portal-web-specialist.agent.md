@@ -2,7 +2,7 @@
 name: Portal-Web Specialist
 description: "Expert in React 19 + TanStack stack for Kyora portal-web. Specializes in mobile-first, RTL/Arabic-first UI, TanStack Router/Query/Form/Store, daisyUI, and Chart.js visualizations."
 target: vscode
-model: Claude Sonnet 4.5 (copilot)
+model: Gemini 3 Pro (Preview) (copilot)
 tools:
   [
     "vscode",
