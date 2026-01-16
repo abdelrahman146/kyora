@@ -44,6 +44,16 @@ type listAssetsQuery struct {
 	OrderBy  []string `form:"orderBy" binding:"omitempty"`
 }
 
+// Expense list query with filters
+type listExpensesQuery struct {
+	Page     int             `form:"page" binding:"omitempty,min=1"`
+	PageSize int             `form:"pageSize" binding:"omitempty,min=1,max=100"`
+	OrderBy  []string        `form:"orderBy" binding:"omitempty"`
+	Category ExpenseCategory `form:"category" binding:"omitempty"`
+	From     *time.Time      `form:"from" binding:"omitempty" time_format:"2006-01-02"`
+	To       *time.Time      `form:"to" binding:"omitempty" time_format:"2006-01-02"`
+}
+
 // ListAssets returns a paginated list of assets for the workspace
 //
 // @Summary      List assets
@@ -801,6 +811,9 @@ func (h *HttpHandler) DeleteWithdrawal(c *gin.Context) {
 // @Param        page query int false "Page number (default: 1)"
 // @Param        pageSize query int false "Page size (default: 20, max: 100)"
 // @Param        orderBy query []string false "Sort order (e.g., -amount, occurredOn)"
+// @Param        category query string false "Filter by category"
+// @Param        from query string false "Filter from date (YYYY-MM-DD)"
+// @Param        to query string false "Filter to date (YYYY-MM-DD)"
 // @Success      200 {object} list.ListResponse[accounting.ExpenseResponse]
 // @Failure      401 {object} problem.Problem
 // @Failure      500 {object} problem.Problem
@@ -813,7 +826,7 @@ func (h *HttpHandler) ListExpenses(c *gin.Context) {
 		return
 	}
 
-	var query listAssetsQuery
+	var query listExpensesQuery
 	if err := c.ShouldBindQuery(&query); err != nil {
 		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
 		return
@@ -832,14 +845,21 @@ func (h *HttpHandler) ListExpenses(c *gin.Context) {
 		query.PageSize = 20
 	}
 
+	// Build filter options
+	filterOpts := &ListExpensesFilter{
+		Category: query.Category,
+		From:     query.From,
+		To:       query.To,
+	}
+
 	listReq := list.NewListRequest(query.Page, query.PageSize, query.OrderBy, "")
-	expenses, err := h.service.ListExpenses(c.Request.Context(), actor, biz, listReq)
+	expenses, err := h.service.ListExpenses(c.Request.Context(), actor, biz, listReq, filterOpts)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return
 	}
 
-	totalCount, err := h.service.CountExpenses(c.Request.Context(), actor, biz)
+	totalCount, err := h.service.CountExpenses(c.Request.Context(), actor, biz, filterOpts)
 	if err != nil {
 		response.Error(c, problem.InternalError().WithError(err))
 		return

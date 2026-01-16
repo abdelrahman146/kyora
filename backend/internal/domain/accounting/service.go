@@ -14,7 +14,15 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/types/list"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/transformer"
 	"github.com/shopspring/decimal"
+	"gorm.io/gorm"
 )
+
+// ListExpensesFilter contains filter options for listing expenses
+type ListExpensesFilter struct {
+	Category ExpenseCategory
+	From     *time.Time
+	To       *time.Time
+}
 
 type Service struct {
 	storage         *Storage
@@ -350,18 +358,60 @@ func (s *Service) GetExpenseByID(ctx context.Context, actor *account.User, biz *
 	)
 }
 
-func (s *Service) ListExpenses(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest) ([]*Expense, error) {
-	return s.storage.expense.FindMany(ctx,
+func (s *Service) ListExpenses(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filter *ListExpensesFilter) ([]*Expense, error) {
+	scopes := []func(db *gorm.DB) *gorm.DB{
 		s.storage.expense.ScopeBusinessID(biz.ID),
 		s.storage.expense.WithPagination(req.Offset(), req.Limit()),
 		s.storage.expense.WithOrderBy(req.ParsedOrderByWithDefault(ExpenseSchema, []string{"-occurredOn"})),
-	)
+	}
+
+	// Apply category filter
+	if filter != nil && filter.Category != "" {
+		scopes = append(scopes, s.storage.expense.ScopeEquals(ExpenseSchema.Category, filter.Category))
+	}
+
+	// Apply date range filter on occurredOn
+	if filter != nil && (filter.From != nil || filter.To != nil) {
+		from := time.Time{}
+		to := time.Time{}
+		if filter.From != nil {
+			from = *filter.From
+		}
+		if filter.To != nil {
+			// Add 1 day to include the entire "to" date
+			to = filter.To.AddDate(0, 0, 1)
+		}
+		scopes = append(scopes, s.storage.expense.ScopeTime(ExpenseSchema.OccurredOn, from, to))
+	}
+
+	return s.storage.expense.FindMany(ctx, scopes...)
 }
 
-func (s *Service) CountExpenses(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
-	return s.storage.expense.Count(ctx,
+func (s *Service) CountExpenses(ctx context.Context, actor *account.User, biz *business.Business, filter *ListExpensesFilter) (int64, error) {
+	scopes := []func(db *gorm.DB) *gorm.DB{
 		s.storage.expense.ScopeBusinessID(biz.ID),
-	)
+	}
+
+	// Apply category filter
+	if filter != nil && filter.Category != "" {
+		scopes = append(scopes, s.storage.expense.ScopeEquals(ExpenseSchema.Category, filter.Category))
+	}
+
+	// Apply date range filter on occurredOn
+	if filter != nil && (filter.From != nil || filter.To != nil) {
+		from := time.Time{}
+		to := time.Time{}
+		if filter.From != nil {
+			from = *filter.From
+		}
+		if filter.To != nil {
+			// Add 1 day to include the entire "to" date
+			to = filter.To.AddDate(0, 0, 1)
+		}
+		scopes = append(scopes, s.storage.expense.ScopeTime(ExpenseSchema.OccurredOn, from, to))
+	}
+
+	return s.storage.expense.Count(ctx, scopes...)
 }
 
 func (s *Service) CreateExpense(ctx context.Context, actor *account.User, biz *business.Business, req *CreateExpenseRequest) (*Expense, error) {
