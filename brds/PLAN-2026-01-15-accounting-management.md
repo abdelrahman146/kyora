@@ -184,14 +184,10 @@ Execution protocol:
     - Show `frequency` select.
     - Show `autoBackfill` checkbox.
     - Submit to `createRecurringExpense` instead of `createExpense`.
-- [ ] **Portal:** Update `ExpenseList` to optionally show recurring templates?
-  - *Decision Check:* BRD says "List active templates" is separate. For V1, we will mix them or add a Tab "Recurring Templates" if easy.
+- [ ] **Portal:** Update `ExpenseList` to optionally show recurring templates and ability to manage them and change their status or delete them or edit them.
+  - *Decision Check:* BRD says "List active templates" is separate. For V1, we will add a Tab "Recurring Templates".
   - *Decision:* Stick to simple Expenses List (occurrences) for now. The *creation* flow is the priority.
 - [ ] **Portal:** Ensure `ExpenseCard` shows a recurring badge if the expense record has `recurringExpenseId` (if backend returns it) or just trust the create flow works.
-
-**Verification:**
-- Create a recurring expense (e.g., Weekly).
-- Verify backend creates the template AND the backfilled history (if checked).
 
 ---
 

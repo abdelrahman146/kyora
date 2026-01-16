@@ -2,6 +2,7 @@
  * ExpenseListPage Component
  *
  * List page for expenses with:
+ * - Tab navigation: Expenses / Recurring Templates
  * - Filterable list (date range, category)
  * - Desktop: Table view with edit/delete actions
  * - Mobile: Card view with ExpenseCard
@@ -12,7 +13,7 @@
  * The search input is hidden per UX spec.
  */
 
-import { useNavigate, useParams, useSearch } from '@tanstack/react-router'
+import { Link, useNavigate, useParams, useSearch } from '@tanstack/react-router'
 import { useEffect, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import { Receipt, Repeat } from 'lucide-react'
@@ -41,6 +42,53 @@ import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form'
+
+/**
+ * ExpensesTabs - Navigation tabs for expenses/recurring templates
+ * Exported for use by RecurringExpenseListPage
+ */
+export function ExpensesTabs({
+  businessDescriptor,
+  activeTab,
+}: {
+  businessDescriptor: string
+  activeTab: 'expenses' | 'recurring'
+}) {
+  const { t } = useTranslation('accounting')
+
+  return (
+    <div className="tabs tabs-boxed bg-base-200/50 p-1 mb-4">
+      <Link
+        to="/business/$businessDescriptor/accounting/expenses"
+        params={{ businessDescriptor }}
+        search={{
+          page: 1,
+          pageSize: 20,
+          sortBy: 'occurredOn',
+          sortOrder: 'desc',
+        }}
+        className={`tab gap-2 ${activeTab === 'expenses' ? 'tab-active' : ''}`}
+      >
+        <Receipt className="w-4 h-4" />
+        {t('tabs.expenses')}
+      </Link>
+      <Link
+        to="/business/$businessDescriptor/accounting/expenses/recurring"
+        params={{ businessDescriptor }}
+        search={{
+          page: 1,
+          pageSize: 20,
+          sortBy: 'createdAt',
+          sortOrder: 'desc',
+        }}
+        className={`tab gap-2 ${activeTab === 'recurring' ? 'tab-active' : ''}`}
+      >
+        <Repeat className="w-4 h-4" />
+        {t('tabs.recurring')}
+      </Link>
+    </div>
+  )
+}
 
 export function ExpenseListPage() {
   const { t } = useTranslation('accounting')
@@ -336,6 +384,12 @@ export function ExpenseListPage() {
 
   return (
     <>
+      {/* Tab Navigation */}
+      <ExpensesTabs
+        businessDescriptor={businessDescriptor}
+        activeTab="expenses"
+      />
+
       <ResourceListLayout<Expense>
         // Header
         title={t('header.expenses')}

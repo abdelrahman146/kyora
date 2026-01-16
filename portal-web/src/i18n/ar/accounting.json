@@ -6,7 +6,12 @@
     "dashboard": "المحاسبة",
     "expenses": "المصروفات",
     "capital": "رأس المال والسحوبات",
-    "assets": "الأصول"
+    "assets": "الأصول",
+    "recurring_templates": "المصروفات المتكررة"
+  },
+  "tabs": {
+    "expenses": "المصروفات",
+    "recurring": "المتكرر"
   },
   "stats": {
     "safe_to_draw": "المتاح للسحب",
@@ -20,6 +25,8 @@
   "actions": {
     "add_expense": "إضافة مصروف",
     "add_first_expense": "إضافة أول مصروف",
+    "add_recurring": "إضافة متكرر",
+    "add_first_recurring": "إضافة أول متكرر",
     "create_expense": "إضافة مصروف",
     "create_recurring": "إنشاء متكرر",
     "edit_expense": "تعديل المصروف",
@@ -104,9 +111,26 @@
     "exceeds_safe_amount": "هذا المبلغ يتجاوز الحد الآمن",
     "recurring_badge": "متكرر"
   },
+  "recurring": {
+    "next_date": "التاريخ التالي",
+    "next_on": "التالي: {{date}}",
+    "started_on": "البدء: {{date}}",
+    "ends_on": "الانتهاء: {{date}}",
+    "add_hint": "استخدم زر التكرار عند إنشاء مصروف",
+    "change_status": "تغيير الحالة",
+    "pause": "إيقاف مؤقت",
+    "resume": "استئناف",
+    "end": "إنهاء",
+    "cancel": "إلغاء الجدول",
+    "reactivate": "إعادة تفعيل",
+    "confirm_status_title": "تأكيد تغيير الحالة",
+    "confirm_status_message": "هل أنت متأكد من رغبتك في تغيير حالة هذا المصروف المتكرر إلى {{status}}؟"
+  },
   "empty": {
     "expenses_title": "لا توجد مصروفات بعد",
     "expenses_description": "أضف الإيجار أو اشتراكات البرامج لمعرفة ربحك الحقيقي",
+    "recurring_title": "لا توجد مصروفات متكررة بعد",
+    "recurring_description": "أنشئ مصروفات متكررة للفواتير المنتظمة مثل الإيجار أو الاشتراكات",
     "capital_title": "لا توجد معاملات بعد",
     "capital_description": "سجّل الاستثمارات التي قمت بها أو المبالغ التي سحبتها من المشروع",
     "assets_title": "لا توجد أصول بعد",
@@ -121,7 +145,8 @@
     "category": "الفئة",
     "type": "النوع",
     "all_categories": "جميع الفئات",
-    "all_types": "جميع الأنواع"
+    "all_types": "جميع الأنواع",
+    "all_statuses": "جميع الحالات"
   },
   "list": {
     "recent_activity": "النشاط الأخير",

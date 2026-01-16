@@ -6,7 +6,12 @@
     "dashboard": "Accounting",
     "expenses": "Expenses",
     "capital": "Capital & Draws",
-    "assets": "Assets"
+    "assets": "Assets",
+    "recurring_templates": "Recurring Templates"
+  },
+  "tabs": {
+    "expenses": "Expenses",
+    "recurring": "Recurring"
   },
   "stats": {
     "safe_to_draw": "Safe to Draw",
@@ -20,6 +25,8 @@
   "actions": {
     "add_expense": "Add Expense",
     "add_first_expense": "Add First Expense",
+    "add_recurring": "Add Recurring",
+    "add_first_recurring": "Add First Recurring",
     "create_expense": "Add Expense",
     "create_recurring": "Create Recurring",
     "edit_expense": "Edit Expense",
@@ -104,9 +111,26 @@
     "exceeds_safe_amount": "This exceeds your safe amount",
     "recurring_badge": "Recurring"
   },
+  "recurring": {
+    "next_date": "Next Date",
+    "next_on": "Next: {{date}}",
+    "started_on": "Started: {{date}}",
+    "ends_on": "Ends: {{date}}",
+    "add_hint": "Use the Repeat toggle when creating an expense",
+    "change_status": "Change Status",
+    "pause": "Pause",
+    "resume": "Resume",
+    "end": "End",
+    "cancel": "Cancel Schedule",
+    "reactivate": "Reactivate",
+    "confirm_status_title": "Confirm Status Change",
+    "confirm_status_message": "Are you sure you want to change the status of this recurring expense to {{status}}?"
+  },
   "empty": {
     "expenses_title": "No expenses yet",
     "expenses_description": "Add your rent or software subscriptions to see your true profit",
+    "recurring_title": "No recurring expenses yet",
+    "recurring_description": "Set up recurring expenses for regular bills like rent or subscriptions",
     "capital_title": "No transactions yet",
     "capital_description": "Record investments you made or money you withdrew from the business",
     "assets_title": "No assets yet",
@@ -121,7 +145,8 @@
     "category": "Category",
     "type": "Type",
     "all_categories": "All Categories",
-    "all_types": "All Types"
+    "all_types": "All Types",
+    "all_statuses": "All Statuses"
   },
   "list": {
     "recent_activity": "Recent Activity",

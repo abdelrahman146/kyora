@@ -95,6 +95,7 @@
     "analytics": "Analytics",
     "accounting": "Accounting",
     "expenses": "Expenses",
+    "recurring_expenses": "Recurring Expenses",
     "capital": "Capital",
     "assets": "Assets",
     "billing": "Billing",

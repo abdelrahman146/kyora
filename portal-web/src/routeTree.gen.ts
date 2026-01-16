@@ -32,6 +32,7 @@ import { Route as BusinessBusinessDescriptorCustomersCustomerIdRouteImport } fro
 import { Route as BusinessBusinessDescriptorAccountingCapitalRouteImport } from './routes/business/$businessDescriptor/accounting/capital'
 import { Route as BusinessBusinessDescriptorAccountingAssetsRouteImport } from './routes/business/$businessDescriptor/accounting/assets'
 import { Route as BusinessBusinessDescriptorAccountingExpensesIndexRouteImport } from './routes/business/$businessDescriptor/accounting/expenses/index'
+import { Route as BusinessBusinessDescriptorAccountingExpensesRecurringIndexRouteImport } from './routes/business/$businessDescriptor/accounting/expenses/recurring/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -158,6 +159,12 @@ const BusinessBusinessDescriptorAccountingExpensesIndexRoute =
     path: '/accounting/expenses/',
     getParentRoute: () => BusinessBusinessDescriptorRoute,
   } as any)
+const BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute =
+  BusinessBusinessDescriptorAccountingExpensesRecurringIndexRouteImport.update({
+    id: '/accounting/expenses/recurring/',
+    path: '/accounting/expenses/recurring/',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -183,6 +190,7 @@ export interface FileRoutesByFullPath {
   '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders': typeof BusinessBusinessDescriptorOrdersIndexRoute
   '/business/$businessDescriptor/accounting/expenses': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
+  '/business/$businessDescriptor/accounting/expenses/recurring': typeof BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -207,6 +215,7 @@ export interface FileRoutesByTo {
   '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders': typeof BusinessBusinessDescriptorOrdersIndexRoute
   '/business/$businessDescriptor/accounting/expenses': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
+  '/business/$businessDescriptor/accounting/expenses/recurring': typeof BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -233,6 +242,7 @@ export interface FileRoutesById {
   '/business/$businessDescriptor/inventory/': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders/': typeof BusinessBusinessDescriptorOrdersIndexRoute
   '/business/$businessDescriptor/accounting/expenses/': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
+  '/business/$businessDescriptor/accounting/expenses/recurring/': typeof BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -260,6 +270,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor/inventory'
     | '/business/$businessDescriptor/orders'
     | '/business/$businessDescriptor/accounting/expenses'
+    | '/business/$businessDescriptor/accounting/expenses/recurring'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -284,6 +295,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor/inventory'
     | '/business/$businessDescriptor/orders'
     | '/business/$businessDescriptor/accounting/expenses'
+    | '/business/$businessDescriptor/accounting/expenses/recurring'
   id:
     | '__root__'
     | '/'
@@ -309,6 +321,7 @@ export interface FileRouteTypes {
     | '/business/$businessDescriptor/inventory/'
     | '/business/$businessDescriptor/orders/'
     | '/business/$businessDescriptor/accounting/expenses/'
+    | '/business/$businessDescriptor/accounting/expenses/recurring/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -491,6 +504,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessBusinessDescriptorAccountingExpensesIndexRouteImport
       parentRoute: typeof BusinessBusinessDescriptorRoute
     }
+    '/business/$businessDescriptor/accounting/expenses/recurring/': {
+      id: '/business/$businessDescriptor/accounting/expenses/recurring/'
+      path: '/accounting/expenses/recurring'
+      fullPath: '/business/$businessDescriptor/accounting/expenses/recurring'
+      preLoaderRoute: typeof BusinessBusinessDescriptorAccountingExpensesRecurringIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
   }
 }
 
@@ -504,6 +524,7 @@ interface BusinessBusinessDescriptorRouteChildren {
   BusinessBusinessDescriptorInventoryIndexRoute: typeof BusinessBusinessDescriptorInventoryIndexRoute
   BusinessBusinessDescriptorOrdersIndexRoute: typeof BusinessBusinessDescriptorOrdersIndexRoute
   BusinessBusinessDescriptorAccountingExpensesIndexRoute: typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
+  BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute: typeof BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute
 }
 
 const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteChildren =
@@ -525,6 +546,8 @@ const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteCh
       BusinessBusinessDescriptorOrdersIndexRoute,
     BusinessBusinessDescriptorAccountingExpensesIndexRoute:
       BusinessBusinessDescriptorAccountingExpensesIndexRoute,
+    BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute:
+      BusinessBusinessDescriptorAccountingExpensesRecurringIndexRoute,
   }
 
 const BusinessBusinessDescriptorRouteWithChildren =
