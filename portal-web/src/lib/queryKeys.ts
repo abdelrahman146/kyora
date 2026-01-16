@@ -222,6 +222,110 @@ export const analytics = {
 } as const
 
 /**
+ * Accounting queries (business-scoped)
+ * StaleTime: 1 minute (financial data, moderate update frequency)
+ * Invalidated on business switch
+ */
+export const accounting = {
+  all: ['accounting'] as const,
+  businessScoped: true,
+  summaries: () => [...accounting.all, 'summary'] as const,
+  summary: (
+    businessDescriptor: string,
+    params?: { from?: string; to?: string },
+  ) => [...accounting.summaries(), businessDescriptor, params] as const,
+  expenses: () => [...accounting.all, 'expenses'] as const,
+  expenseList: (
+    businessDescriptor: string,
+    filters?: {
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+      from?: string
+      to?: string
+      category?: string
+    },
+  ) => [...accounting.expenses(), 'list', businessDescriptor, filters] as const,
+  expenseDetail: (businessDescriptor: string, expenseId: string) =>
+    [
+      ...accounting.expenses(),
+      'detail',
+      businessDescriptor,
+      expenseId,
+    ] as const,
+  recurringExpenses: () => [...accounting.all, 'recurring-expenses'] as const,
+  recurringExpenseList: (
+    businessDescriptor: string,
+    filters?: {
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) =>
+    [
+      ...accounting.recurringExpenses(),
+      'list',
+      businessDescriptor,
+      filters,
+    ] as const,
+  recurringExpenseDetail: (
+    businessDescriptor: string,
+    recurringExpenseId: string,
+  ) =>
+    [
+      ...accounting.recurringExpenses(),
+      'detail',
+      businessDescriptor,
+      recurringExpenseId,
+    ] as const,
+  investments: () => [...accounting.all, 'investments'] as const,
+  investmentList: (
+    businessDescriptor: string,
+    filters?: {
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) =>
+    [...accounting.investments(), 'list', businessDescriptor, filters] as const,
+  investmentDetail: (businessDescriptor: string, investmentId: string) =>
+    [
+      ...accounting.investments(),
+      'detail',
+      businessDescriptor,
+      investmentId,
+    ] as const,
+  withdrawals: () => [...accounting.all, 'withdrawals'] as const,
+  withdrawalList: (
+    businessDescriptor: string,
+    filters?: {
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) =>
+    [...accounting.withdrawals(), 'list', businessDescriptor, filters] as const,
+  withdrawalDetail: (businessDescriptor: string, withdrawalId: string) =>
+    [
+      ...accounting.withdrawals(),
+      'detail',
+      businessDescriptor,
+      withdrawalId,
+    ] as const,
+  assets: () => [...accounting.all, 'assets'] as const,
+  assetList: (
+    businessDescriptor: string,
+    filters?: {
+      page?: number
+      pageSize?: number
+      orderBy?: Array<string>
+    },
+  ) => [...accounting.assets(), 'list', businessDescriptor, filters] as const,
+  assetDetail: (businessDescriptor: string, assetId: string) =>
+    [...accounting.assets(), 'detail', businessDescriptor, assetId] as const,
+} as const
+
+/**
  * Metadata query keys (global, not business-scoped)
  * StaleTime: 24 hours (static reference data)
  */
@@ -255,6 +359,7 @@ export const queryKeys = {
   orders,
   inventory,
   analytics,
+  accounting,
   metadata,
   onboarding,
   staleTime,
@@ -277,6 +382,7 @@ export function isBusinessScopedQuery(
     rootKey === 'addresses' ||
     rootKey === 'orders' ||
     rootKey === 'inventory' ||
-    rootKey === 'analytics'
+    rootKey === 'analytics' ||
+    rootKey === 'accounting'
   )
 }

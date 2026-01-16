@@ -3,6 +3,7 @@ package accounting
 import (
 	"context"
 	"fmt"
+	"sort"
 	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
@@ -694,4 +695,73 @@ func (s *Service) CreateNewRecurringExpenseOccurrence(ctx context.Context, actor
 		return nil, err
 	}
 	return expense, nil
+}
+
+// GetRecentActivities returns a unified list of recent accounting activities
+// including expenses, investments, and withdrawals, sorted by date descending.
+// The limit parameter controls how many items are returned (default 10, max 50).
+func (s *Service) GetRecentActivities(ctx context.Context, actor *account.User, biz *business.Business, limit int) ([]RecentActivityResponse, error) {
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 50 {
+		limit = 50
+	}
+
+	// Fetch recent expenses
+	expenses, err := s.storage.expense.FindMany(ctx,
+		s.storage.expense.ScopeBusinessID(biz.ID),
+		s.storage.expense.WithOrderBy([]string{"occurred_on DESC", "created_at DESC"}),
+		s.storage.expense.WithLimit(limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch recent investments
+	investments, err := s.storage.investment.FindMany(ctx,
+		s.storage.investment.ScopeBusinessID(biz.ID),
+		s.storage.investment.WithOrderBy([]string{"invested_at DESC", "created_at DESC"}),
+		s.storage.investment.WithLimit(limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Fetch recent withdrawals
+	withdrawals, err := s.storage.withdrawal.FindMany(ctx,
+		s.storage.withdrawal.ScopeBusinessID(biz.ID),
+		s.storage.withdrawal.WithOrderBy([]string{"withdrawn_at DESC", "created_at DESC"}),
+		s.storage.withdrawal.WithLimit(limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Convert and merge all activities
+	activities := make([]RecentActivityResponse, 0, len(expenses)+len(investments)+len(withdrawals))
+
+	for _, exp := range expenses {
+		activities = append(activities, ExpenseToRecentActivity(exp))
+	}
+
+	for _, inv := range investments {
+		activities = append(activities, InvestmentToRecentActivity(inv))
+	}
+
+	for _, w := range withdrawals {
+		activities = append(activities, WithdrawalToRecentActivity(w))
+	}
+
+	// Sort by OccurredAt descending
+	sort.Slice(activities, func(i, j int) bool {
+		return activities[i].OccurredAt.After(activities[j].OccurredAt)
+	})
+
+	// Return only the requested limit
+	if len(activities) > limit {
+		activities = activities[:limit]
+	}
+
+	return activities, nil
 }

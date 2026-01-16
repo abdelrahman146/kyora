@@ -1,0 +1,195 @@
+{
+  "nav": {
+    "title": "Accounting"
+  },
+  "header": {
+    "dashboard": "Accounting",
+    "expenses": "Expenses",
+    "capital": "Capital & Draws",
+    "assets": "Assets"
+  },
+  "stats": {
+    "safe_to_draw": "Safe to Draw",
+    "safe_to_draw_description": "Amount you can safely withdraw",
+    "total_assets": "Total Assets",
+    "total_expenses": "Total Expenses",
+    "expenses_month": "Expenses (This Month)",
+    "total_investments": "Total Investments",
+    "total_withdrawals": "Total Withdrawals"
+  },
+  "actions": {
+    "add_expense": "Add Expense",
+    "add_first_expense": "Add First Expense",
+    "create_expense": "Add Expense",
+    "create_recurring": "Create Recurring",
+    "edit_expense": "Edit Expense",
+    "delete_expense": "Delete Expense",
+    "record_transaction": "Record Transaction",
+    "add_investment": "Add Investment",
+    "add_withdrawal": "Add Withdrawal",
+    "add_asset": "Add Asset",
+    "add_first_asset": "Add First Asset",
+    "edit_asset": "Edit Asset",
+    "delete_asset": "Delete Asset",
+    "save_expense": "Save Expense",
+    "save_transaction": "Save Transaction",
+    "save_asset": "Save Asset",
+    "invest": "Invest",
+    "withdraw": "Withdraw"
+  },
+  "category": {
+    "label": "Category",
+    "rent": "Rent",
+    "marketing": "Marketing",
+    "salaries": "Salaries",
+    "packaging": "Packaging",
+    "software": "Software",
+    "logistics": "Logistics",
+    "transaction_fee": "Transaction Fee",
+    "travel": "Travel",
+    "supplies": "Supplies",
+    "other": "Other"
+  },
+  "frequency": {
+    "label": "Frequency",
+    "daily": "Daily",
+    "weekly": "Weekly",
+    "monthly": "Monthly",
+    "yearly": "Yearly"
+  },
+  "status": {
+    "label": "Status",
+    "active": "Active",
+    "paused": "Paused",
+    "ended": "Ended",
+    "canceled": "Canceled"
+  },
+  "type": {
+    "label": "Type",
+    "one_time": "One-time",
+    "recurring": "Recurring",
+    "investment": "Investment",
+    "withdrawal": "Withdrawal"
+  },
+  "activity": {
+    "expense": "Expense",
+    "investment": "Investment",
+    "withdrawal": "Withdrawal",
+    "unknown": "Activity"
+  },
+  "form": {
+    "add_expense_title": "Add Expense",
+    "amount": "Amount",
+    "amount_placeholder": "0.00",
+    "date": "Date",
+    "note": "Note",
+    "note_placeholder": "Add a note (optional)",
+    "is_recurring": "Repeat this expense?",
+    "is_recurring_hint": "We will automatically add this for you every period",
+    "auto_backfill": "Log past expenses from start date?",
+    "auto_backfill_hint": "Create expense entries for past periods",
+    "start_date": "Start Date",
+    "end_date": "End Date (Optional)",
+    "frequency": "Frequency",
+    "name": "Name",
+    "name_placeholder": "e.g., Camera, Laptop",
+    "value": "Value",
+    "value_placeholder": "0.00",
+    "purchase_date": "Purchase Date",
+    "transaction_type": "Transaction Type",
+    "select_category": "Select category"
+  },
+  "helper": {
+    "safe_amount": "Safe limit: {{amount}}",
+    "exceeds_safe_amount": "This exceeds your safe amount",
+    "recurring_badge": "Recurring"
+  },
+  "empty": {
+    "expenses_title": "No expenses yet",
+    "expenses_description": "Add your rent or software subscriptions to see your true profit",
+    "capital_title": "No transactions yet",
+    "capital_description": "Record investments you made or money you withdrew from the business",
+    "assets_title": "No assets yet",
+    "assets_description": "Do you own equipment? Add it here to track business value",
+    "recent_activity_title": "No activity yet",
+    "recent_activity_description": "Add an expense or investment to see your activity here"
+  },
+  "filters": {
+    "title": "Filter",
+    "date_range": "Date Range",
+    "select_date_range": "Select date range",
+    "category": "Category",
+    "type": "Type",
+    "all_categories": "All Categories",
+    "all_types": "All Types"
+  },
+  "list": {
+    "recent_activity": "Recent Activity",
+    "view_all": "View All",
+    "occurred_on": "on {{date}}",
+    "invested_on": "Invested on {{date}}",
+    "withdrawn_on": "Withdrawn on {{date}}",
+    "purchased_on": "Purchased on {{date}}",
+    "no_note": "No note"
+  },
+  "toast": {
+    "expense_created": "Expense saved",
+    "expense_updated": "Expense updated",
+    "expense_deleted": "Expense deleted",
+    "recurring_created": "Recurring expense created",
+    "recurring_updated": "Recurring expense updated",
+    "recurring_deleted": "Recurring expense deleted",
+    "recurring_status_updated": "Status updated",
+    "navigate_to_recurring": "Opening recurring schedule...",
+    "investment_created": "Investment recorded",
+    "investment_updated": "Investment updated",
+    "investment_deleted": "Investment deleted",
+    "withdrawal_created": "Withdrawal recorded",
+    "withdrawal_updated": "Withdrawal updated",
+    "withdrawal_deleted": "Withdrawal deleted",
+    "asset_created": "Asset saved",
+    "asset_updated": "Asset updated",
+    "asset_deleted": "Asset deleted"
+  },
+  "delete": {
+    "expense_title": "Delete Expense",
+    "expense_message": "Are you sure you want to delete this expense? This action cannot be undone.",
+    "expense_warning": "Delete {{category}} expense of {{amount}}? This action cannot be undone.",
+    "recurring_title": "Delete Recurring Schedule",
+    "recurring_message": "Are you sure you want to delete this recurring expense? This will not delete past expense entries.",
+    "recurring_warning": "This will delete the recurring schedule and all future expenses. Past expense entries will remain.",
+    "choose_what_to_delete": "Choose what to delete",
+    "this_occurrence": "This Expense Only",
+    "this_occurrence_hint": "Only this one will be deleted",
+    "recurring_template": "Entire Recurring Schedule",
+    "recurring_template_hint": "All future expenses will stop",
+    "investment_title": "Delete Investment",
+    "investment_message": "Are you sure you want to delete this investment record?",
+    "withdrawal_title": "Delete Withdrawal",
+    "withdrawal_message": "Are you sure you want to delete this withdrawal record?",
+    "asset_title": "Delete Asset",
+    "asset_message": "Are you sure you want to delete this asset?"
+  },
+  "edit": {
+    "expense_title": "Edit Expense",
+    "edit_expense": "Edit Expense",
+    "recurring_choose_mode": "This expense is part of a recurring series. What would you like to do?",
+    "edit_this_occurrence": "Edit This Expense",
+    "edit_this_occurrence_hint": "Only this occurrence will be changed",
+    "edit_recurring_template": "Edit Recurring Schedule",
+    "edit_recurring_template_hint": "Affects all future expenses",
+    "recurring_template_title": "Edit Recurring Schedule",
+    "start_date_not_editable": "Start date cannot be changed after creation"
+  },
+  "validation": {
+    "amount_required": "Amount is required",
+    "amount_positive": "Amount must be greater than 0",
+    "category_required": "Please select a category",
+    "date_required": "Date is required",
+    "name_required": "Name is required",
+    "value_required": "Value is required",
+    "value_positive": "Value must be greater than 0",
+    "frequency_required": "Please select a frequency",
+    "start_date_required": "Start date is required"
+  }
+}

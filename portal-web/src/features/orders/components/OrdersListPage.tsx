@@ -371,7 +371,7 @@ export function OrdersListPage() {
     },
     {
       key: 'actions',
-      label: '',
+      label: tCommon('actionsLabel'),
       align: 'center',
       width: '200px',
       render: (order: Order) => (

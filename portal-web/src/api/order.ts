@@ -118,7 +118,7 @@ export interface Order {
   shippingFee: string
   discount: string
   discountType?: DiscountType
-  discountValue?: string
+  discountValue?: string | null
   cogs: string
   total: string
   currency: string

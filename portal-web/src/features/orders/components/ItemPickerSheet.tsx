@@ -383,6 +383,7 @@ export function ItemPickerSheet({
               <field.PriceField
                 label={tOrders('item_unit_price')}
                 required
+                placeholder="0.00"
                 hint={
                   selectedVariant
                     ? `${tOrders('original_price')}: ${selectedVariant.salePrice} ${selectedVariant.currency}`

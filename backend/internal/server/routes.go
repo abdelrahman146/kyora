@@ -446,6 +446,7 @@ func registerBusinessScopedRoutes(
 		}
 
 		accountingGroup.GET("/summary", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), accountingHandler.GetAccountingSummary)
+		accountingGroup.GET("/recent-activities", account.EnforceActorPermissions(role.ActionView, role.ResourceAccounting), accountingHandler.ListRecentActivities)
 	}
 }
 

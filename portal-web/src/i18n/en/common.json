@@ -94,6 +94,9 @@
     "orders": "Orders",
     "analytics": "Analytics",
     "accounting": "Accounting",
+    "expenses": "Expenses",
+    "capital": "Capital",
+    "assets": "Assets",
     "billing": "Billing",
     "team": "Team",
     "settings": "Settings"

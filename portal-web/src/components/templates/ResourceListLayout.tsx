@@ -76,12 +76,14 @@ export interface ResourceListLayoutProps<T> {
   onAddClick: () => void
   /** Whether add button should be disabled */
   addButtonDisabled?: boolean
+  /** Whether to hide the search input */
+  hideSearch?: boolean
   /** Search placeholder text */
-  searchPlaceholder: string
+  searchPlaceholder?: string
   /** Current search value */
-  searchValue: string
+  searchValue?: string
   /** Search change handler */
-  onSearchChange: (value: string) => void
+  onSearchChange?: (value: string) => void
   /** Filter drawer title */
   filterTitle: string
   /** Filter button text (default: "Filter") */
@@ -166,8 +168,9 @@ export function ResourceListLayout<T>({
   addButtonText,
   onAddClick,
   addButtonDisabled = false,
-  searchPlaceholder,
-  searchValue,
+  hideSearch = false,
+  searchPlaceholder = '',
+  searchValue = '',
   onSearchChange,
   filterTitle,
   filterButtonText,
@@ -239,14 +242,16 @@ export function ResourceListLayout<T>({
 
       {/* Toolbar */}
       <div className="flex flex-col sm:flex-row gap-3">
-        <div className="flex-1">
-          <SearchInput
-            value={searchValue}
-            onChange={onSearchChange}
-            placeholder={searchPlaceholder}
-          />
-        </div>
-        <div className="flex gap-2">
+        {!hideSearch && (
+          <div className="flex-1">
+            <SearchInput
+              value={searchValue}
+              onChange={onSearchChange ?? (() => {})}
+              placeholder={searchPlaceholder}
+            />
+          </div>
+        )}
+        <div className={hideSearch ? 'flex flex-1 gap-2' : 'flex gap-2'}>
           {/* Sort Button (Mobile Only) */}
           {isMobile && sortOptions && sortOptions.length > 0 && onSortApply && (
             <div className="flex-1">

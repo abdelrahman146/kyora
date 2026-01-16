@@ -235,3 +235,96 @@ func ToRecurringExpenseResponses(recurringExpenses []*RecurringExpense) []Recurr
 	}
 	return responses
 }
+
+// =============================================================================
+// Recent Activity Response
+// =============================================================================
+
+// RecentActivityType represents the type of recent accounting activity
+type RecentActivityType string
+
+const (
+	RecentActivityTypeExpense    RecentActivityType = "expense"
+	RecentActivityTypeInvestment RecentActivityType = "investment"
+	RecentActivityTypeWithdrawal RecentActivityType = "withdrawal"
+)
+
+// RecentActivityResponse is a unified response for recent accounting activities
+// It provides a polymorphic view of expenses, investments, and withdrawals
+type RecentActivityResponse struct {
+	ID          string              `json:"id"`
+	Type        RecentActivityType  `json:"type"`
+	Amount      decimal.Decimal     `json:"amount"`
+	Currency    string              `json:"currency"`
+	Description string              `json:"description"`
+	OccurredAt  time.Time           `json:"occurredAt"`
+	CreatedAt   time.Time           `json:"createdAt"`
+	Category    *ExpenseCategory    `json:"category,omitempty"`    // Only for expenses
+	ExpenseType *ExpenseType        `json:"expenseType,omitempty"` // Only for expenses
+	PersonID    *string             `json:"personId,omitempty"`    // InvestorID or WithdrawerID
+}
+
+// RecentActivitiesResponse is the response for the recent activities endpoint
+type RecentActivitiesResponse struct {
+	Items []RecentActivityResponse `json:"items"`
+}
+
+// ExpenseToRecentActivity converts an Expense to RecentActivityResponse
+func ExpenseToRecentActivity(exp *Expense) RecentActivityResponse {
+	var description string
+	if exp.Note.Valid {
+		description = exp.Note.String
+	} else {
+		description = string(exp.Category)
+	}
+
+	return RecentActivityResponse{
+		ID:          exp.ID,
+		Type:        RecentActivityTypeExpense,
+		Amount:      exp.Amount,
+		Currency:    exp.Currency,
+		Description: description,
+		OccurredAt:  exp.OccurredOn,
+		CreatedAt:   exp.CreatedAt,
+		Category:    &exp.Category,
+		ExpenseType: &exp.Type,
+	}
+}
+
+// InvestmentToRecentActivity converts an Investment to RecentActivityResponse
+func InvestmentToRecentActivity(inv *Investment) RecentActivityResponse {
+	description := inv.Note
+	if description == "" {
+		description = "Investment"
+	}
+
+	return RecentActivityResponse{
+		ID:          inv.ID,
+		Type:        RecentActivityTypeInvestment,
+		Amount:      inv.Amount,
+		Currency:    inv.Currency,
+		Description: description,
+		OccurredAt:  inv.InvestedAt,
+		CreatedAt:   inv.CreatedAt,
+		PersonID:    &inv.InvestorID,
+	}
+}
+
+// WithdrawalToRecentActivity converts a Withdrawal to RecentActivityResponse
+func WithdrawalToRecentActivity(w *Withdrawal) RecentActivityResponse {
+	description := w.Note
+	if description == "" {
+		description = "Withdrawal"
+	}
+
+	return RecentActivityResponse{
+		ID:          w.ID,
+		Type:        RecentActivityTypeWithdrawal,
+		Amount:      w.Amount,
+		Currency:    w.Currency,
+		Description: description,
+		OccurredAt:  w.WithdrawnAt,
+		CreatedAt:   w.CreatedAt,
+		PersonID:    &w.WithdrawerID,
+	}
+}

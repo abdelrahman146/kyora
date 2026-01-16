@@ -1,0 +1,195 @@
+{
+  "nav": {
+    "title": "المحاسبة"
+  },
+  "header": {
+    "dashboard": "المحاسبة",
+    "expenses": "المصروفات",
+    "capital": "رأس المال والسحوبات",
+    "assets": "الأصول"
+  },
+  "stats": {
+    "safe_to_draw": "المتاح للسحب",
+    "safe_to_draw_description": "المبلغ الذي يمكنك سحبه بأمان",
+    "total_assets": "إجمالي الأصول",
+    "total_expenses": "إجمالي المصروفات",
+    "expenses_month": "مصروفات الشهر",
+    "total_investments": "إجمالي الاستثمارات",
+    "total_withdrawals": "إجمالي السحوبات"
+  },
+  "actions": {
+    "add_expense": "إضافة مصروف",
+    "add_first_expense": "إضافة أول مصروف",
+    "create_expense": "إضافة مصروف",
+    "create_recurring": "إنشاء متكرر",
+    "edit_expense": "تعديل المصروف",
+    "delete_expense": "حذف المصروف",
+    "record_transaction": "تسجيل معاملة",
+    "add_investment": "إضافة استثمار",
+    "add_withdrawal": "إضافة سحب",
+    "add_asset": "إضافة أصل",
+    "add_first_asset": "إضافة أول أصل",
+    "edit_asset": "تعديل الأصل",
+    "delete_asset": "حذف الأصل",
+    "save_expense": "حفظ المصروف",
+    "save_transaction": "حفظ المعاملة",
+    "save_asset": "حفظ الأصل",
+    "invest": "استثمار",
+    "withdraw": "سحب"
+  },
+  "category": {
+    "label": "الفئة",
+    "rent": "الإيجار",
+    "marketing": "التسويق",
+    "salaries": "الرواتب",
+    "packaging": "التغليف",
+    "software": "البرمجيات",
+    "logistics": "الشحن والتوصيل",
+    "transaction_fee": "رسوم المعاملات",
+    "travel": "سفر",
+    "supplies": "مواد",
+    "other": "أخرى"
+  },
+  "frequency": {
+    "label": "التكرار",
+    "daily": "يومي",
+    "weekly": "أسبوعي",
+    "monthly": "شهري",
+    "yearly": "سنوي"
+  },
+  "status": {
+    "label": "الحالة",
+    "active": "نشط",
+    "paused": "متوقف مؤقتاً",
+    "ended": "منتهي",
+    "canceled": "ملغي"
+  },
+  "type": {
+    "label": "النوع",
+    "one_time": "مرة واحدة",
+    "recurring": "متكرر",
+    "investment": "استثمار",
+    "withdrawal": "سحب"
+  },
+  "activity": {
+    "expense": "مصروف",
+    "investment": "استثمار",
+    "withdrawal": "سحب",
+    "unknown": "نشاط"
+  },
+  "form": {
+    "add_expense_title": "إضافة مصروف",
+    "amount": "المبلغ",
+    "amount_placeholder": "0.00",
+    "date": "التاريخ",
+    "note": "ملاحظة",
+    "note_placeholder": "أضف ملاحظة (اختياري)",
+    "is_recurring": "تكرار هذا المصروف؟",
+    "is_recurring_hint": "سنضيف هذا المصروف تلقائياً كل فترة",
+    "auto_backfill": "إضافة المصروفات السابقة من تاريخ البدء؟",
+    "auto_backfill_hint": "إنشاء سجلات المصروفات للفترات السابقة",
+    "start_date": "تاريخ البدء",
+    "end_date": "تاريخ الانتهاء (اختياري)",
+    "frequency": "التكرار",
+    "name": "الاسم",
+    "name_placeholder": "مثال: كاميرا، لابتوب",
+    "value": "القيمة",
+    "value_placeholder": "0.00",
+    "purchase_date": "تاريخ الشراء",
+    "transaction_type": "نوع المعاملة",
+    "select_category": "اختر الفئة"
+  },
+  "helper": {
+    "safe_amount": "الحد الآمن: {{amount}}",
+    "exceeds_safe_amount": "هذا المبلغ يتجاوز الحد الآمن",
+    "recurring_badge": "متكرر"
+  },
+  "empty": {
+    "expenses_title": "لا توجد مصروفات بعد",
+    "expenses_description": "أضف الإيجار أو اشتراكات البرامج لمعرفة ربحك الحقيقي",
+    "capital_title": "لا توجد معاملات بعد",
+    "capital_description": "سجّل الاستثمارات التي قمت بها أو المبالغ التي سحبتها من المشروع",
+    "assets_title": "لا توجد أصول بعد",
+    "assets_description": "هل تمتلك معدات؟ أضفها هنا لتتبع قيمة مشروعك",
+    "recent_activity_title": "لا يوجد نشاط بعد",
+    "recent_activity_description": "أضف مصروف أو استثمار لرؤية نشاطك هنا"
+  },
+  "filters": {
+    "title": "تصفية",
+    "date_range": "النطاق الزمني",
+    "select_date_range": "اختر النطاق الزمني",
+    "category": "الفئة",
+    "type": "النوع",
+    "all_categories": "جميع الفئات",
+    "all_types": "جميع الأنواع"
+  },
+  "list": {
+    "recent_activity": "النشاط الأخير",
+    "view_all": "عرض الكل",
+    "occurred_on": "في {{date}}",
+    "invested_on": "استثمار في {{date}}",
+    "withdrawn_on": "سحب في {{date}}",
+    "purchased_on": "شراء في {{date}}",
+    "no_note": "بدون ملاحظة"
+  },
+  "toast": {
+    "expense_created": "تم حفظ المصروف",
+    "expense_updated": "تم تحديث المصروف",
+    "expense_deleted": "تم حذف المصروف",
+    "recurring_created": "تم إنشاء المصروف المتكرر",
+    "recurring_updated": "تم تحديث المصروف المتكرر",
+    "recurring_deleted": "تم حذف المصروف المتكرر",
+    "recurring_status_updated": "تم تحديث الحالة",
+    "navigate_to_recurring": "جاري فتح جدول التكرار...",
+    "investment_created": "تم تسجيل الاستثمار",
+    "investment_updated": "تم تحديث الاستثمار",
+    "investment_deleted": "تم حذف الاستثمار",
+    "withdrawal_created": "تم تسجيل السحب",
+    "withdrawal_updated": "تم تحديث السحب",
+    "withdrawal_deleted": "تم حذف السحب",
+    "asset_created": "تم حفظ الأصل",
+    "asset_updated": "تم تحديث الأصل",
+    "asset_deleted": "تم حذف الأصل"
+  },
+  "delete": {
+    "expense_title": "حذف المصروف",
+    "expense_message": "هل أنت متأكد من حذف هذا المصروف؟ لا يمكن التراجع عن هذا الإجراء.",
+    "expense_warning": "حذف مصروف {{category}} بقيمة {{amount}}؟ لا يمكن التراجع عن هذا الإجراء.",
+    "recurring_title": "حذف جدول التكرار",
+    "recurring_message": "هل أنت متأكد من حذف هذا المصروف المتكرر؟ لن يتم حذف المصروفات السابقة.",
+    "recurring_warning": "سيتم حذف جدول التكرار وجميع المصروفات المستقبلية. ستبقى المصروفات السابقة.",
+    "choose_what_to_delete": "اختر ما تريد حذفه",
+    "this_occurrence": "هذا المصروف فقط",
+    "this_occurrence_hint": "سيتم حذف هذا المصروف فقط",
+    "recurring_template": "جدول التكرار بالكامل",
+    "recurring_template_hint": "ستتوقف جميع المصروفات المستقبلية",
+    "investment_title": "حذف الاستثمار",
+    "investment_message": "هل أنت متأكد من حذف سجل الاستثمار هذا؟",
+    "withdrawal_title": "حذف السحب",
+    "withdrawal_message": "هل أنت متأكد من حذف سجل السحب هذا؟",
+    "asset_title": "حذف الأصل",
+    "asset_message": "هل أنت متأكد من حذف هذا الأصل؟"
+  },
+  "edit": {
+    "expense_title": "تعديل المصروف",
+    "edit_expense": "تعديل المصروف",
+    "recurring_choose_mode": "هذا المصروف جزء من سلسلة متكررة. ماذا تريد أن تفعل؟",
+    "edit_this_occurrence": "تعديل هذا المصروف",
+    "edit_this_occurrence_hint": "سيتم تغيير هذا المصروف فقط",
+    "edit_recurring_template": "تعديل جدول التكرار",
+    "edit_recurring_template_hint": "يؤثر على جميع المصروفات المستقبلية",
+    "recurring_template_title": "تعديل جدول التكرار",
+    "start_date_not_editable": "لا يمكن تغيير تاريخ البدء بعد الإنشاء"
+  },
+  "validation": {
+    "amount_required": "المبلغ مطلوب",
+    "amount_positive": "يجب أن يكون المبلغ أكبر من 0",
+    "category_required": "يرجى اختيار الفئة",
+    "date_required": "التاريخ مطلوب",
+    "name_required": "الاسم مطلوب",
+    "value_required": "القيمة مطلوبة",
+    "value_positive": "يجب أن تكون القيمة أكبر من 0",
+    "frequency_required": "يرجى اختيار التكرار",
+    "start_date_required": "تاريخ البدء مطلوب"
+  }
+}

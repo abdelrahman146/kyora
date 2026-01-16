@@ -626,7 +626,7 @@ export function CreateOrderSheet({
                                     discountType === 'amount' ? (
                                       <field.PriceField
                                         label={tOrders('discount_value')}
-                                        placeholder="0"
+                                        placeholder="0.00"
                                       />
                                     ) : (
                                       <field.TextField

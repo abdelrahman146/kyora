@@ -12,6 +12,7 @@ import arDashboard from './ar/dashboard.json'
 import arCustomers from './ar/customers.json'
 import arPagination from './ar/pagination.json'
 import arHome from './ar/home.json'
+import arAccounting from './ar/accounting.json'
 import enCommon from './en/common.json'
 import enErrors from './en/errors.json'
 import enOnboarding from './en/onboarding.json'
@@ -24,6 +25,7 @@ import enDashboard from './en/dashboard.json'
 import enCustomers from './en/customers.json'
 import enPagination from './en/pagination.json'
 import enHome from './en/home.json'
+import enAccounting from './en/accounting.json'
 import { getCookie } from '@/lib/cookies'
 
 /**
@@ -80,6 +82,7 @@ void i18n.use(initReactI18next).init({
       customers: arCustomers,
       pagination: arPagination,
       home: arHome,
+      accounting: arAccounting,
     },
     en: {
       common: enCommon,
@@ -94,6 +97,7 @@ void i18n.use(initReactI18next).init({
       customers: enCustomers,
       pagination: enPagination,
       home: enHome,
+      accounting: enAccounting,
     },
   },
   lng: detectedLanguage,
@@ -112,6 +116,7 @@ void i18n.use(initReactI18next).init({
     'customers',
     'pagination',
     'home',
+    'accounting',
   ],
   interpolation: {
     escapeValue: false,

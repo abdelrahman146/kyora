@@ -264,7 +264,9 @@ export function BottomSheet({
         )}
 
         {/* Content Area */}
-        <div className={`px-4 py-6 ${contentClassName}`}>{children}</div>
+        <div className={`px-4 py-6 text-start ${contentClassName}`}>
+          {children}
+        </div>
 
         {/* Footer */}
         {footer && (

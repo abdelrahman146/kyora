@@ -27,7 +27,11 @@ import { Route as AuthOauthCallbackRouteImport } from './routes/auth/oauth/callb
 import { Route as BusinessBusinessDescriptorOrdersIndexRouteImport } from './routes/business/$businessDescriptor/orders/index'
 import { Route as BusinessBusinessDescriptorInventoryIndexRouteImport } from './routes/business/$businessDescriptor/inventory/index'
 import { Route as BusinessBusinessDescriptorCustomersIndexRouteImport } from './routes/business/$businessDescriptor/customers/index'
+import { Route as BusinessBusinessDescriptorAccountingIndexRouteImport } from './routes/business/$businessDescriptor/accounting/index'
 import { Route as BusinessBusinessDescriptorCustomersCustomerIdRouteImport } from './routes/business/$businessDescriptor/customers/$customerId'
+import { Route as BusinessBusinessDescriptorAccountingCapitalRouteImport } from './routes/business/$businessDescriptor/accounting/capital'
+import { Route as BusinessBusinessDescriptorAccountingAssetsRouteImport } from './routes/business/$businessDescriptor/accounting/assets'
+import { Route as BusinessBusinessDescriptorAccountingExpensesIndexRouteImport } from './routes/business/$businessDescriptor/accounting/expenses/index'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -124,10 +128,34 @@ const BusinessBusinessDescriptorCustomersIndexRoute =
     path: '/customers/',
     getParentRoute: () => BusinessBusinessDescriptorRoute,
   } as any)
+const BusinessBusinessDescriptorAccountingIndexRoute =
+  BusinessBusinessDescriptorAccountingIndexRouteImport.update({
+    id: '/accounting/',
+    path: '/accounting/',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
 const BusinessBusinessDescriptorCustomersCustomerIdRoute =
   BusinessBusinessDescriptorCustomersCustomerIdRouteImport.update({
     id: '/customers/$customerId',
     path: '/customers/$customerId',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
+const BusinessBusinessDescriptorAccountingCapitalRoute =
+  BusinessBusinessDescriptorAccountingCapitalRouteImport.update({
+    id: '/accounting/capital',
+    path: '/accounting/capital',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
+const BusinessBusinessDescriptorAccountingAssetsRoute =
+  BusinessBusinessDescriptorAccountingAssetsRouteImport.update({
+    id: '/accounting/assets',
+    path: '/accounting/assets',
+    getParentRoute: () => BusinessBusinessDescriptorRoute,
+  } as any)
+const BusinessBusinessDescriptorAccountingExpensesIndexRoute =
+  BusinessBusinessDescriptorAccountingExpensesIndexRouteImport.update({
+    id: '/accounting/expenses/',
+    path: '/accounting/expenses/',
     getParentRoute: () => BusinessBusinessDescriptorRoute,
   } as any)
 
@@ -147,10 +175,14 @@ export interface FileRoutesByFullPath {
   '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
   '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/accounting/assets': typeof BusinessBusinessDescriptorAccountingAssetsRoute
+  '/business/$businessDescriptor/accounting/capital': typeof BusinessBusinessDescriptorAccountingCapitalRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/accounting': typeof BusinessBusinessDescriptorAccountingIndexRoute
   '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
   '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders': typeof BusinessBusinessDescriptorOrdersIndexRoute
+  '/business/$businessDescriptor/accounting/expenses': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -167,10 +199,14 @@ export interface FileRoutesByTo {
   '/onboarding': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
   '/business/$businessDescriptor': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/accounting/assets': typeof BusinessBusinessDescriptorAccountingAssetsRoute
+  '/business/$businessDescriptor/accounting/capital': typeof BusinessBusinessDescriptorAccountingCapitalRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/accounting': typeof BusinessBusinessDescriptorAccountingIndexRoute
   '/business/$businessDescriptor/customers': typeof BusinessBusinessDescriptorCustomersIndexRoute
   '/business/$businessDescriptor/inventory': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders': typeof BusinessBusinessDescriptorOrdersIndexRoute
+  '/business/$businessDescriptor/accounting/expenses': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -189,10 +225,14 @@ export interface FileRoutesById {
   '/onboarding/': typeof OnboardingIndexRoute
   '/auth/oauth/callback': typeof AuthOauthCallbackRoute
   '/business/$businessDescriptor/': typeof BusinessBusinessDescriptorIndexRoute
+  '/business/$businessDescriptor/accounting/assets': typeof BusinessBusinessDescriptorAccountingAssetsRoute
+  '/business/$businessDescriptor/accounting/capital': typeof BusinessBusinessDescriptorAccountingCapitalRoute
   '/business/$businessDescriptor/customers/$customerId': typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  '/business/$businessDescriptor/accounting/': typeof BusinessBusinessDescriptorAccountingIndexRoute
   '/business/$businessDescriptor/customers/': typeof BusinessBusinessDescriptorCustomersIndexRoute
   '/business/$businessDescriptor/inventory/': typeof BusinessBusinessDescriptorInventoryIndexRoute
   '/business/$businessDescriptor/orders/': typeof BusinessBusinessDescriptorOrdersIndexRoute
+  '/business/$businessDescriptor/accounting/expenses/': typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -212,10 +252,14 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/oauth/callback'
     | '/business/$businessDescriptor/'
+    | '/business/$businessDescriptor/accounting/assets'
+    | '/business/$businessDescriptor/accounting/capital'
     | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/accounting'
     | '/business/$businessDescriptor/customers'
     | '/business/$businessDescriptor/inventory'
     | '/business/$businessDescriptor/orders'
+    | '/business/$businessDescriptor/accounting/expenses'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -232,10 +276,14 @@ export interface FileRouteTypes {
     | '/onboarding'
     | '/auth/oauth/callback'
     | '/business/$businessDescriptor'
+    | '/business/$businessDescriptor/accounting/assets'
+    | '/business/$businessDescriptor/accounting/capital'
     | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/accounting'
     | '/business/$businessDescriptor/customers'
     | '/business/$businessDescriptor/inventory'
     | '/business/$businessDescriptor/orders'
+    | '/business/$businessDescriptor/accounting/expenses'
   id:
     | '__root__'
     | '/'
@@ -253,10 +301,14 @@ export interface FileRouteTypes {
     | '/onboarding/'
     | '/auth/oauth/callback'
     | '/business/$businessDescriptor/'
+    | '/business/$businessDescriptor/accounting/assets'
+    | '/business/$businessDescriptor/accounting/capital'
     | '/business/$businessDescriptor/customers/$customerId'
+    | '/business/$businessDescriptor/accounting/'
     | '/business/$businessDescriptor/customers/'
     | '/business/$businessDescriptor/inventory/'
     | '/business/$businessDescriptor/orders/'
+    | '/business/$businessDescriptor/accounting/expenses/'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -404,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessBusinessDescriptorCustomersIndexRouteImport
       parentRoute: typeof BusinessBusinessDescriptorRoute
     }
+    '/business/$businessDescriptor/accounting/': {
+      id: '/business/$businessDescriptor/accounting/'
+      path: '/accounting'
+      fullPath: '/business/$businessDescriptor/accounting'
+      preLoaderRoute: typeof BusinessBusinessDescriptorAccountingIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
     '/business/$businessDescriptor/customers/$customerId': {
       id: '/business/$businessDescriptor/customers/$customerId'
       path: '/customers/$customerId'
@@ -411,28 +470,61 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BusinessBusinessDescriptorCustomersCustomerIdRouteImport
       parentRoute: typeof BusinessBusinessDescriptorRoute
     }
+    '/business/$businessDescriptor/accounting/capital': {
+      id: '/business/$businessDescriptor/accounting/capital'
+      path: '/accounting/capital'
+      fullPath: '/business/$businessDescriptor/accounting/capital'
+      preLoaderRoute: typeof BusinessBusinessDescriptorAccountingCapitalRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
+    '/business/$businessDescriptor/accounting/assets': {
+      id: '/business/$businessDescriptor/accounting/assets'
+      path: '/accounting/assets'
+      fullPath: '/business/$businessDescriptor/accounting/assets'
+      preLoaderRoute: typeof BusinessBusinessDescriptorAccountingAssetsRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
+    '/business/$businessDescriptor/accounting/expenses/': {
+      id: '/business/$businessDescriptor/accounting/expenses/'
+      path: '/accounting/expenses'
+      fullPath: '/business/$businessDescriptor/accounting/expenses'
+      preLoaderRoute: typeof BusinessBusinessDescriptorAccountingExpensesIndexRouteImport
+      parentRoute: typeof BusinessBusinessDescriptorRoute
+    }
   }
 }
 
 interface BusinessBusinessDescriptorRouteChildren {
   BusinessBusinessDescriptorIndexRoute: typeof BusinessBusinessDescriptorIndexRoute
+  BusinessBusinessDescriptorAccountingAssetsRoute: typeof BusinessBusinessDescriptorAccountingAssetsRoute
+  BusinessBusinessDescriptorAccountingCapitalRoute: typeof BusinessBusinessDescriptorAccountingCapitalRoute
   BusinessBusinessDescriptorCustomersCustomerIdRoute: typeof BusinessBusinessDescriptorCustomersCustomerIdRoute
+  BusinessBusinessDescriptorAccountingIndexRoute: typeof BusinessBusinessDescriptorAccountingIndexRoute
   BusinessBusinessDescriptorCustomersIndexRoute: typeof BusinessBusinessDescriptorCustomersIndexRoute
   BusinessBusinessDescriptorInventoryIndexRoute: typeof BusinessBusinessDescriptorInventoryIndexRoute
   BusinessBusinessDescriptorOrdersIndexRoute: typeof BusinessBusinessDescriptorOrdersIndexRoute
+  BusinessBusinessDescriptorAccountingExpensesIndexRoute: typeof BusinessBusinessDescriptorAccountingExpensesIndexRoute
 }
 
 const BusinessBusinessDescriptorRouteChildren: BusinessBusinessDescriptorRouteChildren =
   {
     BusinessBusinessDescriptorIndexRoute: BusinessBusinessDescriptorIndexRoute,
+    BusinessBusinessDescriptorAccountingAssetsRoute:
+      BusinessBusinessDescriptorAccountingAssetsRoute,
+    BusinessBusinessDescriptorAccountingCapitalRoute:
+      BusinessBusinessDescriptorAccountingCapitalRoute,
     BusinessBusinessDescriptorCustomersCustomerIdRoute:
       BusinessBusinessDescriptorCustomersCustomerIdRoute,
+    BusinessBusinessDescriptorAccountingIndexRoute:
+      BusinessBusinessDescriptorAccountingIndexRoute,
     BusinessBusinessDescriptorCustomersIndexRoute:
       BusinessBusinessDescriptorCustomersIndexRoute,
     BusinessBusinessDescriptorInventoryIndexRoute:
       BusinessBusinessDescriptorInventoryIndexRoute,
     BusinessBusinessDescriptorOrdersIndexRoute:
       BusinessBusinessDescriptorOrdersIndexRoute,
+    BusinessBusinessDescriptorAccountingExpensesIndexRoute:
+      BusinessBusinessDescriptorAccountingExpensesIndexRoute,
   }
 
 const BusinessBusinessDescriptorRouteWithChildren =

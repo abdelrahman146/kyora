@@ -1522,3 +1522,60 @@ func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 
 	response.SuccessJSON(c, http.StatusOK, summary)
 }
+
+// recentActivitiesQuery defines query parameters for recent activities
+type recentActivitiesQuery struct {
+	Limit int `form:"limit" binding:"omitempty,min=1,max=50"`
+}
+
+// ListRecentActivities returns a unified list of recent accounting activities
+//
+// @Summary      List recent activities
+// @Description  Returns a unified list of recent accounting activities (expenses, investments, withdrawals) sorted by date descending
+// @Tags         accounting
+// @Produce      json
+// @Param        businessDescriptor path string true "Business descriptor"
+// @Param        limit query int false "Number of items to return (default: 10, max: 50)"
+// @Success      200 {object} accounting.RecentActivitiesResponse
+// @Failure      400 {object} problem.Problem
+// @Failure      401 {object} problem.Problem
+// @Failure      500 {object} problem.Problem
+// @Router       /v1/businesses/{businessDescriptor}/accounting/recent-activities [get]
+// @Security     BearerAuth
+func (h *HttpHandler) ListRecentActivities(c *gin.Context) {
+	actor, err := account.ActorFromContext(c)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	var query recentActivitiesQuery
+	if err := c.ShouldBindQuery(&query); err != nil {
+		response.Error(c, problem.BadRequest("invalid query parameters").WithError(err))
+		return
+	}
+
+	biz, err := h.getBusinessForWorkspace(c, actor)
+	if err != nil {
+		response.Error(c, err)
+		return
+	}
+
+	// Default limit
+	limit := query.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+
+	activities, err := h.service.GetRecentActivities(c.Request.Context(), actor, biz, limit)
+	if err != nil {
+		response.Error(c, problem.InternalError().WithError(err))
+		return
+	}
+
+	resp := RecentActivitiesResponse{
+		Items: activities,
+	}
+
+	response.SuccessJSON(c, http.StatusOK, resp)
+}
