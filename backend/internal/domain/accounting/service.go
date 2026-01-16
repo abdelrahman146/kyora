@@ -425,7 +425,7 @@ func (s *Service) CreateExpense(ctx context.Context, actor *account.User, biz *b
 		Type:               req.Type,
 	}
 	if req.OccurredOn != nil {
-		expense.OccurredOn = *req.OccurredOn
+		expense.OccurredOn = req.OccurredOn.Time
 	}
 	if err := s.storage.expense.CreateOne(ctx, expense); err != nil {
 		return nil, err
@@ -454,7 +454,7 @@ func (s *Service) UpdateExpense(ctx context.Context, actor *account.User, biz *b
 	}
 	expense.Note = transformer.ToNullString(req.Note)
 	if req.OccurredOn != nil {
-		expense.OccurredOn = *req.OccurredOn
+		expense.OccurredOn = req.OccurredOn.Time
 	}
 	expense.RecurringExpenseID = transformer.ToNullString(req.RecurringExpenseID)
 	if req.Type != "" {
@@ -579,12 +579,14 @@ func (s *Service) CreateRecurringExpense(ctx context.Context, actor *account.Use
 		recurringExpense = &RecurringExpense{
 			BusinessID:         biz.ID,
 			Frequency:          req.Frequency,
-			RecurringStartDate: req.RecurringStartDate,
+			RecurringStartDate: req.RecurringStartDate.Time,
 			Amount:             req.Amount,
 			Currency:           biz.Currency,
 			Category:           req.Category,
-			RecurringEndDate:   transformer.ToNullTime(req.RecurringEndDate),
 			Note:               transformer.ToNullString(req.Note),
+		}
+		if req.RecurringEndDate != nil {
+			recurringExpense.RecurringEndDate = transformer.ToNullTime(req.RecurringEndDate.Time)
 		}
 		if err := s.storage.recurringExpense.CreateOne(tctx, recurringExpense); err != nil {
 			return err
@@ -611,8 +613,8 @@ func (s *Service) UpdateRecurringExpense(ctx context.Context, actor *account.Use
 	if req.Frequency != "" {
 		recurringExpense.Frequency = req.Frequency
 	}
-	if !req.RecurringStartDate.IsZero() {
-		recurringExpense.RecurringStartDate = req.RecurringStartDate
+	if req.RecurringStartDate != nil && !req.RecurringStartDate.Time.IsZero() {
+		recurringExpense.RecurringStartDate = req.RecurringStartDate.Time
 	}
 	if !req.Amount.IsZero() {
 		if !req.Amount.GreaterThan(decimal.Zero) {
@@ -623,8 +625,8 @@ func (s *Service) UpdateRecurringExpense(ctx context.Context, actor *account.Use
 	if req.Category != "" {
 		recurringExpense.Category = req.Category
 	}
-	if !req.RecurringEndDate.IsZero() {
-		recurringExpense.RecurringEndDate = transformer.ToNullTime(req.RecurringEndDate)
+	if req.RecurringEndDate != nil && !req.RecurringEndDate.Time.IsZero() {
+		recurringExpense.RecurringEndDate = transformer.ToNullTime(req.RecurringEndDate.Time)
 	}
 	recurringExpense.Note = transformer.ToNullString(req.Note)
 	if err := s.storage.recurringExpense.UpdateOne(ctx, recurringExpense); err != nil {

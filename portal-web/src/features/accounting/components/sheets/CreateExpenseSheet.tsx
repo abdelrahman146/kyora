@@ -28,7 +28,6 @@ import {
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface CreateExpenseSheetProps {
@@ -78,43 +77,39 @@ export function CreateExpenseSheet({
         return
       }
 
-      try {
-        // Format date to YYYY-MM-DD
-        const dateString = format(value.date, 'yyyy-MM-dd')
+      // Format date to YYYY-MM-DD
+      const dateString = format(value.date, 'yyyy-MM-dd')
 
-        if (value.isRecurring) {
-          // Create recurring expense
-          await createRecurringExpenseMutation.mutateAsync({
-            amount: value.amount,
-            category: value.category,
-            note: value.note || undefined,
-            frequency: value.frequency,
-            recurringStartDate: dateString,
-            recurringEndDate: value.endDate
-              ? format(value.endDate, 'yyyy-MM-dd')
-              : undefined,
-            autoCreateHistoricalExpenses: value.autoBackfill,
-          })
-          toast.success(t('toast.recurring_expense_created'))
-        } else {
-          // Create one-time expense
-          await createExpenseMutation.mutateAsync({
-            amount: value.amount,
-            category: value.category,
-            occurredOn: dateString,
-            note: value.note || undefined,
-          })
-          toast.success(t('toast.expense_created'))
-        }
-
-        // Reset form and close
-        form.reset()
-        await onCreated?.()
-        onClose()
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
+      if (value.isRecurring) {
+        // Create recurring expense
+        await createRecurringExpenseMutation.mutateAsync({
+          amount: value.amount,
+          category: value.category,
+          note: value.note || undefined,
+          frequency: value.frequency,
+          recurringStartDate: dateString,
+          recurringEndDate: value.endDate
+            ? format(value.endDate, 'yyyy-MM-dd')
+            : undefined,
+          autoCreateHistoricalExpenses: value.autoBackfill,
+        })
+        toast.success(t('toast.recurring_expense_created'))
+      } else {
+        // Create one-time expense (backend requires type: 'one_time')
+        await createExpenseMutation.mutateAsync({
+          amount: value.amount,
+          category: value.category,
+          type: 'one_time',
+          occurredOn: dateString,
+          note: value.note || undefined,
+        })
+        toast.success(t('toast.expense_created'))
       }
+
+      // Reset form and close
+      form.reset()
+      await onCreated?.()
+      onClose()
     },
   })
 

@@ -27,7 +27,6 @@ import { useUpdateExpenseMutation } from '@/api/accounting'
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 
 interface EditExpenseSheetProps {
@@ -170,26 +169,23 @@ export function EditExpenseSheet({
         return
       }
 
-      try {
-        // Format date to YYYY-MM-DD
-        const dateString = format(value.date, 'yyyy-MM-dd')
+      // Format date to YYYY-MM-DD
+      const dateString = format(value.date, 'yyyy-MM-dd')
 
-        await updateExpenseMutation.mutateAsync({
-          amount: value.amount,
-          category: value.category as ExpenseCategory,
-          occurredOn: dateString,
-          note: value.note || null,
-        })
+      // Include type field (preserve existing type from expense)
+      await updateExpenseMutation.mutateAsync({
+        amount: value.amount,
+        category: value.category as ExpenseCategory,
+        type: expense.type,
+        occurredOn: dateString,
+        note: value.note || null,
+      })
 
-        toast.success(t('toast.expense_updated'))
+      toast.success(t('toast.expense_updated'))
 
-        // Close and notify parent
-        await onUpdated?.()
-        onClose()
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
-      }
+      // Close and notify parent
+      await onUpdated?.()
+      onClose()
     },
   })
 

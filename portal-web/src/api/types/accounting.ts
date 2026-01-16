@@ -11,18 +11,29 @@ import { z } from 'zod'
 
 // =============================================================================
 // Expense Category Enum
+// Backend: backend/internal/domain/accounting/model.go ExpenseCategory
 // =============================================================================
 
 export const expenseCategoryEnum = z.enum([
-  'rent',
-  'marketing',
-  'salaries',
-  'packaging',
-  'software',
-  'logistics',
-  'transaction_fee',
+  'office',
   'travel',
   'supplies',
+  'utilities',
+  'payroll',
+  'marketing',
+  'rent',
+  'software',
+  'maintenance',
+  'insurance',
+  'taxes',
+  'training',
+  'consulting',
+  'miscellaneous',
+  'legal',
+  'research',
+  'equipment',
+  'shipping',
+  'transaction_fee',
   'other',
 ])
 
@@ -218,11 +229,15 @@ export type ListResponse<T> = {
 // =============================================================================
 
 // Expense Create Request
+// Backend requires: amount (required), category (required), type (required),
+// recurringExpenseId (required if type=recurring), note (optional), occurredOn (optional)
 export const createExpenseRequestSchema = z.object({
   amount: z.string().min(1),
   category: expenseCategoryEnum,
-  occurredOn: z.string(), // YYYY-MM-DD or RFC3339
+  type: expenseTypeEnum,
+  occurredOn: z.string().optional(), // YYYY-MM-DD or RFC3339
   note: z.string().optional(),
+  recurringExpenseId: z.string().optional(),
 })
 
 export type CreateExpenseRequest = z.infer<typeof createExpenseRequestSchema>
@@ -231,8 +246,10 @@ export type CreateExpenseRequest = z.infer<typeof createExpenseRequestSchema>
 export const updateExpenseRequestSchema = z.object({
   amount: z.string().optional(),
   category: expenseCategoryEnum.optional(),
+  type: expenseTypeEnum.optional(),
   occurredOn: z.string().optional(),
   note: z.string().nullable().optional(),
+  recurringExpenseId: z.string().optional(),
 })
 
 export type UpdateExpenseRequest = z.infer<typeof updateExpenseRequestSchema>

@@ -30,7 +30,6 @@ import {
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { FormInput } from '@/components/form/FormInput'
 
@@ -123,34 +122,29 @@ export function EditRecurringExpenseSheet({
         return
       }
 
-      try {
-        await updateMutation.mutateAsync({
-          amount: value.amount,
-          category: value.category as ExpenseCategory,
-          frequency: value.frequency,
-          recurringEndDate: value.endDate
-            ? format(value.endDate, 'yyyy-MM-dd')
-            : null,
-          note: value.note || null,
-        })
+      await updateMutation.mutateAsync({
+        amount: value.amount,
+        category: value.category as ExpenseCategory,
+        frequency: value.frequency,
+        recurringEndDate: value.endDate
+          ? format(value.endDate, 'yyyy-MM-dd')
+          : null,
+        note: value.note || null,
+      })
 
-        toast.success(t('toast.recurring_updated'))
+      toast.success(t('toast.recurring_updated'))
 
-        // Invalidate queries
-        await queryClient.invalidateQueries({
-          queryKey: accountingQueries.recurringExpenses(),
-        })
-        await queryClient.invalidateQueries({
-          queryKey: accountingQueries.expenses(),
-        })
+      // Invalidate queries
+      await queryClient.invalidateQueries({
+        queryKey: accountingQueries.recurringExpenses(),
+      })
+      await queryClient.invalidateQueries({
+        queryKey: accountingQueries.expenses(),
+      })
 
-        // Notify parent and close
-        await onUpdated?.()
-        onClose()
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
-      }
+      // Notify parent and close
+      await onUpdated?.()
+      onClose()
     },
   })
 

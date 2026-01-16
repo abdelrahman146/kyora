@@ -13,20 +13,18 @@ import { useTranslation } from 'react-i18next'
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Banknote,
   Box,
   Boxes,
-  Calculator,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   PiggyBank,
   Plus,
   Receipt,
   Repeat,
-  Truck,
   Wallet,
 } from 'lucide-react'
+
+import { categoryIcons } from '../schema/options'
 
 import type { RecentActivity } from '@/api/accounting'
 
@@ -39,18 +37,6 @@ import { StatCardGroup } from '@/components/molecules/StatCardGroup'
 import { formatCurrency } from '@/lib/formatCurrency'
 import { formatDateShort } from '@/lib/formatDate'
 import { useLanguage } from '@/hooks/useLanguage'
-
-// Category icon mapping for expenses
-const categoryIcons: Record<string, typeof Receipt> = {
-  rent: Banknote,
-  marketing: CreditCard,
-  salaries: Wallet,
-  packaging: Box,
-  software: Calculator,
-  logistics: Truck,
-  transaction_fee: Receipt,
-  other: Receipt,
-}
 
 export function AccountingDashboard() {
   const { t } = useTranslation('accounting')

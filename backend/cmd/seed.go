@@ -26,6 +26,7 @@ import (
 	"github.com/abdelrahman146/kyora/internal/platform/database"
 	"github.com/abdelrahman146/kyora/internal/platform/email"
 	assetTypes "github.com/abdelrahman146/kyora/internal/platform/types/asset"
+	"github.com/abdelrahman146/kyora/internal/platform/types/date"
 	"github.com/abdelrahman146/kyora/internal/platform/types/problem"
 	"github.com/abdelrahman146/kyora/internal/platform/types/role"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/hash"
@@ -1042,7 +1043,7 @@ func seedAccountingData(ctx context.Context, svc *accounting.Service, owner *acc
 
 	renting := accounting.CreateRecurringExpenseRequest{
 		Frequency:                    accounting.RecurringExpenseFrequencyMonthly,
-		RecurringStartDate:           time.Now().AddDate(0, -6, 0),
+		RecurringStartDate:           date.Date{Time: time.Now().AddDate(0, -6, 0)},
 		Amount:                       decimal.NewFromFloat(1200),
 		Category:                     accounting.ExpenseCategoryRent,
 		Note:                         "Monthly rent",
@@ -1050,7 +1051,7 @@ func seedAccountingData(ctx context.Context, svc *accounting.Service, owner *acc
 	}
 	saasp := accounting.CreateRecurringExpenseRequest{
 		Frequency:                    accounting.RecurringExpenseFrequencyMonthly,
-		RecurringStartDate:           time.Now().AddDate(0, -6, 0),
+		RecurringStartDate:           date.Date{Time: time.Now().AddDate(0, -6, 0)},
 		Amount:                       decimal.NewFromFloat(320),
 		Category:                     accounting.ExpenseCategorySoftware,
 		Note:                         "Software subscriptions",
@@ -1086,7 +1087,7 @@ func seedAccountingData(ctx context.Context, svc *accounting.Service, owner *acc
 			Category:   tpl.category,
 			Type:       accounting.ExpenseTypeOneTime,
 			Note:       tpl.note,
-			OccurredOn: &when,
+			OccurredOn: &date.Date{Time: when},
 		})
 	}
 	if err := step("["+biz.Descriptor+"] Accounting: one-time expenses", func() error {

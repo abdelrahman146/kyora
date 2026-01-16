@@ -6,6 +6,7 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
+	"github.com/abdelrahman146/kyora/internal/platform/types/date"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/shopspring/decimal"
@@ -325,7 +326,7 @@ type CreateExpenseRequest struct {
 	Type               ExpenseType     `form:"type" json:"type" binding:"required"`
 	RecurringExpenseID string          `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
 	Note               string          `form:"note" json:"note" binding:"omitempty"`
-	OccurredOn         *time.Time      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
+	OccurredOn         *date.Date      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
 }
 
 type UpdateExpenseRequest struct {
@@ -334,7 +335,7 @@ type UpdateExpenseRequest struct {
 	Type               ExpenseType     `form:"type" json:"type" binding:"omitempty"`
 	RecurringExpenseID string          `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
 	Note               string          `form:"note" json:"note" binding:"omitempty"`
-	OccurredOn         *time.Time      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
+	OccurredOn         *date.Date      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
 }
 
 var ExpenseSchema = struct {
@@ -448,8 +449,8 @@ func (m *RecurringExpense) BeforeCreate(tx *gorm.DB) (err error) {
 
 type CreateRecurringExpenseRequest struct {
 	Frequency                    RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"required,oneof=daily weekly monthly yearly"`
-	RecurringEndDate             time.Time                 `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty,gtfield=RecurringStartDate"`
-	RecurringStartDate           time.Time                 `form:"recurringStartDate" json:"recurringStartDate" binding:"required"`
+	RecurringEndDate             *date.Date                `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty"`
+	RecurringStartDate           date.Date                 `form:"recurringStartDate" json:"recurringStartDate" binding:"required"`
 	Amount                       decimal.Decimal           `form:"amount" json:"amount" binding:"required"`
 	Category                     ExpenseCategory           `form:"category" json:"category" binding:"required,oneof=office travel supplies utilities payroll marketing rent software maintenance insurance taxes training consulting miscellaneous legal research equipment shipping transaction_fee other"`
 	Note                         string                    `form:"note" json:"note" binding:"omitempty"`
@@ -458,8 +459,8 @@ type CreateRecurringExpenseRequest struct {
 
 type UpdateRecurringExpenseRequest struct {
 	Frequency          RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"omitempty,oneof=daily weekly monthly yearly"`
-	RecurringEndDate   time.Time                 `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty,gtfield=RecurringStartDate"`
-	RecurringStartDate time.Time                 `form:"recurringStartDate" json:"recurringStartDate" binding:"omitempty"`
+	RecurringEndDate   *date.Date                `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty"`
+	RecurringStartDate *date.Date                `form:"recurringStartDate" json:"recurringStartDate" binding:"omitempty"`
 	Amount             decimal.Decimal           `form:"amount" json:"amount" binding:"omitempty"`
 	Category           ExpenseCategory           `form:"category" json:"category" binding:"omitempty"`
 	Note               string                    `form:"note" json:"note" binding:"omitempty"`
