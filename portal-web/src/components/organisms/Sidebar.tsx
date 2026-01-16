@@ -2,16 +2,13 @@ import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
 import {
-  BarChart3,
   Calculator,
   ChevronLeft,
   ChevronRight,
-  CreditCard,
   LayoutDashboard,
   Package,
   ShoppingCart,
   Users,
-  UsersRound,
   X,
 } from 'lucide-react'
 import { Logo } from '../atoms/Logo'
@@ -39,10 +36,7 @@ const navItems: Array<NavItem> = [
   { key: 'inventory', icon: Package, path: '/inventory' },
   { key: 'orders', icon: ShoppingCart, path: '/orders' },
   { key: 'customers', icon: Users, path: '/customers' },
-  { key: 'analytics', icon: BarChart3, path: '/analytics' },
   { key: 'accounting', icon: Calculator, path: '/accounting' },
-  { key: 'billing', icon: CreditCard, path: '/billing' },
-  { key: 'team', icon: UsersRound, path: '/team' },
 ]
 
 /**

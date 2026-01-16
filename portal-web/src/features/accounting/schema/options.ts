@@ -11,7 +11,6 @@ import {
   HardDrive,
   Laptop,
   Lightbulb,
-  Package,
   Plane,
   Receipt,
   Scale,
@@ -19,7 +18,6 @@ import {
   Shield,
   Truck,
   Users,
-  Wallet,
   Wrench,
 } from 'lucide-react'
 import type { ExpenseCategory } from '@/api/accounting'

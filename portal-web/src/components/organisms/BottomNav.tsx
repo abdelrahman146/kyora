@@ -1,29 +1,23 @@
 import { useTranslation } from 'react-i18next'
 import { Link, useLocation } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import {
-  LayoutDashboard,
-  Menu,
-  Package,
-  ShoppingCart,
-  Users,
-} from 'lucide-react'
+import { Calculator, Menu, Package, ShoppingCart, Users } from 'lucide-react'
 import { businessStore, openSidebar } from '@/stores/businessStore'
 import { cn } from '@/lib/utils'
 
 interface NavItem {
   key: string
-  icon: typeof LayoutDashboard
+  icon: typeof Menu
   path: string
 }
 
 export type BottomNavProps = Record<string, never>
 
 const navItems: Array<NavItem> = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '' },
   { key: 'inventory', icon: Package, path: '/inventory' },
   { key: 'orders', icon: ShoppingCart, path: '/orders' },
   { key: 'customers', icon: Users, path: '/customers' },
+  { key: 'accounting', icon: Calculator, path: '/accounting' },
 ]
 
 /**
