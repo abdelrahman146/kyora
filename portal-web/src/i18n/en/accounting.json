@@ -84,6 +84,7 @@
     "expense": "Expense",
     "investment": "Investment",
     "withdrawal": "Withdrawal",
+    "asset": "Asset",
     "unknown": "Activity"
   },
   "form": {
@@ -102,6 +103,7 @@
     "frequency": "Frequency",
     "name": "Name",
     "name_placeholder": "e.g., Camera, Laptop",
+    "type": "Type",
     "value": "Value",
     "value_placeholder": "0.00",
     "purchase_date": "Purchase Date",
@@ -190,8 +192,16 @@
     "edit_recurring_template_hint": "Affects all future expenses",
     "investment_title": "Edit Investment",
     "withdrawal_title": "Edit Withdrawal",
+    "asset_title": "Edit Asset",
     "recurring_template_title": "Edit Recurring Schedule",
     "start_date_not_editable": "Start date cannot be changed after creation"
+  },
+  "asset_type": {
+    "software": "Software",
+    "equipment": "Equipment",
+    "vehicle": "Vehicle",
+    "furniture": "Furniture",
+    "other": "Other"
   },
   "validation": {
     "amount_required": "Amount is required",
@@ -230,5 +240,10 @@
     "recurring_badge": "Recurring",
     "safe_amount": "Safe to draw: {{amount}}",
     "exceeds_safe_amount": "This amount exceeds the safe amount you can withdraw."
+  },
+  "items": {
+    "investments": "investments",
+    "withdrawals": "withdrawals",
+    "assets": "assets"
   }
 }

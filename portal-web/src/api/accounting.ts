@@ -24,6 +24,7 @@ import type { UseMutationOptions } from '@tanstack/react-query'
 import type {
   AccountingSummary,
   Asset,
+  AssetType,
   CreateAssetRequest,
   CreateExpenseRequest,
   CreateInvestmentRequest,
@@ -53,6 +54,7 @@ export type {
   Investment,
   Withdrawal,
   Asset,
+  AssetType,
   AccountingSummary,
   ExpenseCategory,
   RecentActivity,
@@ -64,6 +66,7 @@ export {
   recurringExpenseFrequencyEnum,
   recurringExpenseStatusEnum,
   recentActivityTypeEnum,
+  assetTypeEnum,
 } from './types/accounting'
 
 // =============================================================================

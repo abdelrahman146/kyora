@@ -252,16 +252,16 @@ const (
 // RecentActivityResponse is a unified response for recent accounting activities
 // It provides a polymorphic view of expenses, investments, and withdrawals
 type RecentActivityResponse struct {
-	ID          string              `json:"id"`
-	Type        RecentActivityType  `json:"type"`
-	Amount      decimal.Decimal     `json:"amount"`
-	Currency    string              `json:"currency"`
-	Description string              `json:"description"`
-	OccurredAt  time.Time           `json:"occurredAt"`
-	CreatedAt   time.Time           `json:"createdAt"`
-	Category    *ExpenseCategory    `json:"category,omitempty"`    // Only for expenses
-	ExpenseType *ExpenseType        `json:"expenseType,omitempty"` // Only for expenses
-	PersonID    *string             `json:"personId,omitempty"`    // InvestorID or WithdrawerID
+	ID          string             `json:"id"`
+	Type        RecentActivityType `json:"type"`
+	Amount      decimal.Decimal    `json:"amount"`
+	Currency    string             `json:"currency"`
+	Description string             `json:"description"`
+	OccurredAt  time.Time          `json:"occurredAt"`
+	CreatedAt   time.Time          `json:"createdAt"`
+	Category    *ExpenseCategory   `json:"category,omitempty"`    // Only for expenses
+	ExpenseType *ExpenseType       `json:"expenseType,omitempty"` // Only for expenses
+	PersonID    *string            `json:"personId,omitempty"`    // InvestorID or WithdrawerID
 }
 
 // RecentActivitiesResponse is the response for the recent activities endpoint
@@ -326,5 +326,23 @@ func WithdrawalToRecentActivity(w *Withdrawal) RecentActivityResponse {
 		OccurredAt:  w.WithdrawnAt,
 		CreatedAt:   w.CreatedAt,
 		PersonID:    &w.WithdrawerID,
+	}
+}
+
+// AssetToRecentActivity converts an Asset to RecentActivityResponse
+func AssetToRecentActivity(a *Asset) RecentActivityResponse {
+	description := a.Note
+	if description == "" {
+		description = "Asset Purchased"
+	}
+
+	return RecentActivityResponse{
+		ID:          a.ID,
+		Type:        "asset",
+		Amount:      a.Value,
+		Currency:    a.Currency,
+		Description: description,
+		OccurredAt:  a.PurchasedAt,
+		CreatedAt:   a.CreatedAt,
 	}
 }

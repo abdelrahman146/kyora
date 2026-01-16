@@ -788,8 +788,18 @@ func (s *Service) GetRecentActivities(ctx context.Context, actor *account.User, 
 		return nil, err
 	}
 
+	// Fetch recent assets
+	assets, err := s.storage.asset.FindMany(ctx,
+		s.storage.asset.ScopeBusinessID(biz.ID),
+		s.storage.asset.WithOrderBy([]string{"purchased_at DESC", "created_at DESC"}),
+		s.storage.asset.WithLimit(limit),
+	)
+	if err != nil {
+		return nil, err
+	}
+
 	// Convert and merge all activities
-	activities := make([]RecentActivityResponse, 0, len(expenses)+len(investments)+len(withdrawals))
+	activities := make([]RecentActivityResponse, 0, len(expenses)+len(investments)+len(withdrawals)+len(assets))
 
 	for _, exp := range expenses {
 		activities = append(activities, ExpenseToRecentActivity(exp))
@@ -801,6 +811,10 @@ func (s *Service) GetRecentActivities(ctx context.Context, actor *account.User, 
 
 	for _, w := range withdrawals {
 		activities = append(activities, WithdrawalToRecentActivity(w))
+	}
+
+	for _, a := range assets {
+		activities = append(activities, AssetToRecentActivity(a))
 	}
 
 	// Sort by OccurredAt descending

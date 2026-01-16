@@ -1,23 +1,38 @@
-import { createFileRoute } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  useParams,
+  useRouteContext,
+} from '@tanstack/react-router'
+
+import { AssetListPage } from '@/features/accounting/components/AssetListPage'
 
 /**
- * Assets Management Route (Placeholder)
+ * Assets Management Route
  *
- * Full implementation will be added in Step 6.
+ * Manage fixed assets: equipment, vehicles, software, furniture, etc.
+ * Tracks business-owned assets and their values.
  */
 export const Route = createFileRoute(
   '/business/$businessDescriptor/accounting/assets',
 )({
   staticData: {
-    titleKey: 'pages.assets',
+    titleKey: 'accounting:header.assets',
   },
-  component: AssetsPlaceholder,
+  component: AssetsRoute,
 })
 
-function AssetsPlaceholder() {
+function AssetsRoute() {
+  const { businessDescriptor } = useParams({
+    from: '/business/$businessDescriptor/accounting/assets',
+  })
+  const { business } = useRouteContext({
+    from: '/business/$businessDescriptor',
+  })
+
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <p className="text-base-content/60">Assets management coming soon...</p>
-    </div>
+    <AssetListPage
+      businessDescriptor={businessDescriptor}
+      currency={business.currency}
+    />
   )
 }

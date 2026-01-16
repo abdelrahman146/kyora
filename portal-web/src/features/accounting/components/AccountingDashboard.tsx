@@ -15,6 +15,7 @@ import {
   ArrowUpRight,
   Banknote,
   Box,
+  Boxes,
   Calculator,
   ChevronLeft,
   ChevronRight,
@@ -301,6 +302,15 @@ function ActivityListItem({ activity, currency }: ActivityListItemProps) {
           amountColor: 'text-warning',
           amountPrefix: '-',
           label: t('activity.withdrawal'),
+          badgeText: null,
+        }
+      case 'asset':
+        return {
+          icon: <Boxes className="h-5 w-5 text-success" />,
+          bgColor: 'bg-success/10',
+          amountColor: 'text-success',
+          amountPrefix: '+',
+          label: t('activity.asset'),
           badgeText: null,
         }
       default:

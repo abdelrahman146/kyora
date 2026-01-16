@@ -23,6 +23,9 @@ export { RecurringExpenseQuickActions } from './components/RecurringExpenseQuick
 export { CapitalListPage } from './components/CapitalListPage'
 export { TransactionCard } from './components/TransactionCard'
 export { TransactionQuickActions } from './components/TransactionQuickActions'
+export { AssetListPage } from './components/AssetListPage'
+export { AssetCard } from './components/AssetCard'
+export { AssetQuickActions } from './components/AssetQuickActions'
 
 // Sheets
 export { CreateExpenseSheet } from './components/sheets/CreateExpenseSheet'
@@ -30,6 +33,8 @@ export { EditExpenseSheet } from './components/sheets/EditExpenseSheet'
 export { EditRecurringExpenseSheet } from './components/sheets/EditRecurringExpenseSheet'
 export { CreateTransactionSheet } from './components/sheets/CreateTransactionSheet'
 export { EditTransactionSheet } from './components/sheets/EditTransactionSheet'
+export { CreateAssetSheet } from './components/sheets/CreateAssetSheet'
+export { EditAssetSheet } from './components/sheets/EditAssetSheet'
 
 // Schemas
 export { ExpensesSearchSchema } from './schema/expensesSearch'

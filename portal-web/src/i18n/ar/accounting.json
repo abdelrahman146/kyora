@@ -84,6 +84,7 @@
     "expense": "مصروف",
     "investment": "استثمار",
     "withdrawal": "سحب",
+    "asset": "أصل",
     "unknown": "نشاط"
   },
   "form": {
@@ -102,6 +103,7 @@
     "frequency": "التكرار",
     "name": "الاسم",
     "name_placeholder": "مثال: كاميرا، لابتوب",
+    "type": "النوع",
     "value": "القيمة",
     "value_placeholder": "0.00",
     "purchase_date": "تاريخ الشراء",
@@ -195,8 +197,16 @@
     "edit_recurring_template_hint": "يؤثر على جميع المصروفات المستقبلية",
     "investment_title": "تعديل الاستثمار",
     "withdrawal_title": "تعديل السحب",
+    "asset_title": "تعديل الأصل",
     "recurring_template_title": "تعديل جدول التكرار",
     "start_date_not_editable": "لا يمكن تغيير تاريخ البدء بعد الإنشاء"
+  },
+  "asset_type": {
+    "software": "برمجيات",
+    "equipment": "معدات",
+    "vehicle": "مركبة",
+    "furniture": "أثاث",
+    "other": "أخرى"
   },
   "validation": {
     "amount_required": "المبلغ مطلوب",
@@ -233,6 +243,7 @@
   },
   "items": {
     "investments": "استثمارات",
-    "withdrawals": "سحوبات"
+    "withdrawals": "سحوبات",
+    "assets": "أصول"
   }
 }

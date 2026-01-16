@@ -143,6 +143,20 @@ export const withdrawalSchema = z.object({
 export type Withdrawal = z.infer<typeof withdrawalSchema>
 
 // =============================================================================
+// Asset Type Enum
+// =============================================================================
+
+export const assetTypeEnum = z.enum([
+  'software',
+  'equipment',
+  'vehicle',
+  'furniture',
+  'other',
+])
+
+export type AssetType = z.infer<typeof assetTypeEnum>
+
+// =============================================================================
 // Asset Schema (Fixed Assets)
 // =============================================================================
 
@@ -150,6 +164,7 @@ export const assetSchema = z.object({
   id: z.string(),
   businessId: z.string(),
   name: z.string(),
+  type: assetTypeEnum,
   value: z.string(),
   currency: z.string(),
   purchasedAt: z.string(), // RFC3339
@@ -310,6 +325,7 @@ export type UpdateWithdrawalRequest = z.infer<
 // Asset Create Request
 export const createAssetRequestSchema = z.object({
   name: z.string().min(1),
+  type: assetTypeEnum,
   value: z.string().min(1),
   purchasedAt: z.string(),
   note: z.string().optional(),
@@ -320,6 +336,7 @@ export type CreateAssetRequest = z.infer<typeof createAssetRequestSchema>
 // Asset Update Request
 export const updateAssetRequestSchema = z.object({
   name: z.string().optional(),
+  type: assetTypeEnum.optional(),
   value: z.string().optional(),
   purchasedAt: z.string().optional(),
   note: z.string().nullable().optional(),
@@ -335,6 +352,7 @@ export const recentActivityTypeEnum = z.enum([
   'expense',
   'investment',
   'withdrawal',
+  'asset',
 ])
 
 export type RecentActivityType = z.infer<typeof recentActivityTypeEnum>
