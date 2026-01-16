@@ -160,7 +160,11 @@
     "save": "Save",
     "save_changes": "Save Changes",
     "create": "Create",
+    "continue": "Continue",
     "retry": "Retry"
+  },
+  "errors": {
+    "authentication_required": "You must be logged in to perform this action"
   },
   "notes": {
     "section_label": "Notes section",

@@ -203,6 +203,7 @@
     "amount_positive": "يجب أن يكون المبلغ أكبر من 0",
     "category_required": "يرجى اختيار الفئة",
     "date_required": "التاريخ مطلوب",
+    "date_not_future": "لا يمكن أن يكون التاريخ في المستقبل",
     "name_required": "الاسم مطلوب",
     "value_required": "القيمة مطلوبة",
     "value_positive": "يجب أن تكون القيمة أكبر من 0",

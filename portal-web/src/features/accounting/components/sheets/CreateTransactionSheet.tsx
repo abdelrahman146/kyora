@@ -17,8 +17,9 @@
 
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-hot-toast'
-import { format } from 'date-fns'
 import { ArrowDownCircle, ArrowUpCircle, Info } from 'lucide-react'
+import { useStore } from '@tanstack/react-store'
+import { z } from 'zod'
 
 import {
   useAccountingSummaryQuery,
@@ -28,9 +29,9 @@ import {
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
 import { formatCurrency } from '@/lib/formatCurrency'
+import { authStore } from '@/stores/authStore'
 
 interface CreateTransactionSheetProps {
   isOpen: boolean
@@ -52,6 +53,7 @@ export function CreateTransactionSheet({
 
   const business = getSelectedBusiness()
   const currency = business?.currency ?? 'USD'
+  const user = useStore(authStore, (state) => state.user)
 
   // Fetch safe to draw amount for withdrawal helper
   const { data: summary } = useAccountingSummaryQuery(businessDescriptor)
@@ -70,11 +72,12 @@ export function CreateTransactionSheet({
       note: '',
     },
     onSubmit: async ({ value }) => {
-      const amount = parseFloat(value.amount)
-      if (isNaN(amount) || amount <= 0) {
-        toast.error(t('validation.amount_positive'))
+      if (!user) {
+        toast.error(tCommon('errors.authentication_required'))
         return
       }
+
+      const amount = parseFloat(value.amount)
 
       // Warn if withdrawal exceeds safe amount (soft block)
       if (value.type === 'withdrawal' && amount > safeToDrawAmount) {
@@ -84,33 +87,29 @@ export function CreateTransactionSheet({
         if (!proceed) return
       }
 
-      try {
-        const dateString = format(value.date, 'yyyy-MM-dd')
-
-        if (value.type === 'investment') {
-          await createInvestmentMutation.mutateAsync({
-            amount: value.amount,
-            investedAt: dateString,
-            note: value.note || undefined,
-          })
-          toast.success(t('toast.investment_created'))
-        } else {
-          await createWithdrawalMutation.mutateAsync({
-            amount: value.amount,
-            withdrawnAt: dateString,
-            note: value.note || undefined,
-          })
-          toast.success(t('toast.withdrawal_created'))
-        }
-
-        // Reset and close
-        form.reset()
-        await onCreated?.()
-        onClose()
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
+      // Let global error handler catch errors - don't manually toast them
+      if (value.type === 'investment') {
+        await createInvestmentMutation.mutateAsync({
+          investorId: user.id,
+          amount: value.amount,
+          investedAt: value.date.toISOString(),
+          note: value.note || undefined,
+        })
+        toast.success(t('toast.investment_created'))
+      } else {
+        await createWithdrawalMutation.mutateAsync({
+          withdrawerId: user.id,
+          amount: value.amount,
+          withdrawnAt: value.date.toISOString(),
+          note: value.note || undefined,
+        })
+        toast.success(t('toast.withdrawal_created'))
       }
+
+      // Reset and close
+      form.reset()
+      await onCreated?.()
+      onClose()
     },
   })
 
@@ -195,7 +194,21 @@ export function CreateTransactionSheet({
           </form.Subscribe>
 
           {/* Amount Field */}
-          <form.AppField name="amount">
+          <form.AppField
+            name="amount"
+            validators={{
+              onChange: z
+                .string()
+                .min(1, 'accounting:validation.amount_required')
+                .refine(
+                  (val) => {
+                    const num = parseFloat(val)
+                    return !isNaN(num) && num > 0
+                  },
+                  { message: 'accounting:validation.amount_positive' },
+                ),
+            }}
+          >
             {(field) => (
               <field.PriceField
                 label={t('form.amount')}
@@ -223,7 +236,17 @@ export function CreateTransactionSheet({
           </form.Subscribe>
 
           {/* Date Field */}
-          <form.AppField name="date">
+          <form.AppField
+            name="date"
+            validators={{
+              onChange: z
+                .date({
+                  required_error: 'accounting:validation.date_required',
+                  invalid_type_error: 'accounting:validation.date_required',
+                })
+                .max(new Date(), 'accounting:validation.date_not_future'),
+            }}
+          >
             {(field) => (
               <field.DateField
                 label={t('form.date')}

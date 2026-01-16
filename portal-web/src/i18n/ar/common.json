@@ -160,7 +160,11 @@
     "save": "حفظ",
     "save_changes": "حفظ التغييرات",
     "create": "إنشاء",
+    "continue": "متابعة",
     "retry": "إعادة المحاولة"
+  },
+  "errors": {
+    "authentication_required": "يجب تسجيل الدخول لإجراء هذا الإجراء"
   },
   "notes": {
     "section_label": "قسم الملاحظات",

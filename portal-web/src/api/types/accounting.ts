@@ -261,8 +261,9 @@ export type UpdateRecurringExpenseStatusRequest = z.infer<
 
 // Investment Create Request
 export const createInvestmentRequestSchema = z.object({
+  investorId: z.string().min(1),
   amount: z.string().min(1),
-  investedAt: z.string(),
+  investedAt: z.string(), // RFC3339/ISO8601
   note: z.string().optional(),
 })
 
@@ -272,8 +273,9 @@ export type CreateInvestmentRequest = z.infer<
 
 // Investment Update Request
 export const updateInvestmentRequestSchema = z.object({
+  investorId: z.string().optional(),
   amount: z.string().optional(),
-  investedAt: z.string().optional(),
+  investedAt: z.string().optional(), // RFC3339/ISO8601
   note: z.string().nullable().optional(),
 })
 
@@ -283,8 +285,9 @@ export type UpdateInvestmentRequest = z.infer<
 
 // Withdrawal Create Request
 export const createWithdrawalRequestSchema = z.object({
+  withdrawerId: z.string().min(1),
   amount: z.string().min(1),
-  withdrawnAt: z.string(),
+  withdrawnAt: z.string(), // RFC3339/ISO8601
   note: z.string().optional(),
 })
 
@@ -294,8 +297,9 @@ export type CreateWithdrawalRequest = z.infer<
 
 // Withdrawal Update Request
 export const updateWithdrawalRequestSchema = z.object({
+  withdrawerId: z.string().optional(),
   amount: z.string().optional(),
-  withdrawnAt: z.string().optional(),
+  withdrawnAt: z.string().optional(), // RFC3339/ISO8601
   note: z.string().nullable().optional(),
 })
 

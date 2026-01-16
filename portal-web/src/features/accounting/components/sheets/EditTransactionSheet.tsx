@@ -6,7 +6,9 @@
 
 import { useTranslation } from 'react-i18next'
 import { toast } from 'react-hot-toast'
-import { format, parseISO } from 'date-fns'
+import { parseISO } from 'date-fns'
+import { useStore } from '@tanstack/react-store'
+import { z } from 'zod'
 
 import type { Investment, Withdrawal } from '@/api/accounting'
 import {
@@ -16,8 +18,8 @@ import {
 import { BottomSheet } from '@/components/molecules/BottomSheet'
 import { Button } from '@/components/atoms/Button'
 import { useKyoraForm } from '@/lib/form'
-import { translateErrorAsync } from '@/lib/translateError'
 import { getSelectedBusiness } from '@/stores/businessStore'
+import { authStore } from '@/stores/authStore'
 
 interface EditTransactionSheetProps {
   isOpen: boolean
@@ -40,6 +42,7 @@ export function EditTransactionSheet({
   const { t: tCommon } = useTranslation('common')
   const business = getSelectedBusiness()
   const currency = business?.currency ?? 'USD'
+  const user = useStore(authStore, (state) => state.user)
 
   const updateInvestmentMutation =
     useUpdateInvestmentMutation(businessDescriptor)
@@ -58,43 +61,38 @@ export function EditTransactionSheet({
       note: transaction.note ?? '',
     },
     onSubmit: async ({ value }) => {
-      const amount = parseFloat(value.amount)
-      if (isNaN(amount) || amount <= 0) {
-        toast.error(t('validation.amount_positive'))
+      if (!user) {
+        toast.error(tCommon('errors.authentication_required'))
         return
       }
 
-      try {
-        const dateString = format(value.date, 'yyyy-MM-dd')
-
-        if (type === 'investment') {
-          await updateInvestmentMutation.mutateAsync({
-            id: transaction.id,
-            data: {
-              amount: value.amount,
-              investedAt: dateString,
-              note: value.note || undefined,
-            },
-          })
-          toast.success(t('toast.investment_updated'))
-        } else {
-          await updateWithdrawalMutation.mutateAsync({
-            id: transaction.id,
-            data: {
-              amount: value.amount,
-              withdrawnAt: dateString,
-              note: value.note || undefined,
-            },
-          })
-          toast.success(t('toast.withdrawal_updated'))
-        }
-
-        await onUpdated?.()
-        onClose()
-      } catch (error) {
-        const message = await translateErrorAsync(error, t)
-        toast.error(message)
+      // Let global error handler catch errors - don't manually toast them
+      if (type === 'investment') {
+        await updateInvestmentMutation.mutateAsync({
+          id: transaction.id,
+          data: {
+            investorId: user.id,
+            amount: value.amount,
+            investedAt: value.date.toISOString(),
+            note: value.note || undefined,
+          },
+        })
+        toast.success(t('toast.investment_updated'))
+      } else {
+        await updateWithdrawalMutation.mutateAsync({
+          id: transaction.id,
+          data: {
+            withdrawerId: user.id,
+            amount: value.amount,
+            withdrawnAt: value.date.toISOString(),
+            note: value.note || undefined,
+          },
+        })
+        toast.success(t('toast.withdrawal_updated'))
       }
+
+      await onUpdated?.()
+      onClose()
     },
   })
 
@@ -138,7 +136,21 @@ export function EditTransactionSheet({
       >
         <form.FormRoot id="edit-transaction-form" className="space-y-4">
           {/* Amount */}
-          <form.AppField name="amount">
+          <form.AppField
+            name="amount"
+            validators={{
+              onChange: z
+                .string()
+                .min(1, 'accounting:validation.amount_required')
+                .refine(
+                  (val) => {
+                    const num = parseFloat(val)
+                    return !isNaN(num) && num > 0
+                  },
+                  { message: 'accounting:validation.amount_positive' },
+                ),
+            }}
+          >
             {(field) => (
               <field.PriceField
                 label={t('form.amount')}
@@ -150,7 +162,17 @@ export function EditTransactionSheet({
           </form.AppField>
 
           {/* Date */}
-          <form.AppField name="date">
+          <form.AppField
+            name="date"
+            validators={{
+              onChange: z
+                .date({
+                  required_error: 'accounting:validation.date_required',
+                  invalid_type_error: 'accounting:validation.date_required',
+                })
+                .max(new Date(), 'accounting:validation.date_not_future'),
+            }}
+          >
             {(field) => (
               <field.DateField
                 label={t('form.date')}
