@@ -38,6 +38,7 @@
   "reset": "Reset",
   "clear": "Clear",
   "apply": "Apply",
+  "saving": "Saving...",
   "select_date_range": "Select date range",
   "select_month": "Select month",
   "select_year": "Select year",

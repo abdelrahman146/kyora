@@ -11,7 +11,9 @@
   },
   "tabs": {
     "expenses": "المصروفات",
-    "recurring": "المتكرر"
+    "recurring": "المتكررة",
+    "investments": "الاستثمارات",
+    "withdrawals": "السحوبات"
   },
   "stats": {
     "safe_to_draw": "المتاح للسحب",
@@ -126,18 +128,6 @@
     "confirm_status_title": "تأكيد تغيير الحالة",
     "confirm_status_message": "هل أنت متأكد من رغبتك في تغيير حالة هذا المصروف المتكرر إلى {{status}}؟"
   },
-  "empty": {
-    "expenses_title": "لا توجد مصروفات بعد",
-    "expenses_description": "أضف الإيجار أو اشتراكات البرامج لمعرفة ربحك الحقيقي",
-    "recurring_title": "لا توجد مصروفات متكررة بعد",
-    "recurring_description": "أنشئ مصروفات متكررة للفواتير المنتظمة مثل الإيجار أو الاشتراكات",
-    "capital_title": "لا توجد معاملات بعد",
-    "capital_description": "سجّل الاستثمارات التي قمت بها أو المبالغ التي سحبتها من المشروع",
-    "assets_title": "لا توجد أصول بعد",
-    "assets_description": "هل تمتلك معدات؟ أضفها هنا لتتبع قيمة مشروعك",
-    "recent_activity_title": "لا يوجد نشاط بعد",
-    "recent_activity_description": "أضف مصروف أو استثمار لرؤية نشاطك هنا"
-  },
   "filters": {
     "title": "تصفية",
     "date_range": "النطاق الزمني",
@@ -203,6 +193,8 @@
     "edit_this_occurrence_hint": "سيتم تغيير هذا المصروف فقط",
     "edit_recurring_template": "تعديل جدول التكرار",
     "edit_recurring_template_hint": "يؤثر على جميع المصروفات المستقبلية",
+    "investment_title": "تعديل الاستثمار",
+    "withdrawal_title": "تعديل السحب",
     "recurring_template_title": "تعديل جدول التكرار",
     "start_date_not_editable": "لا يمكن تغيير تاريخ البدء بعد الإنشاء"
   },
@@ -216,5 +208,30 @@
     "value_positive": "يجب أن تكون القيمة أكبر من 0",
     "frequency_required": "يرجى اختيار التكرار",
     "start_date_required": "تاريخ البدء مطلوب"
+  },
+  "empty": {
+    "expenses_title": "لا توجد مصروفات بعد",
+    "expenses_description": "أضف الإيجار أو اشتراكات البرامج لمعرفة ربحك الحقيقي",
+    "recurring_title": "لا توجد مصروفات متكررة بعد",
+    "recurring_description": "أنشئ مصروفات متكررة للفواتير المنتظمة مثل الإيجار أو الاشتراكات",
+    "capital_title": "لا توجد معاملات بعد",
+    "capital_description": "سجّل الاستثمارات التي قمت بها أو المبالغ التي سحبتها من المشروع",
+    "assets_title": "لا توجد أصول بعد",
+    "assets_description": "هل تمتلك معدات؟ أضفها هنا لتتبع قيمة مشروعك",
+    "recent_activity_title": "لا يوجد نشاط بعد",
+    "recent_activity_description": "أضف مصروف أو استثمار لرؤية نشاطك هنا",
+    "no_investments": "لا توجد استثمارات بعد",
+    "no_investments_message": "ابدأ في تتبع رأس المال المُضاف لرؤية سجل استثماراتك",
+    "no_withdrawals": "لا توجد سحوبات بعد",
+    "no_withdrawals_message": "سجل سحوبات المالك لتتبع رأس المال المسحوب"
+  },
+  "confirm": {
+    "delete_transaction_title": "حذف العملية",
+    "delete_transaction_message": "هل أنت متأكد من حذف هذه العملية؟ لا يمكن التراجع عن هذا الإجراء.",
+    "delete": "حذف"
+  },
+  "items": {
+    "investments": "استثمارات",
+    "withdrawals": "سحوبات"
   }
 }

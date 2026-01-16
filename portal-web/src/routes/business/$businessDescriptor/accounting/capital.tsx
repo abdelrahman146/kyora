@@ -1,23 +1,38 @@
-import { createFileRoute } from '@tanstack/react-router'
+import {
+  createFileRoute,
+  useParams,
+  useRouteContext,
+} from '@tanstack/react-router'
+
+import { CapitalListPage } from '@/features/accounting/components/CapitalListPage'
 
 /**
- * Capital Management Route (Placeholder)
+ * Capital Management Route
  *
- * Full implementation will be added in Step 5.
+ * Manage capital transactions: Investments & Withdrawals.
+ * Tracks owner equity movements in/out of the business.
  */
 export const Route = createFileRoute(
   '/business/$businessDescriptor/accounting/capital',
 )({
   staticData: {
-    titleKey: 'pages.capital',
+    titleKey: 'accounting:header.capital',
   },
-  component: CapitalPlaceholder,
+  component: CapitalRoute,
 })
 
-function CapitalPlaceholder() {
+function CapitalRoute() {
+  const { businessDescriptor } = useParams({
+    from: '/business/$businessDescriptor/accounting/capital',
+  })
+  const { business } = useRouteContext({
+    from: '/business/$businessDescriptor',
+  })
+
   return (
-    <div className="flex items-center justify-center min-h-[50vh]">
-      <p className="text-base-content/60">Capital management coming soon...</p>
-    </div>
+    <CapitalListPage
+      businessDescriptor={businessDescriptor}
+      currency={business.currency}
+    />
   )
 }

@@ -281,9 +281,7 @@ function ActivityListItem({ activity, currency }: ActivityListItemProps) {
             : t('activity.expense'),
           badgeText:
             activity.expenseType === 'recurring' ? (
-              <span className="badge badge-ghost badge-sm gap-1 text-secondary">
-                <Repeat className="w-3 h-3" />
-              </span>
+              <Repeat className="w-3 h-3" />
             ) : null,
         }
       }
@@ -336,6 +334,11 @@ function ActivityListItem({ activity, currency }: ActivityListItemProps) {
               })}
         </p>
       </div>
+      {details.badgeText && (
+        <span className="badge badge-ghost badge-sm gap-1 text-secondary">
+          {details.badgeText}
+        </span>
+      )}
       <div className="text-end">
         <p className={`font-semibold tabular-nums ${details.amountColor}`}>
           {details.amountPrefix}
@@ -345,11 +348,6 @@ function ActivityListItem({ activity, currency }: ActivityListItemProps) {
           {formatDateShort(activity.occurredAt)}
         </p>
       </div>
-      {details.badgeText && (
-        <span className="badge badge-outline badge-sm">
-          {details.badgeText}
-        </span>
-      )}
     </li>
   )
 }

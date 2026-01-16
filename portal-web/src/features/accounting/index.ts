@@ -20,11 +20,16 @@ export {
 } from './components/RecurringExpenseListPage'
 export { RecurringExpenseCard } from './components/RecurringExpenseCard'
 export { RecurringExpenseQuickActions } from './components/RecurringExpenseQuickActions'
+export { CapitalListPage } from './components/CapitalListPage'
+export { TransactionCard } from './components/TransactionCard'
+export { TransactionQuickActions } from './components/TransactionQuickActions'
 
 // Sheets
 export { CreateExpenseSheet } from './components/sheets/CreateExpenseSheet'
 export { EditExpenseSheet } from './components/sheets/EditExpenseSheet'
 export { EditRecurringExpenseSheet } from './components/sheets/EditRecurringExpenseSheet'
+export { CreateTransactionSheet } from './components/sheets/CreateTransactionSheet'
+export { EditTransactionSheet } from './components/sheets/EditTransactionSheet'
 
 // Schemas
 export { ExpensesSearchSchema } from './schema/expensesSearch'

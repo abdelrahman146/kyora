@@ -16,6 +16,7 @@ import {
   queryOptions,
   useMutation,
   useQuery,
+  useQueryClient,
 } from '@tanstack/react-query'
 import { del, get, patch, post } from './client'
 import type { UseMutationOptions } from '@tanstack/react-query'
@@ -1004,33 +1005,77 @@ export function useCreateInvestmentMutation(
   businessDescriptor: string,
   options?: UseMutationOptions<Investment, Error, CreateInvestmentRequest>,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateInvestmentRequest) =>
       accountingApi.createInvestment(businessDescriptor, data),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate investments list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.investments(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
 
 export function useUpdateInvestmentMutation(
   businessDescriptor: string,
-  investmentId: string,
-  options?: UseMutationOptions<Investment, Error, UpdateInvestmentRequest>,
+  options?: UseMutationOptions<
+    Investment,
+    Error,
+    { id: string; data: UpdateInvestmentRequest }
+  >,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: UpdateInvestmentRequest) =>
-      accountingApi.updateInvestment(businessDescriptor, investmentId, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateInvestmentRequest }) =>
+      accountingApi.updateInvestment(businessDescriptor, id, data),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate investments list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.investments(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
 
 export function useDeleteInvestmentMutation(
   businessDescriptor: string,
-  investmentId: string,
-  options?: UseMutationOptions<void, Error, void>,
+  options?: UseMutationOptions<void, Error, string>,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () =>
-      accountingApi.deleteInvestment(businessDescriptor, investmentId),
+    mutationFn: (id: string) =>
+      accountingApi.deleteInvestment(businessDescriptor, id),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate investments list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.investments(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
@@ -1059,33 +1104,77 @@ export function useCreateWithdrawalMutation(
   businessDescriptor: string,
   options?: UseMutationOptions<Withdrawal, Error, CreateWithdrawalRequest>,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
     mutationFn: (data: CreateWithdrawalRequest) =>
       accountingApi.createWithdrawal(businessDescriptor, data),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate withdrawals list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.withdrawals(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
 
 export function useUpdateWithdrawalMutation(
   businessDescriptor: string,
-  withdrawalId: string,
-  options?: UseMutationOptions<Withdrawal, Error, UpdateWithdrawalRequest>,
+  options?: UseMutationOptions<
+    Withdrawal,
+    Error,
+    { id: string; data: UpdateWithdrawalRequest }
+  >,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: (data: UpdateWithdrawalRequest) =>
-      accountingApi.updateWithdrawal(businessDescriptor, withdrawalId, data),
+    mutationFn: ({ id, data }: { id: string; data: UpdateWithdrawalRequest }) =>
+      accountingApi.updateWithdrawal(businessDescriptor, id, data),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate withdrawals list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.withdrawals(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
 
 export function useDeleteWithdrawalMutation(
   businessDescriptor: string,
-  withdrawalId: string,
-  options?: UseMutationOptions<void, Error, void>,
+  options?: UseMutationOptions<void, Error, string>,
 ) {
+  const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: () =>
-      accountingApi.deleteWithdrawal(businessDescriptor, withdrawalId),
+    mutationFn: (id: string) =>
+      accountingApi.deleteWithdrawal(businessDescriptor, id),
+    onSuccess: (data, variables, onMutateResult, context) => {
+      // Invalidate withdrawals list and summary
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.withdrawals(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.summaries(),
+      })
+      void queryClient.invalidateQueries({
+        queryKey: accountingQueries.recentActivitiesKey(),
+      })
+      options?.onSuccess?.(data, variables, onMutateResult, context)
+    },
     ...options,
   })
 }
