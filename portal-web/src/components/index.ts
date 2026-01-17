@@ -83,6 +83,12 @@ export {
   type SortButtonProps,
   type SortOption,
 } from './molecules/SortButton'
+export { InsightCard, type InsightCardProps } from './molecules/InsightCard'
+export {
+  AdvisorPanel,
+  type AdvisorPanelProps,
+  type AdvisorInsight,
+} from './molecules/AdvisorPanel'
 
 // Organisms
 export { Sidebar, type SidebarProps } from './organisms/Sidebar'

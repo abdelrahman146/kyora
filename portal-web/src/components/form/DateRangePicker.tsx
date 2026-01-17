@@ -60,6 +60,10 @@ export interface DateRangePickerProps extends Omit<
   fullWidth?: boolean
   size?: 'sm' | 'md' | 'lg'
   numberOfMonths?: number
+  /** Button mode: Render as button instead of input (no clipping, modal-based) */
+  buttonMode?: boolean
+  /** Custom button content (only in buttonMode) */
+  buttonContent?: React.ReactNode
 }
 
 export const DateRangePicker = forwardRef<

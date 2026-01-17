@@ -5,6 +5,7 @@ import {
   Calculator,
   ChevronLeft,
   ChevronRight,
+  FileBarChart,
   LayoutDashboard,
   Package,
   ShoppingCart,
@@ -37,6 +38,7 @@ const navItems: Array<NavItem> = [
   { key: 'orders', icon: ShoppingCart, path: '/orders' },
   { key: 'customers', icon: Users, path: '/customers' },
   { key: 'accounting', icon: Calculator, path: '/accounting' },
+  { key: 'reports', icon: FileBarChart, path: '/reports' },
 ]
 
 /**

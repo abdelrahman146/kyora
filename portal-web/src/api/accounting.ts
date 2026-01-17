@@ -7,6 +7,7 @@
  * - Withdrawals (owner capital out)
  * - Assets (fixed assets)
  * - Summary (financial overview including "Safe to Draw")
+ * - Financial Reports (balance sheet, P&L, cash flow)
  *
  * Based on backend routes at: /v1/businesses/:businessDescriptor/accounting/...
  * See: .github/instructions/accounting.instructions.md
@@ -45,7 +46,12 @@ import type {
   UpdateWithdrawalRequest,
   Withdrawal,
 } from './types/accounting'
-import { STALE_TIME } from '@/lib/queryKeys'
+import type {
+  CashFlowStatement,
+  FinancialPosition,
+  ProfitAndLossStatement,
+} from './types/analytics'
+import { STALE_TIME, reports } from '@/lib/queryKeys'
 
 // Re-export types for convenience
 export type {
@@ -59,6 +65,9 @@ export type {
   ExpenseCategory,
   RecentActivity,
   RecentActivitiesResponse,
+  FinancialPosition,
+  ProfitAndLossStatement,
+  CashFlowStatement,
 }
 export {
   expenseCategoryEnum,
@@ -1229,4 +1238,133 @@ export function useDeleteAssetMutation(
     mutationFn: () => accountingApi.deleteAsset(businessDescriptor, assetId),
     ...options,
   })
+}
+
+// =============================================================================
+// Financial Reports API
+// =============================================================================
+
+/**
+ * Reports API for financial statements
+ * Based on backend routes at: /v1/businesses/:businessDescriptor/analytics/reports/...
+ */
+export const reportsApi = {
+  /**
+   * Get Financial Position (Balance Sheet)
+   * Shows assets, liabilities, and equity
+   */
+  async getFinancialPosition(
+    businessDescriptor: string,
+    asOf?: string,
+  ): Promise<FinancialPosition> {
+    const query = asOf ? `?asOf=${asOf}` : ''
+    return get<FinancialPosition>(
+      `v1/businesses/${businessDescriptor}/analytics/reports/financial-position${query}`,
+    )
+  },
+
+  /**
+   * Get Profit and Loss Statement
+   * Shows revenue, costs, and profitability
+   */
+  async getProfitAndLoss(
+    businessDescriptor: string,
+    asOf?: string,
+  ): Promise<ProfitAndLossStatement> {
+    const query = asOf ? `?asOf=${asOf}` : ''
+    return get<ProfitAndLossStatement>(
+      `v1/businesses/${businessDescriptor}/analytics/reports/profit-and-loss${query}`,
+    )
+  },
+
+  /**
+   * Get Cash Flow Statement
+   * Shows cash movement through the business
+   */
+  async getCashFlow(
+    businessDescriptor: string,
+    asOf?: string,
+  ): Promise<CashFlowStatement> {
+    const query = asOf ? `?asOf=${asOf}` : ''
+    return get<CashFlowStatement>(
+      `v1/businesses/${businessDescriptor}/analytics/reports/cash-flow${query}`,
+    )
+  },
+}
+
+// =============================================================================
+// Financial Reports Query Options
+// =============================================================================
+
+/**
+ * Query options for Financial Position report
+ * StaleTime: 5 minutes (computed data, acceptable staleness)
+ */
+export const financialPositionQueryOptions = (
+  businessDescriptor: string,
+  asOf?: string,
+) =>
+  queryOptions({
+    queryKey: reports.financialPosition(businessDescriptor, asOf),
+    queryFn: () => reportsApi.getFinancialPosition(businessDescriptor, asOf),
+    staleTime: STALE_TIME.FIVE_MINUTES,
+  })
+
+/**
+ * Query options for Profit and Loss report
+ * StaleTime: 5 minutes (computed data, acceptable staleness)
+ */
+export const profitAndLossQueryOptions = (
+  businessDescriptor: string,
+  asOf?: string,
+) =>
+  queryOptions({
+    queryKey: reports.profitAndLoss(businessDescriptor, asOf),
+    queryFn: () => reportsApi.getProfitAndLoss(businessDescriptor, asOf),
+    staleTime: STALE_TIME.FIVE_MINUTES,
+  })
+
+/**
+ * Query options for Cash Flow report
+ * StaleTime: 5 minutes (computed data, acceptable staleness)
+ */
+export const cashFlowQueryOptions = (
+  businessDescriptor: string,
+  asOf?: string,
+) =>
+  queryOptions({
+    queryKey: reports.cashFlow(businessDescriptor, asOf),
+    queryFn: () => reportsApi.getCashFlow(businessDescriptor, asOf),
+    staleTime: STALE_TIME.FIVE_MINUTES,
+  })
+
+// =============================================================================
+// Financial Reports Hooks
+// =============================================================================
+
+/**
+ * Hook to fetch Financial Position (Balance Sheet)
+ */
+export function useFinancialPositionQuery(
+  businessDescriptor: string,
+  asOf?: string,
+) {
+  return useQuery(financialPositionQueryOptions(businessDescriptor, asOf))
+}
+
+/**
+ * Hook to fetch Profit and Loss Statement
+ */
+export function useProfitAndLossQuery(
+  businessDescriptor: string,
+  asOf?: string,
+) {
+  return useQuery(profitAndLossQueryOptions(businessDescriptor, asOf))
+}
+
+/**
+ * Hook to fetch Cash Flow Statement
+ */
+export function useCashFlowQuery(businessDescriptor: string, asOf?: string) {
+  return useQuery(cashFlowQueryOptions(businessDescriptor, asOf))
 }

@@ -101,7 +101,11 @@
     "assets": "Assets",
     "billing": "Billing",
     "team": "Team",
-    "settings": "Settings"
+    "settings": "Settings",
+    "reports": "Reports",
+    "reports_health": "Business Health",
+    "reports_profit": "Profit & Earnings",
+    "reports_cashflow": "Cash Movement"
   },
   "customer": {
     "customers": "Customers",

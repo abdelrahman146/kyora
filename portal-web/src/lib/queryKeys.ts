@@ -326,6 +326,22 @@ export const accounting = {
 } as const
 
 /**
+ * Reports queries (business-scoped)
+ * StaleTime: 5 minutes (computed data, acceptable staleness)
+ * Invalidated on business switch
+ */
+export const reports = {
+  all: ['reports'] as const,
+  businessScoped: true,
+  financialPosition: (businessDescriptor: string, asOf?: string) =>
+    [...reports.all, 'financial-position', businessDescriptor, asOf] as const,
+  profitAndLoss: (businessDescriptor: string, asOf?: string) =>
+    [...reports.all, 'profit-and-loss', businessDescriptor, asOf] as const,
+  cashFlow: (businessDescriptor: string, asOf?: string) =>
+    [...reports.all, 'cash-flow', businessDescriptor, asOf] as const,
+} as const
+
+/**
  * Metadata query keys (global, not business-scoped)
  * StaleTime: 24 hours (static reference data)
  */
@@ -360,6 +376,7 @@ export const queryKeys = {
   inventory,
   analytics,
   accounting,
+  reports,
   metadata,
   onboarding,
   staleTime,
@@ -383,6 +400,7 @@ export function isBusinessScopedQuery(
     rootKey === 'orders' ||
     rootKey === 'inventory' ||
     rootKey === 'analytics' ||
-    rootKey === 'accounting'
+    rootKey === 'accounting' ||
+    rootKey === 'reports'
   )
 }

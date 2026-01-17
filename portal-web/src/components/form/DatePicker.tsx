@@ -61,6 +61,10 @@ export interface DatePickerProps extends Omit<
   clearable?: boolean
   fullWidth?: boolean
   size?: 'sm' | 'md' | 'lg'
+  /** Button mode: Render as button instead of input (no clipping, modal-based) */
+  buttonMode?: boolean
+  /** Custom button content (only in buttonMode) */
+  buttonContent?: React.ReactNode
 }
 
 export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
@@ -79,6 +83,8 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       clearable = true,
       fullWidth = true,
       size = 'md',
+      buttonMode = false,
+      buttonContent,
       className,
       id,
       disabled,
@@ -396,6 +402,92 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
       </div>
     )
 
+    // Button mode: renders as button with modal picker (no clipping)
+    if (buttonMode) {
+      return (
+        <>
+          <button
+            ref={(node) => {
+              if (typeof ref === 'function') {
+                ref(node as any)
+              } else if (ref) {
+                ;(ref as any).current = node
+              }
+            }}
+            type="button"
+            onClick={() => !disabled && handleOpen()}
+            disabled={disabled}
+            aria-label={label}
+            aria-expanded={isOpen}
+            className={cn(
+              'flex items-center gap-2 rounded-btn px-3 py-2 text-sm transition-colors cursor-pointer',
+              'text-base-content/70 hover:bg-base-200 hover:text-base-content',
+              disabled && 'opacity-50 cursor-not-allowed',
+              className,
+            )}
+          >
+            {buttonContent || (
+              <>
+                <Calendar className="h-4 w-4" aria-hidden="true" />
+                <span className="whitespace-nowrap">
+                  {value
+                    ? format(value, dateFormat, { locale })
+                    : label || t('date.selectDate')}
+                </span>
+              </>
+            )}
+          </button>
+
+          {isOpen &&
+            !disabled &&
+            createPortal(
+              <>
+                {/* Backdrop */}
+                <div
+                  className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm"
+                  onClick={handleClose}
+                  aria-hidden="true"
+                />
+
+                {/* Calendar Modal */}
+                <div
+                  ref={popupRef}
+                  role="dialog"
+                  aria-modal="true"
+                  aria-label={label || t('date.selectDate')}
+                  className={cn(
+                    'fixed z-[101] bg-base-100 shadow-2xl',
+                    isMobile
+                      ? 'inset-x-0 bottom-0 rounded-t-3xl'
+                      : 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl',
+                  )}
+                >
+                  {/* Header */}
+                  <div className="flex items-center justify-between border-b border-base-300 px-4 py-3">
+                    <h3 className="text-base font-semibold">
+                      {label || t('date.selectDate')}
+                    </h3>
+                    <button
+                      type="button"
+                      onClick={handleClose}
+                      className="btn btn-ghost btn-sm btn-square"
+                      aria-label={t('close')}
+                    >
+                      <X className="h-4 w-4" />
+                    </button>
+                  </div>
+
+                  {/* Calendar Content */}
+                  <div className="p-4">{calendarContent}</div>
+                </div>
+              </>,
+              document.body,
+            )}
+        </>
+      )
+    }
+
+    // Input mode: standard input field with dropdown picker
     return (
       <div
         ref={containerRef}

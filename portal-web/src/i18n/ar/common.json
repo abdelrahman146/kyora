@@ -101,7 +101,11 @@
     "assets": "الأصول",
     "billing": "الفواتير",
     "team": "الفريق",
-    "settings": "الإعدادات"
+    "settings": "الإعدادات",
+    "reports": "التقارير",
+    "reports_health": "صحة عملك",
+    "reports_profit": "أرباحك",
+    "reports_cashflow": "حركة النقد"
   },
   "customer": {
     "customers": "العملاء",
