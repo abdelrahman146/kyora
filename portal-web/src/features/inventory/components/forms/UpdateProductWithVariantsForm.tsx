@@ -132,7 +132,7 @@ export function UpdateProductWithVariantsForm({
 
         for (const variant of newVariants) {
           await createVariantMutation.mutateAsync({
-            product_id: product.id,
+            productId: product.id,
             code: variant.code,
             sku: variant.sku || undefined,
             photos: variant.photos,

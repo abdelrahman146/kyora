@@ -60,10 +60,10 @@ export interface Variant {
 export interface ListResponse<T> {
   items: Array<T>
   page: number
-  page_size: number
-  total_count: number
-  total_pages: number
-  has_more: boolean
+  pageSize: number
+  totalCount: number
+  totalPages: number
+  hasMore: boolean
 }
 
 export type ListProductsResponse = ListResponse<Product>
@@ -85,7 +85,7 @@ export interface UpdateProductRequest {
 }
 
 export interface CreateVariantRequest {
-  product_id: string
+  productId: string
   code: string
   sku?: string
   photos?: Array<AssetReference>
@@ -132,14 +132,14 @@ export interface UpdateCategoryRequest {
 }
 
 export interface InventorySummaryResponse {
-  products_count: number
-  variants_count: number
-  categories_count: number
-  low_stock_variants_count: number
-  out_of_stock_variants_count: number
-  total_stock_units: number
-  inventory_value: string
-  top_products_by_inventory_value: Array<Product>
+  productsCount: number
+  variantsCount: number
+  categoriesCount: number
+  lowStockVariantsCount: number
+  outOfStockVariantsCount: number
+  totalStockUnits: number
+  inventoryValue: string
+  topProductsByInventoryValue: Array<Product>
 }
 
 /**
@@ -734,7 +734,7 @@ export function useCreateVariantMutation(
     mutationFn: (data: CreateVariantRequest) =>
       inventoryApi.createVariant(businessDescriptor, {
         ...data,
-        product_id: productId,
+        productId: productId,
       }),
     ...options,
   })

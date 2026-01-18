@@ -201,14 +201,16 @@ Inventory list uses TanStack Router search params for:
 - Use TanStack Query keys under `queryKeys.inventory.*`.
 - After mutations (create/update/delete), invalidate broadly with `queryKeys.inventory.all`.
 
-### Known drift (do not propagate)
+### API Contract Alignment (Critical)
 
-In `portal-web/src/api/inventory.ts`, the `ListResponse` interface currently uses snake_case keys (`page_size`, `total_count`, `total_pages`, `has_more`). Backend responses use camelCase (`pageSize`, `totalCount`, `totalPages`, `hasMore`).
+**Portal-web API types MUST match backend JSON exactly (camelCase).**
 
-Additionally, `CreateVariantRequest` uses `product_id` (snake_case) while the backend expects `productId` (camelCase).
+- `ListResponse` fields: `pageSize`, `totalCount`, `totalPages`, `hasMore` (NOT snake_case)
+- `CreateVariantRequest.productId` (NOT `product_id`)
+- `InventorySummaryResponse` fields: `productsCount`, `variantsCount`, `categoriesCount`, `lowStockVariantsCount`, `outOfStockVariantsCount`, `totalStockUnits`, `inventoryValue`, `topProductsByInventoryValue` (all camelCase)
+- All Variant/Product fields use camelCase to match backend DTOs
 
-- Don't copy these snake_case types into new code.
-- When touching inventory portal-web code, align the types to backend reality (match patterns used by other modules like `portal-web/src/api/order.ts`).
+This is non-negotiable and verified by backend E2E tests. See `.github/instructions/responses-dtos-swagger.instructions.md` for API contract standards.
 
 ## Extension checklist (when adding/changing inventory behavior)
 

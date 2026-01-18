@@ -124,8 +124,8 @@ export function InventoryListPage() {
   const categoriesResponse = useCategoriesQuery(businessDescriptor)
 
   const products = productsResponse.data?.items ?? []
-  const totalItems = productsResponse.data?.total_count ?? 0
-  const totalPages = productsResponse.data?.total_pages ?? 0
+  const totalItems = productsResponse.data?.totalCount ?? 0
+  const totalPages = productsResponse.data?.totalPages ?? 0
   const categories = categoriesResponse.data ?? []
 
   const categoryOptions: Array<{ value: string; label: string }> = [

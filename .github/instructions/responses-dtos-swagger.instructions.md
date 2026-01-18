@@ -236,6 +236,47 @@ Portal must target the backend standard (`createdAt`, `updatedAt`).
 
 If an endpoint currently returns PascalCase timestamps due to leaked `gorm.Model`, do not normalize silently in random components. Log drift and fix backend to return DTOs.
 
+### 4.4 Portal-web types MUST use camelCase to match backend responses (CRITICAL)
+
+**Rule:** All TypeScript interfaces in `portal-web/src/api/` must use camelCase field names to match backend JSON responses.
+
+**MANDATORY:**
+
+- ✅ `pageSize`, `totalCount`, `totalPages`, `hasMore` (ListResponse fields)
+- ✅ `productId`, `businessId`, `categoryId` (foreign keys)
+- ✅ `createdAt`, `updatedAt`, `deletedAt` (timestamps)
+- ❌ `page_size`, `total_count`, `total_pages`, `has_more` (snake_case)
+- ❌ `product_id`, `business_id` (snake_case)
+
+**Why this matters:**
+
+When portal-web types use snake_case, TypeScript will fail at runtime when accessing the actual camelCase data from backend responses. Example:
+
+```typescript
+// ❌ WRONG: Type defines snake_case
+interface ListResponse {
+  page_size: number; // Type says page_size
+}
+
+// But backend sends camelCase
+const response = await api.list(); // { pageSize: 20, ... }
+console.log(response.page_size); // undefined! ❌
+
+// ✅ CORRECT: Type matches backend
+interface ListResponse {
+  pageSize: number; // Type matches backend
+}
+const response = await api.list(); // { pageSize: 20, ... }
+console.log(response.pageSize); // 20 ✅
+```
+
+**When adding new types:**
+
+1. Check backend `model_response.go` or OpenAPI schema
+2. Copy field names and casing exactly
+3. Use camelCase consistently
+4. Verify with TypeScript type check (`npm run type-check`)
+
 ---
 
 ## 5) Known systemic drift areas
