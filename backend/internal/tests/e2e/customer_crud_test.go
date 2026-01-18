@@ -88,12 +88,13 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_ValidationErrors() {
 		name    string
 		payload map[string]interface{}
 	}{
-		{"missing name", map[string]interface{}{"email": "test@example.com", "countryCode": "eg"}},
-		{"missing email", map[string]interface{}{"name": "Test", "countryCode": "eg"}},
-		{"missing countryCode", map[string]interface{}{"name": "Test", "email": "test@example.com"}},
-		{"invalid email", map[string]interface{}{"name": "Test", "email": "invalid-email", "countryCode": "eg"}},
-		{"invalid countryCode length", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "e"}},
-		{"invalid gender", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "eg", "gender": "invalid"}},
+		{"missing name", map[string]interface{}{"email": "test@example.com", "countryCode": "eg", "phoneNumber": "1234567890", "phoneCode": "+20"}},
+		{"missing countryCode", map[string]interface{}{"name": "Test", "email": "test@example.com", "phoneNumber": "1234567890", "phoneCode": "+20"}},
+		{"missing phoneNumber", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "eg", "phoneCode": "+20"}},
+		{"missing phoneCode", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "eg", "phoneNumber": "1234567890"}},
+		{"invalid email", map[string]interface{}{"name": "Test", "email": "invalid-email", "countryCode": "eg", "phoneNumber": "1234567890", "phoneCode": "+20"}},
+		{"invalid countryCode length", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "e", "phoneNumber": "1234567890", "phoneCode": "+20"}},
+		{"invalid gender", map[string]interface{}{"name": "Test", "email": "test@example.com", "countryCode": "eg", "gender": "invalid", "phoneNumber": "1234567890", "phoneCode": "+20"}},
 	}
 
 	for _, tt := range tests {
@@ -124,6 +125,8 @@ func (s *CustomerCRUDSuite) TestCreateCustomer_DuplicateEmail() {
 		"name":        "Second Customer",
 		"email":       "duplicate@example.com",
 		"countryCode": "eg",
+		"phoneNumber": "1234567890",
+		"phoneCode":   "+20",
 	}
 
 	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers", payload, token)

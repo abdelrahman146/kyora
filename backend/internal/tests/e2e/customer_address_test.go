@@ -50,7 +50,7 @@ func (s *CustomerAddressSuite) TestCreateAddress_Success() {
 		"city":        "Cairo",
 		"street":      "123 Test St",
 		"phoneCode":   "+20",
-		"phone":       "1234567890",
+		"phoneNumber": "1234567890",
 		"zipCode":     "12345",
 	}
 
@@ -93,12 +93,12 @@ func (s *CustomerAddressSuite) TestCreateAddress_ValidationErrors() {
 		name    string
 		payload map[string]interface{}
 	}{
-		{"missing countryCode", map[string]interface{}{"state": "Cairo", "city": "Cairo", "phoneCode": "+20", "phone": "1234567890"}},
-		{"missing state", map[string]interface{}{"countryCode": "eg", "city": "Cairo", "phoneCode": "+20", "phone": "1234567890"}},
-		{"missing city", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "phoneCode": "+20", "phone": "1234567890"}},
-		{"missing phoneCode", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "city": "Cairo", "phone": "1234567890"}},
-		{"missing phone", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "city": "Cairo", "phoneCode": "+20"}},
-		{"invalid countryCode length", map[string]interface{}{"countryCode": "e", "state": "Cairo", "city": "Cairo", "phoneCode": "+20", "phone": "1234567890"}},
+		{"missing countryCode", map[string]interface{}{"state": "Cairo", "city": "Cairo", "phoneCode": "+20", "phoneNumber": "1234567890"}},
+		{"missing state", map[string]interface{}{"countryCode": "eg", "city": "Cairo", "phoneCode": "+20", "phoneNumber": "1234567890"}},
+		{"missing city", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "phoneCode": "+20", "phoneNumber": "1234567890"}},
+		{"missing phoneCode", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "city": "Cairo", "phoneNumber": "1234567890"}},
+		{"missing phoneNumber", map[string]interface{}{"countryCode": "eg", "state": "Cairo", "city": "Cairo", "phoneCode": "+20"}},
+		{"invalid countryCode length", map[string]interface{}{"countryCode": "e", "state": "Cairo", "city": "Cairo", "phoneCode": "+20", "phoneNumber": "1234567890"}},
 	}
 
 	for _, tt := range tests {
@@ -124,7 +124,7 @@ func (s *CustomerAddressSuite) TestCreateAddress_CustomerNotFound() {
 		"state":       "Cairo",
 		"city":        "Cairo",
 		"phoneCode":   "+20",
-		"phone":       "1234567890",
+		"phoneNumber": "1234567890",
 	}
 
 	resp, err := s.customerHelper.Client.AuthenticatedRequest("POST", "/v1/businesses/test-biz/customers/cus_nonexistent/addresses", payload, token)

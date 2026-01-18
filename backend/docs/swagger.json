@@ -2391,6 +2391,24 @@
                         "description": "Sort order (e.g., -amount, occurredOn)",
                         "name": "orderBy",
                         "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter by category",
+                        "name": "category",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter from date (YYYY-MM-DD)",
+                        "name": "from",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter to date (YYYY-MM-DD)",
+                        "name": "to",
+                        "in": "query"
                     }
                 ],
                 "responses": {
@@ -2970,6 +2988,64 @@
                     },
                     "404": {
                         "description": "Not Found",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    }
+                }
+            }
+        },
+        "/v1/businesses/{businessDescriptor}/accounting/recent-activities": {
+            "get": {
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Returns a unified list of recent accounting activities (expenses, investments, withdrawals) sorted by date descending",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "accounting"
+                ],
+                "summary": "List recent activities",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Business descriptor",
+                        "name": "businessDescriptor",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of items to return (default: 10, max: 50)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/accounting.RecentActivitiesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/problem.Problem"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized",
                         "schema": {
                             "$ref": "#/definitions/problem.Problem"
                         }
@@ -10097,7 +10173,7 @@
                     "type": "string"
                 },
                 "occurredOn": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 },
                 "recurringExpenseId": {
                     "type": "string"
@@ -10185,10 +10261,10 @@
                     "type": "string"
                 },
                 "recurringEndDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 },
                 "recurringStartDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 }
             }
         },
@@ -10394,6 +10470,76 @@
                 }
             }
         },
+        "accounting.RecentActivitiesResponse": {
+            "type": "object",
+            "properties": {
+                "items": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/accounting.RecentActivityResponse"
+                    }
+                }
+            }
+        },
+        "accounting.RecentActivityResponse": {
+            "type": "object",
+            "properties": {
+                "amount": {
+                    "type": "number"
+                },
+                "category": {
+                    "description": "Only for expenses",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/accounting.ExpenseCategory"
+                        }
+                    ]
+                },
+                "createdAt": {
+                    "type": "string"
+                },
+                "currency": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "expenseType": {
+                    "description": "Only for expenses",
+                    "allOf": [
+                        {
+                            "$ref": "#/definitions/accounting.ExpenseType"
+                        }
+                    ]
+                },
+                "id": {
+                    "type": "string"
+                },
+                "occurredAt": {
+                    "type": "string"
+                },
+                "personId": {
+                    "description": "InvestorID or WithdrawerID",
+                    "type": "string"
+                },
+                "type": {
+                    "$ref": "#/definitions/accounting.RecentActivityType"
+                }
+            }
+        },
+        "accounting.RecentActivityType": {
+            "type": "string",
+            "enum": [
+                "expense",
+                "investment",
+                "withdrawal"
+            ],
+            "x-enum-varnames": [
+                "RecentActivityTypeExpense",
+                "RecentActivityTypeInvestment",
+                "RecentActivityTypeWithdrawal"
+            ]
+        },
         "accounting.RecurringExpense": {
             "type": "object",
             "properties": {
@@ -10542,7 +10688,7 @@
                     "type": "string"
                 },
                 "occurredOn": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 },
                 "recurringExpenseId": {
                     "type": "string"
@@ -10591,10 +10737,10 @@
                     "type": "string"
                 },
                 "recurringEndDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 },
                 "recurringStartDate": {
-                    "type": "string"
+                    "$ref": "#/definitions/date.Date"
                 }
             }
         },

@@ -299,7 +299,7 @@ definitions:
       note:
         type: string
       occurredOn:
-        type: string
+        $ref: '#/definitions/date.Date'
       recurringExpenseId:
         type: string
       type:
@@ -363,9 +363,9 @@ definitions:
       note:
         type: string
       recurringEndDate:
-        type: string
+        $ref: '#/definitions/date.Date'
       recurringStartDate:
-        type: string
+        $ref: '#/definitions/date.Date'
     required:
     - amount
     - category
@@ -519,6 +519,51 @@ definitions:
       updatedAt:
         type: string
     type: object
+  accounting.RecentActivitiesResponse:
+    properties:
+      items:
+        items:
+          $ref: '#/definitions/accounting.RecentActivityResponse'
+        type: array
+    type: object
+  accounting.RecentActivityResponse:
+    properties:
+      amount:
+        type: number
+      category:
+        allOf:
+        - $ref: '#/definitions/accounting.ExpenseCategory'
+        description: Only for expenses
+      createdAt:
+        type: string
+      currency:
+        type: string
+      description:
+        type: string
+      expenseType:
+        allOf:
+        - $ref: '#/definitions/accounting.ExpenseType'
+        description: Only for expenses
+      id:
+        type: string
+      occurredAt:
+        type: string
+      personId:
+        description: InvestorID or WithdrawerID
+        type: string
+      type:
+        $ref: '#/definitions/accounting.RecentActivityType'
+    type: object
+  accounting.RecentActivityType:
+    enum:
+    - expense
+    - investment
+    - withdrawal
+    type: string
+    x-enum-varnames:
+    - RecentActivityTypeExpense
+    - RecentActivityTypeInvestment
+    - RecentActivityTypeWithdrawal
   accounting.RecurringExpense:
     properties:
       amount:
@@ -619,7 +664,7 @@ definitions:
       note:
         type: string
       occurredOn:
-        type: string
+        $ref: '#/definitions/date.Date'
       recurringExpenseId:
         type: string
       type:
@@ -652,9 +697,9 @@ definitions:
       note:
         type: string
       recurringEndDate:
-        type: string
+        $ref: '#/definitions/date.Date'
       recurringStartDate:
-        type: string
+        $ref: '#/definitions/date.Date'
     type: object
   accounting.UpdateWithdrawalRequest:
     properties:
@@ -23831,6 +23876,18 @@ paths:
           type: string
         name: orderBy
         type: array
+      - description: Filter by category
+        in: query
+        name: category
+        type: string
+      - description: Filter from date (YYYY-MM-DD)
+        in: query
+        name: from
+        type: string
+      - description: Filter to date (YYYY-MM-DD)
+        in: query
+        name: to
+        type: string
       produces:
       - application/json
       responses:
@@ -24218,6 +24275,44 @@ paths:
       security:
       - BearerAuth: []
       summary: Update investment
+      tags:
+      - accounting
+  /v1/businesses/{businessDescriptor}/accounting/recent-activities:
+    get:
+      description: Returns a unified list of recent accounting activities (expenses,
+        investments, withdrawals) sorted by date descending
+      parameters:
+      - description: Business descriptor
+        in: path
+        name: businessDescriptor
+        required: true
+        type: string
+      - description: 'Number of items to return (default: 10, max: 50)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/accounting.RecentActivitiesResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "401":
+          description: Unauthorized
+          schema:
+            $ref: '#/definitions/problem.Problem'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/problem.Problem'
+      security:
+      - BearerAuth: []
+      summary: List recent activities
       tags:
       - accounting
   /v1/businesses/{businessDescriptor}/accounting/recurring-expenses:
