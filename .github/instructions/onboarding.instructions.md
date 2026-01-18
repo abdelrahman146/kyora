@@ -30,7 +30,6 @@ Backend stage enum (see `backend/internal/domain/onboarding/model.go`):
 - `identity_verified`
 - `business_staged`
 - `payment_pending` (paid plans)
-- `payment_confirmed` (defined, but not currently set by backend logic)
 - `ready_to_commit`
 - `committed`
 
@@ -51,8 +50,6 @@ Backend payment status enum:
   - paid plan: `identity_verified|business_staged` → `payment_pending` and `paymentStatus=pending`
 - Stripe webhook: `payment_pending` → `ready_to_commit` and `paymentStatus=succeeded`
 - Complete onboarding: `ready_to_commit` → `committed` (atomic commit)
-
-Important: `payment_confirmed` exists in the enum, and portal-web supports it in routing, but backend currently sets `ready_to_commit` directly when payment succeeds.
 
 ## Backend: endpoints and contracts
 
@@ -246,7 +243,6 @@ Routes:
 - `identity_verified` → `/onboarding/business`
 - `business_staged` → `/onboarding/payment`
 - `payment_pending` → `/onboarding/payment`
-- `payment_confirmed` → `/onboarding/complete`
 - `ready_to_commit` → `/onboarding/complete`
 - `committed` → `/onboarding/complete`
 
@@ -304,14 +300,13 @@ Note: backend currently returns `payment_pending` for paid plans (not `business_
 ### Payment (`/onboarding/payment`)
 
 - Route guard sends free plans to `/onboarding/complete`.
-- Route guard currently only allows stages: `business_staged|payment_pending|payment_confirmed`.
-  - Backend sets `payment_pending`, so `business_staged` is generally not expected.
+- Route guard only allows stages: `business_staged|payment_pending`.
 - On `status=success`, it navigates to `/onboarding/complete`.
 - Starts payment by calling `POST /v1/onboarding/payment/start` and then `window.location.href = checkoutUrl`.
 
 ### Complete (`/onboarding/complete`)
 
-- Route guard currently allows only `ready_to_commit` or `payment_confirmed`.
+- Route guard only allows `ready_to_commit`.
 - Calls `POST /v1/onboarding/complete`, stores tokens, sets user, and deletes session.
 - Redirects to `/`.
 
@@ -369,7 +364,7 @@ Clients should never check for `business_staged` in onSuccess handlers. Use the 
 ## Known drifts (code not following patterns)
 
 - ~~Backend sets `payment_pending` after business for paid plans; portal business step navigation checks for `business_staged`~~ **RESOLVED** (see: `backlog/drifts/2026-01-18-onboarding-business-stage-navigation-mismatch.md`)
-- Backend never sets stage `payment_confirmed` even though it's defined in the enum; portal supports it in routing and guards (see: `backlog/drifts/2026-01-18-onboarding-payment-confirmed-stage-unused.md`)
+- ~~Backend never sets stage `payment_confirmed` even though it's defined in the enum; portal supports it in routing and guards~~ **RESOLVED** (see: `backlog/drifts/2026-01-18-onboarding-payment-confirmed-stage-unused.md`)
 - Onboarding pages manually display mutation errors bypassing the global error handler (see: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`)
 
 Keep this file updated when drifts are fixed.

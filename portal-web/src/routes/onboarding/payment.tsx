@@ -36,8 +36,7 @@ export const Route = createFileRoute('/onboarding/payment')({
 
     if (
       session.stage !== 'business_staged' &&
-      session.stage !== 'payment_pending' &&
-      session.stage !== 'payment_confirmed'
+      session.stage !== 'payment_pending'
     ) {
       throw redirect({
         to: '/onboarding/plan',
@@ -45,11 +44,8 @@ export const Route = createFileRoute('/onboarding/payment')({
       })
     }
 
-    // If payment already confirmed, go to complete
-    if (
-      session.stage === 'payment_confirmed' ||
-      session.paymentStatus === 'succeeded'
-    ) {
+    // If payment already succeeded, go to complete
+    if (session.paymentStatus === 'succeeded') {
       throw redirect({
         to: '/onboarding/complete',
         search: { session: parsed.session },

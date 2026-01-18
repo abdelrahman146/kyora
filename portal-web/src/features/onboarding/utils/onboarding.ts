@@ -7,7 +7,6 @@ export const STAGE_ROUTES: Record<SessionStage, string> = {
   identity_verified: '/onboarding/business',
   business_staged: '/onboarding/payment',
   payment_pending: '/onboarding/payment',
-  payment_confirmed: '/onboarding/complete',
   ready_to_commit: '/onboarding/complete',
   committed: '/onboarding/complete',
 }

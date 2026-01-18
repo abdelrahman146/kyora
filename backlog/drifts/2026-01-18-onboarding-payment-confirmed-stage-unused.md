@@ -12,9 +12,10 @@ affected-files:
   - portal-web/src/features/onboarding/utils/onboarding.ts
 related-instructions:
   - .github/instructions/onboarding.instructions.md
-status: open
+status: resolved
 assignee: null
 pattern-category: dead-code
+resolution-date: 2026-01-19
 ---
 
 # Onboarding stage `payment_confirmed` is defined but never set
@@ -158,7 +159,55 @@ Then require explicit user action (Complete button click) to move to `ready_to_c
 
 - None
 
+## Resolution
+
+**Status:** ✅ Resolved
+**Date:** 2026-01-19
+**Approach:** Option 1 - Remove the unused stage
+
+### Harmonization Completed
+
+All unused `payment_confirmed` references have been removed from backend and portal-web:
+
+**Changes Made:**
+
+1. **Backend** (`backend/internal/domain/onboarding/model.go`):
+   - Removed `StagePaymentConfirmed` constant from SessionStage enum
+
+2. **Portal-Web**:
+   - Removed `payment_confirmed` from `SessionStageSchema` (api/types/onboarding.ts)
+   - Removed `payment_confirmed` route mapping from `STAGE_ROUTES` (features/onboarding/utils/onboarding.ts)
+   - Updated payment route guard to only check `business_staged|payment_pending` (routes/onboarding/payment.tsx)
+   - Updated complete route guard to only check `ready_to_commit` (routes/onboarding/complete.tsx)
+   - Removed i18n translations for `payment_confirmed` from en/ar onboarding.json
+
+3. **Documentation**:
+   - Updated `.github/instructions/onboarding.instructions.md` to remove all references to `payment_confirmed`
+   - Regenerated Swagger/OpenAPI documentation (`make openapi`)
+
+### Migration Statistics
+
+- Total unused stage references removed: 7 (1 backend enum + 6 portal-web locations)
+- Backend transition logic: No changes needed (never used the stage)
+- Instruction files updated: 1 (onboarding.instructions.md)
+
+### Validation Results
+
+✅ **TypeScript:** `npm run type-check` passes  
+✅ **Linting:** `npm run lint -- --fix` passes  
+✅ **Swagger:** Regenerated - `payment_confirmed` no longer in documentation  
+✅ **Pattern Consistency:** Dead code fully removed  
+
+### Prevention
+
+This drift will not recur because:
+- All `payment_confirmed` references have been completely eliminated
+- Backend enum is now clean (no unused values)
+- Portal-web routing automatically validates against the removed stage
+- TypeScript schema enforces only valid stages
+
 ## Notes
 
 - The payment route's polling mechanism (`refetchInterval: 3000`) is specifically designed to observe the transition from `payment_pending` to `ready_to_commit` after the webhook fires.
-- Removing `payment_confirmed` won't break any existing functionality since the backend never sets it.
+- Removing `payment_confirmed` doesn't break existing functionality since the backend never set it.
+- Stripe webhook still correctly transitions: `payment_pending` → `ready_to_commit` (unchanged behavior)

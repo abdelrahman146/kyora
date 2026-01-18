@@ -14,7 +14,6 @@ export const SessionStageSchema = z.enum([
   'identity_verified',
   'business_staged',
   'payment_pending',
-  'payment_confirmed',
   'ready_to_commit',
   'committed',
 ])

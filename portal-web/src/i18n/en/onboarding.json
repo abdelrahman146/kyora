@@ -13,7 +13,6 @@
     "identity_verified": "Email Verified",
     "business_staged": "Business Setup",
     "payment_pending": "Payment Pending",
-    "payment_confirmed": "Payment Confirmed",
     "ready_to_commit": "Ready to Complete",
     "committed": "Completed"
   },

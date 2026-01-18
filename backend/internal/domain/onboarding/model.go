@@ -22,10 +22,9 @@ const (
 	StageIdentityPending  SessionStage = "identity_pending" // after plan, before verification
 	StageIdentityVerified SessionStage = "identity_verified"
 	StageBusinessStaged   SessionStage = "business_staged"
-	StagePaymentPending   SessionStage = "payment_pending"   // only for paid tiers
-	StagePaymentConfirmed SessionStage = "payment_confirmed" // stripe checkout finished
-	StageReadyToCommit    SessionStage = "ready_to_commit"   // all prerequisites satisfied
-	StageCommitted        SessionStage = "committed"         // finalized & removed logically
+	StagePaymentPending   SessionStage = "payment_pending" // only for paid tiers
+	StageReadyToCommit    SessionStage = "ready_to_commit" // all prerequisites satisfied
+	StageCommitted        SessionStage = "committed"       // finalized & removed logically
 )
 
 // PaymentStatus tracks paid tier progress; free plans skip to succeeded immediately

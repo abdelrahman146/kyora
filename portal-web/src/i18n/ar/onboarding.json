@@ -13,7 +13,6 @@
     "identity_verified": "تم التحقق من البريد الإلكتروني",
     "business_staged": "إعداد العمل",
     "payment_pending": "في انتظار الدفع",
-    "payment_confirmed": "تم تأكيد الدفع",
     "ready_to_commit": "جاهز للإكمال",
     "committed": "مكتمل"
   },

@@ -22,10 +22,7 @@ export const Route = createFileRoute('/onboarding/complete')({
       onboardingQueries.session(parsed.session),
     )
 
-    if (
-      session.stage !== 'ready_to_commit' &&
-      session.stage !== 'payment_confirmed'
-    ) {
+    if (session.stage !== 'ready_to_commit') {
       throw redirect({
         to: '/onboarding/plan',
         replace: true,

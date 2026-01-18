@@ -13696,14 +13696,12 @@
                 "identity_verified",
                 "business_staged",
                 "payment_pending",
-                "payment_confirmed",
                 "ready_to_commit",
                 "committed"
             ],
             "x-enum-comments": {
                 "StageCommitted": "finalized \u0026 removed logically",
                 "StageIdentityPending": "after plan, before verification",
-                "StagePaymentConfirmed": "stripe checkout finished",
                 "StagePaymentPending": "only for paid tiers",
                 "StageReadyToCommit": "all prerequisites satisfied"
             },
@@ -13713,7 +13711,6 @@
                 "StageIdentityVerified",
                 "StageBusinessStaged",
                 "StagePaymentPending",
-                "StagePaymentConfirmed",
                 "StageReadyToCommit",
                 "StageCommitted"
             ]
