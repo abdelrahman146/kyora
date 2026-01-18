@@ -149,14 +149,12 @@ The backend does **not** currently validate that `phone` is E.164; portal-web cu
 
 ### Address update (repo reality)
 
-Backend `UpdateCustomerAddress` service method only updates:
+Backend `UpdateCustomerAddress` now updates:
 
 - `street`, `city`, `state`, `zipCode`, `countryCode`
+- `phoneCode`, `phoneNumber` (trimmed; still optional and not validated for E.164)
 
-**Phone fields are NOT updateable:**
-
-- Even though `UpdateCustomerAddressRequest` DTO includes `phoneCode` and `phoneNumber` binding fields, the service implementation does not update these fields.
-- Portal-web's update request type includes these fields, but they are silently ignored by the backend.
+Portal-web request types already include these fields; backend now persists them when provided.
 
 ### Note JSON shape
 

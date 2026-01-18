@@ -554,6 +554,12 @@ func (s *Service) UpdateCustomerAddress(ctx context.Context, actor *account.User
 	if req.State != "" {
 		address.State = req.State
 	}
+	if req.PhoneCode != "" {
+		address.PhoneCode = strings.TrimSpace(req.PhoneCode)
+	}
+	if req.PhoneNumber != "" {
+		address.PhoneNumber = strings.TrimSpace(req.PhoneNumber)
+	}
 	if req.ZipCode != "" {
 		address.ZipCode = transformer.ToNullableString(req.ZipCode)
 	}

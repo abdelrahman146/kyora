@@ -3,7 +3,7 @@ title: "Customer Address Phone Fields Not Updateable Despite DTO Including Them"
 date: 2026-01-18
 priority: medium
 category: consistency
-status: open
+status: resolved
 domain: backend
 ---
 
@@ -98,20 +98,40 @@ if req.PhoneNumber != "" {
 
 ## Suggested Fix
 
-**Recommended: Remove phone fields from DTO**
-
-1. Remove `PhoneCode` and `PhoneNumber` from `UpdateCustomerAddressRequest` in `backend/internal/domain/customer/model.go`
-2. Update portal-web `UpdateAddressRequest` in `portal-web/src/api/address.ts` to match
-3. Regenerate Swagger/OpenAPI: `make openapi`
-4. Add E2E test confirming phone fields are immutable after address creation
-
-## Rationale
-
-Phone numbers are contact identifiers and typically shouldn't change. If a customer changes their phone, it's more appropriate to:
-- Create a new address with the new phone number
-- Or update the customer-level phone fields instead
+Option 2: Implement phone field updates in service
 
 ## Related
 
 - `.github/instructions/customer.instructions.md` (documents current behavior)
 - `.github/instructions/responses-dtos-swagger.instructions.md` (DTO contract standards)
+
+## Resolution
+
+**Status:** Resolved
+
+**Date:** 2026-01-19
+
+**Approach Taken:** Option 2 — implement phone field updates in service
+
+**Harmonization Summary:**
+
+- `UpdateCustomerAddress` now applies `phoneCode` and `phoneNumber` updates (trimmed) alongside other address fields.
+- Customer instructions updated to document that phone fields are updateable.
+
+**Files Changed:**
+
+- backend/internal/domain/customer/service.go — add phoneCode/phoneNumber updates in address update flow.
+- .github/instructions/customer.instructions.md — reflect updateable phone fields in address updates.
+
+**Migration Completeness:**
+
+- Total instances found: 1 service method; all updated.
+- Remaining drift: 0.
+
+**Validation:**
+
+- Tests not run (manual verification only).
+
+**Instruction Files Updated:**
+
+- .github/instructions/customer.instructions.md — clarified address update behavior to include phone fields.
