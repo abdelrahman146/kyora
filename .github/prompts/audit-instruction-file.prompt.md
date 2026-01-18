@@ -1,9 +1,9 @@
 ---
 name: audit-instruction-file
-description: "Comprehensive audit and update of a specific instruction file, with validation, enhancement, and drift/bug detection"
+description: "Audit and update instruction file, detect bugs/drifts, create actionable reports"
 agent: "AI Architect"
 argument-hint: "Path to the instruction file to audit (e.g., .github/instructions/backend-core.instructions.md)"
-tools: ["vscode", "execute", "read", "edit", "search", "todo"]
+tools: ["read", "edit", "search"]
 ---
 
 # Instruction File Audit & Update
@@ -38,7 +38,7 @@ For each rule/pattern in the instruction file:
 
 1. **Verify it exists** in the codebase
    - Use grep/semantic search to find real examples
-   - If a pattern is prescribed but not used, flag it
+   - If a pattern is prescribed but not used, note it for removal or mark as "planned"
 
 2. **Check for completeness**
    - Are there conventions used in code but not documented?
@@ -70,7 +70,7 @@ For each issue found, collect:
 - **Impact** (how this affects consistency/maintainability/correctness)
 - **Suggested fix** (concrete steps to resolve)
 
-### Phase 3.5: Check Existing Reports
+### Phase 4: Check Existing Reports
 
 Before creating new reports:
 
@@ -79,7 +79,7 @@ Before creating new reports:
    - A similar issue already exists (same file/pattern/problem)
    - A related issue exists (same domain but different aspect)
 3. **Deduplication strategy**:
-   - If exact duplicate: skip creating new report, note in audit summary
+   - If exact duplicate: skip creating new report, note in summary
    - If partial overlap: enhance existing report with new findings instead of creating new
    - If related but distinct: create new report and reference the related one
 4. **Enhancement strategy**:
@@ -87,7 +87,7 @@ Before creating new reports:
    - Update impact assessment if scope is larger
    - Add additional context or fix suggestions
 
-### Phase 4: Report Generation
+### Phase 5: Report Generation
 
 Create detailed reports in `backlog/` following this structure:
 
@@ -109,20 +109,21 @@ Create detailed reports in `backlog/` following this structure:
 - Template: Use the enhancement template (`.github/prompts/templates/enhancement.template.md`)
 - Criteria: Gaps in coverage, missing documentation, or improvement opportunities
 
-### Phase 5: Update the Instruction File
+### Phase 6: Update the Instruction File
 
 Based on your findings:
 
 1. **Add missing patterns** found in Phase 2
 2. **Remove invalid patterns** (those not actually used)
-3. **Clarify ambiguous rules** with examples
-4. **Add references** to related SSOT files
-5. **Update frontmatter** if scope has changed
-6. **Add a "Known Drifts" section** (if significant) with links to drift reports
+3. **Update outdated patterns** to match current implementation
+4. **Clarify ambiguous rules** with examples from actual code
+5. **Add references** to related SSOT files (link, don't duplicate)
+6. **Update frontmatter** if scope has changed
+7. **Fix any "Known Drifts" sections** — if drifts are resolved, mark them as resolved; if new drifts exist, document them briefly
 
-### Phase 6: Summary
+### Phase 7: Provide Summary
 
-Provide a concise summary:
+Provide a concise summary in the chat (not as a separate file):
 
 ```markdown
 ## Audit Summary for [instruction-file-name]
@@ -131,9 +132,10 @@ Provide a concise summary:
 **Files Scanned:** [count]
 **Patterns Validated:** [count]
 
-### Changes Made
+### Changes Made to Instruction File
 
-- [list of updates to the instruction file]
+- [list each specific change made to the instruction file]
+- [be specific: "Added pattern X", "Removed outdated Y", "Updated Z to match implementation"]
 
 ### Reports Created
 
@@ -176,12 +178,22 @@ Provide a concise summary:
 
 ## Safety Checks
 
-- Do not modify production code (only `.github/**` and `backlog/**`)
+- **Only modify instruction files** (`.github/instructions/*.instructions.md`)
+- **Create bug/drift/enhancement reports** in `backlog/` subdirectories
+- **Do NOT create**: audit reports, README files, documentation files, or summary markdown files
+- Do not modify production code
 - Do not add secrets or credentials to any file
 - Ensure all created markdown files have valid frontmatter
 - Link to existing files; verify paths before adding references
 - Create `backlog/` folder structure if it doesn't exist
 - Read existing reports before creating new ones to avoid duplicates
+
+## Output Requirements
+
+- **Update the instruction file** to match current codebase reality
+- **Create actionable bug/drift/enhancement reports** for issues found
+- **Provide summary in chat** (not as a separate markdown file)
+- **Do NOT create**: audit reports (e.g., `AUDIT-YYYY-MM-DD-*.md`), README files, or general documentation
 
 ## References
 

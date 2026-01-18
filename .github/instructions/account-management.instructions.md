@@ -28,43 +28,36 @@ If you change authentication/session behavior or route contracts, update backend
 All routes are under `/v1/auth`.
 
 - `POST /login`
-
   - Body: `{ email, password }`
   - Returns: `LoginResponse { user, token, refreshToken }`
   - Rate limited (best-effort): 20 attempts / 10 minutes per `(email, ip)`.
 
 - `POST /refresh`
-
   - Body: `{ refreshToken }`
   - Returns: `RefreshResponse { token, refreshToken }`
   - Refresh tokens are rotated: old refresh session is revoked first.
 
 - `POST /logout`
-
   - Body: `{ refreshToken }`
   - Returns: `204`
   - Revokes exactly the provided refresh token (session).
 
 - `POST /logout-all`
-
   - Body: `{ refreshToken }`
   - Returns: `204`
   - Revokes all refresh sessions for the user and increments `authVersion` (invalidates all access JWTs).
 
 - `POST /logout-others`
-
   - Body: `{ refreshToken }`
   - Returns: `204`
   - Revokes all refresh sessions except the provided refresh token.
 
 - Google OAuth
-
   - `GET /google/url` → returns `{ url, state }`
   - `POST /google/login` body: `{ code }` → returns `LoginResponse`
   - Current behavior: Google login succeeds only if a user already exists with that email.
 
 - Password reset
-
   - `POST /forgot-password` body: `{ email }` → `204`
     - If email does not exist: still returns `204`.
     - If rate limited: returns `429`.
@@ -82,7 +75,6 @@ All routes are under `/v1/auth`.
 All routes are under `/v1/invitations`.
 
 - `POST /accept?token=...`
-
   - Body: `{ firstName, lastName, password }`
   - Behavior: creates a user in the invitation workspace, marks invitation accepted, consumes token, then issues tokens.
   - Returns: `LoginResponse`.
@@ -124,7 +116,6 @@ Workspace users (permission: `role.ActionView` on `role.ResourceAccount`):
 Workspace user management (permission: `role.ActionManage` on `role.ResourceAccount`):
 
 - `PATCH /users/:userId/role` body: `{ role: 'user'|'admin' }`
-
   - Cannot update your own role.
   - Cannot update the workspace owner’s role.
 
@@ -136,7 +127,6 @@ Workspace user management (permission: `role.ActionManage` on `role.ResourceAcco
 Workspace invitations management (permission: `role.ActionManage` on `role.ResourceAccount`):
 
 - `POST /invitations`
-
   - Plan gates applied:
     - `billing.EnforceActiveSubscription`
     - `billing.EnforcePlanWorkspaceLimits(billing.PlanSchema.MaxTeamMembers, accountService.CountWorkspaceUsersForPlanLimit)`
@@ -193,15 +183,9 @@ When building team/workspace management UI, follow backend contract above:
 - Invitation acceptance pages for `POST /v1/invitations/accept?token=...` and `GET /v1/invitations/accept/google?...`.
 - Logout other devices: `POST /v1/auth/logout-others`.
 
-## Known portal drift (must fix before building on it)
+## Known portal drift (resolved)
 
-- **Email verification request endpoint mismatch**
-
-  - Backend: `POST /v1/auth/verify-email/request`
-  - Portal currently calls: `POST /v1/auth/request-email-verification`
-  - Fix: rename portal client method path to match backend.
-
-- **Reset password request body mismatch**
-  - Backend expects: `{ token, newPassword }`
-  - Portal currently sends: `{ token, password }`
-  - Fix: update portal type/schema + call sites to send `newPassword`.
+- **Email verification request endpoint** — ✅ RESOLVED
+  - Portal correctly calls `POST /v1/auth/verify-email/request`
+- **Reset password request body** — ✅ RESOLVED
+  - Portal correctly sends `{ token, newPassword }`
