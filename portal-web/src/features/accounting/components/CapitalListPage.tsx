@@ -250,7 +250,7 @@ export function CapitalListPage({
         <Button
           variant="primary"
           size="lg"
-          className="btn-circle shadow-lg"
+          className="btn-circle border-2 border-base-300"
           onClick={() =>
             handleOpenCreate(isInvestmentsTab ? 'investment' : 'withdrawal')
           }

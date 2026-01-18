@@ -104,15 +104,51 @@ rounded-full → pills, avatars, circular buttons
 
 ---
 
-## Shadows (No Shadows)
+## Shadows (No Shadows) - Updated 2026-01-19
 
-- Do not use shadow utilities for elevation.
-- Do not introduce “elevation” via `shadow-*` or `drop-shadow-*`.
+**Rule (Explicit):**
 
-**Known Drifts**:
+- MUST NOT: Use any shadow utilities (`shadow-*`, `drop-shadow-*`)
+- MUST: Use borders for elevation and separation
+- WHY: Maintains minimal, calm aesthetic; prevents visual clutter
 
-- Portal: AssetListPage, CapitalListPage, AdvisorPanel, DatePicker use shadows (see backlog/drifts/2026-01-18-portal-web-shadow-usage-violates-design-tokens.md)
-- Storefront: defines shadow CSS variables and uses gradients (see backlog/drifts/2026-01-18-storefront-web-uses-gradients-and-shadows.md)
+**Common Mistakes:**
+
+❌ **Wrong - Using shadows for elevation:**
+
+```tsx
+// FAB buttons
+className = "btn-circle shadow-lg";
+
+// Hover states
+className = "hover:shadow-sm";
+
+// Modals
+className = "shadow-2xl";
+```
+
+✅ **Correct - Using borders:**
+
+```tsx
+// FAB buttons
+className = "btn-circle border-2 border-base-300";
+
+// Hover states - use border color change
+className = "border border-base-300 hover:border-primary/50";
+
+// Modals
+className = "border-2 border-base-300";
+```
+
+**Affected Areas:**
+
+- All UI components requiring visual separation
+- Interactive elements (buttons, cards, panels)
+- Modal overlays and floating elements
+
+**Related Drift Reports:**
+
+- `backlog/drifts/2026-01-18-portal-web-shadow-usage-violates-design-tokens.md` - Resolved 2026-01-19
 
 ---
 

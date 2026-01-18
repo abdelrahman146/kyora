@@ -456,7 +456,7 @@ export const DatePicker = forwardRef<HTMLInputElement, DatePickerProps>(
                   aria-modal="true"
                   aria-label={label || t('date.selectDate')}
                   className={cn(
-                    'fixed z-[101] bg-base-100 shadow-2xl',
+                    'fixed z-[101] bg-base-100 border-2 border-base-300',
                     isMobile
                       ? 'inset-x-0 bottom-0 rounded-t-3xl'
                       : 'left-1/2 top-1/2 -translate-x-1/2 -translate-y-1/2 rounded-2xl',

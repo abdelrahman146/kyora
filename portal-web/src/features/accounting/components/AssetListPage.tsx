@@ -148,7 +148,7 @@ export function AssetListPage({
         <Button
           variant="primary"
           size="lg"
-          className="btn-circle shadow-lg"
+          className="btn-circle border-2 border-base-300"
           onClick={() => setIsCreateOpen(true)}
           aria-label={t('actions.add_asset')}
         >

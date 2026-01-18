@@ -113,7 +113,7 @@ export function AdvisorPanel({
             return (
               <div
                 key={index}
-                className="flex items-start gap-3 rounded-lg bg-base-100 p-3 transition-shadow hover:shadow-sm"
+                className="flex items-start gap-3 rounded-lg bg-base-100 border border-base-300 p-3 transition-colors hover:border-primary/50"
               >
                 {/* Icon with colored dot */}
                 <div className="relative shrink-0">
