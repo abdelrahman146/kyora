@@ -24,6 +24,7 @@
     "name_placeholder": "Customer name",
     "email": "Email",
     "email_placeholder": "name@example.com",
+    "email_helper": "Email is optional. Phone number is the primary identifier.",
     "country": "Country",
     "select_country": "Select country",
     "gender": "Gender",

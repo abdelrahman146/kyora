@@ -136,6 +136,7 @@ export function AdditionalDetailsInputs({
             disabled={disabled}
             autoComplete="email"
             startIcon={<Mail className="w-4 h-4 text-base-content/60" />}
+            helperText={tCustomers('form.email_helper')}
           />
 
           {/* Gender */}

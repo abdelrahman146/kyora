@@ -29,6 +29,7 @@ export function AssetQuickActions({
   onActionComplete,
 }: AssetQuickActionsProps) {
   const { t } = useTranslation('accounting')
+  const { t: tCommon } = useTranslation('common')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -113,8 +114,8 @@ export function AssetQuickActions({
         onConfirm={handleDelete}
         title={t('delete.asset_title')}
         message={t('delete.asset_message')}
-        confirmText={t('common:actions.delete')}
-        cancelText={t('common:actions.cancel')}
+        confirmText={tCommon('actions.delete')}
+        cancelText={tCommon('actions.cancel')}
         variant="error"
       />
     </>

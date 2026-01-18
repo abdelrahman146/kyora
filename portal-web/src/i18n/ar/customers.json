@@ -24,6 +24,7 @@
     "name_placeholder": "اسم العميل",
     "email": "البريد الإلكتروني",
     "email_placeholder": "name@example.com",
+    "email_helper": "البريد الإلكتروني اختياري. رقم الهاتف هو المعرف الأساسي.",
     "country": "الدولة",
     "select_country": "اختر الدولة",
     "gender": "الجنس",

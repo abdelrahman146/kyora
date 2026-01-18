@@ -34,6 +34,7 @@ export function TransactionQuickActions({
   onActionComplete,
 }: TransactionQuickActionsProps) {
   const { t } = useTranslation('accounting')
+  const { t: tCommon } = useTranslation('common')
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const [isEditOpen, setIsEditOpen] = useState(false)
   const [isDeleteOpen, setIsDeleteOpen] = useState(false)
@@ -124,8 +125,8 @@ export function TransactionQuickActions({
         onConfirm={handleDelete}
         title={t(`delete.${type}_title`)}
         message={t(`delete.${type}_message`)}
-        confirmText={t('common:actions.delete')}
-        cancelText={t('common:actions.cancel')}
+        confirmText={tCommon('actions.delete')}
+        cancelText={tCommon('actions.cancel')}
         variant="error"
       />
     </>

@@ -10,6 +10,28 @@ import { STALE_TIME, queryKeys } from '@/lib/queryKeys'
  * Business API Types and Schemas
  */
 
+/**
+ * Storefront Theme Schema (SSOT)
+ * Defines the visual theme for a business storefront
+ */
+export const StorefrontThemeSchema = z.object({
+  primaryColor: z.string(),
+  secondaryColor: z.string(),
+  accentColor: z.string(),
+  backgroundColor: z.string(),
+  textColor: z.string(),
+  fontFamily: z.string(),
+  headingFontFamily: z.string(),
+})
+
+export type StorefrontTheme = z.infer<typeof StorefrontThemeSchema>
+
+/**
+ * Business Response Schema (SSOT - Single Source of Truth)
+ *
+ * Aligned with backend BusinessResponse in backend/internal/domain/business/model_response.go
+ * All fields are required except: logo (omitempty), archivedAt (omitempty)
+ */
 export const BusinessSchema = z.object({
   id: z.string(),
   workspaceId: z.string(),
@@ -21,15 +43,7 @@ export const BusinessSchema = z.object({
   currency: z.string(),
   storefrontPublicId: z.string(),
   storefrontEnabled: z.boolean(),
-  storefrontTheme: z.object({
-    primaryColor: z.string(),
-    secondaryColor: z.string(),
-    accentColor: z.string(),
-    backgroundColor: z.string(),
-    textColor: z.string(),
-    fontFamily: z.string(),
-    headingFontFamily: z.string(),
-  }),
+  storefrontTheme: StorefrontThemeSchema,
   supportEmail: z.string(),
   phoneNumber: z.string(),
   whatsappNumber: z.string(),

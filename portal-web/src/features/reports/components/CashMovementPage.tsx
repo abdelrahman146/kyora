@@ -37,9 +37,9 @@ import { useTranslation } from 'react-i18next'
 
 import { AsOfDatePicker } from './AsOfDatePicker'
 
+import type { AdvisorInsight } from '@/components'
 import { useCashFlowQuery } from '@/api/accounting'
 import { AdvisorPanel, Button, Skeleton } from '@/components'
-import type { AdvisorInsight } from '@/components'
 import { useLanguage } from '@/hooks/useLanguage'
 import { cn } from '@/lib/utils'
 import { formatCurrency } from '@/lib/formatCurrency'
@@ -86,8 +86,8 @@ export function CashMovementPage() {
   const netFinancingCash = cashFromOwner - ownerDraws
 
   // Build insights for advisor panel
-  const advisorInsights = useMemo<AdvisorInsight[]>(() => {
-    const insights: AdvisorInsight[] = []
+  const advisorInsights = useMemo<Array<AdvisorInsight>>(() => {
+    const insights: Array<AdvisorInsight> = []
 
     if (netCashFlow >= 0) {
       insights.push({ type: 'positive', message: t('insights.cash_healthy') })

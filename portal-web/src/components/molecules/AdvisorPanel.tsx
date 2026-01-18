@@ -28,11 +28,11 @@
  * ```
  */
 import {
-  Lightbulb,
-  TrendingUp,
   AlertCircle,
   Info,
+  Lightbulb,
   Sparkles,
+  TrendingUp,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -51,7 +51,7 @@ export interface AdvisorPanelProps {
   /** Panel title */
   title: string
   /** List of insights to display */
-  insights: AdvisorInsight[]
+  insights: Array<AdvisorInsight>
   /** Additional CSS classes */
   className?: string
 }

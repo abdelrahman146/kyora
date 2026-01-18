@@ -10,7 +10,7 @@
  * - Mobile-first, RTL-compatible layout
  * - Professional financial statement appearance
  */
-import { Minus, Plus, Equal } from 'lucide-react'
+import { Equal, Minus, Plus } from 'lucide-react'
 
 import { formatCurrency } from '@/lib/formatCurrency'
 import { cn } from '@/lib/utils'

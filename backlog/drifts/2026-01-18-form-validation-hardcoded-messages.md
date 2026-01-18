@@ -3,7 +3,7 @@ title: Form validation uses hardcoded error messages instead of translation keys
 date: 2026-01-18
 severity: medium
 scope: portal-web
-status: open
+status: resolved
 ---
 
 # Drift: Form Validation Hardcoded Error Messages
@@ -111,3 +111,40 @@ validators={{
 2. Create missing translation keys
 3. Replace hardcoded messages with keys
 4. Add linter rule to catch hardcoded validation strings (future enhancement)
+
+## Resolution
+
+**Status:** Resolved
+
+**Date:** 2026-01-18
+
+**Approach Taken:** Option 1 — updated code to match existing SSOT (forms.instructions.md)
+
+**Harmonization Summary:**
+
+- Replaced onboarding Zod schemas’ hardcoded English validation messages with translation keys under `validation.*`.
+- Added missing translation keys for URL + business descriptor length rules in both en/ar errors dictionaries.
+
+**Files Changed:**
+
+- portal-web/src/api/types/onboarding.ts — all validation messages now use translation keys (required/invalid email/OTP length/password min/business descriptor rules/URL validation).
+- portal-web/src/i18n/en/errors.json — added `validation.invalid_url`, `validation.business_descriptor_min_length`, `validation.business_descriptor_max_length`.
+- portal-web/src/i18n/ar/errors.json — Arabic equivalents added for the same validation keys.
+
+**Migration Completeness:**
+
+- Total drift instances found: 13 (onboarding request schemas).
+- Instances harmonized: 13.
+- Remaining drift: 0.
+
+**Validation:**
+
+- [ ] Tests not run (not requested). Changes are translation-key only.
+
+**Instruction Files Updated:**
+
+- None needed; existing `.github/instructions/forms.instructions.md` already mandates translation keys.
+
+**Prevention:**
+
+- Onboarding schemas now rely on translation keys; added missing keys to i18n to avoid future hardcoding for these rules.

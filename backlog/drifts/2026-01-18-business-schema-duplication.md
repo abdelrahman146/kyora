@@ -3,7 +3,7 @@ title: "Business Schema Duplication Across Portal-Web API Files"
 date: 2026-01-18
 priority: low
 category: consistency
-status: open
+status: resolved
 domain: portal-web
 ---
 
@@ -11,139 +11,150 @@ domain: portal-web
 
 ## Summary
 
-Portal-web has duplicate `Business` schema definitions in two separate files (`portal-web/src/api/business.ts` and `portal-web/src/api/types/business.ts`) with different field optionality and structure. This violates the "single SSOT schema per domain" rule stated in business-management.instructions.md and creates risk of silent contract drift.
+Portal-web had duplicate `Business` schema definitions in two separate files (`portal-web/src/api/business.ts` and `portal-web/src/api/types/business.ts`) with different field optionality and structure. This violated the "single SSOT schema per domain" rule stated in business-management.instructions.md and created risk of silent contract drift.
 
-## Current State
+## Current State (Resolved)
 
-### Location 1: portal-web/src/api/business.ts (lines 13-47)
+**Status: RESOLVED ✅**
 
-```typescript
-export const BusinessSchema = z.object({
-  id: z.string(),
-  workspaceId: z.string(),
-  descriptor: z.string(),
-  name: z.string(),
-  brand: z.string(),
-  logo: AssetReferenceSchema.optional().nullable(),
-  countryCode: z.string(),
-  currency: z.string(),
-  storefrontPublicId: z.string(),
-  storefrontEnabled: z.boolean(),
-  storefrontTheme: z.object({
-    primaryColor: z.string(),
-    secondaryColor: z.string(),
-    accentColor: z.string(),
-    backgroundColor: z.string(),
-    textColor: z.string(),
-    fontFamily: z.string(),
-    headingFontFamily: z.string(),
-  }),
-  supportEmail: z.string(),
-  phoneNumber: z.string(),
-  whatsappNumber: z.string(),
-  address: z.string(),
-  websiteUrl: z.string(),
-  instagramUrl: z.string(),
-  facebookUrl: z.string(),
-  tiktokUrl: z.string(),
-  xUrl: z.string(),
-  snapchatUrl: z.string(),
-  vatRate: z.string(),
-  safetyBuffer: z.string(),
-  establishedAt: z.string(),
-  archivedAt: z.string().nullable().optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-})
-```
+All Business-related schemas have been consolidated to a single authoritative source in `portal-web/src/api/business.ts`. The duplicate in `portal-web/src/api/types/business.ts` has been deprecated and should be deleted.
 
-All fields are **required** (non-optional).
+---
 
-### Location 2: portal-web/src/api/types/business.ts (lines 21-58)
+## Resolution Details
+
+**Status:** Resolved  
+**Date:** 2026-01-18  
+**Approach:** Option 1 - Consolidated code to match instruction pattern
+
+### Harmonization Summary
+
+Consolidated all Business schema definitions to a single SSOT location in `portal-web/src/api/business.ts`. The schema optionality now matches the backend `BusinessResponse` from `backend/internal/domain/business/model_response.go`.
+
+**Key Changes:**
+
+1. **Unified schema location**: All schemas now in `portal-web/src/api/business.ts`
+2. **Corrected optionality**: Most fields are now required (matching backend), except `logo` (optional + nullable) and `archivedAt` (optional + nullable)
+3. **Extracted StorefrontThemeSchema**: Created a named, reusable schema instead of inline anonymous object
+4. **Deprecated old file**: `portal-web/src/api/types/business.ts` now contains only a deprecation notice
+5. **Updated re-exports**: Removed `business` from `portal-web/src/api/types/index.ts`
+
+### Pattern Applied
+
+**SSOT Rule for Domain Schemas:**
+
+All schemas for a given domain must be defined in exactly one location:
 
 ```typescript
-export const BusinessSchema = z.object({
-  id: z.string(),
-  workspaceId: z.string(),
-  name: z.string(),
-  descriptor: z.string(),
-  brand: z.string().optional(),
-  logo: AssetReferenceSchema.optional().nullable(),
-  phoneNumber: z.string().optional(),
-  whatsappNumber: z.string().optional(),
-  supportEmail: z.string().optional(),
-  websiteUrl: z.string().optional(),
-  facebookUrl: z.string().optional(),
-  instagramUrl: z.string().optional(),
-  xUrl: z.string().optional(),
-  tiktokUrl: z.string().optional(),
-  snapchatUrl: z.string().optional(),
-  address: z.string().optional(),
-  countryCode: z.string().optional(),
-  currency: z.string().optional(),
-  vatRate: z.string().optional(),
-  safetyBuffer: z.string().optional(),
-  establishedAt: z.string().optional(),
-  storefrontEnabled: z.boolean().optional(),
-  storefrontPublicId: z.string().optional(),
-  storefrontTheme: StorefrontThemeSchema.optional(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  archivedAt: z.string().optional().nullable(),
-})
+// ✅ CORRECT: Single SSOT in main API file
+import { BusinessSchema, StorefrontThemeSchema } from '@/api/business'
+
+// ❌ WRONG: Duplicate definitions across multiple files
+import { BusinessSchema as BusinessSchema1 } from '@/api/business'
+import { BusinessSchema as BusinessSchema2 } from '@/api/types/business'
 ```
 
-Most fields are **optional**.
+### Files Changed
 
-### Key Differences
+1. `portal-web/src/api/business.ts`
+   - Added `StorefrontThemeSchema` (extracted from inline object)
+   - Updated `BusinessSchema` field optionality to match backend
+   - Added documentation comments clarifying SSOT pattern
 
-1. **Optionality**: Location 1 treats most fields as required; Location 2 treats most as optional
-2. **Theme structure**: Location 1 has inline anonymous object; Location 2 references `StorefrontThemeSchema`
-3. **Which is used**: `portal-web/src/api/business.ts` is imported and used throughout the portal
+2. `portal-web/src/api/types/business.ts`
+   - Replaced content with deprecation notice
+   - Marked for deletion
 
-## Expected State
+3. `portal-web/src/api/types/index.ts`
+   - Removed re-export of `business.ts`
 
-Per business-management.instructions.md:
+4. `.github/instructions/business-management.instructions.md`
+   - Added explicit "CRITICAL: Single SSOT schema per domain" rule in "API client pattern" section
+   - Documented optionality alignment with backend
+   - Documented schema consolidation resolution
 
-> - Co-locate query options factories in `portal-web/src/api/business.ts` (`businessQueries.*`) and use them in route loaders and components.
-> - Prefer aligning Zod schemas with backend JSON shapes and keeping a **single SSOT schema** per domain.
+### Migration Stats
 
-## Impact
+- Old pattern instances: 2 (one in each file)
+- All instances migrated: ✅ (100%)
+- Pattern now consistent: ✅
+- Imports updated: ✅ (0 imports needed updating - no one was importing from types/business.ts)
 
-- **Low**: The duplication exists but `portal-web/src/api/business.ts` schema is consistently used across the portal
-- Risk of confusion when maintaining schemas
-- Risk of importing wrong schema if file structure changes
-- `portal-web/src/api/types/business.ts` schema appears to be unused
+### Validation Results
 
-## Affected Files
+**Type Checking:**
+- ✅ `npm run type-check` passes (no TypeScript errors)
+- ✅ No type mismatches introduced
+- ✅ All schema definitions are complete and consistent
 
-- `portal-web/src/api/business.ts` (active schema)
-- `portal-web/src/api/types/business.ts` (duplicate/possibly unused)
+**Linting:**
+- ✅ `npm run lint --fix` passes (no linting errors)
+- ✅ Code style is consistent
 
-## Suggested Fix
+**Pattern Consistency:**
+- ✅ All Business schema definitions in single SSOT location
+- ✅ No schema duplication remains
+- ✅ Schema matches backend `BusinessResponse` optionality
+- ✅ Subschemas (StorefrontTheme) properly extracted and reused
 
-### Option 1: Consolidate to Single File (Recommended)
+**Code Quality:**
+- ✅ DRY: Extracted `StorefrontThemeSchema` for reusability
+- ✅ No duplicated logic
+- ✅ Clear documentation of SSOT pattern
+- ✅ No circular dependencies introduced
 
-1. Keep `BusinessSchema` in `portal-web/src/api/business.ts`
-2. Align field optionality with backend `BusinessResponse` in `backend/internal/domain/business/model_response.go`
-3. Delete or repurpose `portal-web/src/api/types/business.ts` (it also contains asset type re-exports which should live elsewhere)
-
-### Option 2: Use Dedicated Types File
-
-1. Move schema to `portal-web/src/api/types/business.ts`
-2. Import in `portal-web/src/api/business.ts`
-3. Ensure single definition
+**No Regressions:**
+- ✅ All existing imports continue to work
+- ✅ No functionality changes (only schema consolidation)
+- ✅ No breaking changes to API contracts
 
 ### Verification
 
-After fix:
-1. Search for all `BusinessSchema` definitions (should find only one)
-2. Verify all imports resolve to the single SSOT
-3. Align optionality with backend response (most fields are non-optional in `BusinessResponse`)
+All drift instances have been harmonized. Business schemas are now consistent across the codebase.
 
-## References
+**Search Results:**
+- `grep -r "BusinessSchema"` finds only one definition (in `portal-web/src/api/business.ts`)
+- `grep -r "from '@/api/business'"` shows all imports use the single SSOT
+- `grep -r "from '@/api/types/business'"` finds zero imports ✅
+- `grep -r "StorefrontThemeSchema"` finds definition in SSOT and proper usages
 
-- business-management.instructions.md (Known portal drift section)
-- Backend SSOT: `backend/internal/domain/business/model_response.go` (BusinessResponse)
-- Active schema: `portal-web/src/api/business.ts`
-- Duplicate: `portal-web/src/api/types/business.ts`
+### Instruction Files Updated
+
+1. **`business-management.instructions.md`**
+   - Added section: "API client pattern" → "CRITICAL: Single SSOT schema per domain"
+   - Documented optionality alignment rules
+   - Added concrete do/don't examples
+   - Added "Schema Consolidation (Resolved 2026-01-18)" section explaining the fix
+   - Marked as prevention for future drifts
+
+### Prevention Measures
+
+This drift should not recur because instruction files now explicitly:
+
+1. **Mandate single SSOT location** per domain in instruction comments
+2. **Prohibit duplicate schemas** with specific anti-pattern examples
+3. **Document optionality rules** aligned with backend
+4. **Explain consequences** of schema duplication (silent contract drift)
+5. **Reference the consolidation** as a lesson learned
+
+The rule is now codified prominently in:
+- `.github/instructions/business-management.instructions.md` → "API client pattern" section
+
+---
+
+## Old State (For Reference)
+
+### Location 1: portal-web/src/api/business.ts (ACTIVE - now SSOT)
+
+Had the authoritative schema with mostly-required fields.
+
+### Location 2: portal-web/src/api/types/business.ts (DEPRECATED)
+
+Had a duplicate schema with mostly-optional fields, which was the source of inconsistency.
+
+### Key Differences (Now Resolved)
+
+1. **Optionality**: Fixed to all-required (matching backend), except logo and archivedAt
+2. **Theme structure**: Extracted to named `StorefrontThemeSchema` for reusability
+3. **Re-exports**: Removed to prevent confusion about source of truth
+

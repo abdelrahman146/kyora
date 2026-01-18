@@ -1,7 +1,6 @@
 export * from './accounting'
 export * from './analytics'
 export * from './auth'
-export * from './business'
 export * from './common'
 export * from './metadata'
 export * from './onboarding'

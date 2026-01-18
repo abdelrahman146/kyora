@@ -79,8 +79,11 @@ export type Plan = z.infer<typeof PlanSchema>
 // Start Session - POST /v1/onboarding/start
 
 export const StartSessionRequestSchema = z.object({
-  email: z.string().email({ message: 'Invalid email address' }),
-  planDescriptor: z.string().min(1, 'Plan is required'),
+  email: z
+    .string()
+    .email({ message: 'validation.invalid_email' })
+    .min(1, 'validation.required'),
+  planDescriptor: z.string().min(1, 'validation.required'),
 })
 
 export type StartSessionRequest = z.infer<typeof StartSessionRequestSchema>
@@ -121,7 +124,7 @@ export type GetSessionResponse = z.infer<typeof GetSessionResponseSchema>
 // Send OTP - POST /v1/onboarding/email/otp
 
 export const SendOTPRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
+  sessionToken: z.string().min(1, 'validation.required'),
 })
 
 export type SendOTPRequest = z.infer<typeof SendOTPRequestSchema>
@@ -135,11 +138,11 @@ export type SendOTPResponse = z.infer<typeof SendOTPResponseSchema>
 // Verify Email - POST /v1/onboarding/email/verify
 
 export const VerifyOTPRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
-  code: z.string().length(6, 'OTP must be 6 digits'),
-  firstName: z.string().min(1, 'First name is required'),
-  lastName: z.string().min(1, 'Last name is required'),
-  password: z.string().min(8, 'Password must be at least 8 characters'),
+  sessionToken: z.string().min(1, 'validation.required'),
+  code: z.string().length(6, 'validation.otp_length'),
+  firstName: z.string().min(1, 'validation.required'),
+  lastName: z.string().min(1, 'validation.required'),
+  password: z.string().min(8, 'validation.password_min_length'),
 })
 
 export type VerifyOTPRequest = z.infer<typeof VerifyOTPRequestSchema>
@@ -153,8 +156,8 @@ export type VerifyOTPResponse = z.infer<typeof VerifyOTPResponseSchema>
 // OAuth Google - POST /v1/onboarding/oauth/google
 
 export const OAuthGoogleRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
-  code: z.string().min(1, 'OAuth code is required'),
+  sessionToken: z.string().min(1, 'validation.required'),
+  code: z.string().min(1, 'validation.required'),
 })
 
 export type OAuthGoogleRequest = z.infer<typeof OAuthGoogleRequestSchema>
@@ -168,18 +171,15 @@ export type OAuthGoogleResponse = z.infer<typeof OAuthGoogleResponseSchema>
 // Set Business - POST /v1/onboarding/business
 
 export const SetBusinessRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
-  businessName: z.string().min(1, 'Business name is required'),
+  sessionToken: z.string().min(1, 'validation.required'),
+  businessName: z.string().min(1, 'validation.required'),
   businessDescriptor: z
     .string()
-    .min(3, 'Business descriptor must be at least 3 characters')
-    .max(20, 'Business descriptor must be at most 20 characters')
-    .regex(
-      /^[a-z0-9-]+$/,
-      'Business descriptor can only contain lowercase letters, numbers, and hyphens',
-    ),
-  country: z.string().min(1, 'Country is required'),
-  currency: z.string().min(1, 'Currency is required'),
+    .min(3, 'validation.business_descriptor_min_length')
+    .max(20, 'validation.business_descriptor_max_length')
+    .regex(/^[a-z0-9-]+$/, 'validation.business_descriptor_format'),
+  country: z.string().min(1, 'validation.country_required'),
+  currency: z.string().min(1, 'validation.required'),
 })
 
 export type SetBusinessRequest = z.infer<typeof SetBusinessRequestSchema>
@@ -193,9 +193,9 @@ export type SetBusinessResponse = z.infer<typeof SetBusinessResponseSchema>
 // Payment Start - POST /v1/onboarding/payment/start
 
 export const PaymentStartRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
-  successUrl: z.string().url(),
-  cancelUrl: z.string().url(),
+  sessionToken: z.string().min(1, 'validation.required'),
+  successUrl: z.string().url('validation.invalid_url'),
+  cancelUrl: z.string().url('validation.invalid_url'),
 })
 
 export type PaymentStartRequest = z.infer<typeof PaymentStartRequestSchema>
@@ -209,7 +209,7 @@ export type PaymentStartResponse = z.infer<typeof PaymentStartResponseSchema>
 // Complete Onboarding - POST /v1/onboarding/complete
 
 export const CompleteOnboardingRequestSchema = z.object({
-  sessionToken: z.string().min(1, 'Session token is required'),
+  sessionToken: z.string().min(1, 'validation.required'),
 })
 
 export type CompleteOnboardingRequest = z.infer<
