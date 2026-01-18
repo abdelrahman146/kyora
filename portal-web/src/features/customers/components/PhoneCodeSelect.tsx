@@ -3,6 +3,7 @@ import { useTranslation } from 'react-i18next'
 import type { FormSelectOption } from '@/components/form/FormSelect'
 import { useCountriesQuery } from '@/api/metadata'
 import { FormSelect } from '@/components/form/FormSelect'
+import { useLanguage } from '@/hooks/useLanguage'
 
 export interface PhoneCodeSelectProps {
   value: string
@@ -30,11 +31,10 @@ export function PhoneCodeSelect({
   placeholder,
   searchable = true,
 }: PhoneCodeSelectProps) {
-  const { i18n } = useTranslation()
   const { t: tCustomers } = useTranslation('customers')
   const { data: countries = [], isSuccess } = useCountriesQuery()
 
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const { isArabic } = useLanguage()
   const countriesReady = isSuccess && countries.length > 0
 
   const phoneCodeOptions: Array<FormSelectOption> = useMemo(() => {

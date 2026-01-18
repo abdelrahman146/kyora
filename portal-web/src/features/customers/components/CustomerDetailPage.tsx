@@ -25,6 +25,7 @@ import type { QueryClient } from '@tanstack/react-query'
 import type { CreateAddressRequest, UpdateAddressRequest } from '@/api/address'
 import type { CustomerAddress, CustomerGender } from '@/api/customer'
 import type { Order } from '@/api/order'
+import { useLanguage } from '@/hooks/useLanguage'
 import {
   addressQueries,
   useAddressesQuery,
@@ -72,13 +73,12 @@ export async function customerDetailLoader({
 }
 
 export function CustomerDetailPage() {
-  const { i18n } = useTranslation()
   const { t: tCommon } = useTranslation('common')
   const { t: tCustomers } = useTranslation('customers')
   const { t: tDashboard } = useTranslation('dashboard')
   const { t: tErrors } = useTranslation('errors')
   const { t: tOrders } = useTranslation('orders')
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const { isArabic } = useLanguage()
 
   const { businessDescriptor, customerId } = useParams({
     from: '/business/$businessDescriptor/customers/$customerId',

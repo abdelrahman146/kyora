@@ -8,11 +8,12 @@ import type { CountryMetadata } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { useSetBusinessMutation } from '@/api/onboarding'
 import { useKyoraForm } from '@/lib/form'
+import { useLanguage } from '@/hooks/useLanguage'
 
 import { OnboardingLayout } from '@/features/onboarding/components/OnboardingLayout'
 
 export function BusinessSetupPage() {
-  const { t: tOnboarding, i18n } = useTranslation('onboarding')
+  const { t: tOnboarding } = useTranslation('onboarding')
   const { t: tCommon } = useTranslation('common')
   const { t: tErrors } = useTranslation('errors')
   const navigate = useNavigate()
@@ -26,8 +27,7 @@ export function BusinessSetupPage() {
     isError: isCountriesError,
   } = useCountriesQuery()
 
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
-  const language = isArabic ? 'ar' : 'en'
+  const { isArabic, language } = useLanguage()
 
   const sortedCountries = useMemo(() => {
     return [...countries].sort((a, b) => {

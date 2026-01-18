@@ -442,7 +442,7 @@ The current language and text direction are set on `document.documentElement` at
 2. **Language change** — `i18n.on('languageChanged')` listener updates both attributes
 3. **`useLanguage` hook** — `portal-web/src/hooks/useLanguage.ts` updates both when `changeLanguage()` is called
 
-**Rule: Always read from `document.documentElement`, never duplicate the logic**
+**Rule: Always read from `document.documentElement` or use `useLanguage` hook**
 
 ✅ **Correct: Read from document**
 
@@ -451,24 +451,51 @@ const isRTL = document.documentElement.dir === "rtl";
 const currentLang = document.documentElement.lang;
 ```
 
-✅ **Correct: Use `useLanguage` hook**
+✅ **Correct: Use `useLanguage` hook (PREFERRED)**
 
 ```tsx
 const { isRTL, language, isArabic } = useLanguage();
 ```
 
-❌ **Wrong: Check i18n.language directly with .startsWith()**
+❌ **Wrong: Check i18n.language directly with .startsWith() (CRITICAL ANTI-PATTERN)**
 
 ```tsx
-// Found in 5 places (drift - should use useLanguage hook)
+// NEVER do this - duplicates language detection logic
+const { i18n } = useTranslation();
 const isArabic = i18n.language.toLowerCase().startsWith("ar");
 ```
 
-**Known drift:**
+**Why this is wrong:**
 
-- Several components check `i18n.language.toLowerCase().startsWith('ar')` instead of using `useLanguage` hook
-- Files: `BusinessSetupPage.tsx`, `AddressCard.tsx`, `CustomerDetailPage.tsx`, `PhoneCodeSelect.tsx`, `CountrySelect.tsx`
-- This is redundant and should be refactored to use `useLanguage` hook
+- Duplicates language detection logic across components
+- Harder to maintain (changes require updating multiple files)
+- Violates single source of truth principle
+- `useLanguage` already provides this functionality
+
+**Pattern to follow when refactoring:**
+
+```tsx
+// Before (WRONG)
+import { useTranslation } from "react-i18next";
+
+export function MyComponent() {
+  const { i18n } = useTranslation();
+  const isArabic = i18n.language.toLowerCase().startsWith("ar");
+  const countryName = isArabic ? country.nameAr : country.name;
+  // ...
+}
+
+// After (CORRECT)
+import { useTranslation } from "react-i18next";
+import { useLanguage } from "@/hooks/useLanguage";
+
+export function MyComponent() {
+  const { t } = useTranslation("namespace"); // namespace-specific translation
+  const { isArabic } = useLanguage(); // centralized language state
+  const countryName = isArabic ? country.nameAr : country.name;
+  // ...
+}
+```
 
 ### 5.3 The `useLanguage` hook (preferred way to access language)
 
@@ -524,13 +551,15 @@ toggleLanguage(); // Switch between en/ar
 
 **Do:**
 
-- Use `useLanguage` hook in components
-- Read `document.documentElement.dir` for one-off checks
-- Use CSS logical properties when possible (`margin-inline-start`, `padding-inline-end`)
+- ✅ Use `useLanguage` hook in components (PREFERRED)
+- ✅ Read `document.documentElement.dir` for one-off checks (rare cases)
+- ✅ Use CSS logical properties when possible (`margin-inline-start`, `padding-inline-end`)
 
 **Don't:**
 
-- Check `i18n.language` directly with `.startsWith()` or `.toLowerCase()`
+- ❌ Check `i18n.language` directly with `.startsWith()` or `.toLowerCase()` (duplicates logic)
+- ❌ Destructure `i18n` from `useTranslation()` just to check language (use `useLanguage` instead)
+- ❌ Create computed language variables like `const language = isArabic ? 'ar' : 'en'` when `useLanguage` already provides this
 - Duplicate language detection logic across components
 - Set `document.documentElement.lang` or `.dir` outside of i18n init or `useLanguage`
 - Create multiple ways to determine language or direction

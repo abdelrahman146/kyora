@@ -16,6 +16,7 @@ import { useTranslation } from 'react-i18next'
 
 import type { CustomerAddress } from '@/api/customer'
 import { useCountriesQuery } from '@/api/metadata'
+import { useLanguage } from '@/hooks/useLanguage'
 
 interface AddressCardProps {
   address: CustomerAddress
@@ -30,11 +31,10 @@ export function AddressCard({
   onDelete,
   isDeleting,
 }: AddressCardProps) {
-  const { i18n } = useTranslation()
   const { t: tCommon } = useTranslation('common')
   const { t: tCustomers } = useTranslation('customers')
   const { data: countries = [] } = useCountriesQuery()
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const { isArabic } = useLanguage()
 
   const getCountryInfo = (countryCode: string) => {
     const country = countries.find((c) => c.code === countryCode)

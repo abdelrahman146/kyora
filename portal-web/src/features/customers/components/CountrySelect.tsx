@@ -4,6 +4,7 @@ import type { FormSelectOption } from '@/components/form/FormSelect'
 import type { CountryMetadata } from '@/api/types/metadata'
 import { useCountriesQuery } from '@/api/metadata'
 import { FormSelect } from '@/components/form/FormSelect'
+import { useLanguage } from '@/hooks/useLanguage'
 
 export interface CountrySelectProps {
   value: string
@@ -33,11 +34,10 @@ export function CountrySelect({
   searchable = true,
   availableCountries,
 }: CountrySelectProps) {
-  const { i18n } = useTranslation()
   const { t: tCustomers } = useTranslation('customers')
   const { data: countries = [], isSuccess } = useCountriesQuery()
 
-  const isArabic = i18n.language.toLowerCase().startsWith('ar')
+  const { isArabic } = useLanguage()
   const countriesReady = isSuccess && countries.length > 0
 
   const countryOptions: Array<FormSelectOption> = useMemo(() => {
