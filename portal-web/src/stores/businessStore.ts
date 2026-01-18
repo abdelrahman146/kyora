@@ -182,17 +182,5 @@ export function getSelectedBusiness(): Business | null {
   )
 }
 
-/**
- * Initialize TanStack Store Devtools (dev-only)
- *
- * Conditionally loads devtools in development mode only.
- * Production builds will exclude this code via tree-shaking.
- */
-if (import.meta.env.DEV) {
-  console.log(
-    '[businessStore] TanStack Store devtools enabled in development mode',
-  )
-}
-
 // Re-export Business type for convenience
 export type { Business } from '@/api/business'

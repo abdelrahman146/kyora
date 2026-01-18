@@ -8,6 +8,7 @@ import (
 	"log"
 	"os"
 	"path/filepath"
+	"strings"
 
 	"github.com/spf13/viper"
 )
@@ -146,6 +147,14 @@ func Configure() {
 		}
 	}
 
+	// Environment variable overrides
+	//
+	// Kyora config keys are dot-separated (e.g., "http.port"). Typical shells
+	// can't export variables containing '.', so we support overrides like:
+	//   KYORA_HTTP_PORT=8080
+	//   KYORA_DATABASE_DSN=postgres://...
+	viper.SetEnvPrefix("KYORA")
+	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 }
 

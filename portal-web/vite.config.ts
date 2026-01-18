@@ -20,6 +20,18 @@ const config = defineConfig({
     // React plugin
     viteReact(),
   ],
+  server: {
+    // Allow opening portal-web from other devices on the same network.
+    host: true,
+    port: Number(process.env.VITE_DEV_PORT ?? 3000),
+    strictPort: true,
+    // When accessing the dev server from a phone, the HMR websocket host
+    // must be reachable from the client. Vite usually infers this correctly
+    // from the page origin; this env knob allows forcing it when needed.
+    hmr: process.env.VITE_DEV_HOST
+      ? { host: process.env.VITE_DEV_HOST }
+      : undefined,
+  },
   build: {
     rollupOptions: {
       // Exclude TanStack Store devtools from production bundle

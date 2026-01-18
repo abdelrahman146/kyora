@@ -2,9 +2,57 @@ import ky from 'ky'
 import { parseProblemDetails } from '@/lib/errorParser'
 import { deleteCookie, getCookie, setCookie } from '@/lib/cookies'
 
-const API_BASE_URL: string =
-  (import.meta.env.VITE_API_BASE_URL as string | undefined) ??
-  'http://localhost:8080'
+function getDefaultApiBaseUrl(): string {
+  // In dev, we often open the portal via LAN IP from a phone.
+  // If no explicit base URL is provided, default to the same host
+  // the portal is being served from (but on the backend port).
+  try {
+    if (typeof window !== 'undefined') {
+      const protocol = window.location.protocol || 'http:'
+      const host = window.location.hostname || 'localhost'
+      return `${protocol}//${host}:8080`
+    }
+  } catch {
+    // ignore
+  }
+
+  return 'http://localhost:8080'
+}
+
+const API_BASE_URL: string = (() => {
+  const env = import.meta.env.VITE_API_BASE_URL as string | undefined
+  if (env && env.trim().length > 0) {
+    return env
+  }
+  return getDefaultApiBaseUrl()
+})()
+
+function createRequestId(): string {
+  try {
+    const cryptoObj = globalThis.crypto as
+      | {
+          randomUUID?: () => string
+          getRandomValues?: (arr: Uint8Array) => void
+        }
+      | undefined
+
+    if (cryptoObj?.randomUUID) {
+      return cryptoObj.randomUUID()
+    }
+
+    if (cryptoObj?.getRandomValues) {
+      const bytes = new Uint8Array(16)
+      cryptoObj.getRandomValues(bytes)
+      return Array.from(bytes)
+        .map((b) => b.toString(16).padStart(2, '0'))
+        .join('')
+    }
+  } catch {
+    // ignore
+  }
+
+  return `${Date.now().toString(16)}-${Math.random().toString(16).slice(2)}`
+}
 
 const REFRESH_TOKEN_COOKIE_NAME = 'kyora_refresh_token'
 
@@ -92,7 +140,7 @@ export const apiClient = ky.create({
 
         // Add request ID for tracing (optional but useful for debugging)
         if (!request.headers.has('X-Request-ID')) {
-          request.headers.set('X-Request-ID', crypto.randomUUID())
+          request.headers.set('X-Request-ID', createRequestId())
         }
       },
     ],

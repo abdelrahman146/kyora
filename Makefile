@@ -1,8 +1,32 @@
+# Development helpers
+.PHONY: dev.ip
+dev.ip:
+	@IFACE=$$(route -n get default 2>/dev/null | awk '/interface:/{print $$2}' | head -n 1); \
+	if [ -z "$$IFACE" ]; then IFACE=en0; fi; \
+	IP=$$(ipconfig getifaddr $$IFACE 2>/dev/null || ipconfig getifaddr en0 2>/dev/null || ipconfig getifaddr en1 2>/dev/null); \
+	if [ -z "$$IP" ]; then echo "Could not determine LAN IP"; exit 1; fi; \
+	echo $$IP
+
 # Backend Development
 .PHONY: dev.server
 dev.server:
-	@echo "Starting backend development server..."
+	@echo "Starting backend development server"
 	@cd backend && rm -rf tmp && air server
+
+# Portal-web Development
+.PHONY: dev.portal
+dev.portal:
+	@echo "Starting portal development server"
+	@LAN_IP=$$($(MAKE) -s dev.ip) || true; \
+	if [ -n "$$LAN_IP" ]; then echo "Portal URL (LAN): http://$$LAN_IP:$${PORTAL_PORT:-3000}"; fi
+	@cd portal-web && \
+	VITE_DISABLE_TANSTACK_DEVTOOLS=$${VITE_DISABLE_TANSTACK_DEVTOOLS:-$${DISABLE_DEVTOOLS:-}} \
+	npm run dev
+
+.PHONY: dev
+dev:
+	@echo "Starting backend + portal"
+	@$(MAKE) -j2 dev.server dev.portal
 
 # Backend OpenAPI
 .PHONY: openapi
@@ -91,7 +115,14 @@ help:
 	@echo "Kyora Monorepo - Available targets:"
 	@echo ""
 	@echo "Backend Development:"
-	@echo "  dev.server           - Run backend development server with live reload"
+	@echo "  dev.server           - Run backend development server with live reload (local)"
+	@echo ""
+	@echo "Portal Web Development:"
+	@echo "  dev.portal           - Run portal dev server (works on localhost or LAN IP)"
+	@echo "    DISABLE_DEVTOOLS=1 make dev.portal    - Disable TanStack devtools UI"
+	@echo ""
+	@echo "Helpers:"
+	@echo "  dev.ip               - Print your current LAN IP"
 	@echo ""
 	@echo "Backend OpenAPI:"
 	@echo "  openapi              - Generate backend OpenAPI docs (Swaggo)"

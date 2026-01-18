@@ -10,6 +10,15 @@ import { initializeAuth } from '@/stores/authStore'
 export function RootLayout() {
   const { isRTL } = useLanguage()
 
+  const disableDevtoolsRaw = import.meta.env.VITE_DISABLE_TANSTACK_DEVTOOLS as
+    | string
+    | undefined
+  const disableDevtools =
+    disableDevtoolsRaw === '1' ||
+    disableDevtoolsRaw === 'true' ||
+    disableDevtoolsRaw === 'TRUE'
+  const showDevtools = import.meta.env.DEV && !disableDevtools
+
   // Restore session on mount
   useEffect(() => {
     void initializeAuth()
@@ -80,7 +89,7 @@ export function RootLayout() {
       <Outlet />
 
       {/* Development Tools */}
-      {import.meta.env.DEV && (
+      {showDevtools && (
         <>
           <TanStackRouterDevtools />
           <ReactQueryDevtools />

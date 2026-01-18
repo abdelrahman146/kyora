@@ -155,16 +155,3 @@ export async function logoutAll(): Promise<void> {
     clearAuth()
   }
 }
-
-/**
- * Initialize TanStack Store Devtools (dev-only)
- *
- * Conditionally loads devtools in development mode only.
- * Production builds will exclude this code via tree-shaking.
- */
-if (import.meta.env.DEV) {
-  // Note: TanStack Store has built-in devtools support via @tanstack/react-store
-  // The devtools are automatically enabled in development mode.
-  // No need for a separate devtools package.
-  console.log('[authStore] TanStack Store devtools enabled in development mode')
-}
