@@ -4,7 +4,7 @@ description: "Kyora solution architect agent. Converts a BRD (or raw business re
 target: vscode
 argument-hint: "Provide a BRD path (preferred) and a UI/UX spec if exist path under /brds. I will ask clarifying questions, inspect the repo, and produce a step-based engineering plan that satisfies the BRD and (if provided) the UX spec."
 infer: false
-model: Gemini 3 Pro (Preview) (copilot)
+model: Claude Sonnet 4.5 (copilot)
 tools: ["vscode", "read", "search", "edit", "todo", "agent"]
 handoffs:
   - label: Implement Feature

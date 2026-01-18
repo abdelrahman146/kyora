@@ -4,7 +4,7 @@ description: "Maintains Kyora’s Copilot AI infrastructure (.github agents, pro
 target: vscode
 argument-hint: "Improve/create Copilot agents, instructions, prompts, or skills under .github/. Mention the target file(s) and desired behavior."
 infer: false
-model: Gemini 3 Pro (Preview) (copilot)
+model: Claude Sonnet 4.5 (copilot)
 tools: ["vscode", "read", "edit", "search", "web", "agent", "todo"]
 ---
 
@@ -155,22 +155,18 @@ If bundling resources, prefer:
 ## Operating Rules (Non-Negotiable)
 
 1. **Start from Kyora SSOT**
-
    - Treat `.github/copilot-instructions.md` as the orchestration SSOT.
    - For backend/frontend specifics, defer to the existing instruction files in `.github/instructions/`.
 
 2. **Never invent conventions**
-
    - Only codify patterns you can point to in the repository.
    - If code is inconsistent, prefer: “follow existing patterns in folder X” and propose a small consolidation plan.
 
 3. **Avoid instruction conflicts**
-
    - Prefer folder-specific `applyTo` rules over bloating the repo-wide file.
    - Do not create overlapping instructions that contradict each other.
 
 4. **Tool discipline**
-
    - Keep tools minimal and scoped. Don’t add broader tools “just in case”.
    - If a workflow would require running scripts/terminal commands, require explicit user confirmation.
 

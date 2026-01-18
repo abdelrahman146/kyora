@@ -2,7 +2,7 @@
 name: Feature Builder
 description: "Full-stack feature implementation agent. Builds complete Kyora features from backend (Go/GORM) to frontend (React/TanStack), ensuring consistency, multi-tenancy, and E2E test coverage."
 target: vscode
-model: Gemini 3 Pro (Preview) (copilot)
+model: Claude Sonnet 4.5 (copilot)
 tools:
   [
     "vscode",
@@ -297,13 +297,11 @@ When the prompt is a bug report or regression:
 ### Phase 1: Planning (10% of time)
 
 1. **Understand Requirements**
-
    - Read user story / feature request
    - Ask clarifying questions
    - Identify similar existing features
 
 2. **Create Implementation Plan**
-
    - Break down into backend + frontend tasks
    - List all models, endpoints, forms, views
    - Identify multi-tenancy requirements
@@ -316,13 +314,11 @@ When the prompt is a bug report or regression:
 ### Phase 2: Backend (40% of time)
 
 1. **Invoke Backend Specialist**
-
    - Use `runSubagent` with clear context
    - Provide business logic requirements
    - Specify API contract (endpoints, DTOs)
 
 2. **Review Backend Output**
-
    - Verify multi-tenancy scoping
    - Check error handling
    - Ensure E2E tests exist
@@ -334,13 +330,11 @@ When the prompt is a bug report or regression:
 ### Phase 3: Frontend (40% of time)
 
 1. **Invoke Portal-Web Specialist**
-
    - Use `runSubagent` with API contracts
    - Provide UX requirements
    - Specify route structure
 
 2. **Review Frontend Output**
-
    - Verify mobile-first layout
    - Check RTL compatibility
    - Ensure i18n completeness
@@ -353,13 +347,11 @@ When the prompt is a bug report or regression:
 ### Phase 4: Integration (10% of time)
 
 1. **End-to-End Verification**
-
    - Run full stack (backend + frontend)
    - Test complete workflows
    - Verify error handling
 
 2. **Documentation**
-
    - Update API docs (Swagger)
    - Document UX patterns (if new)
    - Update feature README (if exists)
