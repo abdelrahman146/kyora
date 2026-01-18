@@ -59,18 +59,6 @@ export function CompleteOnboardingPage() {
                   {tOnboarding('complete.redirecting')}
                 </p>
               </>
-            ) : completeMutation.isError ? (
-              <>
-                <div className="alert alert-error mb-4">
-                  <span>{completeMutation.error.message}</span>
-                </div>
-                <button
-                  onClick={() => completeMutation.reset()}
-                  className="btn btn-primary"
-                >
-                  {tOnboarding('complete.retry')}
-                </button>
-              </>
             ) : null}
           </div>
         </div>

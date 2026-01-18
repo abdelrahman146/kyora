@@ -347,6 +347,44 @@ const query = useQuery({
 - Always translate errors before displaying (`translateErrorAsync`)
 - Never show raw `error.message` or backend `detail` without translation
 
+### 2.6 Anti-Patterns (DO NOT DO)
+
+❌ **WRONG:** Manually displaying `mutation.error.message` in JSX
+
+```tsx
+// This bypasses global handler, shows untranslated error, creates inconsistent UX
+{
+  mutation.isError && (
+    <div className="alert alert-error">
+      <span>{mutation.error.message}</span>
+    </div>
+  );
+}
+```
+
+✅ **CORRECT:** Rely on global error handler (no manual display)
+
+```tsx
+// Global MutationCache.onError will automatically show translated error as toast
+const mutation = useMutation({
+  mutationFn: (data) => api.update(data),
+  // No onError handler needed - global handler takes care of it
+});
+```
+
+✅ **CORRECT (if truly custom UX needed):** Opt out with meta flag and translate
+
+```tsx
+const mutation = useMutation({
+  mutationFn: (data) => api.update(data),
+  meta: { errorToast: "off" }, // Opt out of global toast
+  onError: async (error) => {
+    const translated = await translateErrorAsync(error, t);
+    setInlineError(translated); // Show inline if UX requires it
+  },
+});
+```
+
 ---
 
 ## 3) Known drift / gaps (log to DRIFT_TODO.md when touching)
@@ -355,6 +393,5 @@ These are current backend↔portal misalignments that affect error UX:
 
 - Portal includes `parseValidationErrors()` expecting `extensions.errors | validationErrors | fieldErrors`, but backend does not emit a full field→message map today.
 - Backend maps Gin struct validation errors to a generic `400 invalid request body` (code: `request.invalid_body`) without exposing which fields failed.
-- **Onboarding components bypass global error handler:** Several onboarding pages manually display `mutation.error.message` instead of relying on the global QueryCache/MutationCache error handlers (see drift report: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`).
 
 If you change either side, keep this document updated and log new drift in `DRIFT_TODO.md`.

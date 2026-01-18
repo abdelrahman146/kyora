@@ -123,13 +123,6 @@ export function PaymentPage() {
                     </>
                   )}
                 </button>
-
-                {startPaymentMutation.isError && (
-                  <div className="alert alert-error mt-4">
-                    <AlertCircle className="w-5 h-5" />
-                    <span>{startPaymentMutation.error.message}</span>
-                  </div>
-                )}
               </div>
             </div>
           )}
@@ -191,13 +184,6 @@ export function PaymentPage() {
                   </>
                 )}
               </button>
-
-              {startPaymentMutation.isError && (
-                <div className="alert alert-error mt-4">
-                  <AlertCircle className="w-5 h-5" />
-                  <span>{startPaymentMutation.error.message}</span>
-                </div>
-              )}
             </div>
           </div>
         )}

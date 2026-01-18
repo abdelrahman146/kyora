@@ -57,7 +57,7 @@ export function EmailEntryPage() {
     }
   }
 
-  const displayedError = oauthError ?? startSessionMutation.error
+  const displayedError = oauthError
 
   return (
     <OnboardingLayout>

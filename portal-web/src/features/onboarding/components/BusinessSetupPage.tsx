@@ -249,14 +249,6 @@ export function BusinessSetupPage() {
                   </div>
                 )}
 
-                {setBusinessMutation.error && (
-                  <div className="alert alert-error">
-                    <span className="text-sm">
-                      {setBusinessMutation.error.message}
-                    </span>
-                  </div>
-                )}
-
                 <form.SubmitButton
                   variant="primary"
                   size="lg"

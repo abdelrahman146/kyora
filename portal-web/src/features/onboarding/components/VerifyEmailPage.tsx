@@ -165,7 +165,7 @@ export function VerifyEmailPage() {
     }
   }
 
-  const otpStepError = oauthError ?? sendOTPMutation.error
+  const otpStepError = oauthError
 
   const isSubmitting =
     sendOTPMutation.isPending ||
@@ -220,7 +220,6 @@ export function VerifyEmailPage() {
                     onComplete={handleOtpComplete}
                     disabled={isSubmitting}
                     autoFocus
-                    error={!!verifyEmailMutation.error}
                   />
                 </div>
 
@@ -382,29 +381,20 @@ export function VerifyEmailPage() {
                     )}
                   </profileForm.AppField>
 
-                  {verifyEmailMutation.error && (
-                    <div className="alert alert-error">
-                      <div className="flex flex-col gap-2">
-                        <span className="text-sm">
-                          {verifyEmailMutation.error.message}
-                        </span>
-                        {showLoginCta && (
-                          <Button
-                            type="button"
-                            variant="outline"
-                            size="sm"
-                            onClick={async () => {
-                              await navigate({
-                                to: '/auth/login',
-                                search: { redirect: '/' },
-                              })
-                            }}
-                          >
-                            {tAuth('login')}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
+                  {showLoginCta && (
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      onClick={async () => {
+                        await navigate({
+                          to: '/auth/login',
+                          search: { redirect: '/' },
+                        })
+                      }}
+                    >
+                      {tAuth('login')}
+                    </Button>
                   )}
 
                   <profileForm.SubmitButton

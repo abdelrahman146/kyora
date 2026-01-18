@@ -92,9 +92,7 @@ export function OAuthCallbackPage() {
                   {tOnboarding('oauth.errorTitle')}
                 </h2>
                 <p className="text-base-content/70 mb-4">
-                  {oauthError ||
-                    oauthMutation.error?.message ||
-                    tOnboarding('oauth.noCode')}
+                  {oauthError || tOnboarding('oauth.noCode')}
                 </p>
                 <p className="text-sm text-base-content/50">
                   {tOnboarding('oauth.redirecting')}

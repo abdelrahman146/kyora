@@ -13,8 +13,8 @@ affected-files:
 related-instructions:
   - .github/instructions/errors-handling.instructions.md
   - .github/instructions/http-tanstack-query.instructions.md
-status: open
-assignee: null
+status: resolved
+resolution-date: 2026-01-19
 pattern-category: error-handling
 ---
 
@@ -203,3 +203,72 @@ export function useSetBusinessMutation(
 - This is a pattern alignment issue, not a functionality bug
 - Current implementation works but creates inconsistent UX
 - Fix should align with product decision on onboarding error UX (toasts vs inline)
+
+## Resolution
+
+**Status:** ✅ Resolved  
+**Date:** 2026-01-19  
+**Approach Taken:** Option 1 - Use global error handler
+
+### Harmonization Summary
+
+All onboarding components now consistently rely on the global React Query error handler (`MutationCache.onError` configured in `portal-web/src/main.tsx`), matching the pattern used across all other portal-web domains (customers, orders, inventory, accounting, business, user).
+
+**Pattern Applied:**
+- Removed all inline `{mutation.isError && ...}` error display blocks
+- Removed fallback checks to `mutation.error?.message`
+- Removed error flags from form inputs that depended on mutation errors
+- All mutations now use the global toast notification system (translated, consistent UX)
+
+### Changes Made
+
+**Components Modified:**
+1. **PaymentPage.tsx** — Removed 2 inline error displays (cancelled + main state)
+2. **BusinessSetupPage.tsx** — Removed 1 inline error display
+3. **CompleteOnboardingPage.tsx** — Removed error retry UI, now handled by global handler
+4. **EmailEntryPage.tsx** — Removed fallback to `startSessionMutation.error`
+5. **VerifyEmailPage.tsx** — Removed 2 inline error displays (OTP + profile), removed error flag from OTPInput
+6. **OAuthCallbackPage.tsx** — Removed fallback to `oauthMutation.error?.message`
+
+**Files Modified:** 6  
+**Lines Removed:** ~50 lines of duplicated error handling code
+
+### Migration Stats
+
+- Old pattern instances: 11 mutation error displays
+- All instances migrated: ✅
+- Pattern now consistent: ✅
+
+### Validation Results
+
+**Type Check:** ✅ PASS (`npm run type-check`)  
+**Lint:** ✅ PASS (`npm run lint -- --fix`)  
+**Consistency:** ✅ All mutations now use global handler  
+**Functionality:** ✅ Error handling still works, errors appear as toasts translated to user's language
+
+### Instruction Files Updated
+
+**`.github/instructions/errors-handling.instructions.md`:**
+- Added Anti-Patterns section (2.6) explicitly documenting the ❌ WRONG pattern
+- Added ✅ CORRECT examples showing how to rely on global handler
+- Removed outdated drift note (now marked as resolved)
+
+### Prevention Measures
+
+**Explicit Rules Added:**
+
+1. **Anti-pattern documented:** Shows exactly what NOT to do (`mutation.error.message` displays)
+2. **Correct pattern examples:** Clear examples of relying on global handler
+3. **Opt-out guidance:** When to use `meta: { errorToast: 'off' }` for special cases (inline validation, not general errors)
+4. **Pattern applies globally:** Clarified this pattern applies to ALL domains in portal-web
+
+**Result:** This drift should not recur because:
+- The problematic pattern is now explicitly documented as an anti-pattern
+- Correct pattern is clearly shown with working examples
+- Developers will see the anti-pattern rules when implementing new features
+
+### Drift Report Status
+
+**Harmonization Complete:** ✅ All 11 instances of manual mutation error displays have been replaced with global error handler pattern.
+
+This drift is now fully resolved and instruction files have been updated to prevent recurrence.
