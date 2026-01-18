@@ -142,13 +142,15 @@ Request:
 
 Response:
 
-- `stage`
+- `stage` — **always `ready_to_commit` (free) or `payment_pending` (paid)**; never `business_staged`
 
 Behavior:
 
-- Allowed stages: `identity_verified` or `business_staged`.
-- Free plan: sets `ready_to_commit`.
-- Paid plan: sets `payment_pending`.
+- Allowed input stages: `identity_verified` or `business_staged`.
+- Internally sets `business_staged` but immediately overwrites:
+  - Free plan: response stage is `ready_to_commit`
+  - Paid plan: response stage is `payment_pending`
+- **Important:** `business_staged` is an internal transition state. The response **never** returns this stage to the client.
 
 ### `POST /v1/onboarding/payment/start`
 
@@ -332,9 +334,41 @@ When you change onboarding behavior, you must update all of these together:
 - Backend `DELETE /v1/onboarding/session` uses JSON body with `sessionToken` field (not URL params).
 - Backend `DELETE /v1/onboarding/session` rejects deletion if session is already committed (returns `ErrSessionAlreadyCommitted`).
 
+## Critical: `business_staged` is internal-only (DO NOT use in frontend navigation)
+
+**IMPORTANT:** Backend response from `POST /v1/onboarding/business` **NEVER** contains `stage: "business_staged"`.
+
+The backend internally sets this stage but always overwrites it before responding:
+
+- **Free plans:** respond with `ready_to_commit`
+- **Paid plans:** respond with `payment_pending`
+
+**Common mistake (❌ WRONG):**
+
+```tsx
+if (response.stage === "business_staged") {
+  // This branch NEVER executes - backend never returns this value
+  navigate("/onboarding/payment");
+}
+```
+
+**Correct pattern (✅ RIGHT):**
+
+```tsx
+if (response.stage === "payment_pending") {
+  // Paid plan: user proceeds to payment
+  navigate("/onboarding/payment");
+} else if (response.stage === "ready_to_commit") {
+  // Free plan: user proceeds to complete
+  navigate("/onboarding/complete");
+}
+```
+
+Clients should never check for `business_staged` in onSuccess handlers. Use the stage→route mapping in `portal-web/src/features/onboarding/utils/onboarding.ts` for automatic redirects (which defensively allow all stages).
+
 ## Known drifts (code not following patterns)
 
-- Backend sets `payment_pending` after business for paid plans; portal business step navigation checks for `business_staged` (see: `backlog/drifts/2026-01-18-onboarding-business-stage-navigation-mismatch.md`)
+- ~~Backend sets `payment_pending` after business for paid plans; portal business step navigation checks for `business_staged`~~ **RESOLVED** (see: `backlog/drifts/2026-01-18-onboarding-business-stage-navigation-mismatch.md`)
 - Backend never sets stage `payment_confirmed` even though it's defined in the enum; portal supports it in routing and guards (see: `backlog/drifts/2026-01-18-onboarding-payment-confirmed-stage-unused.md`)
 - Onboarding pages manually display mutation errors bypassing the global error handler (see: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`)
 

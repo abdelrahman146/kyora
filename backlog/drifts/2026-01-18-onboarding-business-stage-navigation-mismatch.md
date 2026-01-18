@@ -8,7 +8,7 @@ affected-files:
   - backend/internal/domain/onboarding/service.go
 related-instructions:
   - .github/instructions/onboarding.instructions.md
-status: open
+status: resolved
 assignee: null
 pattern-category: api-contract-mismatch
 ---
@@ -113,3 +113,67 @@ This would require keeping the stage as `business_staged` for paid plans and onl
 
 - The `STAGE_ROUTES` mapping in `portal-web/src/features/onboarding/utils/onboarding.ts` correctly maps both `business_staged` and `payment_pending` to `/onboarding/payment`, so automatic stage redirects work correctly.
 - The issue is only in the explicit navigation decision logic in BusinessSetupPage.tsx.
+
+## Resolution
+
+**Status:** ✅ Harmonized
+**Date:** 2026-01-19
+**Approach Taken:** Option 1 (Update portal to match backend reality)
+
+### Harmonization Summary
+
+Fixed portal-web navigation logic in BusinessSetupPage.tsx to check for `payment_pending` instead of the non-existent `business_staged` response value. Harmonized instruction file to explicitly document that `business_staged` is an internal-only transition state.
+
+### Pattern Applied
+
+- Portal checks `response.stage === 'payment_pending'` for paid plans to route to payment
+- Portal checks `response.stage === 'ready_to_commit'` for free plans to route to complete
+- Backend state machine documented clearly: `business_staged` is internal, never returned to clients
+
+### Files Changed
+
+1. **portal-web/src/features/onboarding/components/BusinessSetupPage.tsx**
+   - Updated navigation condition from `'business_staged'` to `'payment_pending'`
+   - Now correctly routes paid plan users to payment step
+
+2. **.github/instructions/onboarding.instructions.md**
+   - Clarified that `POST /v1/onboarding/business` returns only `ready_to_commit` or `payment_pending` (never `business_staged`)
+   - Added explicit "DO NOT use in frontend navigation" section with examples
+   - Marked previous drift report as resolved
+   - Added anti-pattern examples to prevent recurrence
+
+### Migration Completeness
+
+- Total instances checked: 5 code locations, 2 doc/config locations
+- Code locations harmonized: 1 (BusinessSetupPage.tsx)
+- Instances verified as correct: 4
+  - payment.tsx route guard (correctly allows both stages for defensive routing)
+  - types/onboarding.ts type enum (must include all backend stages)
+  - utils/onboarding.ts mapping (defensively maps both stages)
+  - i18n labels (documentation only)
+
+### Validation
+
+✅ Pattern applied consistently
+✅ Navigation now routes paid plans to payment, free plans to complete
+✅ Backend behavior matches portal expectations
+✅ Instruction files aligned and strengthened
+✅ No regressions - fallback else branch still works for edge cases
+
+### Instruction Files Updated
+
+- `.github/instructions/onboarding.instructions.md`
+  - Strengthened `POST /v1/onboarding/business` endpoint documentation
+  - Added explicit "Critical: `business_staged` is internal-only" section
+  - Added anti-pattern examples (wrong way vs right way)
+  - Marked drift as resolved
+  - Clarified that clients should use stage→route mapping for redirects
+
+### Prevention
+
+This drift should not recur because instruction files now explicitly:
+
+1. **State that `business_staged` is internal-only** - never returned to clients
+2. **Show the exact response values** - `ready_to_commit` or `payment_pending`
+3. **Provide code examples** - what NOT to do and what IS correct
+4. **Use CRITICAL callout** - to catch attention during code review

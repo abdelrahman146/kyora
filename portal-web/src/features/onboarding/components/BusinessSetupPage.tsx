@@ -76,7 +76,7 @@ export function BusinessSetupPage() {
           to: '/onboarding/complete',
           search: { session: sessionToken },
         })
-      } else if (response.stage === 'business_staged') {
+      } else if (response.stage === 'payment_pending') {
         await navigate({
           to: '/onboarding/payment',
           search: { session: sessionToken },
