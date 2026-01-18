@@ -144,6 +144,27 @@ Success:
 - `response.SuccessEmpty(c, status)`
 - `response.SuccessText(c, status, text)`
 
+**Critical: Always return response DTOs, never raw GORM models**
+
+```go
+// ✅ CORRECT: Always use To*Response conversion
+response.SuccessJSON(c, http.StatusOK, ToUserResponse(user))
+
+// ❌ WRONG: Never return raw model
+response.SuccessJSON(c, http.StatusOK, user)
+
+// ❌ WRONG: Never wrap raw model in gin.H
+response.SuccessJSON(c, http.StatusOK, gin.H{"user": user})
+```
+
+**Response DTO Requirements:**
+
+- Store all model responses in `<domain>/model_response.go`
+- Create converter functions `To<Model>Response()` for each model
+- **All JSON field names MUST be camelCase** (`createdAt`, not `CreatedAt`)
+- Never embed raw GORM models in DTOs
+- See `.github/instructions/responses-dtos-swagger.instructions.md` for full guidance
+
 Errors:
 
 - Always use `response.Error(c, err)`.
@@ -352,7 +373,9 @@ Topics are defined in `internal/platform/bus/events.go`:
 - Building SQL strings from user input (order/search filters) without schema mapping.
 - Using floats for money.
 - Performing multi-entity writes without `AtomicProcess.Exec`.
-- Calling another domain’s storage layer directly.
+- Calling another domain’s storage layer directly.- **Returning raw GORM models directly in HTTP responses** (leaks `CreatedAt`, `UpdatedAt`, `DeletedAt` as PascalCase; violates camelCase standard).
+- **Wrapping raw models in `gin.H{}`** (still leaks GORM internals; always use `To*Response()` converters).
+- **Embedding GORM models in response structs** (embeds all PascalCase fields; always create explicit DTOs with camelCase).
 
 ## Reference implementations (ground truth)
 
@@ -364,3 +387,4 @@ Topics are defined in `internal/platform/bus/events.go`:
 - Response + error mapping: `backend/internal/platform/response/response.go`
 - Repository + scopes: `backend/internal/platform/database/repository.go`
 - Atomic transactions: `backend/internal/platform/database/atomic.go`
+- **Response DTOs (correct pattern):** `backend/internal/domain/account/model_response.go` (User, Workspace, UserInvitation, LoginResponse) and `backend/internal/domain/billing/model_response.go` (Plan, Subscription)

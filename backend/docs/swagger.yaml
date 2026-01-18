@@ -2761,15 +2761,6 @@ definitions:
     required:
     - sessionToken
     type: object
-  onboarding.completeResponse:
-    properties:
-      refreshToken:
-        type: string
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/account.User'
-    type: object
   onboarding.deleteSessionRequest:
     properties:
       sessionToken:
@@ -28116,7 +28107,7 @@ paths:
         "200":
           description: OK
           schema:
-            $ref: '#/definitions/onboarding.completeResponse'
+            $ref: '#/definitions/account.LoginResponse'
         "400":
           description: Bad Request
           schema:

@@ -37,12 +37,6 @@ type paymentStartResponse struct {
 	CheckoutURL string `json:"checkoutUrl"`
 }
 
-type completeResponse struct {
-	User         account.User `json:"user"`
-	Token        string       `json:"token"`
-	RefreshToken string       `json:"refreshToken"`
-}
-
 // Start initializes an onboarding session.
 //
 // @Summary      Start onboarding session
@@ -240,7 +234,7 @@ type completeRequest struct {
 // @Accept       json
 // @Produce      json
 // @Param        request body completeRequest true "Complete request"
-// @Success      200 {object} completeResponse
+// @Success      200 {object} account.LoginResponse
 // @Failure      400 {object} problem.Problem
 // @Failure      401 {object} problem.Problem
 // @Failure      404 {object} problem.Problem
@@ -258,7 +252,7 @@ func (h *HttpHandler) Complete(c *gin.Context) {
 		response.Error(c, err)
 		return
 	}
-	response.SuccessJSON(c, http.StatusOK, gin.H{"user": user, "token": token, "refreshToken": refreshToken})
+	response.SuccessJSON(c, http.StatusOK, account.ToLoginResponse(user, token, refreshToken))
 }
 
 type sessionResponse struct {

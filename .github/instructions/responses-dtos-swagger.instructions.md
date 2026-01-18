@@ -70,15 +70,80 @@ Rule: do not expose GORM’s embedded `gorm.Model` fields directly to JSON.
 
 ## 2) DTO layer (what to do, and what NOT to do)
 
-### 2.1 Don’t return GORM models directly
+### 2.1 Don't return GORM models directly (CRITICAL RULE)
 
-Many Kyora domain models embed `gorm.Model`. When a handler returns that struct directly, Go’s `encoding/json` will serialize embedded fields as **PascalCase** (`CreatedAt`, `UpdatedAt`, etc.).
+**MANDATORY:** Never return a GORM model directly in an HTTP response.
+
+Many Kyora domain models embed `gorm.Model`. When a handler returns that struct directly, Go's `encoding/json` will serialize embedded fields as **PascalCase** (`CreatedAt`, `UpdatedAt`, etc.).
 
 This causes:
 
-- Broken response standards (casing)
-- Swagger drift (OpenAPI includes the wrong fields)
-- Portal types becoming inconsistent or duplicative
+- **Broken response standards** (casing violates API contract)
+- **Swagger drift** (OpenAPI includes the wrong fields)
+- **Portal types becoming inconsistent** or duplicative
+- **GORM internals leak** to clients (violates abstraction)
+
+**The Rule:**
+
+- **Always create an explicit response DTO** for each model that is returned to clients
+- **Always use `To<Model>Response()` converter functions** in handlers
+- **Never wrap raw models** in `gin.H{}` or other envelopes
+- **Every response DTO must use camelCase** JSON tags exclusively
+
+**Anti-Pattern Examples (DO NOT DO):**
+
+```go
+// ❌ WRONG: Returns raw model (leaks GORM internals with PascalCase)
+func (h *Handler) GetUser(c *gin.Context) {
+    user := h.service.GetUser(id)
+    response.SuccessJSON(c, http.StatusOK, user)  // BAD: user has CreatedAt, UpdatedAt
+}
+
+// ❌ WRONG: Wraps raw model in gin.H (still leaks GORM)
+func (h *Handler) CompleteOnboarding(c *gin.Context) {
+    user := h.service.CreateUser(...)
+    response.SuccessJSON(c, http.StatusOK, gin.H{"user": user})  // BAD: user has CreatedAt, UpdatedAt
+}
+
+// ❌ WRONG: Uses a response struct that directly embeds the model
+type UserResponse struct {
+    *User  // BAD: embeds all GORM fields including CreatedAt
+}
+```
+
+**Correct Pattern:**
+
+```go
+// ✅ CORRECT: Explicit response DTO with camelCase
+type UserResponse struct {
+    ID        string    `json:"id"`
+    Email     string    `json:"email"`
+    CreatedAt time.Time `json:"createdAt"`      // camelCase
+    UpdatedAt time.Time `json:"updatedAt"`      // camelCase
+}
+
+// ✅ CORRECT: Converter function maps model to DTO
+func ToUserResponse(user *User) *UserResponse {
+    return &UserResponse{
+        ID:        user.ID,
+        Email:     user.Email,
+        CreatedAt: user.CreatedAt,
+        UpdatedAt: user.UpdatedAt,
+    }
+}
+
+// ✅ CORRECT: Handler uses converter
+func (h *Handler) GetUser(c *gin.Context) {
+    user := h.service.GetUser(id)
+    response.SuccessJSON(c, http.StatusOK, ToUserResponse(user))  // GOOD
+}
+
+// ✅ CORRECT: Even in complex responses like login
+func (h *Handler) Login(c *gin.Context) {
+    user := h.service.Login(email, password)
+    response.SuccessJSON(c, http.StatusOK, ToLoginResponse(user, token, refreshToken))
+}
+```
 
 **Policy:** handlers should return explicit response DTOs.
 
