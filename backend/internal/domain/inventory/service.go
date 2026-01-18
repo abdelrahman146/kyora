@@ -66,30 +66,15 @@ type ListProductsFilters struct {
 }
 
 func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListProductsFilters) ([]*Product, int64, error) {
+	// Build base scopes with qualified table name to avoid ambiguity
 	baseScopes := []func(db *gorm.DB) *gorm.DB{
 		s.storage.products.ScopeWhere("products.business_id = ?", biz.ID),
 	}
 
+	// Apply filters using storage scope methods
 	needsVariantJoin := false
-	useInnerJoin := false // INNER JOIN only if stock filter requires it
-
-	// Check if sorting requires aggregation from variants
-	needsVariantsCountSort := false
-	needsCostPriceSort := false
-	needsStockSort := false
-	for _, ob := range req.OrderBy() {
-		switch {
-		case ob == "variantsCount" || ob == "-variantsCount":
-			needsVariantsCountSort = true
-			needsVariantJoin = true
-		case ob == "costPrice" || ob == "-costPrice":
-			needsCostPriceSort = true
-			needsVariantJoin = true
-		case ob == "stock" || ob == "-stock":
-			needsStockSort = true
-			needsVariantJoin = true
-		}
-	}
+	useInnerJoin := false
+	hasSearchJoin := false // Track if search already added joins
 
 	if filters != nil {
 		if filters.CategoryID != "" {
@@ -98,44 +83,40 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 
 		if filters.StockStatus != "" {
 			needsVariantJoin = true
-			useInnerJoin = true // Stock filtering requires products to have variants
-			switch filters.StockStatus {
-			case StockStatusInStock:
-				baseScopes = append(baseScopes,
-					s.storage.variants.ScopeWhere("variants.stock_quantity > variants.stock_alert"),
-				)
-			case StockStatusLowStock:
-				baseScopes = append(baseScopes,
-					s.storage.variants.ScopeWhere("variants.stock_quantity > 0 AND variants.stock_quantity <= variants.stock_alert"),
-				)
-			case StockStatusOutOfStock:
-				baseScopes = append(baseScopes,
-					s.storage.variants.ScopeWhere("variants.stock_quantity = 0"),
-				)
-			}
+			useInnerJoin = true
+			baseScopes = append(baseScopes, s.storage.ScopeProductStockStatus(filters.StockStatus))
 		}
 	}
 
+	// Check if sorting requires variant aggregation
+	needsAggregation := false
+	aggFields := []string{}
+	for _, ob := range req.OrderBy() {
+		switch {
+		case ob == "variantsCount" || ob == "-variantsCount":
+			needsAggregation = true
+			needsVariantJoin = true
+			aggFields = append(aggFields, "product_agg.variants_count")
+		case ob == "costPrice" || ob == "-costPrice":
+			needsAggregation = true
+			needsVariantJoin = true
+			aggFields = append(aggFields, "product_agg.avg_cost_price")
+		case ob == "stock" || ob == "-stock":
+			needsAggregation = true
+			needsVariantJoin = true
+			aggFields = append(aggFields, "product_agg.total_stock")
+		}
+	}
+
+	// Apply search if provided (search scope adds its own joins)
 	var listExtra []func(db *gorm.DB) *gorm.DB
 	if req.SearchTerm() != "" {
-		term := req.SearchTerm()
-		like := "%" + term + "%"
-
 		needsVariantJoin = true
-		// Don't override useInnerJoin - keep LEFT JOIN for search-only scenarios
-		baseScopes = append(baseScopes,
-			s.storage.products.WithJoins("LEFT JOIN categories ON categories.id = products.category_id AND categories.deleted_at IS NULL"),
-			s.storage.products.ScopeWhere(
-				"(products.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.search_vector @@ websearch_to_tsquery('simple', ?) OR categories.search_vector @@ websearch_to_tsquery('simple', ?) OR variants.sku ILIKE ?)",
-				term,
-				term,
-				term,
-				like,
-			),
-		)
+		hasSearchJoin = true // Search adds joins internally
+		baseScopes = append(baseScopes, s.storage.ScopeProductSearch(req.SearchTerm()))
 
 		if !req.HasExplicitOrderBy() {
-			rankExpr, err := database.WebSearchRankOrder(term, "products.search_vector", "variants.search_vector", "categories.search_vector")
+			rankExpr, err := database.WebSearchRankOrder(req.SearchTerm(), "products.search_vector", "variants.search_vector", "categories.search_vector")
 			if err != nil {
 				return nil, 0, err
 			}
@@ -143,52 +124,17 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		}
 	}
 
-	// If sorting by aggregated fields, add appropriate aggregations
-	needsAggregation := needsVariantsCountSort || needsCostPriceSort || needsStockSort
+	// Add aggregation join if needed (must be first to avoid conflicts)
 	if needsAggregation {
-		// Build aggregation SQL with all needed fields
-		var aggFields []string
-		if needsVariantsCountSort {
-			aggFields = append(aggFields, "COUNT(*)::int as variants_count")
-		}
-		if needsCostPriceSort {
-			aggFields = append(aggFields, "AVG(cost_price)::numeric as avg_cost_price")
-		}
-		if needsStockSort {
-			aggFields = append(aggFields, "SUM(stock_quantity)::int as total_stock")
-		}
-
-		joinSQL := fmt.Sprintf(`
-			LEFT JOIN LATERAL (
-				SELECT %s
-				FROM variants
-				WHERE variants.product_id = products.id 
-					AND variants.deleted_at IS NULL
-			) AS product_agg ON true
-		`, strings.Join(aggFields, ", "))
-
 		baseScopes = append([]func(db *gorm.DB) *gorm.DB{
-			s.storage.products.WithJoins(joinSQL),
+			s.storage.WithProductAggregation(req.OrderBy()),
 		}, baseScopes...)
 
 		// Parse custom ordering for aggregated fields
-		customOrders := []string{}
+		customOrders := s.storage.ParseProductCustomOrdering(req.OrderBy())
 		for _, ob := range req.OrderBy() {
-			switch ob {
-			case "variantsCount":
-				customOrders = append(customOrders, "product_agg.variants_count ASC")
-			case "-variantsCount":
-				customOrders = append(customOrders, "product_agg.variants_count DESC")
-			case "costPrice":
-				customOrders = append(customOrders, "product_agg.avg_cost_price ASC")
-			case "-costPrice":
-				customOrders = append(customOrders, "product_agg.avg_cost_price DESC")
-			case "stock":
-				customOrders = append(customOrders, "product_agg.total_stock ASC")
-			case "-stock":
-				customOrders = append(customOrders, "product_agg.total_stock DESC")
-			default:
-				// Parse normal schema fields
+			// Also add normal schema fields to custom orders
+			if !strings.Contains(ob, "variantsCount") && !strings.Contains(ob, "costPrice") && !strings.Contains(ob, "stock") {
 				field, desc, found := list.ParseOrderField(ob, ProductSchema)
 				if found {
 					direction := "ASC"
@@ -204,45 +150,23 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 			listExtra = append(listExtra, s.storage.products.WithOrderBy(customOrders))
 		}
 
-		// If stock filtering is also needed, add regular JOIN after LATERAL
-		if useInnerJoin {
-			baseScopes = append(baseScopes,
-				s.storage.products.WithJoins("INNER JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL"),
-			)
+		// Add regular variant join if stock filtering is also needed and search didn't add joins
+		if useInnerJoin && !hasSearchJoin {
+			baseScopes = append(baseScopes, s.storage.WithProductVariantJoin(true))
 		}
-	} else if needsVariantJoin {
-		joinType := "LEFT"
-		if useInnerJoin {
-			joinType = "INNER"
-		}
+	} else if needsVariantJoin && !hasSearchJoin {
+		// Only add variant join if search didn't already add it
 		baseScopes = append([]func(db *gorm.DB) *gorm.DB{
-			s.storage.products.WithJoins(fmt.Sprintf("%s JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL", joinType)),
+			s.storage.WithProductVariantJoin(useInnerJoin),
 		}, baseScopes...)
 	}
 
 	// Add GROUP BY if we have variant joins to prevent duplicates
 	if needsVariantJoin || useInnerJoin {
-		// Build GROUP BY clause including aggregated columns if needed
-		groupByColumns := []string{"products.id"}
-
-		// Add aggregated columns to GROUP BY when sorting by them
-		if needsAggregation {
-			if needsVariantsCountSort {
-				groupByColumns = append(groupByColumns, "product_agg.variants_count")
-			}
-			if needsCostPriceSort {
-				groupByColumns = append(groupByColumns, "product_agg.avg_cost_price")
-			}
-			if needsStockSort {
-				groupByColumns = append(groupByColumns, "product_agg.total_stock")
-			}
-		}
-
-		listExtra = append(listExtra, func(db *gorm.DB) *gorm.DB {
-			return db.Group(strings.Join(groupByColumns, ", "))
-		})
+		listExtra = append(listExtra, s.storage.WithProductGroupBy(needsAggregation, aggFields))
 	}
 
+	// Build final query options
 	findOpts := append([]func(*gorm.DB) *gorm.DB{}, baseScopes...)
 	findOpts = append(findOpts, listExtra...)
 	findOpts = append(findOpts,
@@ -256,6 +180,7 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 
 	findOpts = append(findOpts, s.storage.products.WithPreload("Variants"))
 
+	// Execute query
 	items, err := s.storage.products.FindMany(ctx, findOpts...)
 	if err != nil {
 		return nil, 0, err

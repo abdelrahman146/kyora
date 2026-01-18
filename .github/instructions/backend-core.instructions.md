@@ -299,6 +299,110 @@ Service rules:
 - Prefer helper methods that prevent BOLA patterns (example: `account.Service.GetWorkspaceUserByID`).
 - Use `shopspring/decimal` for money-like values (never `float64`).
 - Use UTC for timestamps.
+- **CRITICAL: Service methods must be thin orchestrators** (20-60 lines max). Do not construct queries in service layer.
+
+### Storage layer rules (CRITICAL for clean architecture)
+
+**All query construction belongs in storage layer, not service layer.**
+
+**MANDATORY:**
+
+- ✅ Create **scope methods** in `storage.go` for complex filters/searches/aggregations
+- ✅ Use `Repository[T]` pattern with scope method chaining
+- ✅ Encapsulate all JOINs in storage scopes
+- ✅ Encapsulate all WHERE conditions in storage scopes
+- ✅ Encapsulate all GROUP BY/aggregation logic in storage helpers
+- ✅ Use schema constants instead of magic strings (table/column names)
+
+**FORBIDDEN in service layer:**
+
+- ❌ Raw SQL strings (e.g., `"LEFT JOIN customers ON..."`)
+- ❌ Manual JOIN construction with string concatenation
+- ❌ Magic strings for table/column names (e.g., `"customer_id"`, `"business_id"`)
+- ❌ Manual GROUP BY clause building
+- ❌ Complex WHERE condition construction with OR/AND logic
+- ❌ Aggregation logic (COUNT, SUM, AVG) mixed with business logic
+
+**Service Layer Pattern (Example):**
+
+```go
+func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *business.Business,
+    req *list.ListRequest, filters *ListProductsFilters) ([]*Product, int64, error) {
+    // Build scopes using repository methods ONLY
+    scopes := []func(*gorm.DB) *gorm.DB{
+        s.storage.products.ScopeBusinessID(biz.ID),
+    }
+
+    // Apply filters via storage scope methods
+    if filters != nil {
+        if filters.CategoryID != "" {
+            scopes = append(scopes, s.storage.products.ScopeCategoryID(filters.CategoryID))
+        }
+    }
+
+    // Apply search via storage scope method
+    if req.SearchTerm() != "" {
+        scopes = append(scopes, s.storage.products.ScopeSearch(req.SearchTerm()))
+    }
+
+    // Delegate ALL query execution to storage
+    return s.storage.products.FindManyWithCount(ctx, req, scopes)
+}
+```
+
+**Storage Layer Pattern (Example):**
+
+```go
+// storage.go - owns all query construction
+func (s *ProductStorage) ScopeSearch(term string) func(*gorm.DB) *gorm.DB {
+    return func(db *gorm.DB) *gorm.DB {
+        like := "%" + term + "%"
+        return db.
+            Joins("LEFT JOIN categories ON categories.id = products.category_id AND categories.deleted_at IS NULL").
+            Joins("LEFT JOIN variants ON variants.product_id = products.id AND variants.deleted_at IS NULL").
+            Where("(products.search_vector @@ websearch_to_tsquery('simple', ?) OR "+
+                "categories.search_vector @@ websearch_to_tsquery('simple', ?) OR "+
+                "variants.sku ILIKE ?)", term, term, like)
+    }
+}
+
+func (s *ProductStorage) WithProductAggregation(orderBy []string) func(*gorm.DB) *gorm.DB {
+    return func(db *gorm.DB) *gorm.DB {
+        // Build LATERAL JOIN for aggregation - this belongs in storage!
+        // Encapsulate schema knowledge (variant.stock_quantity, product_id, etc.)
+        return db.Joins(`LEFT JOIN LATERAL (
+            SELECT COUNT(*)::int as variants_count, ...
+            FROM variants WHERE variants.product_id = products.id
+        ) AS product_agg ON true`)
+    }
+}
+```
+
+**Anti-Pattern (NEVER DO THIS in service layer):**
+
+```go
+// ❌ WRONG: Complex queries in service layer
+func (s *Service) ListProducts(...) (...) {
+    baseScopes := []func(db *gorm.DB) *gorm.DB{
+        s.storage.products.ScopeWhere("products.business_id = ?", biz.ID),
+    }
+
+    if needsVariantsCountSort {
+        joinSQL := fmt.Sprintf(`
+            LEFT JOIN LATERAL (
+                SELECT COUNT(*)::int as variants_count
+                FROM variants
+                WHERE variants.product_id = products.id
+                    AND variants.deleted_at IS NULL
+            ) AS product_agg ON true
+        `)
+        baseScopes = append(baseScopes, s.storage.products.WithJoins(joinSQL))
+        baseScopes = append(baseScopes, func(db *gorm.DB) *gorm.DB {
+            return db.Group(strings.Join(groupByColumns, ", "))
+        })
+    }
+}
+```
 
 Handler rules:
 
@@ -373,9 +477,11 @@ Topics are defined in `internal/platform/bus/events.go`:
 - Building SQL strings from user input (order/search filters) without schema mapping.
 - Using floats for money.
 - Performing multi-entity writes without `AtomicProcess.Exec`.
-- Calling another domain’s storage layer directly.- **Returning raw GORM models directly in HTTP responses** (leaks `CreatedAt`, `UpdatedAt`, `DeletedAt` as PascalCase; violates camelCase standard).
+- Calling another domain's storage layer directly.
+- **Returning raw GORM models directly in HTTP responses** (leaks `CreatedAt`, `UpdatedAt`, `DeletedAt` as PascalCase; violates camelCase standard).
 - **Wrapping raw models in `gin.H{}`** (still leaks GORM internals; always use `To*Response()` converters).
 - **Embedding GORM models in response structs** (embeds all PascalCase fields; always create explicit DTOs with camelCase).
+- **✓ CRITICAL: Constructing queries in service layer** — All query construction (JOINs, WHERE, GROUP BY, aggregations) belongs in storage layer. Service methods should only build scope arrays and delegate to storage. See "Storage layer rules" above for detailed examples and anti-patterns.
 
 ## Reference implementations (ground truth)
 

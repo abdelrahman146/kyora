@@ -248,50 +248,16 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 
 	// Apply filters
 	if filters != nil {
-		// Filter by country
 		if filters.CountryCode != "" {
 			scopes = append(scopes,
 				s.storage.customer.ScopeEquals(CustomerSchema.CountryCode, strings.ToUpper(filters.CountryCode)),
 			)
 		}
-
-		// Filter by hasOrders
 		if filters.HasOrders != nil {
-			if *filters.HasOrders {
-				scopes = append(scopes,
-					s.storage.customer.ScopeWhere("EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)"),
-				)
-			} else {
-				scopes = append(scopes,
-					s.storage.customer.ScopeWhere("NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)"),
-				)
-			}
+			scopes = append(scopes, s.storage.ScopeHasOrders(*filters.HasOrders))
 		}
-
-		// Filter by social media platforms
 		if len(filters.SocialPlatforms) > 0 {
-			conditions := []string{}
-			for _, platform := range filters.SocialPlatforms {
-				switch strings.ToLower(platform) {
-				case "instagram":
-					conditions = append(conditions, "customers.instagram_username IS NOT NULL AND customers.instagram_username != ''")
-				case "tiktok":
-					conditions = append(conditions, "customers.tiktok_username IS NOT NULL AND customers.tiktok_username != ''")
-				case "facebook":
-					conditions = append(conditions, "customers.facebook_username IS NOT NULL AND customers.facebook_username != ''")
-				case "x":
-					conditions = append(conditions, "customers.x_username IS NOT NULL AND customers.x_username != ''")
-				case "snapchat":
-					conditions = append(conditions, "customers.snapchat_username IS NOT NULL AND customers.snapchat_username != ''")
-				case "whatsapp":
-					conditions = append(conditions, "customers.whatsapp_number IS NOT NULL AND customers.whatsapp_number != ''")
-				}
-			}
-			if len(conditions) > 0 {
-				scopes = append(scopes,
-					s.storage.customer.ScopeWhere("("+strings.Join(conditions, " OR ")+")"),
-				)
-			}
+			scopes = append(scopes, s.storage.ScopeSocialPlatforms(filters.SocialPlatforms))
 		}
 	}
 
@@ -303,9 +269,7 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		scopes = append(scopes,
 			s.storage.customer.ScopeWhere(
 				"(customers.search_vector @@ websearch_to_tsquery('simple', ?) OR customers.name ILIKE ? OR customers.email ILIKE ?)",
-				term,
-				like,
-				like,
+				term, like, like,
 			),
 		)
 		if !req.HasExplicitOrderBy() {
@@ -326,22 +290,9 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 		}
 	}
 
-	// If sorting by aggregated fields, we need to join orders for sorting
+	// If sorting by aggregated fields, add the aggregation join
 	if needsAggregatedSort {
-		// Add left join with orders aggregation
-		scopes = append([]func(*gorm.DB) *gorm.DB{
-			s.storage.customer.WithJoins(`
-				LEFT JOIN LATERAL (
-					SELECT 
-						COUNT(DISTINCT orders.id)::int as orders_count,
-						COALESCE(SUM(orders.total), 0)::numeric as total_spent
-					FROM orders
-					WHERE orders.customer_id = customers.id 
-						AND orders.deleted_at IS NULL
-						AND orders.status NOT IN ('cancelled', 'returned', 'failed')
-				) AS customer_agg ON true
-			`),
-		}, scopes...)
+		scopes = append([]func(*gorm.DB) *gorm.DB{s.storage.WithCustomerAggregation()}, scopes...)
 
 		// Parse custom ordering for aggregated fields
 		customOrders := []string{}
@@ -356,7 +307,6 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 			case "-totalSpent":
 				customOrders = append(customOrders, "customer_agg.total_spent DESC")
 			default:
-				// Parse normal schema fields and extract the column
 				field, desc, found := list.ParseOrderField(ob, CustomerSchema)
 				if found {
 					direction := "ASC"
@@ -367,7 +317,6 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 				}
 			}
 		}
-
 		if len(customOrders) > 0 {
 			listOpts = append(listOpts, s.storage.customer.WithOrderBy(customOrders))
 		}
@@ -375,16 +324,14 @@ func (s *Service) ListCustomers(ctx context.Context, actor *account.User, biz *b
 
 	findOpts := append([]func(*gorm.DB) *gorm.DB{}, scopes...)
 	findOpts = append(findOpts, listOpts...)
-	findOpts = append(findOpts,
-		s.storage.customer.WithPagination(req.Offset(), req.Limit()),
-	)
+	findOpts = append(findOpts, s.storage.customer.WithPagination(req.Offset(), req.Limit()))
 
 	// Only add parsed order by if we're not doing custom aggregated sort
 	if !needsAggregatedSort {
 		findOpts = append(findOpts, s.storage.customer.WithOrderBy(req.ParsedOrderBy(CustomerSchema)))
 	}
 
-	// Fetch customers using repository
+	// Fetch customers
 	customers, err := s.storage.customer.FindMany(ctx, findOpts...)
 	if err != nil {
 		return nil, 0, err

@@ -996,7 +996,6 @@ type ListOrdersFilters struct {
 
 func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *business.Business, req *list.ListRequest, filters *ListOrdersFilters) ([]*Order, int64, error) {
 	baseScopes := []func(db *gorm.DB) *gorm.DB{
-		// Qualify business_id to avoid ambiguity when joining other tables that also have business_id.
 		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 	}
 
@@ -1016,22 +1015,7 @@ func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *busi
 			baseScopes = append(baseScopes, s.storage.order.ScopeIn(OrderSchema.PaymentStatus, vals))
 		}
 		if len(filters.Channels) > 0 {
-			normalized := make([]string, 0, len(filters.Channels))
-			seen := map[string]struct{}{}
-			for _, ch := range filters.Channels {
-				c := strings.ToLower(strings.TrimSpace(ch))
-				if c == "" {
-					continue
-				}
-				if _, ok := seen[c]; ok {
-					continue
-				}
-				seen[c] = struct{}{}
-				normalized = append(normalized, c)
-			}
-			if len(normalized) > 0 {
-				baseScopes = append(baseScopes, s.storage.order.ScopeWhere("LOWER(orders.channel) IN ?", normalized))
-			}
+			baseScopes = append(baseScopes, s.storage.ScopeChannels(filters.Channels))
 		}
 		if filters.CustomerID != "" {
 			baseScopes = append(baseScopes, s.storage.order.ScopeEquals(OrderSchema.CustomerID, filters.CustomerID))
@@ -1047,17 +1031,9 @@ func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *busi
 	var listExtra []func(db *gorm.DB) *gorm.DB
 	if req.SearchTerm() != "" {
 		term := req.SearchTerm()
-		like := "%" + term + "%"
 		baseScopes = append(baseScopes,
-			s.storage.order.WithJoins("LEFT JOIN customers ON customers.id = orders.customer_id"),
-			s.storage.order.ScopeWhere(
-				"(orders.search_vector @@ websearch_to_tsquery('simple', ?) OR customers.search_vector @@ websearch_to_tsquery('simple', ?) OR orders.order_number ILIKE ? OR customers.name ILIKE ? OR customers.email ILIKE ?)",
-				term,
-				term,
-				like,
-				like,
-				like,
-			),
+			s.storage.WithOrderCustomerJoin(),
+			s.storage.ScopeOrderSearch(term),
 		)
 		if !req.HasExplicitOrderBy() {
 			rankExpr, err := database.WebSearchRankOrder(term, "orders.search_vector", "customers.search_vector")

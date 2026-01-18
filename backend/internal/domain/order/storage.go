@@ -1,8 +1,11 @@
 package order
 
 import (
+	"strings"
+
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"gorm.io/gorm"
 )
 
 type Storage struct {
@@ -37,4 +40,46 @@ func ensureOrderSearchIndexes(db *database.Database) {
 
 	// Trigram index for fast substring lookup on order numbers.
 	database.EnsureTrigramGinIndex(conn, "orders_order_number_trgm_idx", OrderTable, "order_number")
+}
+
+// ScopeOrderSearch adds search conditions for orders, including customer search vector.
+// Requires a LEFT JOIN on customers table to be called before this scope.
+func (s *Storage) ScopeOrderSearch(term string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		like := "%" + term + "%"
+		return db.Where(
+			"(orders.search_vector @@ websearch_to_tsquery('simple', ?) OR customers.search_vector @@ websearch_to_tsquery('simple', ?) OR orders.order_number ILIKE ? OR customers.name ILIKE ? OR customers.email ILIKE ?)",
+			term, term, like, like, like,
+		)
+	}
+}
+
+// ScopeChannels filters orders by channel (case-insensitive).
+func (s *Storage) ScopeChannels(channels []string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if len(channels) == 0 {
+			return db
+		}
+
+		normalized := make([]string, 0, len(channels))
+		seen := map[string]struct{}{}
+		for _, ch := range channels {
+			c := strings.ToLower(strings.TrimSpace(ch))
+			if c == "" || seen[c] != struct{}{} {
+				continue
+			}
+			seen[c] = struct{}{}
+			normalized = append(normalized, c)
+		}
+
+		if len(normalized) > 0 {
+			return db.Where("LOWER(orders.channel) IN ?", normalized)
+		}
+		return db
+	}
+}
+
+// WithOrderCustomerJoin adds a LEFT JOIN with customers table for search.
+func (s *Storage) WithOrderCustomerJoin() func(*gorm.DB) *gorm.DB {
+	return s.order.WithJoins("LEFT JOIN customers ON customers.id = orders.customer_id")
 }

@@ -2,9 +2,11 @@ package customer
 
 import (
 	"context"
+	"strings"
 
 	"github.com/abdelrahman146/kyora/internal/platform/cache"
 	"github.com/abdelrahman146/kyora/internal/platform/database"
+	"gorm.io/gorm"
 )
 
 type Storage struct {
@@ -86,4 +88,63 @@ func ensureCustomerSearchIndexes(db *database.Database) {
 	// Trigram indexes speed up substring matches (ILIKE) for user-friendly partial search.
 	database.EnsureTrigramGinIndex(conn, "customers_name_trgm_idx", CustomerTable, "name")
 	database.EnsureTrigramGinIndex(conn, "customers_email_trgm_idx", CustomerTable, "email")
+}
+
+// ScopeHasOrders filters customers by whether they have any non-deleted orders.
+func (s *Storage) ScopeHasOrders(hasOrders bool) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if hasOrders {
+			return db.Where("EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)")
+		}
+		return db.Where("NOT EXISTS (SELECT 1 FROM orders WHERE orders.customer_id = customers.id AND orders.deleted_at IS NULL)")
+	}
+}
+
+// ScopeSocialPlatforms filters customers by social media platform presence.
+// Only includes customers that have a non-empty username/number for at least one of the specified platforms.
+func (s *Storage) ScopeSocialPlatforms(platforms []string) func(*gorm.DB) *gorm.DB {
+	return func(db *gorm.DB) *gorm.DB {
+		if len(platforms) == 0 {
+			return db
+		}
+
+		conditions := []string{}
+		for _, platform := range platforms {
+			switch strings.ToLower(platform) {
+			case "instagram":
+				conditions = append(conditions, "customers.instagram_username IS NOT NULL AND customers.instagram_username != ''")
+			case "tiktok":
+				conditions = append(conditions, "customers.tiktok_username IS NOT NULL AND customers.tiktok_username != ''")
+			case "facebook":
+				conditions = append(conditions, "customers.facebook_username IS NOT NULL AND customers.facebook_username != ''")
+			case "x":
+				conditions = append(conditions, "customers.x_username IS NOT NULL AND customers.x_username != ''")
+			case "snapchat":
+				conditions = append(conditions, "customers.snapchat_username IS NOT NULL AND customers.snapchat_username != ''")
+			case "whatsapp":
+				conditions = append(conditions, "customers.whatsapp_number IS NOT NULL AND customers.whatsapp_number != ''")
+			}
+		}
+
+		if len(conditions) > 0 {
+			return db.Where("(" + strings.Join(conditions, " OR ") + ")")
+		}
+		return db
+	}
+}
+
+// WithCustomerAggregation adds a LATERAL join to compute orders count and total spent per customer.
+// This is used when sorting by ordersCount or totalSpent.
+func (s *Storage) WithCustomerAggregation() func(*gorm.DB) *gorm.DB {
+	return s.customer.WithJoins(`
+		LEFT JOIN LATERAL (
+			SELECT 
+				COUNT(DISTINCT orders.id)::int as orders_count,
+				COALESCE(SUM(orders.total), 0)::numeric as total_spent
+			FROM orders
+			WHERE orders.customer_id = customers.id 
+				AND orders.deleted_at IS NULL
+				AND orders.status NOT IN ('cancelled', 'returned', 'failed')
+		) AS customer_agg ON true
+	`)
 }
