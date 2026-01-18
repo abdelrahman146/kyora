@@ -8,7 +8,7 @@ applyTo: "**/*"
 This file is the **single source of truth** for how onboarding works end-to-end across:
 
 - Backend: `backend/internal/domain/onboarding/**`
-- Portal Web: `portal-web/src/routes/onboarding/**`, `portal-web/src/api/onboarding.ts`, `portal-web/src/lib/onboarding.ts`
+- Portal Web: `portal-web/src/routes/onboarding/**`, `portal-web/src/api/onboarding.ts`, `portal-web/src/features/onboarding/utils/onboarding.ts`
 
 It documents what is **actually implemented today**. If you change the flow, you must update both backend and portal-web and keep them consistent.
 
@@ -18,7 +18,7 @@ It documents what is **actually implemented today**. If you change the flow, you
 - Portal-web must treat `GET /v1/onboarding/session` as truth and be able to **resume** from any step.
 - Never invent a new stage or “skip” behavior in portal-web without adding it to backend and updating:
   - Portal route gating + redirects
-  - `portal-web/src/lib/onboarding.ts` stage→route mapping
+  - `portal-web/src/features/onboarding/utils/onboarding.ts` stage→route mapping
   - Zod enums in `portal-web/src/api/types/onboarding.ts`
 
 ## Backend: state machine (authoritative)
@@ -237,7 +237,7 @@ Routes:
 
 ### Stage→route mapping
 
-`portal-web/src/lib/onboarding.ts` maps backend stages to a route:
+`portal-web/src/features/onboarding/utils/onboarding.ts` maps backend stages to a route:
 
 - `plan_selected` → `/onboarding/email`
 - `identity_pending` → `/onboarding/verify`
@@ -323,14 +323,19 @@ When you change onboarding behavior, you must update all of these together:
   - stage/payment enums in `backend/internal/domain/onboarding/model.go`
 - Portal:
   - Zod enums in `portal-web/src/api/types/onboarding.ts`
-  - Stage routing in `portal-web/src/lib/onboarding.ts`
+  - Stage routing in `portal-web/src/features/onboarding/utils/onboarding.ts`
   - Route guards/loaders in `portal-web/src/routes/onboarding/*.tsx`
   - Any step-specific assumptions (e.g., `business.tsx` expecting `business_staged` vs `payment_pending`)
 
-## Known mismatches / sharp edges (documented so you don’t reintroduce them)
+## API contract notes
 
-- Backend sets `payment_pending` after business for paid plans; portal business step’s navigation checks `business_staged`.
-- Backend does not set stage `payment_confirmed`; portal supports it in routing and guards.
-- Backend `DELETE /v1/onboarding/session` uses JSON body and returns `400` if the session is committed.
+- Backend `DELETE /v1/onboarding/session` uses JSON body with `sessionToken` field (not URL params).
+- Backend `DELETE /v1/onboarding/session` rejects deletion if session is already committed (returns `ErrSessionAlreadyCommitted`).
 
-Keep this file updated if you fix or intentionally change any of the above.
+## Known drifts (code not following patterns)
+
+- Backend sets `payment_pending` after business for paid plans; portal business step navigation checks for `business_staged` (see: `backlog/drifts/2026-01-18-onboarding-business-stage-navigation-mismatch.md`)
+- Backend never sets stage `payment_confirmed` even though it's defined in the enum; portal supports it in routing and guards (see: `backlog/drifts/2026-01-18-onboarding-payment-confirmed-stage-unused.md`)
+- Onboarding pages manually display mutation errors bypassing the global error handler (see: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`)
+
+Keep this file updated when drifts are fixed.

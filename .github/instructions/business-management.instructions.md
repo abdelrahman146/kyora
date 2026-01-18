@@ -32,22 +32,18 @@ Middleware chain:
 Routes:
 
 - `GET /v1/businesses`
-
   - Permission: `role.ActionView` on `role.ResourceBusiness`
   - Returns: `{ businesses: Business[] }`
 
 - `GET /v1/businesses/descriptor/availability?descriptor=...`
-
   - Permission: `role.ActionView` on `role.ResourceBusiness`
   - Returns: `{ available: boolean }`
 
 - `GET /v1/businesses/:businessDescriptor`
-
   - Permission: `role.ActionView` on `role.ResourceBusiness`
   - Returns: `{ business: Business }`
 
 - `POST /v1/businesses`
-
   - Permission: `role.ActionManage` on `role.ResourceBusiness`
   - Plan gates:
     - `billing.EnforceActiveSubscription`
@@ -56,18 +52,15 @@ Routes:
   - Returns: `201 { business: Business }`
 
 - `PATCH /v1/businesses/:businessDescriptor`
-
   - Permission: `role.ActionManage` on `role.ResourceBusiness`
   - Body: `UpdateBusinessInput`
   - Returns: `{ business: Business }`
 
 - `POST /v1/businesses/:businessDescriptor/archive`
-
   - Permission: `role.ActionManage` on `role.ResourceBusiness`
   - Returns: `204`
 
 - `POST /v1/businesses/:businessDescriptor/unarchive`
-
   - Permission: `role.ActionManage` on `role.ResourceBusiness`
   - Returns: `204`
 
@@ -87,7 +80,6 @@ Middleware chain:
 #### Shipping zones
 
 - `GET /v1/businesses/:businessDescriptor/shipping-zones`
-
   - Permission: `role.ActionView` on `role.ResourceBusiness`
   - Returns: `ShippingZone[]`
 
@@ -203,15 +195,11 @@ If/when building business settings UI, align to backend routes above:
 
 ## Known portal drift (must fix before building on it)
 
-- **Create/update payload mismatch for country**
-
-  - Backend expects: `countryCode`
-  - Portal currently models: `country`
-
 - **Multiple business schema sources**
-
   - Portal has overlapping schemas in `portal-web/src/api/business.ts` and `portal-web/src/api/types/business.ts` with different optionality/theme shapes.
   - Consolidate to a single schema SSOT to avoid silent contract drift.
 
 - **Portal does not expose several backend business endpoints yet**
-  - No client methods for descriptor availability, archive/unarchive, payment methods, or shipping zone mutations.
+  - No client methods for descriptor availability, archive/unarchive
+  - Shipping zone mutations (create/update/delete) are not exposed yet
+  - Payment method update (per-business override) is not exposed yet

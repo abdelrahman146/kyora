@@ -154,7 +154,6 @@ Computed for the selected `[from, to]` range:
 These reports are currently **inception-to-date** (from `time.Time{}` to `asOf`), not period reports.
 
 - Financial position (`ComputeFinancialPosition`):
-
   - Retained earnings: `revenue - cogs - expenses`.
   - Cash on hand approximation:
     - `cash = (revenue + ownerInvestment) - (expenses + ownerDraws + fixedAssets + inventoryValue)`.
@@ -216,8 +215,3 @@ Do not re-implement separate chart conventions inside analytics.
 ### i18n
 
 Portal already has an `analytics` translation namespace and should keep analytics UI labels there.
-
-## Known portal drift / gaps (track before building on it)
-
-- Portal currently has an Analytics nav item but no matching analytics routes or API clients.
-- Ensure date filter UX aligns to analytics backend date-only contract (`YYYY-MM-DD`).

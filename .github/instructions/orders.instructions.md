@@ -162,7 +162,7 @@ Allowed `paymentStatus` transitions:
 
 Additional invariant:
 
-- Payment status changes are only allowed when `order.status ∈ {placed, shipped, fulfilled}`.
+- Payment status changes are only allowed when `order.status ∈ {placed, ready_for_shipment, shipped, fulfilled}`.
 
 Event-driven automation:
 
@@ -216,8 +216,8 @@ Behavior:
 
 - **Date filters:** portal currently writes `from/to` as `yyyy-MM-dd` strings, but backend expects RFC3339 timestamps.
   - If you touch date filtering, align portal to backend’s RFC3339 expectation.
-- **`UpdateOrderRequest` mismatch:** portal type includes `shippingAddressId`, but backend does not support updating shipping address.
-  - Backend will ignore unknown JSON fields; do not rely on updating shipping address until backend supports it.
+- **`UpdateOrderRequest` type includes `shippingAddressId`:** backend supports updating shipping address via `UpdateOrderRequest.ShippingAddressID` (validated and tested), but portal type documents it as unsupported.
+  - Portal can safely use this field; backend validates that address belongs to customer and business, and only allows updates before order is shipped.
 - **Missing API surface in portal:** portal API does not expose `GET /orders/by-number/:orderNumber` nor `PATCH /payment-details` yet.
 - **`orderBy` encoding:** backend binds `orderBy` as a repeatable query param. Portal currently serializes it as CSV (via `join(',')`).
   - This works when the list only uses a single sort field; multiple sorts will not be parsed correctly.

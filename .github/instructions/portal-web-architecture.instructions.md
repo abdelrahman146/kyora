@@ -75,8 +75,8 @@ applyTo: "portal-web/**"
 ### Forms & Validation
 
 - **TanStack Form 1.27.7** - Form state management
-- **TanStack Store 0.8.0** - Reactive state (auth, business, metadata, onboarding stores)
-- **Zod 4.2.1** - Schema validation, type inference
+- **TanStack Store 0.8.0** - Reactive state (auth, business stores)
+- **Zod ^3.25.76** - Schema validation, type inference
 - **Custom `useKyoraForm`** - Zero-boilerplate composition layer
 
 ### Styling & UI
@@ -148,23 +148,26 @@ portal-web/
 │   ├── i18n/                   # Translations
 │   │   ├── ar/                 # Arabic (primary)
 │   │   └── en/                 # English (fallback)
+│   ├── integrations/           # Third-party integrations
+│   │   └── tanstack-query/     # TanStack Query extensions
 │   ├── lib/                    # Utilities
 │   │   ├── auth.ts             # Auth logic
 │   │   ├── errorParser.ts      # RFC7807 parser
 │   │   ├── queryKeys.ts        # Query key factory
 │   │   ├── routeGuards.ts      # Route auth guards
-│   │   ├── form/               # Form system
+│   │   ├── storePersistence.ts # Store persistence plugin
+│   │   ├── form/               # Form system (includes BusinessContext)
 │   │   ├── charts/             # Chart.js utils
 │   │   └── upload/             # File upload utils
 │   ├── routes/                 # File-based routes
 │   │   ├── __root.tsx          # Root layout
-│   │   ├── _auth/              # Auth layout group
-│   │   └── _app/               # App layout group
+│   │   ├── auth/               # Auth routes
+│   │   ├── onboarding/         # Onboarding flow
+│   │   └── business/           # Business-scoped routes
 │   ├── schemas/                # Zod schemas
 │   ├── stores/                 # TanStack Store instances
 │   │   ├── authStore.ts
-│   │   ├── businessStore.ts
-│   │   └── (no other stores by default)
+│   │   └── businessStore.ts
 │   ├── types/                  # TypeScript types
 │   └── main.tsx                # Entry point
 ├── public/                     # Static assets
@@ -248,28 +251,40 @@ const apiClient = ky.create({
 
 ```typescript
 // Require authentication
-export const requireAuth = () => {
+export async function requireAuth() {
+  await initializeAuth();
   const { isAuthenticated } = authStore.state;
   if (!isAuthenticated) {
-    throw redirect({ to: "/auth/login" });
+    throw redirect({
+      to: "/auth/login",
+      search: { redirect: window.location.pathname },
+    });
   }
-};
+}
 
-// Require guest (redirect if logged in)
-export const requireGuest = () => {
+// Redirect if authenticated (for auth pages)
+export async function redirectIfAuthenticated() {
+  await initializeAuth();
   const { isAuthenticated } = authStore.state;
   if (isAuthenticated) {
     throw redirect({ to: "/" });
   }
-};
+}
 ```
 
 **Usage in routes:**
 
 ```typescript
-// src/routes/_app/dashboard.tsx
-export const Route = createFileRoute("/_app/dashboard")({
+// src/routes/business/$businessDescriptor/index.tsx
+export const Route = createFileRoute("/business/$businessDescriptor/")({
   beforeLoad: requireAuth,
+  component: DashboardPage,
+});
+
+// src/routes/auth/login.tsx
+export const Route = createFileRoute("/auth/login")({
+  beforeLoad: redirectIfAuthenticated,
+  component: LoginPage,
 });
 ```
 
@@ -342,7 +357,6 @@ await invalidateCustomerQueries(customerId);
 **Stores:**
 
 1. **authStore** (`src/stores/authStore.ts`)
-
    - User session state
    - No persistence (restored from cookie)
 
@@ -388,15 +402,20 @@ myStore.subscribe(() => {
 src/routes/
 ├── __root.tsx              → Root layout
 ├── index.tsx               → / (homepage)
-├── _auth/                  → Auth layout group (requireGuest)
+├── auth/                   → Auth routes (redirectIfAuthenticated guard)
 │   ├── login.tsx           → /auth/login
-│   └── register.tsx        → /auth/register
-└── business/                → Business-scoped routes
-  └── $businessDescriptor/ → /business/:businessDescriptor (requireAuth)
-    ├── index.tsx        → Business home
-    ├── orders/          → /business/:businessDescriptor/orders
-    ├── customers/       → /business/:businessDescriptor/customers
-    └── inventory/       → /business/:businessDescriptor/inventory
+│   ├── forgot-password.tsx → /auth/forgot-password
+│   ├── reset-password.tsx  → /auth/reset-password
+│   └── oauth/              → OAuth callbacks
+├── onboarding/             → Onboarding flow
+└── business/               → Business-scoped routes
+    └── $businessDescriptor/ → /business/:businessDescriptor (requireAuth)
+        ├── index.tsx        → Business home
+        ├── orders/          → Orders management
+        ├── customers/       → Customers management
+        ├── inventory/       → Inventory management
+        ├── accounting/      → Accounting management
+        └── reports/         → Financial reports
 ```
 
 ### Route Patterns
@@ -487,6 +506,8 @@ Current namespaces:
 - `customers`
 - `pagination`
 - `home`
+- `accounting`
+- `reports`
 
 ### Canonical Usage
 
@@ -564,9 +585,9 @@ UI pattern:
 **Context Requirement:**
 
 ```typescript
-import { BusinessContext } from "@/contexts/BusinessContext";
+import { BusinessContext } from '@/lib/form/components/FileUploadField';
 
-<BusinessContext.Provider value={business.descriptor}>
+<BusinessContext.Provider value={{ businessDescriptor: business.descriptor }}>
   <form.ImageUploadField name="logo" />
 </BusinessContext.Provider>;
 ```
@@ -602,6 +623,14 @@ import { BusinessContext } from "@/contexts/BusinessContext";
 3. **Query Stale Time:** Configure per query (default: 0ms)
 4. **Optimistic Updates:** Mutate cache before server response
 5. **Skeleton Loaders:** Prevent layout shift during loading
+
+---
+
+## Known Drifts
+
+These are code patterns that don't follow the documented standards. See `backlog/drifts/` for details:
+
+- **Accounting components use multi-colon i18n pattern** (`t('common:actions.delete')`) instead of namespace-bound pattern. See `backlog/drifts/2026-01-18-accounting-components-use-multi-colon-i18n.md`.
 
 ---
 

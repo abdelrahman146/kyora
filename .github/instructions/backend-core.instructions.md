@@ -32,7 +32,7 @@ Key lifecycle facts:
 
 - Config defaults are prepared via `internal/platform/config.Configure()`.
 - In normal CLI runs, config is loaded once in Cobra `PersistentPreRunE` (`config.Load()`), then logging is initialized (`logger.Init()`).
-- `server.New()` calls `config.Configure()` again to ensure defaults exist (important for tests / non-Cobra usage).
+- `server.New()` calls `config.Configure()` again to ensure defaults exist (important for tests / non-Cobra usage where Cobra's PreRunE doesn't execute).
 
 ## Folder structure and dependency direction
 
@@ -205,13 +205,18 @@ Query modifiers:
 
 Scopes (filters):
 
-- `ScopeWorkspaceID(workspaceID)` / `ScopeBusinessID(businessID)`
+All scope methods are defined in `internal/platform/database/repository.go` and available on all `Repository[T]` instances:
+
+- `ScopeWorkspaceID(workspaceID)` / `ScopeBusinessID(businessID)` — tenant isolation (required for multi-tenancy)
 - `ScopeID(id)` / `ScopeIDs([]any{...})`
-- `ScopeEquals(field, value)`, `ScopeNotEquals`, `ScopeIn`, `ScopeNotIn`
-- `ScopeGreaterThan`, `ScopeLessThan`, `ScopeBetween`, and `...OrEqual` variants
+- `ScopeEquals(field, value)`, `ScopeNotEquals`, `ScopeIn`, `ScopeNotIn`, `ScopeIsNull`
+- `ScopeGreaterThan`, `ScopeLessThan`, `ScopeGreaterThanOrEqual`, `ScopeLessThanOrEqual`
+- `ScopeBetween(field, start, end)`
 - `ScopeCreatedAt(from, to)` / `ScopeTime(field, from, to)`
 - `ScopeSearchTerm(term, fields...)`
 - `ScopeWhere(sql, vars...)` (bound vars; use sparingly for specialized queries)
+
+Important: `ScopeWorkspaceID` and `ScopeBusinessID` assume the table has `workspace_id` or `business_id` columns.
 
 ### Pagination, ordering, search (canonical pattern)
 
@@ -279,6 +284,59 @@ Handler rules:
 - Always use `request.ValidBody`.
 - Always use `response.Success*` / `response.Error`.
 - Extract actor/workspace/business via the `FromContext` helpers.
+
+## Event-driven automation (bus pattern)
+
+Kyora uses an internal event bus for domain automation and cross-domain workflows.
+
+### Bus lifecycle
+
+Bus is created in `server.New()` via `bus.New()` and passed to service constructors.
+
+### Publishing events
+
+Services emit events using `bus.Emit(topic, payload)`:
+
+```go
+s.bus.Emit(bus.OrderPaymentSucceededTopic, &bus.OrderPaymentSucceededEvent{
+    Ctx:           ctx,
+    OrderID:       order.ID,
+    BusinessID:    order.BusinessID,
+    PaymentMethod: string(order.PaymentMethod),
+    Total:         order.Total,
+})
+```
+
+### Subscribing to events
+
+Domain handlers subscribe using `bus.Listen(topic, handlerFunc)`:
+
+```go
+// In domain/accounting/handler_bus.go
+func NewBusHandler(b *bus.Bus, svc *Service, businessSvc accountingRequiredBusinessService) {
+    h := &BusHandler{svc: svc, businessSvc: businessSvc}
+    b.Listen(bus.OrderPaymentSucceededTopic, h.HandleOrderPaymentSucceeded)
+}
+```
+
+Bus handler setup in `server.New()`:
+
+```go
+accounting.NewBusHandler(bus, accountingSvc, businessSvc)
+```
+
+### Event topics and payloads
+
+Topics are defined in `internal/platform/bus/events.go`:
+
+- `OrderPaymentSucceededTopic` → used by accounting to upsert transaction fee expenses
+
+### Rules
+
+- Events are dispatched asynchronously (non-blocking).
+- Handlers must be idempotent (events may be redelivered).
+- Handler panics are caught and logged; do not crash the application.
+- Event payloads should include context (`Ctx`) for tracing/logging.
 
 ## Integrations (SSOT pointers)
 

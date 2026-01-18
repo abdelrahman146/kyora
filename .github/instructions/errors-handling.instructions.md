@@ -131,17 +131,125 @@ Key behavior:
 
 Do not re-implement refresh logic in feature code.
 
-### 2.2 Translating and showing errors
+### 2.2 Global React Query error handling (SSOT)
 
-SSOT utilities:
+Portal-web uses **global error handlers** configured via `QueryClient` with `QueryCache.onError` and `MutationCache.onError` callbacks. This is the **default and recommended** way to handle backend errors.
+
+**Implementation:** `portal-web/src/main.tsx`
+
+```typescript
+const queryClient = new QueryClient({
+  queryCache: new QueryCache({
+    onError: (error, query) => {
+      if (shouldIgnoreGlobalError(error)) return;
+      const meta = query.meta as undefined | { errorToast?: "global" | "off" };
+      if (meta?.errorToast === "off") return;
+
+      // Dedupe by queryHash for 30s to prevent toast spam on background refetches
+      const now = Date.now();
+      const last = queryErrorToastDeduper.get(query.queryHash) ?? 0;
+      if (now - last < QUERY_ERROR_TOAST_DEDUPE_MS) return;
+      queryErrorToastDeduper.set(query.queryHash, now);
+
+      void showErrorFromException(error, i18n.t);
+    },
+  }),
+  mutationCache: new MutationCache({
+    onError: (error, _variables, _context, mutation) => {
+      if (shouldIgnoreGlobalError(error)) return;
+      const meta = mutation.meta as
+        | undefined
+        | { errorToast?: "global" | "off" };
+      if (meta?.errorToast === "off") return;
+
+      void showErrorFromException(error, i18n.t);
+    },
+  }),
+});
+```
+
+**Key behaviors:**
+
+1. **Automatic error translation:** All backend errors are translated via `translateErrorAsync` and shown as toast notifications
+2. **Query error deduplication:** Query errors are deduplicated by `queryHash` for 30 seconds to prevent toast spam on background refetches
+3. **Mutation errors always show:** Mutation errors show toast immediately (no deduplication)
+4. **AbortError filtering:** `shouldIgnoreGlobalError()` filters out `AbortError` and cancel errors
+5. **Opt-out mechanism:** Use `meta: { errorToast: 'off' }` to suppress global toast for special cases
+
+**When to use global handler (default):**
+
+✅ All mutations and queries by default  
+✅ Background refetches  
+✅ User-initiated actions (create/update/delete)
+
+**When to opt out (`meta: { errorToast: 'off' }`):**
+
+- Inline form validation where errors should appear next to fields
+- Silent background operations where errors shouldn't interrupt user
+- Custom error handling that requires different UX (e.g., redirect on auth failure)
+
+**Example: Relying on global handler (recommended):**
+
+```tsx
+// In API client (portal-web/src/api/customer.ts)
+export function useUpdateCustomerMutation(
+  businessDescriptor: string,
+  options?: UseMutationOptions<Customer, Error, UpdateCustomerRequest>,
+) {
+  return useMutation({
+    mutationFn: (data) => customerApi.update(businessDescriptor, data),
+    // No onError needed - global handler shows toast automatically
+    ...options,
+  });
+}
+
+// In component
+const updateMutation = useUpdateCustomerMutation(businessDescriptor, {
+  onSuccess: (updated) => {
+    showSuccessToast(t("customers.update_success"));
+    onClose();
+  },
+  // Error toast shown automatically by global handler
+});
+```
+
+**Example: Opting out for inline errors:**
+
+```tsx
+// In API client (portal-web/src/api/auth.ts)
+export function useLoginMutation(
+  options?: UseMutationOptions<LoginResponse, Error, LoginRequest>,
+) {
+  return useMutation({
+    mutationFn: (data) => authApi.login(data),
+    meta: { errorToast: "off" }, // Suppress global toast
+    ...options,
+  });
+}
+
+// In component
+const loginMutation = useLoginMutation({
+  onError: async (error) => {
+    // Custom inline error display
+    const translated = await translateErrorAsync(error, t);
+    setFormError(translated);
+  },
+});
+```
+
+### 2.3 Error translation and display utilities
+
+**SSOT utilities:**
 
 - Parser: `portal-web/src/lib/errorParser.ts` (`parseProblemDetails`)
 - Translator: `portal-web/src/lib/translateError.ts` (`translateErrorAsync`)
+- Toast: `portal-web/src/lib/toast.ts` (`showErrorFromException`, `showErrorToast`)
 
-UI pattern:
+**UI pattern:**
 
-- In `catch`, call `translateErrorAsync(error, t)` and show a toast or inline message.
-- Do not show raw backend errors directly; always go through i18n.
+- **Default:** Rely on global handler (no manual error handling needed)
+- **Custom handling:** Call `translateErrorAsync(error, t)` and show inline message
+- Do not show raw backend errors directly; always go through i18n
 
 **Mapping rule (strict):** portal-web maps backend codes to i18n keys as:
 
@@ -149,29 +257,95 @@ UI pattern:
 
 This mapping is implemented in `portal-web/src/lib/errorParser.ts`.
 
-### 2.3 Failure scenarios to handle explicitly
+### 2.4 Explicit error handling scenarios
+
+These scenarios require **explicit handling beyond the global handler**:
 
 Handle these consistently in UI:
 
-- Network offline / DNS / CORS: treat as connection error.
-- Timeouts: show timeout message; allow user retry.
-- `401` after refresh attempt: user must re-login (client redirects).
-- `403`: show “no permission” UX; do not offer actions that will always fail.
-- `409`: show conflict message (e.g. descriptor taken).
-- `429`: if `retryAfterSeconds` exists in Problem `extensions`, surface it to the user.
+- **Network offline / DNS / CORS:** treat as connection error (global handler shows translated toast).
+- **Timeouts:** show timeout message; allow user retry (global handler shows translated toast).
+- **`401` after refresh attempt:** user must re-login (client redirects automatically in `portal-web/src/api/client.ts`).
+- **`403`:** show "no permission" UX; do not offer actions that will always fail (global handler shows toast, but UI should prevent the action).
+- **`409`:** show conflict message (e.g. descriptor taken) (global handler shows translated toast).
+- **`429`:** if `retryAfterSeconds` exists in Problem `extensions`, surface it to the user (global handler shows toast, custom handling can extract retry time).
 
-### 2.4 Form validation errors (current behavior)
+**Inline form validation errors (opt-out scenario):**
 
-Today:
+When backend returns field-level errors (rare), you may need to opt out of global handler and show errors inline:
 
-- Backend often returns `400` with generic `detail`.
-- Some domain services include `extensions.field` for a single field.
+```tsx
+// If backend includes extensions.field for a single field
+const mutation = useMutation({
+  meta: { errorToast: "off" },
+  onError: async (error) => {
+    const problem = parseProblemDetails(error);
+    if (problem?.extensions?.field) {
+      // Show field-level error
+      form.setFieldError(
+        problem.extensions.field,
+        await translateErrorAsync(error, t),
+      );
+    } else {
+      // Fall back to generic error display
+      showErrorToast(await translateErrorAsync(error, t));
+    }
+  },
+});
+```
 
-Frontend guidance:
+**Loading states during error recovery:**
 
-- Prefer showing a toast for generic failures.
-- If `extensions.field` is present, you may focus the field and/or show a field-level error message.
-- Do not assume a full `{ fieldName: message }` map exists unless the backend explicitly provides it.
+When a mutation fails and user retries:
+
+- Show loading state: `mutation.isPending`
+- Disable retry button: `disabled={mutation.isPending}`
+- Clear previous error on retry: `mutation.reset()`
+
+**Query error states (less common with global handler):**
+
+Queries with `enabled: false` or special UX needs may require inline error display:
+
+```tsx
+const query = useQuery({
+  // ... query config
+  meta: { errorToast: "off" }, // Suppress global toast
+});
+
+// In JSX
+{
+  query.isError && (
+    <div className="alert alert-error">
+      <span>{await translateErrorAsync(query.error, t)}</span>
+    </div>
+  );
+}
+```
+
+### 2.5 Current portal behavior and known gaps
+
+**Implemented (production-ready):**
+
+- ✅ Global error handling via QueryCache/MutationCache onError
+- ✅ Automatic error translation (`translateErrorAsync`)
+- ✅ Toast notifications for all errors by default
+- ✅ Opt-out mechanism (`meta: { errorToast: 'off' }`)
+- ✅ Query error deduplication (30s window by queryHash)
+- ✅ AbortError filtering
+- ✅ 401 auto-refresh in ky client (`portal-web/src/api/client.ts`)
+
+**Current gaps/inconsistencies:**
+
+- Some components bypass global handler and show `mutation.error.message` directly (see drift report: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`)
+- Backend validation errors don't include full field→message map; most return generic `400` with a single `extensions.field`
+- Not all backend error codes have i18n translations (missing keys fall back to generic messages)
+
+**When touching error handling:**
+
+- Default: rely on global handler (no manual error display)
+- Special case: use `meta: { errorToast: 'off' }` + custom inline display only when UX specifically requires it
+- Always translate errors before displaying (`translateErrorAsync`)
+- Never show raw `error.message` or backend `detail` without translation
 
 ---
 
@@ -181,5 +355,6 @@ These are current backend↔portal misalignments that affect error UX:
 
 - Portal includes `parseValidationErrors()` expecting `extensions.errors | validationErrors | fieldErrors`, but backend does not emit a full field→message map today.
 - Backend maps Gin struct validation errors to a generic `400 invalid request body` (code: `request.invalid_body`) without exposing which fields failed.
+- **Onboarding components bypass global error handler:** Several onboarding pages manually display `mutation.error.message` instead of relying on the global QueryCache/MutationCache error handlers (see drift report: `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`).
 
 If you change either side, keep this document updated and log new drift in `DRIFT_TODO.md`.

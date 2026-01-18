@@ -45,11 +45,9 @@ If the component name or props mention a resource (e.g. `Order`, `Customer`, `Pr
 A **feature** is a cohesive slice of functionality. It can be:
 
 - **Resource/domain feature**: a business-owned resource and all of its UI + forms + feature-specific components.
-
   - Examples: `orders`, `inventory`, `customers`, `analytics`, `accounting`.
 
 - **Cross-cutting/global functionality feature**: global-ish client behavior/state plus components used across many pages.
-
   - Examples: `auth` (auth widgets + flows), `business-switcher` (selected business UX), `language` (language switcher + i18n helpers), `onboarding` (flow pages + steps).
 
 - **Layout/template feature**: a layout that has its own complex UI composition, local context/state, and supporting components.
@@ -91,35 +89,29 @@ Example pattern:
 All shared components must be resource-agnostic.
 
 - `portal-web/src/components/atoms/`
-
   - Small UI primitives.
   - No TanStack Query, no route params, no feature logic.
   - Allowed: generic `Button`, `Badge`, `Input`, `Dialog`, `Tooltip`, `Skeleton`, etc.
 
 - `portal-web/src/components/molecules/`
-
   - Compositions of atoms.
   - Still generic and reusable.
   - Allowed examples: `SearchInput`, `Pagination`, `ConfirmDialog`, `BottomSheet`.
 
 - `portal-web/src/components/organisms/`
-
   - Higher-level reusable composites.
   - Still generic. If it’s feature/resource-specific, it does not belong here.
   - Allowed examples: `Table`, `Header`, `Sidebar` (app chrome), generic filters/sorting.
 
 - `portal-web/src/components/templates/`
-
   - Layout-level wrappers with slots.
   - Must not bake in resource-specific behavior.
 
 - `portal-web/src/components/form/`
-
   - Generic UI form controls **not** tied to TanStack Form.
   - Controls should be usable with any form library (TanStack Form, RHF, uncontrolled).
 
 - `portal-web/src/components/charts/`
-
   - Generic, reusable Chart.js components.
   - Must not be analytics-specific; receive `data`/`options` via props.
 
@@ -136,9 +128,9 @@ Create features under:
 
 #### Feature types (allowed)
 
-- Resource features (business-scoped): `features/orders`, `features/inventory`, ...
-- Global/cross-cutting features: `features/auth`, `features/business-switcher`, `features/language`, ...
-- Layout/template features: `features/dashboard-layout`, `features/app-shell`, ...
+- **Resource features** (business-scoped domains): `features/orders`, `features/inventory`, `features/customers`, `features/accounting`, `features/analytics`, `features/reports`
+- **Global/cross-cutting features**: `features/auth`, `features/business-switcher`, `features/language`, `features/onboarding`, `features/home`
+- **Layout/template features**: `features/dashboard-layout`, `features/app-shell`
 
 If a module has its own state + components + forms, it is a strong sign it should be a feature.
 
@@ -146,9 +138,9 @@ Allowed subfolders (all optional):
 
 - `features/<feature>/state/` feature-local store (route-bound preferred)
 - `features/<feature>/components/` feature-specific components and pages
-- `features/<feature>/forms/` feature-specific forms
-- `features/<feature>/schema/` feature-specific zod schemas
-- `features/<feature>/utils/` feature-specific helpers
+- `features/<feature>/forms/` feature-specific forms (inventory has `components/forms/` subdirectory)
+- `features/<feature>/schema/` feature-specific zod schemas (orders, customers, inventory all have this)
+- `features/<feature>/utils/` feature-specific helpers (inventory has `utils/inventoryUtils.ts`, onboarding has `utils/onboarding.ts`)
 - `features/<feature>/types/` feature-specific types
 
 Rules:
@@ -210,15 +202,33 @@ Use this decision tree:
 
 ---
 
-## 4) Enforcement notes for AI agents
+## 4) Known drifts (code not following this SSOT)
+
+These drifts exist in the current codebase and should be fixed when encountered:
+
+1. **Resource-specific organisms** (see `backlog/drifts/2026-01-18-shippingzoneinfo-notes-violate-organisms-resource-agnostic-rule.md`):
+   - `components/organisms/ShippingZoneInfo.tsx` → should move to `features/orders/components/`
+   - `components/organisms/Notes.tsx` → should move to `features/customers/components/` or `features/notes/` (cross-cutting)
+
+2. **Resource-specific form fields in lib/** (see `backlog/drifts/2026-01-18-form-field-components-import-resource-specific-types.md`):
+   - `lib/form/components/CategorySelectField.tsx` → should move to `features/inventory/components/fields/`
+   - `lib/form/components/ProductVariantSelectField.tsx` → should move to `features/inventory/components/fields/`
+   - `lib/form/components/CustomerSelectField.tsx` → should move to `features/customers/components/fields/`
+
+3. **Feature-specific utilities in lib/** (see `backlog/drifts/2026-01-18-shippingzone-utility-in-lib-is-feature-specific.md`):
+   - `lib/shippingZone.ts` → should move to `features/orders/utils/` or `features/business/utils/`
+
+When refactoring or adding similar code, follow the correct patterns defined in this SSOT, not the drift patterns above.
+
+---
+
+## 5) Enforcement notes for AI agents
 
 - When adding a new page:
-
   - Create a route wrapper in `routes/**`.
   - Implement the page in `features/<feature>/components/**`.
 
 - When moving code:
-
   - Move + update imports in the same change.
   - Delete the old location immediately (no transitional duplicates).
 

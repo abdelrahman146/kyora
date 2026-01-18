@@ -95,7 +95,9 @@ Example shape:
 Rules:
 
 - `url` is **required**.
-- `assetId` is **optional** at validation level but **required in practice** for GC and future migrations. Always send it.
+- `assetId` is **required in practice** for GC and future migrations. Backend validation allows it to be optional for backward compatibility, but all new code must send it.
+  - Portal-web TypeScript types define `assetId` as **required** (non-optional).
+  - Backend Go validation uses `binding:"omitempty"` but this is for flexibility only.
 - `originalUrl` / `thumbnailOriginalUrl` are optional fallbacks; today the upload API mainly returns public/CDN URLs, so most clients will populate only `url` (+ `thumbnailUrl` if provided by their thumbnail workflow).
 
 ### Where `AssetReference` is used today
@@ -299,7 +301,6 @@ This request supports photos at both levels:
 Safer recommended patterns:
 
 - **Best for data integrity (recommended):**
-
   - Upload files first.
   - Only after upload completion, create/update business/product/variant with `AssetReference`.
 
@@ -314,7 +315,10 @@ Do **not** persist an `AssetReference` to the backend just because you already r
 ## Completion tracking (current reality)
 
 - The `complete` endpoint is required to assemble multipart uploads on S3.
-- The backend does not currently persist a “completed” flag in the `uploaded_assets` table (`MarkUploadComplete` is a no-op today). Do not build UX that depends on the server knowing multipart completion state.
+- The backend does not currently persist a "completed" flag in the `uploaded_assets` table.
+  - `MarkUploadComplete` is a no-op today (returns `nil` immediately).
+  - Comment in code: "For now, just return nil - this will be implemented in the GC rewrite"
+- Do not build UX that depends on the server knowing multipart completion state client-side tracking is the source of truth.
 
 ## Multipart upload failures and resume
 
@@ -348,17 +352,14 @@ This is **client state only**. Kyora intentionally does not have a server-side �
 ### Handling common multipart failure modes
 
 - **Network error / timeout while uploading a part:**
-
   - Retry the same part URL with exponential backoff.
   - Continue uploading remaining parts; you don’t need strict sequential uploads.
 
 - **Missing `ETag` in browser:**
-
   - Fix bucket CORS to expose `ETag`.
   - Without ETags you cannot complete multipart.
 
 - **403/expired presigned URLs (often after long pause):**
-
   - Presigned part URLs expire.
   - Kyora does not currently expose an endpoint to “refresh part URLs for an existing assetId/uploadId”.
   - The correct recovery is to **restart the upload**:
@@ -379,14 +380,16 @@ This is **client state only**. Kyora intentionally does not have a server-side �
 
 ## Thumbnail behavior (important for UX)
 
-- Backend decides whether a file “needs thumbnail” based on file category.
+- Backend decides whether a file "needs thumbnail" based on file category (images and videos).
 - If a thumbnail is needed, the upload descriptor includes a nested `thumbnail` descriptor.
 - The client is responsible for:
   - generating a thumbnail (canvas for images; extracted frame for video),
   - uploading thumbnail bytes with the thumbnail descriptor,
-  - uploading the thumbnail using the returned `method`/`url`/`headers` (thumbnail is not multipart today).
-
-## If you don’t store thumbnails in `AssetReference`, your UI will still work, but may load heavier media.
+  - uploading the thumbnail using the returned `method`/`url`/`headers`.
+- **Thumbnail uploads today:**
+  - Local provider: single `POST` to internal URL (same pattern as main local upload).
+  - S3 provider: single pre-signed `PUT` to a URL + required headers (not multipart).
+- If you don't store `thumbnailUrl` in `AssetReference`, your UI will still work, but may load heavier media.
 
 ## See Also
 

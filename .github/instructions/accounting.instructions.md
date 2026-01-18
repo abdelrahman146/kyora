@@ -85,13 +85,24 @@ All routes are business-scoped under:
   - Computes totals and `safeToDrawAmount`.
   - `from/to` are optional; invalid date format returns `400`.
 
+### Recent Activities
+
+- `GET /recent-activities?limit=N` → `RecentActivitiesResponse`
+  - Returns a unified list of recent accounting activities (expenses, investments, withdrawals, assets)
+  - Sorted by `occurredAt` descending
+  - Query: `limit` (default 10, max 50)
+  - Response includes polymorphic activity items with `type` field: `expense|investment|withdrawal|asset`
+
 ## Backend: list response contract
 
 All list endpoints return `list.ListResponse<T>` with **camelCase** metadata:
 
-- `items`
-- `page`, `pageSize`
-- `totalCount`, `hasMore`
+- `items` - Array of results
+- `page` - Current page number (1-based)
+- `pageSize` - Items per page
+- `totalCount` - Total items matching the query
+- `totalPages` - Total number of pages (computed)
+- `hasMore` - Whether more pages exist
 
 Pagination is implemented by `offset = (page-1)*pageSize` and `hasMore = page*pageSize < totalCount`.
 
@@ -207,16 +218,51 @@ E2E tests confirm date ranges apply to totals and safe-to-draw.
 
 ## Portal Web: repo reality (current)
 
-- There is a sidebar nav item pointing to `/accounting`.
-- There are translations and onboarding plan features referencing “accounting”.
-- There is **no implemented accounting route tree or API client** in portal-web today.
+### Status: Implemented
 
-If you implement portal accounting:
+Accounting is now implemented in portal-web as a complete feature module.
 
-- Add a business-scoped API client (follow patterns in `portal-web/src/api/inventory.ts`).
-- Keep list state URL-driven (TanStack Router search params) like customers/inventory.
-- Add query keys under `portal-web/src/lib/queryKeys.ts` and invalidate correctly after mutations.
-- Use the standard form system (`.github/instructions/forms.instructions.md`) and RTL UI rules (`.github/instructions/ui-implementation.instructions.md`).
+### Implemented Structure
+
+**Routes** (`portal-web/src/routes/business/$businessDescriptor/accounting/**`):
+
+- `/accounting/` - Dashboard (AccountingDashboard component)
+- `/accounting/capital` - Capital management page (CapitalListPage)
+- Uses accounting data in Reports routes (`/reports/`, `/reports/cashflow`, `/reports/health`, `/reports/profit`)
+
+**API Client** (`portal-web/src/api/accounting.ts`):
+
+- Complete CRUD operations for all accounting entities
+- Query options factories: `accountingQueries.*`, `expensesQueryOptions`, etc.
+- Custom hooks: `useExpensesQuery`, `useRecurringExpensesQuery`, etc.
+- Full TypeScript types and Zod schemas
+
+**Feature Module** (`portal-web/src/features/accounting/**`):
+
+- **Components:**
+  - List pages: ExpenseListPage, RecurringExpenseListPage, AssetListPage, CapitalListPage
+  - Card components: ExpenseCard, RecurringExpenseCard, AssetCard, TransactionCard
+  - Quick actions: ExpenseQuickActions, RecurringExpenseQuickActions, AssetQuickActions
+  - Dashboard: AccountingDashboard
+- **Sheets:** EditExpenseSheet, EditAssetSheet, EditTransactionSheet
+- **Schema:** expensesSearch.ts, recurringExpensesSearch.ts, options.ts
+
+### Implementation Patterns
+
+- Business-scoped API calls via `businessDescriptor` param
+- URL-driven list state (TanStack Router search params)
+- Query invalidation via `queryKeys.accounting.*` and `queryKeys.reports.*`
+- Standard form system (TanStack Form + field components)
+- RTL-first UI with daisyUI components
+
+### Future Work
+
+When extending portal accounting:
+
+- Follow existing patterns in `portal-web/src/features/accounting/**`
+- Reuse API client and query options from `portal-web/src/api/accounting.ts`
+- Add new routes under `/accounting/` following the existing structure
+- Use existing form sheets as templates for new forms
 
 ## Change checklist (when touching accounting)
 

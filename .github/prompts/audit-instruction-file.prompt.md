@@ -54,15 +54,25 @@ For each rule/pattern in the instruction file:
 
 ### Phase 3: Drift & Bug Detection
 
+**CRITICAL: Drift Direction**
+
+- **Drifts = Code not following instruction rules** (report these in backlog/drifts/)
+- **Instruction file outdated vs code = Auto-fix** (update instruction file, don't report)
+
+When instruction file rules don't match current code implementation:
+
+- If the code is correct and instructions are outdated → Update instruction file automatically in Phase 6
+- If the code violates good patterns → Report as drift or bug
+
 Search the codebase for:
 
-1. **Known drifts** — code that doesn't follow the instruction file patterns
-2. **Inconsistencies** — multiple competing patterns for the same problem
-3. **Anti-patterns** — code that violates stated rules
-4. **Missing patterns** — conventions used but not documented
-5. **Outdated references** — mentions of deprecated libraries, removed files, or changed APIs
+1. **Code drifts** — code that doesn't follow the instruction file patterns (report these)
+2. **Inconsistencies** — multiple competing patterns for the same problem (report these)
+3. **Anti-patterns** — code that violates stated rules (report as bugs if correctness issue, drifts if style/consistency issue)
+4. **Missing patterns** — conventions used in code but not documented in instructions (auto-fix: add to instruction file)
+5. **Outdated instruction rules** — instruction file mentions patterns/libraries/APIs not used in code (auto-fix: remove from instruction file or mark as planned)
 
-For each issue found, collect:
+For each CODE DRIFT or BUG found, collect:
 
 - **Exact location** (file path + line numbers)
 - **Current state** (what the code does now)
@@ -97,11 +107,12 @@ Create detailed reports in `backlog/` following this structure:
 - Template: Use the bug report template (`.github/prompts/templates/bug-report.template.md`)
 - Criteria: Behavior that breaks functionality or causes errors
 
-#### For Drifts (consistency issues):
+#### For Drifts (code consistency issues):
 
 - File: `backlog/drifts/YYYY-MM-DD-<short-slug>.md`
 - Template: Use the drift report template (`.github/prompts/templates/drift-report.template.md`)
-- Criteria: Code that works but doesn't follow established patterns/instructions
+- Criteria: **Code that works but doesn't follow established patterns/instructions**
+- IMPORTANT: Drifts are about CODE not following rules, NOT about instruction files being outdated (those get auto-fixed)
 
 #### For Enhancements (missing features/patterns):
 
@@ -113,13 +124,15 @@ Create detailed reports in `backlog/` following this structure:
 
 Based on your findings:
 
-1. **Add missing patterns** found in Phase 2
-2. **Remove invalid patterns** (those not actually used)
-3. **Update outdated patterns** to match current implementation
+1. **Add missing patterns** found in Phase 2 (patterns used in code but not documented)
+2. **Remove invalid patterns** (patterns in instructions but not used in code)
+3. **Update outdated patterns** to match current implementation (auto-fix instruction drift)
 4. **Clarify ambiguous rules** with examples from actual code
 5. **Add references** to related SSOT files (link, don't duplicate)
 6. **Update frontmatter** if scope has changed
-7. **Fix any "Known Drifts" sections** — if drifts are resolved, mark them as resolved; if new drifts exist, document them briefly
+7. **Update "Known Drifts" sections** — document CODE drifts (code not following patterns), not instruction staleness
+
+**Remember**: If instruction rules don't match code, update the instruction file here. Only create drift reports for CODE that doesn't follow the rules.
 
 ### Phase 7: Provide Summary
 

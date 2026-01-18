@@ -20,7 +20,7 @@ applyTo: "portal-web/**,storefront-web/**"
 
 ---
 
-## ⚠️ CRITICAL RULES
+## ⚠️ CRITICAL RULES (MANDATORY - NO EXCEPTIONS)
 
 ### 1. Form Context Requirement
 
@@ -44,11 +44,47 @@ applyTo: "portal-web/**,storefront-web/**"
 
 **Error symptom:** `Error: formContext only works when within a formComponent passed to createFormHook`
 
-### 2. Field Pattern
-
-**Always use `<form.AppField>` + `{(field) => <field.ComponentName />}` pattern:**
+**Bottom Sheet Pattern (STRICT):**
 
 ```tsx
+// ✅ CORRECT - AppForm wraps EVERYTHING including footer
+function MySheet() {
+  const form = useKyoraForm({...});
+  const formId = useId(); // or hardcoded stable id
+
+  return (
+    <form.AppForm>
+      <BottomSheet
+        footer={
+          <div className="flex gap-2">
+            <Button variant="ghost" onClick={onClose}>
+              {t('common:cancel')}
+            </Button>
+            <form.SubmitButton form={formId} variant="primary">
+              {t('common:save')}
+            </form.SubmitButton>
+          </div>
+        }
+      >
+        <form.FormRoot id={formId}>
+          {/* fields */}
+        </form.FormRoot>
+      </BottomSheet>
+    </form.AppForm>
+  );
+}
+```
+
+### 2. Field Pattern (MANDATORY)
+
+**NEVER use form components directly. ALWAYS use `<form.AppField>` + `{(field) => <field.ComponentName />}` pattern:**
+
+```tsx
+// ❌ WRONG - Using component directly
+<TextField name="email" label={t('auth.email')} />
+<PriceInput name="amount" />
+
+// ✅ CORRECT - Using AppField pattern
 <form.AppField name="email" validators={{...}}>
   {(field) => (
     <field.TextField
@@ -60,34 +96,193 @@ applyTo: "portal-web/**,storefront-web/**"
 </form.AppField>
 ```
 
-### 3. Validation Timing (Default: onBlur)
+**Why this matters:**
+
+- Ensures automatic value binding
+- Ensures error handling works
+- Ensures validation timing works
+- Ensures focus management works
+
+### 3. Field Component Selection (STRICT RULES)
+
+**Always choose the correct field component for the data type:**
+
+| Data Type            | Component                           | Example                         |
+| -------------------- | ----------------------------------- | ------------------------------- |
+| Money/Price/Currency | `<field.PriceField>`                | amount, price, cost, value, fee |
+| Quantity/Count       | `<field.QuantityField>`             | quantity, stock, count          |
+| Email                | `<field.TextField type="email">`    | email                           |
+| Phone                | `<field.TextField type="tel">`      | phone, mobile                   |
+| Password             | `<field.PasswordField>`             | password, confirmPassword       |
+| Long text            | `<field.TextareaField>`             | description, note, comment      |
+| Single choice        | `<field.SelectField>`               | category, status, country       |
+| Multiple choice      | `<field.SelectField multiSelect>`   | tags, permissions               |
+| Yes/No               | `<field.ToggleField>`               | enabled, active, isRecurring    |
+| Date                 | `<field.DateField>`                 | birthdate, startDate, dueDate   |
+| Time                 | `<field.TimeField>`                 | appointmentTime, openingTime    |
+| Date + Time          | `<field.DateTimeField>`             | eventDateTime, scheduledAt      |
+| Date range           | `<field.DateRangeField>`            | reportPeriod, dateRange         |
+| File(s)              | `<field.FileUploadField>`           | documents, attachments          |
+| Image(s)             | `<field.ImageUploadField>`          | photos, gallery, avatar         |
+| Customer             | `<field.CustomerSelectField>`       | customerId                      |
+| Product variant      | `<field.ProductVariantSelectField>` | variantId                       |
+| Address              | `<field.AddressSelectField>`        | shippingAddressId               |
+
+**Money fields (CRITICAL):**
+
+```tsx
+// ❌ WRONG - Never use TextField for money
+<field.TextField name="amount" type="number" />
+<field.TextField name="price" inputMode="decimal" />
+
+// ✅ CORRECT - Always use PriceField for money
+<field.PriceField
+  label={t('form.amount')}
+  currencyCode={currency}
+  placeholder="0.00"
+  required
+/>
+```
+
+**PriceField automatically:**
+
+- Sets `inputMode="decimal"` for mobile numeric keyboard
+- Sets `dir="ltr"` to keep numbers left-to-right in RTL
+- Shows currency code as prefix
+- Prevents invalid characters
+- Formats decimal places correctly (max 2)
+- Handles comma/dot decimal separator
+
+### 4. Validation Timing (Default: onBlur)
 
 ```tsx
 validators={{
-  onBlur: z.string().email('invalid_email'),  // Default - best UX
+  onBlur: z.string().email('validation.invalid_email'),  // Default - best UX
   onChange: /* Use for real-time (username, password strength) */
   onChangeAsync: /* Use for API checks with debounce */
 }}
 ```
 
-### 4. Translation Keys
+### 5. Translation Keys (MANDATORY)
 
-**Always use translation keys, never hardcoded messages:**
+**ALWAYS use translation keys from `src/i18n/*/errors.json`, NEVER hardcoded messages:**
 
 ```tsx
-// ❌ WRONG
+// ❌ WRONG - Hardcoded English message
 z.string().min(8, "Password must be at least 8 characters");
+z.string().email("Please enter a valid email");
+z.number().positive("Must be positive");
 
-// ✅ CORRECT
+// ✅ CORRECT - Translation keys
 z.string().min(8, "validation.password_min_length");
-// Translation: src/i18n/*/errors.json → { "validation": { "password_min_length": "..." } }
+z.string().email("validation.invalid_email");
+z.number().positive("validation.positive_number");
 ```
 
-**Important (Prevents Missing-Key Bugs):**
+**Translation key requirements:**
 
-- Validation keys must be prefixed with `validation.` (e.g. `validation.required`, `validation.invalid_email`).
+- Validation keys **MUST** be prefixed with `validation.` (e.g. `validation.required`, `validation.invalid_email`).
+- Keys **MUST** exist in `src/i18n/en/errors.json` under `validation.*`.
+- Keys **MUST** exist in `src/i18n/ar/errors.json` with Arabic translation.
 - The app translates these via `src/lib/translateValidationError.ts`.
 - Keys without the `validation.` prefix are treated as already-translated strings.
+
+**Common validation keys available:**
+
+```typescript
+// Required fields
+"validation.required";
+
+// Format validation
+"validation.invalid_email";
+"validation.invalid_phone";
+"validation.invalid_format";
+
+// Length validation
+"validation.min_length"; // interpolates {{min}}
+"validation.max_length"; // interpolates {{max}}
+"validation.password_min_length";
+
+// Number validation
+"validation.positive_number";
+"validation.min_zero";
+"validation.min_value"; // interpolates {{min}}
+"validation.max_value"; // interpolates {{max}}
+"validation.invalid_number";
+"validation.integer_only";
+
+// Date validation
+"validation.invalid_date";
+"validation.date_cannot_be_future";
+"validation.date_cannot_be_past";
+"validation.end_date_must_be_after_start_date";
+
+// Selection validation
+"validation.select_at_least_one";
+"validation.select_too_many"; // interpolates {{max}}
+```
+
+**If you need a new validation message:**
+
+1. Add it to `portal-web/src/i18n/en/errors.json` under `validation.*`
+2. Add it to `portal-web/src/i18n/ar/errors.json` with Arabic translation
+3. Use the key in your validator
+
+### 6. Bottom Sheet Structure (STRICT)
+
+**ALL bottom sheets with forms MUST follow this structure:**
+
+```tsx
+function MySheet({ isOpen, onClose }) {
+  const { t } = useTranslation();
+  const form = useKyoraForm({ /* ... */ });
+  const formId = useId(); // or "my-form-id"
+
+  return (
+    <form.AppForm>  {/* MUST wrap everything */}
+      <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={t('title')}
+        footer={  {/* Footer MUST be here, not below FormRoot */}
+          <div className="flex gap-2">
+            <Button
+              type="button"  {/* MUST be type="button" */}
+              variant="ghost"
+              className="flex-1"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              {t('common:cancel')}
+            </Button>
+            <form.SubmitButton
+              form={formId}  {/* MUST match FormRoot id */}
+              variant="primary"
+              className="flex-1"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t('common:saving') : t('common:save')}
+            </form.SubmitButton>
+          </div>
+        }
+      >
+        <form.FormRoot id={formId} className="space-y-4">
+          {/* Fields go here */}
+        </form.FormRoot>
+      </BottomSheet>
+    </form.AppForm>
+  );
+}
+```
+
+**Rules:**
+
+- `form.AppForm` MUST wrap the entire BottomSheet (including footer)
+- `footer` prop MUST be used for buttons (not after FormRoot)
+- Cancel button MUST have `type="button"` to prevent form submission
+- `form.SubmitButton` MUST have `form={formId}` matching `FormRoot` id
+- Both buttons MUST be disabled while `isSubmitting`
+- FormRoot MUST have the `id` prop matching SubmitButton's `form` prop
 
 ---
 
@@ -450,7 +645,7 @@ Time picker with hour/minute controls.
         const hours = date.getHours();
         return hours >= 9 && hours < 17;
       },
-      { message: "outside_business_hours" }
+      { message: "outside_business_hours" },
     ),
   }}
 >
@@ -541,7 +736,7 @@ z.custom<DateRange>((val) => {
   const range = val as DateRange;
   if (!range?.from || !range?.to) return "date_range_required";
   const days = Math.ceil(
-    (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24)
+    (range.to.getTime() - range.from.getTime()) / (1000 * 60 * 60 * 24),
   );
   if (days > 90) return "maximum_90_days";
   return undefined;
@@ -864,31 +1059,101 @@ validators={{
 
 ### Modal/Sheet with External Submit
 
-**CRITICAL:** `form.AppForm` must wrap the ENTIRE component, including footer:
+**CRITICAL:** `form.AppForm` must wrap the ENTIRE component, including footer.
+
+**Strict pattern (MUST follow exactly):**
 
 ```tsx
-function AddCustomerSheet() {
-  const formId = useId();
+function AddCustomerSheet({ isOpen, onClose }) {
+  const { t } = useTranslation();
+  const formId = useId(); // or "add-customer-form"
   const form = useKyoraForm({
-    /* ... */
+    defaultValues: {
+      /* ... */
+    },
+    onSubmit: async ({ value }) => {
+      await api.createCustomer(value);
+      onClose();
+    },
   });
 
-  // ✅ CORRECT - AppForm wraps everything
+  const isSubmitting = createMutation.isPending;
+
+  // ✅ CORRECT - AppForm wraps everything including footer
   return (
     <form.AppForm>
       <BottomSheet
+        isOpen={isOpen}
+        onClose={onClose}
+        title={t("customers:add_customer")}
+        closeOnOverlayClick={!isSubmitting}
+        closeOnEscape={!isSubmitting}
         footer={
-          <div>
-            <button onClick={onClose}>Cancel</button>
-            <form.SubmitButton form={formId}>Submit</form.SubmitButton>
+          <div className="flex gap-2">
+            <Button
+              type="button"
+              variant="ghost"
+              className="flex-1"
+              onClick={onClose}
+              disabled={isSubmitting}
+            >
+              {t("common:cancel")}
+            </Button>
+            <form.SubmitButton
+              form={formId}
+              variant="primary"
+              className="flex-1"
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? t("common:saving") : t("common:save")}
+            </form.SubmitButton>
           </div>
         }
       >
-        <form.FormRoot id={formId}>{/* fields */}</form.FormRoot>
+        <form.FormRoot id={formId} className="space-y-4">
+          {/* fields go here */}
+        </form.FormRoot>
       </BottomSheet>
     </form.AppForm>
   );
 }
+```
+
+**Common mistakes to avoid:**
+
+```tsx
+// ❌ WRONG - AppForm doesn't wrap footer
+<>
+  <form.AppForm>
+    <BottomSheet>
+      <form.FormRoot id={formId}>{/* fields */}</form.FormRoot>
+    </BottomSheet>
+  </form.AppForm>
+  <div>
+    <button onClick={onClose}>Cancel</button>
+    <form.SubmitButton form={formId}>Submit</form.SubmitButton>
+  </div>
+</>
+
+// ❌ WRONG - footer not used, buttons after FormRoot
+<form.AppForm>
+  <BottomSheet>
+    <form.FormRoot id={formId}>{/* fields */}</form.FormRoot>
+    <div>
+      <button onClick={onClose}>Cancel</button>
+      <form.SubmitButton form={formId}>Submit</form.SubmitButton>
+    </div>
+  </BottomSheet>
+</form.AppForm>
+
+// ❌ WRONG - cancel button missing type="button"
+<Button onClick={onClose}>{t('cancel')}</Button>
+// This triggers form submission in some browsers!
+
+// ❌ WRONG - form id mismatch
+<form.FormRoot id="my-form">{/* fields */}</form.FormRoot>
+...
+<form.SubmitButton form="different-form">Submit</form.SubmitButton>
 ```
 
 ### Dependent Fields (Auto-Update)
@@ -1036,7 +1301,7 @@ validators={{
 
 **Cause:** Translation key missing in `src/i18n/*/errors.json`
 
-**Solution:** Add key to errors.json with translated message
+**Solution:** Add key to errors.json with translated message under `validation.*`
 
 ### Issue: Form not submitting
 
@@ -1046,9 +1311,9 @@ validators={{
 
 ### Issue: Field not validating
 
-**Cause:** Validator in wrong place (top-level `onBlur` instead of `validators.email.onBlur`)
+**Cause:** Validator in wrong place or not using AppField pattern
 
-**Solution:** Structure validators as `validators: { fieldName: { onBlur: ... } }`
+**Solution:** Use `<form.AppField>` with validators prop, structure as `validators: { onBlur: ... }`
 
 ### Issue: "businessDescriptor is required"
 
@@ -1056,22 +1321,411 @@ validators={{
 
 **Solution:** Wrap component in `<BusinessContext.Provider value={business.descriptor}>`
 
+### Issue: Money field showing wrong keyboard on mobile
+
+**Cause:** Using TextField instead of PriceField
+
+**Solution:** Use `<field.PriceField>` which automatically sets `inputMode=\"decimal\"` and `dir=\"ltr\"`
+
+### Issue: Cancel button submitting form
+
+**Cause:** Missing `type=\"button\"` attribute
+
+**Solution:** Always add `type=\"button\"` to cancel/secondary buttons in forms
+
+### Issue: Form state not updating
+
+**Cause:** Using components directly instead of AppField pattern
+
+**Solution:** Replace `<TextField />` with `<form.AppField>{(field) => <field.TextField />}</form.AppField>`
+
 ---
 
-## Agent Validation Checklist
+## Common Pitfalls & How to Avoid Them
 
-Before completing form task:
+### Pitfall 1: Using form components directly
 
-- ☑ All form components inside `<form.AppForm>`
-- ☑ All fields use `<form.AppField>` + `{(field) => <field.Component />}` pattern
-- ☑ Validators use `onBlur` by default (or documented exception)
-- ☑ All error messages are translation keys, not hardcoded strings
-- ☑ Translation keys exist in `src/i18n/*/errors.json`
+```tsx
+// ❌ WRONG - Component used directly
+<TextField
+  name=\"email\"
+  value={email}
+  onChange={(e) => setEmail(e.target.value)}
+  label={t('auth.email')}
+/>
+
+// ❌ WRONG - PriceInput used directly
+<PriceInput
+  name=\"amount\"
+  value={amount}
+  onChange={(e) => setAmount(e.target.value)}
+/>
+
+// ✅ CORRECT - Always use AppField pattern
+<form.AppField name=\"email\" validators={{ onBlur: z.string().email('validation.invalid_email') }}>
+  {(field) => (
+    <field.TextField
+      label={t('auth.email')}
+      type=\"email\"
+    />
+  )}
+</form.AppField>
+
+<form.AppField name=\"amount\" validators={{ onChange: ({ value }) => { /* ... */ } }}>
+  {(field) => (
+    <field.PriceField
+      label={t('form.amount')}
+      currencyCode={currency}
+    />
+  )}
+</form.AppField>
+```
+
+**Why:** Direct usage bypasses form context, validation, error handling, and focus management.
+
+### Pitfall 2: Wrong component for money fields
+
+```tsx
+// ❌ WRONG - TextField with type=\"number\"
+<form.AppField name=\"amount\">
+  {(field) => (
+    <field.TextField
+      type=\"number\"
+      step=\"0.01\"
+      min=\"0\"
+    />
+  )}
+</form.AppField>
+
+// ❌ WRONG - TextField with inputMode
+<form.AppField name=\"price\">
+  {(field) => (
+    <field.TextField
+      inputMode=\"decimal\"
+      pattern=\"[0-9]*\"
+    />
+  )}
+</form.AppField>
+
+// ✅ CORRECT - PriceField for all money values
+<form.AppField name=\"amount\">
+  {(field) => (
+    <field.PriceField
+      label={t('form.amount')}
+      currencyCode={currency}
+      placeholder=\"0.00\"
+    />
+  )}
+</form.AppField>
+```
+
+**Why:** PriceField handles decimal formatting, currency display, mobile keyboard, RTL, and validation automatically.
+
+**Money field detection:**
+
+- If the field name contains: `amount`, `price`, `cost`, `fee`, `value`, `total`, `subtotal`, `vat`, `discount`, `shipping`
+- If the label refers to money/currency
+- If the value represents money
+
+**Always use PriceField.**
+
+### Pitfall 3: Hardcoded validation messages
+
+```tsx
+// ❌ WRONG - English hardcoded
+validators={{
+  onBlur: z.string().min(8, \"Password must be at least 8 characters\"),
+}}
+
+validators={{
+  onChange: ({ value }) => {
+    if (!value) return \"This field is required\";
+    if (value.length < 3) return \"Must be at least 3 characters\";
+    return undefined;
+  },
+}}
+
+// ✅ CORRECT - Translation keys
+validators={{
+  onBlur: z.string().min(8, \"validation.password_min_length\"),
+}}
+
+validators={{
+  onChange: ({ value }) => {
+    if (!value) return \"validation.required\";
+    if (value.length < 3) return \"validation.min_length\"; // with interpolation
+    return undefined;
+  },
+}}
+```
+
+**Why:** Hardcoded messages break i18n, ignore RTL, and create maintenance burden.
+
+### Pitfall 4: BottomSheet structure mistakes
+
+```tsx
+// ❌ WRONG - AppForm doesn't wrap footer
+<form.AppForm>
+  <BottomSheet>
+    <form.FormRoot id=\"my-form\">
+      {/* fields */}
+    </form.FormRoot>
+  </BottomSheet>
+</form.AppForm>
+<div>
+  <Button onClick={onClose}>Cancel</Button>
+  <form.SubmitButton form=\"my-form\">Save</form.SubmitButton>
+</div>
+
+// ❌ WRONG - Footer buttons after FormRoot
+<form.AppForm>
+  <BottomSheet>
+    <form.FormRoot id=\"my-form\">
+      {/* fields */}
+    </form.FormRoot>
+    <div className=\"flex gap-2\">
+      <Button onClick={onClose}>Cancel</Button>
+      <form.SubmitButton form=\"my-form\">Save</form.SubmitButton>
+    </div>
+  </BottomSheet>
+</form.AppForm>
+
+// ✅ CORRECT - AppForm wraps everything, footer is a prop
+<form.AppForm>
+  <BottomSheet
+    footer={
+      <div className=\"flex gap-2\">
+        <Button type=\"button\" variant=\"ghost\" onClick={onClose}>
+          {t('common:cancel')}
+        </Button>
+        <form.SubmitButton form=\"my-form\" variant=\"primary\">
+          {t('common:save')}
+        </form.SubmitButton>
+      </div>
+    }
+  >
+    <form.FormRoot id=\"my-form\">
+      {/* fields */}
+    </form.FormRoot>
+  </BottomSheet>
+</form.AppForm>
+```
+
+**Why:** SubmitButton needs form context, which only exists inside AppForm. Footer must be inside AppForm scope.
+
+### Pitfall 5: Cancel button submitting form
+
+```tsx
+// ❌ WRONG - Missing type=\"button\"
+<Button onClick={onClose}>Cancel</Button>
+
+// ❌ WRONG - Using form.SubmitButton
+<form.SubmitButton onClick={onClose}>Cancel</form.SubmitButton>
+
+// ✅ CORRECT - type=\"button\" prevents submission
+<Button type=\"button\" onClick={onClose}>
+  {t('common:cancel')}
+</Button>
+```
+
+**Why:** Buttons inside forms default to `type=\"submit\"` and will trigger form submission when clicked.
+
+### Pitfall 6: Missing validation keys
+
+```tsx
+// ❌ WRONG - Key doesn't exist
+validators={{
+  onBlur: z.string().email('validation.email_format_invalid'),
+}}
+// Result: \"validation.email_format_invalid\" shown to user (not translated)
+
+// ✅ CORRECT - Use existing key
+validators={{
+  onBlur: z.string().email('validation.invalid_email'),
+}}
+// Result: \"Please enter a valid email address\" (EN) or \"الرجاء إدخال بريد إلكتروني صحيح\" (AR)
+```
+
+**How to check:**
+
+1. Search `src/i18n/en/errors.json` for the key
+2. Verify it exists under `validation.*`
+3. Verify Arabic translation exists in `src/i18n/ar/errors.json`
+
+### Pitfall 7: Wrong validation timing
+
+```tsx
+// ❌ WRONG - Using onChange for all fields (too aggressive)
+<form.AppField
+  name=\"email\"
+  validators={{
+    onChange: z.string().email('validation.invalid_email'),
+  }}
+>
+  {(field) => <field.TextField type=\"email\" />}
+</form.AppField>
+// Result: Error shows while user is still typing
+
+// ✅ CORRECT - Use onBlur by default
+<form.AppField
+  name=\"email\"
+  validators={{
+    onBlur: z.string().email('validation.invalid_email'),
+  }}
+>
+  {(field) => <field.TextField type=\"email\" />}
+</form.AppField>
+// Result: Error shows after user leaves field
+
+// ✅ CORRECT - Use onChange only when needed (real-time feedback)
+<form.AppField
+  name=\"username\"
+  validators={{
+    onChange: z.string().min(3, 'validation.min_length'),
+    onChangeAsync: async ({ value }) => {
+      const exists = await checkUsername(value);
+      return exists ? 'validation.username_taken' : undefined;
+    },
+    onChangeAsyncDebounceMs: 500,
+  }}
+>
+  {(field) => <field.TextField />}
+</form.AppField>
+```
+
+**When to use each:**
+
+- `onBlur`: Default for most fields (best UX)
+- `onChange`: Real-time feedback (username availability, password strength)
+- `onChangeAsync`: API validation with debounce
+
+### Pitfall 8: Form ID mismatch
+
+```tsx
+// ❌ WRONG - IDs don't match
+<form.FormRoot id=\"create-form\">
+  {/* fields */}
+</form.FormRoot>
+...
+<form.SubmitButton form=\"submit-form\">Save</form.SubmitButton>
+
+// ✅ CORRECT - Matching IDs
+const formId = useId(); // or \"create-expense-form\"
+...
+<form.FormRoot id={formId}>
+  {/* fields */}
+</form.FormRoot>
+...
+<form.SubmitButton form={formId}>Save</form.SubmitButton>
+```
+
+**Why:** SubmitButton needs to know which form to submit via the `form` attribute.
+
+---
+
+## Agent Validation Checklist (MANDATORY BEFORE COMPLETING TASK)
+
+**Before marking a form task as complete, verify ALL of these:**
+
+### Structure & Context
+
+- ☑ `<form.AppForm>` wraps EVERYTHING (including BottomSheet footer if present)
+- ☑ All form components (FormRoot, SubmitButton, FormError, Subscribe) are inside `<form.AppForm>`
+- ☑ FormRoot has an `id` prop
+- ☑ SubmitButton has `form` prop matching FormRoot's `id`
+- ☑ No form components are used outside `<form.AppForm>`
+
+### Field Pattern
+
+- ☑ **ZERO direct component usage** - every field uses `<form.AppField>` + `{(field) => <field.Component />}` pattern
+- ☑ **NO** `<TextField .../>`, `<SelectField .../>`, `<PriceInput .../>`, etc. used directly
+- ☑ All fields use the render prop pattern: `{(field) => <field.ComponentName />}`
+
+### Field Component Selection
+
+- ☑ Money/price fields use `<field.PriceField>` (NOT TextField with type=\"number\")
+- ☑ Quantity fields use `<field.QuantityField>`
+- ☑ Email fields use `<field.TextField type=\"email\">`
+- ☑ Password fields use `<field.PasswordField>`
+- ☑ Long text uses `<field.TextareaField>` (NOT TextField)
+- ☑ Single select uses `<field.SelectField>`
+- ☑ Multi-select uses `<field.SelectField multiSelect>`
+- ☑ Dates use `<field.DateField>`
+- ☑ Times use `<field.TimeField>`
+- ☑ Images use `<field.ImageUploadField>`
+- ☑ Files use `<field.FileUploadField>`
+- ☑ Toggles/switches use `<field.ToggleField>`
+- ☑ Radio groups use `<field.RadioField>`
+
+### Validation
+
+- ☑ All validators use `onBlur` by default (exceptions must be documented)
+- ☑ **ZERO hardcoded error messages** - all use `validation.*` keys
+- ☑ All validation keys exist in `src/i18n/en/errors.json` under `validation.*`
+- ☑ All validation keys exist in `src/i18n/ar/errors.json` with Arabic translation
 - ☑ Cross-field validation uses `onChangeListenTo` or `onBlurListenTo`
-- ☑ File uploads wrapped in `<BusinessContext.Provider>`
+- ☑ Async validation uses `onChangeAsync` with `onChangeAsyncDebounceMs`
+
+### Bottom Sheet (if applicable)
+
+- ☑ `form.AppForm` wraps the entire BottomSheet (including footer)
+- ☑ Footer buttons are in the `footer` prop (NOT after FormRoot)
+- ☑ Cancel button has `type=\"button\"` to prevent form submission
+- ☑ Cancel button is disabled during submission
+- ☑ Submit button is disabled during submission
+- ☑ Both buttons use `className=\"flex-1\"` for equal width
+- ☑ Submit button shows loading state (e.g., `{isSubmitting ? t('saving') : t('save')}`)
+
+### Translation & i18n
+
+- ☑ All labels use `t()` function, no hardcoded text
+- ☑ All validation messages use translation keys
+- ☑ Button labels use translation keys
+- ☑ Placeholder text uses translation keys
+- ☑ Helper text uses translation keys
+
+### TypeScript & Types
+
 - ☑ No `any` types in validators or handlers
-- ☑ RTL: No `left`/`right` classes (use `start`/`end`)
-- ☑ Accessibility: `aria-label` on icon-only buttons
+- ☑ Form values are properly typed
+- ☑ Field names match form value types
+- ☑ Validator functions have proper return types
+
+### Accessibility
+
+- ☑ All fields have labels (via `label` prop)
+- ☑ Required fields marked with `required` prop
+- ☑ Icon-only buttons have `aria-label`
+- ☑ Error messages are associated with fields
+
+### RTL Support
+
+- ☑ No `left`/`right` classes used (use `start`/`end` or `ms`/`me`)
+- ☑ LTR-only fields (phone, codes, IDs) have `dir=\"ltr\"`
+- ☑ Money fields automatically set `dir=\"ltr\"` (via PriceField)
+
+### File Uploads (if applicable)
+
+- ☑ FileUploadField/ImageUploadField wrapped in `<BusinessContext.Provider>`
+- ☑ Business descriptor is passed to context
+- ☑ File validation schema used (e.g., `imageSchema()`, `fileSchema()`)
+
+### Performance
+
+- ☑ Avoid `form.useStore()` in components (use `<form.Subscribe>` instead)
+- ☑ Async validators have debounce configured
+- ☑ Large lists use field array optimizations
+
+### Common Mistakes to Check
+
+- ☑ NOT using `<TextField name=\"amount\" type=\"number\">` for money
+- ☑ NOT using `<input>` or other native elements directly
+- ☑ NOT hardcoding English error messages
+- ☑ NOT placing SubmitButton outside form.AppForm
+- ☑ NOT forgetting `type=\"button\"` on cancel buttons
+- ☑ NOT using wrong field component for data type
+
+**If ANY checkbox is unchecked, the form is NOT complete. Fix it before finishing.**
 
 ---
 

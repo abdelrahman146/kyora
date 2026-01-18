@@ -42,7 +42,8 @@ This doc is the SSOT for how `portal-web/**` must call the backend.
 
 - Ky instance: `portal-web/src/api/client.ts` exports:
   - `apiClient` (ky instance with auth + retry + refresh flow)
-  - typed helpers: `get/post/postVoid/put/patch/del/delVoid`
+  - typed helpers: `get<T>/post<T>/postVoid/put<T>/patch<T>/del<T>/delVoid`
+  - all helpers include request deduplication to prevent duplicate in-flight requests
 
 Important behavior:
 
@@ -57,14 +58,16 @@ Important behavior:
 
 ### 1.3 Query organization pattern
 
-Most API modules follow this structure:
+All API modules follow this structure:
 
-- `*Api`: plain async functions that call `get/post/patch/...`.
+- `*Api`: plain async functions that call `get/post/patch/del/delVoid`.
 - `*Queries`: `queryOptions({ queryKey, queryFn, staleTime, enabled })` factories.
 - `use*Query` hooks that call `useQuery(*Queries.*)`.
 - `use*Mutation` hooks that call `useMutation({ mutationFn, onSuccess, onError })`.
 
 Query keys are centralized under `portal-web/src/lib/queryKeys.ts`.
+
+Route loaders use `queryClient.ensureQueryData()` or `queryClient.prefetchQuery()` to prefetch data before components render.
 
 ---
 
@@ -102,7 +105,9 @@ If you need a new backend call:
 - Mutation side-effects must be expressed via query invalidation:
   - prefer targeted invalidation (specific list/detail keys)
   - avoid “invalidate everything” unless the user explicitly requests refresh
-  - use helpers in `portal-web/src/lib/queryInvalidation.ts` when needed
+  - use helpers in `portal-web/src/lib/queryInvalidation.ts` for business-scoped invalidation
+    - `invalidateBusinessScopedQueries(queryClient, businessDescriptor?)` - invalidates all queries marked as `businessScoped: true`
+    - only use when required (e.g., business deletion, explicit user-triggered refresh)
 
 ### 2.4 Global error handling (SSOT)
 
@@ -124,12 +129,20 @@ Policy:
 
 The global handlers are implemented in `portal-web/src/main.tsx` via `QueryCache` and `MutationCache`.
 
-Rules:
+Rules: via `shouldIgnoreGlobalError`.
 
-- Abort/cancel errors are ignored globally.
 - Query error toasts are **deduped** by `queryHash` for 30s to prevent spam from refetch loops.
+- Mutation error toasts show immediately (no deduplication).
 - Both queries and mutations support an opt-out meta flag:
   - set `meta: { errorToast: 'off' }` to suppress the global toast.
+  - use this only for inline form validation or special error handling UX.
+
+Use the shared helper `portal-web/src/lib/toast.ts` (`showErrorFromException`) which translates via `translateErrorAsync`.
+
+**Current implementation status:**
+
+- Global handlers are fully operational for all domains (customer, order, inventory, accounting, etc.)
+- Known drift: Onboarding components bypass global handler and manually display `mutation.error.message` (see `backlog/drifts/2026-01-18-onboarding-components-bypass-global-error-handler.md`)
 
 Use the shared helper `portal-web/src/lib/toast.ts` (`showErrorFromException`) which translates via `translateErrorAsync`.
 

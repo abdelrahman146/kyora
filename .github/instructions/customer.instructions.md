@@ -28,7 +28,6 @@ All routes are under:
 ### Customers
 
 - `GET /customers`
-
   - Pagination: `page` (default 1), `pageSize` (default 20, max 100)
   - Sorting: `orderBy` (repeatable). Use `-field` for DESC.
   - Search: `search` (normalized via `list.NormalizeSearchTerm`; overly-long values return `400`)
@@ -39,15 +38,12 @@ All routes are under:
   - Response: `list.ListResponse<CustomerResponse>` (camelCase list metadata)
 
 - `GET /customers/:customerId`
-
   - Returns customer including `addresses[]` and `notes[]` (preloaded)
 
 - `POST /customers`
-
   - Creates a customer. Email uniqueness is enforced per business: `(business_id, email)`.
 
 - `PATCH /customers/:customerId`
-
   - Updates a customer.
 
 - `DELETE /customers/:customerId`
@@ -66,6 +62,8 @@ All routes are under:
 - `POST /customers/:customerId/notes` → creates note
 - `DELETE /customers/:customerId/notes/:noteId` → soft deletes note
 
+**Important:** There is no PATCH/update endpoint for customer notes. Notes are create-only (immutable after creation) or can be deleted.
+
 ## Backend: RBAC and isolation rules (enforced)
 
 Routes are guarded like:
@@ -82,7 +80,11 @@ E2E tests confirm:
 
 ### Customer
 
-- `Customer.Email` is required (DB + request validation) and unique per business.
+- `Customer.Email` field:
+  - **Model:** stored as `nullable.String` in GORM model (to support optional email during creation)
+  - **Response:** `CustomerResponse.Email` is typed as `string` (non-null) and populated from `customer.Email.String`
+  - **Validation:** `CreateCustomerRequest.Email` is optional (`binding:"omitempty,email"`), but backend requires `PhoneNumber` and `PhoneCode` as mandatory identification
+  - **Uniqueness:** enforced per business via unique constraint `(business_id, email)`
 - `CountryCode` is normalized to uppercase on create/update.
 - Social handles are nullable strings:
   - `instagramUsername`, `tiktokUsername`, `facebookUsername`, `xUsername`, `snapchatUsername`, `whatsappNumber`
@@ -147,11 +149,14 @@ The backend does **not** currently validate that `phone` is E.164; portal-web cu
 
 ### Address update (repo reality)
 
-Backend update currently only updates:
+Backend `UpdateCustomerAddress` service method only updates:
 
 - `street`, `city`, `state`, `zipCode`, `countryCode`
 
-Even though portal-web’s update request type includes `phoneCode`/`phoneNumber`, backend service does not update them today.
+**Phone fields are NOT updateable:**
+
+- Even though `UpdateCustomerAddressRequest` DTO includes `phoneCode` and `phoneNumber` binding fields, the service implementation does not update these fields.
+- Portal-web's update request type includes these fields, but they are silently ignored by the backend.
 
 ### Note JSON shape
 
@@ -172,13 +177,15 @@ Other domains (e.g., orders) should use this helper to prevent cross-customer / 
 
 **File placement SSOT:** `.github/instructions/portal-web-code-structure.instructions.md`
 
-- The items below are _current code locations_, not a requirement.
-- Any new/refactored customer UI must live under `portal-web/src/features/customers/**`.
+Current implementation follows the target structure:
 
 - Customer API + hooks: `portal-web/src/api/customer.ts`
 - Address API + hooks: `portal-web/src/api/address.ts`
 - Route wrappers: `portal-web/src/routes/business/$businessDescriptor/customers/**`
-- Current pages + sheets/forms (drift): `portal-web/src/routes/business/$businessDescriptor/customers/**`, `portal-web/src/components/organisms/customers/*`
+- Feature components: `portal-web/src/features/customers/components/**`
+- Search schemas: `portal-web/src/features/customers/schema/**`
+
+**Note:** No legacy `portal-web/src/components/organisms/customers/*` exists; implementation is already in features.
 
 ### URL-driven list state
 
@@ -198,9 +205,9 @@ Customers list uses TanStack Router search params:
 
 Portal-web includes some type/contract drift vs backend. Don’t copy these into new code; align to backend reality when touching customer management:
 
-- `Customer.email` is typed as `string | null` in portal-web but backend requires it for create and stores it as non-null.
-- `CustomerNote` type in `portal-web/src/api/customer.ts` uses `CreatedAt/UpdatedAt` (PascalCase) but backend returns `createdAt/updatedAt` (camelCase).
-- Portal-web address types and forms include `shippingZoneId`; backend `CustomerAddress` model and DTOs do not currently support shipping zones, and responses will not include `shippingZoneId`.
+- **`Customer.email` typing:** Portal-web types `Customer.email` as `string` (non-null), which matches `CustomerResponse` from backend but not the underlying GORM model (`nullable.String`). This is acceptable as the API contract uses response DTOs.
+- **`CustomerNote` timestamp casing:** `CustomerNote` type in `portal-web/src/api/customer.ts` currently uses `createdAt/updatedAt` (camelCase), which correctly matches backend `CustomerNoteResponse` (camelCase).
+- **`CustomerAddress.shippingZoneId` field:** Portal-web address types and forms include `shippingZoneId`; backend `CustomerAddress` model and DTOs do not currently support shipping zones, and responses will not include `shippingZoneId`. This is used in portal-web for UI pre-selection but not sent to backend.
 - **`orderBy` encoding:** backend binds `orderBy` as a repeatable query param (e.g., `orderBy=-joinedAt&orderBy=name`). Portal currently serializes it as CSV (via `join(',')`).
   - This works only when a single field is provided; multiple fields will not be parsed correctly by backend schema mapping.
   - If you touch customers list sorting, switch portal to `searchParams.append('orderBy', value)` per item.

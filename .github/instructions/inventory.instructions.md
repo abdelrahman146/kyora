@@ -28,7 +28,6 @@ All routes are under:
 ### Products
 
 - `GET /products`
-
   - Query:
     - Pagination: `page`, `pageSize`
     - Sorting: `orderBy` (repeatable). Use `-field` for descending.
@@ -62,7 +61,6 @@ All routes are under:
 ### Summary / insights
 
 - `GET /summary?topLimit=N`
-
   - Returns computed metrics for the business:
     - `productsCount`, `variantsCount`, `categoriesCount`
     - `lowStockVariantsCount`, `outOfStockVariantsCount`
@@ -110,7 +108,7 @@ Summary metrics are computed from variants:
 - `lowStockVariantsCount` counts variants with `stock_quantity <= stock_alert`.
 - `outOfStockVariantsCount` counts variants with `stock_quantity == 0`.
 
-Portal-web may compute a product-level stock label (see `portal-web/src/lib/inventoryUtils.ts`) but backend filtering is variant-driven.
+Portal-web may compute a product-level stock label (see `portal-web/src/features/inventory/utils/inventoryUtils.ts`) but backend filtering is variant-driven.
 
 ## Backend: search + ordering (important)
 
@@ -144,7 +142,7 @@ These behaviors are enforced in the service layer and verified by e2e tests:
 - **Variant naming convention:** `Variant.Name = Product.Name + " - " + Variant.Code`.
 - `UpdateProduct` renames all variants if the product name changes.
 - `UpdateVariant` normalizes:
-  - `code`: trimmed + uppercased (e.g. `"  blue  " → "BLUE"`)
+  - `code`: trimmed (e.g. `"  blue  " → "blue"`)
   - `sku`: trimmed
   - `currency`: uppercased (e.g. `"egp" → "EGP"`)
 
@@ -185,7 +183,8 @@ These tests codify real expectations like:
 
 - API client + hooks: `portal-web/src/api/inventory.ts`
 - Route wrappers: `portal-web/src/routes/business/$businessDescriptor/inventory/**`
-- Current page + helpers (drift): `portal-web/src/routes/business/$businessDescriptor/inventory/index.tsx`, `portal-web/src/lib/inventoryUtils.ts`
+- Feature components: `portal-web/src/features/inventory/components/**`
+- Feature utils: `portal-web/src/features/inventory/utils/inventoryUtils.ts`
 - Query keys (staleTime + invalidation): `portal-web/src/lib/queryKeys.ts`
 
 ### Routing + URL-driven state
@@ -204,14 +203,12 @@ Inventory list uses TanStack Router search params for:
 
 ### Known drift (do not propagate)
 
-In `portal-web/src/api/inventory.ts`, several inventory interfaces currently use snake_case keys (e.g. `business_id`, `product_id`, `page_size`). Backend responses are camelCase.
+In `portal-web/src/api/inventory.ts`, the `ListResponse` interface currently uses snake_case keys (`page_size`, `total_count`, `total_pages`, `has_more`). Backend responses use camelCase (`pageSize`, `totalCount`, `totalPages`, `hasMore`).
 
-- Don’t copy these snake_case types into new code.
-- When touching inventory portal-web code, prefer aligning the types to backend reality (and to patterns used by other modules like `portal-web/src/api/order.ts`).
+Additionally, `CreateVariantRequest` uses `product_id` (snake_case) while the backend expects `productId` (camelCase).
 
-- **`orderBy` encoding:** backend binds `orderBy` as a repeatable query param. Portal currently serializes it as CSV (via `join(',')`).
-  - This works only when a single sort field is provided; multiple fields will not be parsed correctly by backend schema mapping.
-  - If you touch inventory list sorting, switch portal to `searchParams.append('orderBy', value)` per item.
+- Don't copy these snake_case types into new code.
+- When touching inventory portal-web code, align the types to backend reality (match patterns used by other modules like `portal-web/src/api/order.ts`).
 
 ## Extension checklist (when adding/changing inventory behavior)
 

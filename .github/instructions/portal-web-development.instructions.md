@@ -27,7 +27,7 @@ applyTo: "portal-web/**"
 ```bash
 cd portal-web
 npm install
-npm run dev  # Start dev server (http://localhost:3000)
+npm run dev  # Start dev server (default port: 3000, configurable via VITE_DEV_PORT)
 ```
 
 ### Dev Server Features
@@ -35,7 +35,9 @@ npm run dev  # Start dev server (http://localhost:3000)
 - **HMR:** Hot Module Replacement (instant updates)
 - **TypeScript:** Type checking in IDE (not during dev server)
 - **TanStack Devtools:** Route/Query debugging overlays
-- **Port:** 3000 (see `portal-web/package.json` dev script)
+- **Port:** Default 3000 (configurable via `VITE_DEV_PORT` env var)
+- **Network Access:** Server allows access from other devices on same network (`host: true`)
+- **Mobile Testing:** Use `VITE_DEV_HOST` env var to set explicit HMR websocket host when needed
 
 ### Type Checking
 
@@ -118,19 +120,28 @@ export interface CreateProductRequest {
 
 **Location:** `src/features/<feature>/schema/*`
 
-If the schema is only used by one feature, keep it inside that feature.
+If the schema is only used by one feature, keep it inside that feature (recommended for new code).
+
+**Legacy Note:** Some older schemas exist in `src/schemas/` (e.g., `auth.ts`, `onboarding.ts`, `inventory.ts`). These are gradually being migrated to feature-specific locations per `.github/instructions/portal-web-code-structure.instructions.md`.
+
+For new feature-specific schemas, always create them under the feature:
 
 ```typescript
 // src/features/products/schema/createProduct.ts
 import { z } from "zod";
 
 export const createProductSchema = z.object({
-  name: z.string().min(2, "min_length").max(100, "max_length"),
-  price: z.number().positive("positive_number"),
+  name: z
+    .string()
+    .min(2, "validation.min_length")
+    .max(100, "validation.max_length"),
+  price: z.number().positive("validation.positive_number"),
 });
 
 export type CreateProductFormData = z.infer<typeof createProductSchema>;
 ```
+
+**Cross-cutting schemas** (used by 2+ distinct features, not resource-specific) may live in `src/schemas/`, but prefer feature-specific placement.
 
 #### 5. Create Feature Components / Page
 
@@ -229,17 +240,23 @@ function ProductsRoute() {
 
 #### 7. Add Translations (Match Existing i18next Setup)
 
-**Rule:** Never hardcode user-facing strings (Arabic-first). Use `t("...")` keys.
+**Rule:** Never hardcode user-facing strings (Arabic-first). Use `t("...")` keys with explicit namespace binding.
 
 For example, update UI labels in the route/component examples:
 
 ```tsx
-const { t } = useTranslation("inventory");
+// Always bind to explicit namespace (SSOT pattern)
+const { t: tInventory } = useTranslation("inventory");
+const { t: tCommon } = useTranslation("common");
 
-<h1 className="text-2xl font-bold">{t("title")}</h1>
+<h1 className="text-2xl font-bold">{tInventory("title")}</h1>
 
 <button onClick={() => setIsAddOpen(true)} className="btn btn-primary">
-  {t("add_product")}
+  {tInventory("add_product")}
+</button>
+
+<button onClick={onClose} className="btn btn-ghost">
+  {tCommon("actions.cancel")}
 </button>
 ```
 
@@ -266,9 +283,12 @@ Usage:
 ```tsx
 import { useTranslation } from "react-i18next";
 
-const { t } = useTranslation("inventory");
-return <h1>{t("title")}</h1>;
+// Always use explicit namespace binding (not default namespace)
+const { t: tInventory } = useTranslation("inventory");
+return <h1>{tInventory("title")}</h1>;
 ```
+
+**Important:** Do not use `t("namespace:key")` pattern (multi-colon). Always bind the namespace with `useTranslation("namespace")` and use bare keys.
 
 See `.github/instructions/i18n-translations.instructions.md` for the SSOT rules (explicit namespaces, locale parity, no duplication).
 
@@ -279,31 +299,58 @@ If you create a new namespace file, you must register it in `src/i18n/init.ts`.
 Checklist:
 
 1. Create both files:
+   - `src/i18n/ar/<namespace>.json`
+   - `src/i18n/en/<namespace>.json`
 
-- `src/i18n/ar/<namespace>.json`
-- `src/i18n/en/<namespace>.json`
+2. Import both JSON files in `src/i18n/init.ts`:
 
-2. Import both JSON files in `src/i18n/init.ts`
+   ```ts
+   import arNamespace from "./ar/namespace.json";
+   import enNamespace from "./en/namespace.json";
+   ```
 
-3. Add them to `resources.ar` and `resources.en`
+3. Add them to the `resources` object:
 
-4. Add `<namespace>` to the `ns` array
+   ```ts
+   resources: {
+     ar: {
+       // ... existing
+       namespace: arNamespace,
+     },
+     en: {
+       // ... existing
+       namespace: enNamespace,
+     },
+   }
+   ```
+
+4. Add `<namespace>` to the `ns` array:
+   ```ts
+   ns: [
+     "common",
+     "errors",
+     // ... existing
+     "namespace",
+   ];
+   ```
 
 Usage patterns:
 
 ```tsx
-const { t } = useTranslation("<namespace>");
-t("some_key");
+// Always use explicit namespace binding
+const { t: tNamespace } = useTranslation("namespace");
+tNamespace("some_key");
 
-// default namespace (translation)
-const { t: tTranslation } = useTranslation();
-tTranslation("some.dotted_key");
+// For common namespace
+const { t: tCommon } = useTranslation("common");
+tCommon("actions.save");
 ```
 
-Rules:
+**Forbidden patterns:**
 
-- Do not use `t("ns:key")` (including multi-colon strings).
-- In UI components, do not use `t(key, { ns: "..." })`; bind `useTranslation("<namespace>")` instead.
+- ❌ `t("ns:key")` - Multi-colon pattern is forbidden
+- ❌ `t(key, { ns: "..." })` - Do not use namespace option in UI code
+- ❌ `useTranslation()` without namespace - Always specify explicit namespace
 
 ---
 
@@ -314,19 +361,34 @@ Rules:
 **Run Tests:**
 
 ```bash
-npm run test          # Run once
-npm run test:watch    # Watch mode
-npm run test:coverage # With coverage
+npm run test          # Run once (vitest run)
 ```
 
+**Note:** `test:watch` and `test:coverage` scripts are not currently configured. To run in watch mode or with coverage, use:
+
+```bash
+npx vitest watch        # Watch mode
+npx vitest --coverage    # With coverage
+```
+
+**Test Configuration:** Vitest is configured via `vite.config.ts` (no separate `vitest.config.ts`).
+
 **Test File Location:** Co-located with source (`*.test.ts`, `*.test.tsx`)
+
+**Current Test Coverage:**
+
+- Only one test file exists: `src/stores/authStore.test.ts`
+- Tests must include `// @vitest-environment jsdom` comment at the top for DOM-dependent tests
+- Use `beforeEach` to ensure consistent state between tests
 
 **Example:**
 
 ```typescript
 // src/stores/authStore.test.ts
+// @vitest-environment jsdom
+
 import { describe, it, expect, beforeEach } from "vitest";
-import { authStore, loginUser, logoutUser } from "./authStore";
+import { authStore, initializeAuth } from "./authStore";
 
 describe("authStore", () => {
   beforeEach(() => {
@@ -353,11 +415,21 @@ describe("authStore", () => {
 
 ### E2E Tests (Playwright - Future)
 
-**Not yet implemented.** Planned for:
+**Status:** Not yet implemented. No Playwright configuration exists in the repository.
+
+**Planned for:**
 
 - Critical user flows (onboarding, order creation)
 - Payment flows
 - Multi-workspace scenarios
+- Cross-browser testing
+
+**When implementing:**
+
+1. Add `@playwright/test` to devDependencies
+2. Create `playwright.config.ts` in `portal-web/`
+3. Add test scripts to `package.json`: `test:e2e`, `test:e2e:ui`
+4. Create test files in `portal-web/tests/` or `portal-web/e2e/`
 
 ---
 
@@ -415,10 +487,12 @@ import "./styles.css";
 
 ### Mutation with Invalidation
 
+Current pattern used in the codebase:
+
 ```typescript
 const mutation = useMutation({
   mutationFn: deleteCustomer,
-  onSuccess: (_, customerId) => {
+  onSuccess: () => {
     queryClient.invalidateQueries({ queryKey: queryKeys.customers.all() });
     queryClient.invalidateQueries({
       queryKey: queryKeys.customers.detail(customerId),
@@ -428,7 +502,15 @@ const mutation = useMutation({
 });
 ```
 
+**Note:** The codebase currently uses `void queryClient.invalidateQueries()` pattern in some places (e.g., accounting API), but both with/without `void` work.
+
 ### Optimistic Update
+
+**Status:** Pattern documented but not currently implemented in the codebase.
+
+The codebase mentions "optimistic updates" in comments (FileUploadField, Notes component) but does not use the full `onMutate`/`onError`/`onSettled` pattern shown below. Most mutations use simple `onSuccess` invalidation.
+
+If implementing optimistic updates in the future, follow this pattern:
 
 ```typescript
 const mutation = useMutation({
@@ -441,23 +523,25 @@ const mutation = useMutation({
 
     // Snapshot previous value
     const previous = queryClient.getQueryData(
-      queryKeys.customers.detail(updatedCustomer.id)
+      queryKeys.customers.detail(updatedCustomer.id),
     );
 
     // Optimistically update
     queryClient.setQueryData(
       queryKeys.customers.detail(updatedCustomer.id),
-      updatedCustomer
+      updatedCustomer,
     );
 
     return { previous };
   },
   onError: (err, variables, context) => {
     // Rollback on error
-    queryClient.setQueryData(
-      queryKeys.customers.detail(variables.id),
-      context.previous
-    );
+    if (context?.previous) {
+      queryClient.setQueryData(
+        queryKeys.customers.detail(variables.id),
+        context.previous,
+      );
+    }
   },
   onSettled: (_, __, variables) => {
     queryClient.invalidateQueries({
@@ -537,8 +621,13 @@ dist/
 
 ```env
 VITE_API_BASE_URL=https://api.kyora.app
-VITE_CDN_BASE_URL=https://cdn.kyora.app
 ```
+
+**Available Environment Variables:**
+
+- `VITE_API_BASE_URL` - Backend API server URL (default: `http://localhost:8080`)
+- `VITE_DEV_PORT` - Dev server port (default: `3000`)
+- `VITE_DEV_HOST` - HMR websocket host override (optional, for mobile testing)
 
 **Usage:**
 
