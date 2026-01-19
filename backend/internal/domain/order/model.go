@@ -136,47 +136,7 @@ const (
 	DiscountTypePercent DiscountType = "percent"
 )
 
-type CreateOrderRequest struct {
-	CustomerID        string          `json:"customerId" binding:"required"`
-	Channel           string          `json:"channel" binding:"required"`
-	ShippingAddressID string          `json:"shippingAddressId" binding:"required"`
-	ShippingZoneID    *string         `json:"shippingZoneId" binding:"omitempty"`
-	ShippingFee       decimal.Decimal `json:"shippingFee" binding:"omitempty"`
-	// Legacy discount field (amount-based). Still supported for backward compatibility.
-	Discount decimal.Decimal `json:"discount" binding:"omitempty"`
-	// New discount fields (preferred). When provided, these take precedence over Discount.
-	DiscountType  DiscountType    `json:"discountType" binding:"omitempty,oneof=amount percent"`
-	DiscountValue decimal.Decimal `json:"discountValue" binding:"omitempty"`
-	// Optional target order status (advanced). If provided, backend will attempt to apply it atomically.
-	Status *OrderStatus `json:"status" binding:"omitempty,oneof=pending placed ready_for_shipment shipped fulfilled cancelled returned"`
-	// Optional target payment status (advanced). If provided, backend will attempt to apply it atomically.
-	PaymentStatus    *OrderPaymentStatus `json:"paymentStatus" binding:"omitempty,oneof=pending paid failed refunded"`
-	PaymentMethod    OrderPaymentMethod  `json:"paymentMethod" binding:"omitempty,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
-	PaymentReference sql.NullString      `json:"paymentReference" binding:"omitempty"`
-	OrderedAt        time.Time           `json:"orderedAt" binding:"omitempty"`
-	// Optional single note content. If provided, a note will be created as part of order creation.
-	Note  string                    `json:"note" binding:"omitempty"`
-	Items []*CreateOrderItemRequest `json:"items" binding:"required,dive,required"`
-}
-
-type UpdateOrderRequest struct {
-	ShippingAddressID *string             `json:"shippingAddressId" binding:"omitempty"`
-	ShippingZoneID    *string             `json:"shippingZoneId" binding:"omitempty"`
-	ShippingFee       decimal.NullDecimal `json:"shippingFee" binding:"omitempty"`
-	Channel           string              `json:"channel" binding:"omitempty"`
-	// Legacy discount field (amount-based). Still supported for backward compatibility.
-	Discount decimal.NullDecimal `json:"discount" binding:"omitempty"`
-	// New discount fields (preferred). When provided, these take precedence over Discount.
-	DiscountType  DiscountType              `json:"discountType" binding:"omitempty,oneof=amount percent"`
-	DiscountValue decimal.NullDecimal       `json:"discountValue" binding:"omitempty"`
-	OrderedAt     time.Time                 `json:"orderedAt" binding:"omitempty"`
-	Items         []*CreateOrderItemRequest `json:"items,omitempty" binding:"omitempty,dive,required"`
-}
-
-type AddOrderPaymentDetailsRequest struct {
-	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
-	PaymentReference sql.NullString     `json:"paymentReference" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var OrderSchema = struct {
 	ID                 schema.Field
@@ -276,12 +236,7 @@ func (m *OrderItem) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateOrderItemRequest struct {
-	VariantID string          `json:"variantId" binding:"required"`
-	Quantity  int             `json:"quantity" binding:"required,min=1"`
-	UnitPrice decimal.Decimal `json:"unitPrice" binding:"required"`
-	UnitCost  decimal.Decimal `json:"unitCost" binding:"omitempty"`
-}
+// CreateOrderItemRequest moved to model_request.go
 
 var OrderItemSchema = struct {
 	ID        schema.Field
@@ -334,14 +289,7 @@ func (m *OrderNote) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateOrderNoteRequest struct {
-	OrderID string `json:"orderId" binding:"required"`
-	Content string `json:"content" binding:"required"`
-}
-
-type UpdateOrderNoteRequest struct {
-	Content string `json:"content" binding:"omitempty"`
-}
+// Request types for notes moved to model_request.go
 
 var OrderNoteSchema = struct {
 	ID        schema.Field

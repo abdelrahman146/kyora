@@ -11,6 +11,7 @@ import {
   UserPlus,
 } from 'lucide-react'
 
+import { inferShippingZoneFromAddress } from '../utils/shippingZone'
 import { ItemPickerSheet } from './ItemPickerSheet'
 import { PreviewStatusPill } from './PreviewStatusPill'
 import { LiveSummaryCard } from './LiveSummaryCard'
@@ -37,7 +38,6 @@ import { StandaloneAddressSheet } from '@/features/customers/components/Standalo
 import { useKyoraForm } from '@/lib/form'
 import { showSuccessToast } from '@/lib/toast'
 import { businessStore, getSelectedBusiness } from '@/stores/businessStore'
-import { inferShippingZoneFromAddress } from '../utils/shippingZone'
 
 export interface CreateOrderSheetProps {
   isOpen: boolean

@@ -6,7 +6,6 @@ import (
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
-	"github.com/abdelrahman146/kyora/internal/platform/types/date"
 	"github.com/abdelrahman146/kyora/internal/platform/types/schema"
 	"github.com/abdelrahman146/kyora/internal/platform/utils/id"
 	"github.com/shopspring/decimal"
@@ -57,21 +56,7 @@ func (m *Asset) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-type CreateAssetRequest struct {
-	Name        string          `form:"name" json:"name" binding:"required"`
-	Type        AssetType       `form:"type" json:"type" binding:"required"`
-	Value       decimal.Decimal `form:"value" json:"value" binding:"required"`
-	PurchasedAt time.Time       `form:"purchasedAt" json:"purchasedAt" binding:"omitempty"`
-	Note        string          `form:"note" json:"note" binding:"omitempty"`
-}
-
-type UpdateAssetRequest struct {
-	Name        string          `form:"name" json:"name" binding:"omitempty"`
-	Type        AssetType       `form:"type" json:"type" binding:"omitempty"`
-	Value       decimal.Decimal `form:"value" json:"value" binding:"omitempty"`
-	PurchasedAt time.Time       `form:"purchasedAt" json:"purchasedAt" binding:"omitempty"`
-	Note        string          `form:"note" json:"note" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var AssetSchema = struct {
 	ID          schema.Field
@@ -125,19 +110,7 @@ func (m *Investment) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateInvestmentRequest struct {
-	InvestorID string          `form:"investorId" json:"investorId" binding:"required"`
-	Amount     decimal.Decimal `form:"amount" json:"amount" binding:"required"`
-	Note       string          `form:"note" json:"note" binding:"omitempty"`
-	InvestedAt time.Time       `form:"investedAt" json:"investedAt" binding:"omitempty"`
-}
-
-type UpdateInvestmentRequest struct {
-	InvestorID string          `form:"investorId" json:"investorId" binding:"omitempty"`
-	Amount     decimal.Decimal `form:"amount" json:"amount" binding:"omitempty"`
-	Note       string          `form:"note" json:"note" binding:"omitempty"`
-	InvestedAt time.Time       `form:"investedAt" json:"investedAt" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var InvestmentSchema = struct {
 	ID         schema.Field
@@ -189,19 +162,7 @@ func (m *Withdrawal) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateWithdrawalRequest struct {
-	Amount       decimal.Decimal `form:"amount" json:"amount" binding:"required"`
-	WithdrawerID string          `form:"withdrawerId" json:"withdrawerId" binding:"required"`
-	Note         string          `form:"note" json:"note" binding:"omitempty"`
-	WithdrawnAt  time.Time       `form:"withdrawnAt" json:"withdrawnAt" binding:"omitempty"`
-}
-
-type UpdateWithdrawalRequest struct {
-	Amount       decimal.Decimal `form:"amount" json:"amount" binding:"omitempty"`
-	WithdrawerID string          `form:"withdrawerId" json:"withdrawerId" binding:"omitempty"`
-	Note         string          `form:"note" json:"note" binding:"omitempty"`
-	WithdrawnAt  time.Time       `form:"withdrawnAt" json:"withdrawnAt" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var WithdrawalSchema = struct {
 	ID           schema.Field
@@ -320,23 +281,7 @@ func (m *Expense) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateExpenseRequest struct {
-	Amount             decimal.Decimal `form:"amount" json:"amount" binding:"required"`
-	Category           ExpenseCategory `form:"category" json:"category" binding:"required"`
-	Type               ExpenseType     `form:"type" json:"type" binding:"required"`
-	RecurringExpenseID string          `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
-	Note               string          `form:"note" json:"note" binding:"omitempty"`
-	OccurredOn         *date.Date      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
-}
-
-type UpdateExpenseRequest struct {
-	Amount             decimal.Decimal `form:"amount" json:"amount" binding:"omitempty"`
-	Category           ExpenseCategory `form:"category" json:"category" binding:"omitempty"`
-	Type               ExpenseType     `form:"type" json:"type" binding:"omitempty"`
-	RecurringExpenseID string          `form:"recurringExpenseId" json:"recurringExpenseId" binding:"omitempty,required_if=Type recurring"`
-	Note               string          `form:"note" json:"note" binding:"omitempty"`
-	OccurredOn         *date.Date      `form:"occurredOn" json:"occurredOn" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var ExpenseSchema = struct {
 	ID                 schema.Field
@@ -448,24 +393,7 @@ func (m *RecurringExpense) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateRecurringExpenseRequest struct {
-	Frequency                    RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"required,oneof=daily weekly monthly yearly"`
-	RecurringEndDate             *date.Date                `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty"`
-	RecurringStartDate           date.Date                 `form:"recurringStartDate" json:"recurringStartDate" binding:"required"`
-	Amount                       decimal.Decimal           `form:"amount" json:"amount" binding:"required"`
-	Category                     ExpenseCategory           `form:"category" json:"category" binding:"required,oneof=office travel supplies utilities payroll marketing rent software maintenance insurance taxes training consulting miscellaneous legal research equipment shipping transaction_fee other"`
-	Note                         string                    `form:"note" json:"note" binding:"omitempty"`
-	AutoCreateHistoricalExpenses bool                      `form:"autoCreateHistoricalExpenses" json:"autoCreateHistoricalExpenses" binding:"omitempty"`
-}
-
-type UpdateRecurringExpenseRequest struct {
-	Frequency          RecurringExpenseFrequency `form:"frequency" json:"frequency" binding:"omitempty,oneof=daily weekly monthly yearly"`
-	RecurringEndDate   *date.Date                `form:"recurringEndDate" json:"recurringEndDate" binding:"omitempty"`
-	RecurringStartDate *date.Date                `form:"recurringStartDate" json:"recurringStartDate" binding:"omitempty"`
-	Amount             decimal.Decimal           `form:"amount" json:"amount" binding:"omitempty"`
-	Category           ExpenseCategory           `form:"category" json:"category" binding:"omitempty"`
-	Note               string                    `form:"note" json:"note" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var RecurringExpenseSchema = struct {
 	ID                 schema.Field

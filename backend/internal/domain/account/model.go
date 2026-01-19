@@ -40,9 +40,7 @@ func (m *Workspace) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-type CreateWorkspaceInput struct {
-	OwnerID string `form:"ownerId" json:"ownerId" binding:"required"`
-}
+// Request DTOs are defined in model_request.go
 
 var WorkspaceSchema = struct {
 	ID                    schema.Field
@@ -159,24 +157,7 @@ func (m *User) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-type CreateUserInput struct {
-	FirstName string `form:"firstName" json:"firstName" binding:"required"`
-	LastName  string `form:"lastName" json:"lastName" binding:"required"`
-	Email     string `form:"email" json:"email" binding:"required,email"`
-	Password  string `form:"password" json:"password" binding:"required,min=8"`
-}
-
-// AcceptInvitationInput represents the request body for accepting an invitation
-type AcceptInvitationInput struct {
-	FirstName string `form:"firstName" json:"firstName" binding:"required"`
-	LastName  string `form:"lastName" json:"lastName" binding:"required"`
-	Password  string `form:"password" json:"password" binding:"required,min=8"`
-}
-
-type UpdateUserInput struct {
-	FirstName *string `form:"firstName" json:"firstName"`
-	LastName  *string `form:"lastName" json:"lastName"`
-}
+// User request DTOs are defined in model_request.go
 
 var UserSchema = struct {
 	ID              schema.Field
@@ -245,14 +226,7 @@ func (m *UserInvitation) BeforeCreate(tx *gorm.DB) (err error) {
 	return nil
 }
 
-type InviteUserInput struct {
-	Email string    `form:"email" json:"email" binding:"required,email"`
-	Role  role.Role `form:"role" json:"role" binding:"required,oneof=user admin"`
-}
-
-type UpdateUserRoleInput struct {
-	Role role.Role `form:"role" json:"role" binding:"required,oneof=user admin"`
-}
+// Invitation request DTOs are defined in model_request.go
 
 var UserInvitationSchema = struct {
 	ID          schema.Field

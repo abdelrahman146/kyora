@@ -24,11 +24,6 @@ func NewHttpHandler(service *Service) *HttpHandler {
 
 // Authentication endpoints
 
-type loginRequest struct {
-	Email    string `json:"email" binding:"required,email"`
-	Password string `json:"password" binding:"required"`
-}
-
 // Login authenticates a user with email and password
 //
 // @Summary      Login with email and password
@@ -81,10 +76,6 @@ func (h *HttpHandler) GetGoogleAuthURL(c *gin.Context) {
 	})
 }
 
-type googleLoginRequest struct {
-	Code string `json:"code" binding:"required"`
-}
-
 // LoginWithGoogle authenticates a user with Google OAuth
 //
 // @Summary      Login with Google OAuth
@@ -127,10 +118,6 @@ func (h *HttpHandler) LoginWithGoogle(c *gin.Context) {
 	}
 
 	response.SuccessJSON(c, http.StatusOK, ToLoginResponse(user, tokens.Token, tokens.RefreshToken))
-}
-
-type refreshRequest struct {
-	RefreshToken string `json:"refreshToken" binding:"required"`
 }
 
 // Refresh exchanges a refresh token for a new access token and rotated refresh token.
@@ -235,10 +222,6 @@ func (h *HttpHandler) LogoutOtherDevices(c *gin.Context) {
 
 // Password reset endpoints
 
-type forgotPasswordRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
-
 // ForgotPassword initiates the password reset process
 //
 // @Summary      Forgot password
@@ -272,11 +255,6 @@ func (h *HttpHandler) ForgotPassword(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
-type resetPasswordRequest struct {
-	Token       string `json:"token" binding:"required"`
-	NewPassword string `json:"newPassword" binding:"required,min=8"`
-}
-
 // ResetPassword resets the user's password using a reset token
 //
 // @Summary      Reset password
@@ -306,10 +284,6 @@ func (h *HttpHandler) ResetPassword(c *gin.Context) {
 }
 
 // Email verification endpoints
-
-type requestEmailVerificationRequest struct {
-	Email string `json:"email" binding:"required,email"`
-}
 
 // RequestEmailVerification sends an email verification link
 //
@@ -342,10 +316,6 @@ func (h *HttpHandler) RequestEmailVerification(c *gin.Context) {
 	}
 
 	response.SuccessEmpty(c, http.StatusNoContent)
-}
-
-type verifyEmailRequest struct {
-	Token string `json:"token" binding:"required"`
 }
 
 // VerifyEmail verifies a user's email address

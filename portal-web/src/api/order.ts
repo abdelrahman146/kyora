@@ -383,6 +383,22 @@ export const orderApi = {
   },
 
   /**
+   * Add or update payment details (method/reference) without changing status
+   */
+  async addOrderPaymentDetails(
+    businessDescriptor: string,
+    orderId: string,
+    data: AddOrderPaymentDetailsRequest,
+  ): Promise<Order> {
+    return patch<Order>(
+      `v1/businesses/${businessDescriptor}/orders/${orderId}/payment-details`,
+      {
+        json: data,
+      },
+    )
+  },
+
+  /**
    * Delete an order
    */
   async deleteOrder(
@@ -553,6 +569,18 @@ export function useUpdateOrderPaymentStatusMutation(
   return useMutation({
     mutationFn: (data: UpdateOrderPaymentStatusRequest) =>
       orderApi.updateOrderPaymentStatus(businessDescriptor, orderId, data),
+    ...options,
+  })
+}
+
+export function useAddOrderPaymentDetailsMutation(
+  businessDescriptor: string,
+  orderId: string,
+  options?: UseMutationOptions<Order, Error, AddOrderPaymentDetailsRequest>,
+) {
+  return useMutation({
+    mutationFn: (data: AddOrderPaymentDetailsRequest) =>
+      orderApi.addOrderPaymentDetails(businessDescriptor, orderId, data),
     ...options,
   })
 }

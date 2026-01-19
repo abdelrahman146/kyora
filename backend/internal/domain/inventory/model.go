@@ -98,19 +98,7 @@ func (m *Product) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateProductRequest struct {
-	Name        string                 `json:"name" binding:"required"`
-	Description string                 `json:"description" binding:"omitempty"`
-	Photos      []asset.AssetReference `json:"photos" binding:"omitempty,max=10,dive"`
-	CategoryID  string                 `json:"categoryId" binding:"required"`
-}
-
-type UpdateProductRequest struct {
-	Name        string                 `json:"name" binding:"omitempty"`
-	Description string                 `json:"description" binding:"omitempty"`
-	Photos      []asset.AssetReference `json:"photos" binding:"omitempty,max=10,dive"`
-	CategoryID  string                 `json:"categoryId" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var ProductSchema = struct {
 	ID          schema.Field
@@ -179,27 +167,7 @@ func (m *Variant) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateVariantRequest struct {
-	ProductID          string                 `form:"productId" json:"productId" binding:"required"`
-	Code               string                 `form:"code" json:"code" binding:"required"`
-	SKU                string                 `form:"sku" json:"sku" binding:"omitempty"`
-	Photos             []asset.AssetReference `form:"photos" json:"photos" binding:"omitempty,max=10,dive"`
-	CostPrice          *decimal.Decimal       `form:"costPrice" json:"costPrice" binding:"required"`
-	SalePrice          *decimal.Decimal       `form:"salePrice" json:"salePrice" binding:"required"`
-	StockQuantity      *int                   `form:"stockQuantity" json:"stockQuantity" binding:"required,gte=0"`
-	StockQuantityAlert *int                   `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"required,gte=0"`
-}
-
-type UpdateVariantRequest struct {
-	Code               *string                `form:"code" json:"code" binding:"omitempty"`
-	SKU                *string                `form:"sku" json:"sku" binding:"omitempty"`
-	Photos             []asset.AssetReference `form:"photos" json:"photos" binding:"omitempty,max=10,dive"`
-	CostPrice          *decimal.Decimal       `form:"costPrice" json:"costPrice" binding:"omitempty"`
-	SalePrice          *decimal.Decimal       `form:"salePrice" json:"salePrice" binding:"omitempty"`
-	Currency           *string                `form:"currency" json:"currency" binding:"omitempty,len=3"`
-	StockQuantity      *int                   `form:"stockQuantity" json:"stockQuantity" binding:"omitempty,gte=0"`
-	StockQuantityAlert *int                   `form:"stockQuantityAlert" json:"stockQuantityAlert" binding:"omitempty,gte=0"`
-}
+// Request types moved to model_request.go
 
 var VariantSchema = struct {
 	ID                 schema.Field
@@ -262,15 +230,7 @@ func (m *Category) BeforeCreate(tx *gorm.DB) (err error) {
 	return
 }
 
-type CreateCategoryRequest struct {
-	Name       string `json:"name" binding:"required"`
-	Descriptor string `json:"descriptor" binding:"required"`
-}
-
-type UpdateCategoryRequest struct {
-	Name       string `json:"name" binding:"omitempty"`
-	Descriptor string `json:"descriptor" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 var CategorySchema = struct {
 	ID         schema.Field

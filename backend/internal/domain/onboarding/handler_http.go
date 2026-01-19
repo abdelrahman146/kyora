@@ -18,11 +18,6 @@ func NewHttpHandler(svc *Service) *HttpHandler {
 	return h
 }
 
-type startRequest struct {
-	Email          string `json:"email" binding:"required,email"`
-	PlanDescriptor string `json:"planDescriptor" binding:"required"`
-}
-
 type startResponse struct {
 	SessionToken string       `json:"sessionToken"`
 	Stage        SessionStage `json:"stage"`
@@ -61,10 +56,6 @@ func (h *HttpHandler) Start(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, gin.H{"sessionToken": sess.Token, "stage": sess.Stage, "isPaid": sess.IsPaidPlan})
 }
 
-type otpRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
-}
-
 type otpResponse struct {
 	RetryAfterSeconds int `json:"retryAfterSeconds"`
 }
@@ -95,14 +86,6 @@ func (h *HttpHandler) SendEmailOTP(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, otpResponse{RetryAfterSeconds: int(retryAfter.Seconds())})
 }
 
-type verifyEmailRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
-	Code         string `json:"code" binding:"required,len=6"`
-	FirstName    string `json:"firstName" binding:"required"`
-	LastName     string `json:"lastName" binding:"required"`
-	Password     string `json:"password" binding:"required,min=8"`
-}
-
 // VerifyEmail verifies an email OTP and stages user profile data.
 //
 // @Summary      Verify email with OTP
@@ -128,11 +111,6 @@ func (h *HttpHandler) VerifyEmail(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, gin.H{"stage": sess.Stage})
 }
 
-type oauthRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
-	Code         string `json:"code" binding:"required"`
-}
-
 // OAuthGoogle exchanges a Google OAuth code for an identity and stages it on the session.
 //
 // @Summary      Verify identity with Google OAuth
@@ -156,14 +134,6 @@ func (h *HttpHandler) OAuthGoogle(c *gin.Context) {
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"stage": sess.Stage})
-}
-
-type businessRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
-	Name         string `json:"name" binding:"required"`
-	Descriptor   string `json:"descriptor" binding:"required"`
-	Country      string `json:"country" binding:"required,len=2"`
-	Currency     string `json:"currency" binding:"required,len=3"`
 }
 
 // SetBusiness stages business details for the session.
@@ -192,12 +162,6 @@ func (h *HttpHandler) SetBusiness(c *gin.Context) {
 	response.SuccessJSON(c, http.StatusOK, gin.H{"stage": sess.Stage})
 }
 
-type paymentStartRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
-	SuccessURL   string `json:"successUrl" binding:"required,url"`
-	CancelURL    string `json:"cancelUrl" binding:"required,url"`
-}
-
 // PaymentStart creates a Stripe checkout session for paid tiers.
 //
 // @Summary      Start payment
@@ -221,10 +185,6 @@ func (h *HttpHandler) PaymentStart(c *gin.Context) {
 		return
 	}
 	response.SuccessJSON(c, http.StatusOK, gin.H{"checkoutUrl": url})
-}
-
-type completeRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
 }
 
 // Complete finalizes the onboarding and returns JWT tokens.
@@ -327,10 +287,6 @@ func (h *HttpHandler) GetSession(c *gin.Context) {
 		OTPExpiry:          otpExpiry,
 		ExpiresAt:          sess.ExpiresAt.Format("2006-01-02T15:04:05Z07:00"),
 	})
-}
-
-type deleteSessionRequest struct {
-	SessionToken string `json:"sessionToken" binding:"required"`
 }
 
 // DeleteSession cancels/deletes an onboarding session.

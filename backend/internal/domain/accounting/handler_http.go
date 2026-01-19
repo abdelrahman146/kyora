@@ -36,23 +36,7 @@ func (h *HttpHandler) getBusinessForWorkspace(c *gin.Context, actor *account.Use
 	return business.BusinessFromContext(c)
 }
 
-// Asset endpoints
-
-type listAssetsQuery struct {
-	Page     int      `form:"page" binding:"omitempty,min=1"`
-	PageSize int      `form:"pageSize" binding:"omitempty,min=1,max=100"`
-	OrderBy  []string `form:"orderBy" binding:"omitempty"`
-}
-
 // Expense list query with filters
-type listExpensesQuery struct {
-	Page     int             `form:"page" binding:"omitempty,min=1"`
-	PageSize int             `form:"pageSize" binding:"omitempty,min=1,max=100"`
-	OrderBy  []string        `form:"orderBy" binding:"omitempty"`
-	Category ExpenseCategory `form:"category" binding:"omitempty"`
-	From     *time.Time      `form:"from" binding:"omitempty" time_format:"2006-01-02"`
-	To       *time.Time      `form:"to" binding:"omitempty" time_format:"2006-01-02"`
-}
 
 // ListAssets returns a paginated list of assets for the workspace
 //
@@ -1305,10 +1289,6 @@ func (h *HttpHandler) DeleteRecurringExpense(c *gin.Context) {
 	response.SuccessEmpty(c, http.StatusNoContent)
 }
 
-type updateRecurringExpenseStatusRequest struct {
-	Status RecurringExpenseStatus `json:"status" binding:"required,oneof=active paused ended canceled"`
-}
-
 // UpdateRecurringExpenseStatus updates the status of a recurring expense
 //
 // @Summary      Update recurring expense status
@@ -1418,11 +1398,6 @@ func (h *HttpHandler) GetRecurringExpenseOccurrences(c *gin.Context) {
 }
 
 // Summary endpoints
-
-type summaryQuery struct {
-	From string `form:"from" binding:"omitempty"`
-	To   string `form:"to" binding:"omitempty"`
-}
 
 type summaryResponse struct {
 	TotalAssetValue  string `json:"totalAssetValue"`
@@ -1544,9 +1519,6 @@ func (h *HttpHandler) GetAccountingSummary(c *gin.Context) {
 }
 
 // recentActivitiesQuery defines query parameters for recent activities
-type recentActivitiesQuery struct {
-	Limit int `form:"limit" binding:"omitempty,min=1,max=50"`
-}
 
 // ListRecentActivities returns a unified list of recent accounting activities
 //

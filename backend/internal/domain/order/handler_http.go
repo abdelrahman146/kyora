@@ -2,7 +2,6 @@ package order
 
 import (
 	"net/http"
-	"time"
 
 	"github.com/abdelrahman146/kyora/internal/domain/account"
 	"github.com/abdelrahman146/kyora/internal/domain/business"
@@ -28,41 +27,6 @@ func NewHttpHandler(service *Service) *HttpHandler {
 func (h *HttpHandler) getBusinessForRequest(c *gin.Context, actor *account.User) (*business.Business, error) {
 	_ = actor
 	return business.BusinessFromContext(c)
-}
-
-type listOrdersQuery struct {
-	Page            int       `form:"page" binding:"omitempty,min=1"`
-	PageSize        int       `form:"pageSize" binding:"omitempty,min=1,max=100"`
-	OrderBy         []string  `form:"orderBy" binding:"omitempty"`
-	SearchTerm      string    `form:"search" binding:"omitempty"`
-	Status          []string  `form:"status" binding:"omitempty"`
-	PaymentStatus   []string  `form:"paymentStatus" binding:"omitempty"`
-	SocialPlatforms []string  `form:"socialPlatforms" binding:"omitempty"`
-	CustomerID      string    `form:"customerId" binding:"omitempty"`
-	OrderNumber     string    `form:"orderNumber" binding:"omitempty"`
-	From            time.Time `form:"from" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
-	To              time.Time `form:"to" time_format:"2006-01-02T15:04:05Z07:00" binding:"omitempty"`
-}
-
-type updateOrderStatusRequest struct {
-	Status OrderStatus `json:"status" binding:"required,oneof=pending placed ready_for_shipment shipped fulfilled cancelled returned"`
-}
-
-type updateOrderPaymentStatusRequest struct {
-	PaymentStatus OrderPaymentStatus `json:"paymentStatus" binding:"required,oneof=pending paid failed refunded"`
-}
-
-type addOrderPaymentDetailsRequest struct {
-	PaymentMethod    OrderPaymentMethod `json:"paymentMethod" binding:"required,oneof=credit_card paypal bank_transfer cash_on_delivery tamara tabby"`
-	PaymentReference string             `json:"paymentReference" binding:"omitempty"`
-}
-
-type createOrderNoteRequest struct {
-	Content string `json:"content" binding:"required"`
-}
-
-type updateOrderNoteRequest struct {
-	Content string `json:"content" binding:"required"`
 }
 
 // ListOrders returns a paginated list of orders.

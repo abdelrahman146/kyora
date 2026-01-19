@@ -101,37 +101,7 @@ var CustomerSchema = struct {
 	DeletedAt:         schema.NewField("deleted_at", "deletedAt"),
 }
 
-type CreateCustomerRequest struct {
-	Name              string         `json:"name" binding:"required"`
-	Gender            CustomerGender `json:"gender" binding:"omitempty,oneof=male female other"`
-	CountryCode       string         `json:"countryCode" binding:"required,len=2"`
-	Email             string         `json:"email" binding:"omitempty,email"`
-	PhoneNumber       string         `json:"phoneNumber" binding:"required"`
-	PhoneCode         string         `json:"phoneCode" binding:"required"`
-	TikTokUsername    string         `json:"tiktokUsername" binding:"omitempty"`
-	InstagramUsername string         `json:"instagramUsername" binding:"omitempty"`
-	FacebookUsername  string         `json:"facebookUsername" binding:"omitempty"`
-	XUsername         string         `json:"xUsername" binding:"omitempty"`
-	SnapchatUsername  string         `json:"snapchatUsername" binding:"omitempty"`
-	WhatsappNumber    string         `json:"whatsappNumber" binding:"omitempty"`
-	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
-}
-
-type UpdateCustomerRequest struct {
-	Name              string         `json:"name" binding:"omitempty"`
-	Gender            CustomerGender `json:"gender" binding:"omitempty,oneof=male female other"`
-	CountryCode       string         `json:"countryCode" binding:"omitempty,len=2"`
-	Email             string         `json:"email" binding:"omitempty,email"`
-	PhoneNumber       string         `json:"phoneNumber" binding:"omitempty"`
-	PhoneCode         string         `json:"phoneCode" binding:"omitempty"`
-	TikTokUsername    string         `json:"tiktokUsername" binding:"omitempty"`
-	InstagramUsername string         `json:"instagramUsername" binding:"omitempty"`
-	FacebookUsername  string         `json:"facebookUsername" binding:"omitempty"`
-	XUsername         string         `json:"xUsername" binding:"omitempty"`
-	SnapchatUsername  string         `json:"snapchatUsername" binding:"omitempty"`
-	WhatsappNumber    string         `json:"whatsappNumber" binding:"omitempty"`
-	JoinedAt          time.Time      `json:"joinedAt" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 /* Address Model */
 //------------------*/
@@ -195,25 +165,7 @@ var CustomerAddressSchema = struct {
 	DeletedAt:   schema.NewField("deleted_at", "deletedAt"),
 }
 
-type CreateCustomerAddressRequest struct {
-	CountryCode string `json:"countryCode" binding:"required,len=2"`
-	State       string `json:"state" binding:"required"`
-	City        string `json:"city" binding:"required"`
-	PhoneCode   string `json:"phoneCode" binding:"required"`
-	PhoneNumber string `json:"phoneNumber" binding:"required"`
-	Street      string `json:"street" binding:"omitempty"`
-	ZipCode     string `json:"zipCode" binding:"omitempty"`
-}
-
-type UpdateCustomerAddressRequest struct {
-	Street      string `json:"street" binding:"omitempty"`
-	City        string `json:"city" binding:"omitempty"`
-	State       string `json:"state" binding:"omitempty"`
-	CountryCode string `json:"countryCode" binding:"omitempty,len=2"`
-	PhoneCode   string `json:"phoneCode" binding:"omitempty"`
-	PhoneNumber string `json:"phoneNumber" binding:"omitempty"`
-	ZipCode     string `json:"zipCode" binding:"omitempty"`
-}
+// Request types moved to model_request.go
 
 /* Customer Note Model */
 //-----------------------*/
@@ -259,10 +211,4 @@ var CustomerNoteSchema = struct {
 	DeletedAt:  schema.NewField("deleted_at", "deletedAt"),
 }
 
-type CreateCustomerNoteRequest struct {
-	Content string `json:"content" binding:"required"`
-}
-
-type UpdateCustomerNoteRequest struct {
-	Content string `json:"content" binding:"omitempty"`
-}
+// Request types moved to model_request.go

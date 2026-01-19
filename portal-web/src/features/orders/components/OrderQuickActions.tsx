@@ -18,6 +18,7 @@ import { EditOrderSheet } from './EditOrderSheet'
 import type { Order } from '@/api/order'
 import {
   orderQueries,
+  useAddOrderPaymentDetailsMutation,
   useDeleteOrderMutation,
   useUpdateOrderMutation,
   useUpdateOrderPaymentStatusMutation,
@@ -44,6 +45,7 @@ export function OrderQuickActions({
   const formId = useId()
   const [showStatusSheet, setShowStatusSheet] = useState(false)
   const [showPaymentSheet, setShowPaymentSheet] = useState(false)
+  const [showPaymentDetailsSheet, setShowPaymentDetailsSheet] = useState(false)
   const [showAddressSheet, setShowAddressSheet] = useState(false)
   const [showEditSheet, setShowEditSheet] = useState(false)
   const [isUpdating, setIsUpdating] = useState(false)
@@ -91,6 +93,10 @@ export function OrderQuickActions({
     businessDescriptor,
     order.id,
   )
+  const addPaymentDetailsMutation = useAddOrderPaymentDetailsMutation(
+    businessDescriptor,
+    order.id,
+  )
   const updateOrderMutation = useUpdateOrderMutation(
     businessDescriptor,
     order.id,
@@ -102,6 +108,7 @@ export function OrderQuickActions({
 
   const statusFormId = `order-status-form-${formId}`
   const paymentFormId = `order-payment-form-${formId}`
+  const paymentDetailsFormId = `order-payment-details-form-${formId}`
   const addressFormId = `order-address-form-${formId}`
 
   const statusForm = useKyoraForm({
@@ -151,6 +158,30 @@ export function OrderQuickActions({
         await queryClient.invalidateQueries({ queryKey: orderQueries.all })
         toast.success(tOrders('payment_status_updated'))
         setShowPaymentSheet(false)
+      } catch {
+        // Global QueryClient error handler shows the error toast.
+      } finally {
+        setIsUpdating(false)
+      }
+    },
+  })
+
+  const paymentDetailsForm = useKyoraForm({
+    defaultValues: {
+      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
+      paymentMethod: order.paymentMethod || 'cash_on_delivery',
+      paymentReference: order.paymentReference || '',
+    },
+    onSubmit: async ({ value }) => {
+      setIsUpdating(true)
+      try {
+        await addPaymentDetailsMutation.mutateAsync({
+          paymentMethod: value.paymentMethod,
+          paymentReference: value.paymentReference || undefined,
+        })
+        await queryClient.invalidateQueries({ queryKey: orderQueries.all })
+        toast.success(tOrders('payment_details_updated'))
+        setShowPaymentDetailsSheet(false)
       } catch {
         // Global QueryClient error handler shows the error toast.
       } finally {
@@ -312,6 +343,24 @@ export function OrderQuickActions({
               {tOrders('update_payment')}
             </button>
           </li>
+          {/* Only show payment details action when order is not in final state */}
+          {!['cancelled', 'returned'].includes(order.status) &&
+            !['paid', 'refunded'].includes(order.paymentStatus) && (
+              <li>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setShowPaymentDetailsSheet(true)
+                  }}
+                >
+                  <CreditCard size={18} />
+                  {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+                  {order.paymentMethod
+                    ? tOrders('update_payment_details')
+                    : tOrders('add_payment_details')}
+                </button>
+              </li>
+            )}
           <li>
             <button
               type="button"
@@ -524,6 +573,103 @@ export function OrderQuickActions({
           </paymentForm.FormRoot>
         </BottomSheet>
       </paymentForm.AppForm>
+
+      <paymentDetailsForm.AppForm>
+        <BottomSheet
+          isOpen={showPaymentDetailsSheet}
+          onClose={() => setShowPaymentDetailsSheet(false)}
+          title={
+            /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
+            order.paymentMethod
+              ? tOrders('update_payment_details')
+              : tOrders('add_payment_details')
+          }
+          footer={
+            <paymentDetailsForm.SubmitButton
+              form={paymentDetailsFormId}
+              variant="primary"
+              disabled={isUpdating}
+              className="w-full"
+            >
+              {isUpdating ? tCommon('loading') : tCommon('update')}
+            </paymentDetailsForm.SubmitButton>
+          }
+        >
+          <paymentDetailsForm.FormRoot
+            id={paymentDetailsFormId}
+            className="space-y-4"
+          >
+            <div className="rounded-lg bg-base-200 p-3">
+              <div className="text-sm">
+                <span className="text-base-content/70">
+                  {tOrders('current_payment_details')}:{' '}
+                </span>
+                <span className="font-medium">
+                  {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
+                  {order.paymentMethod
+                    ? tOrders(`payment_method_${order.paymentMethod}`)
+                    : tOrders('no_payment_method')}
+                </span>
+                {order.paymentReference && (
+                  <>
+                    <br />
+                    <span className="text-base-content/70">
+                      {tOrders('payment_reference')}:{' '}
+                    </span>
+                    <span className="font-medium">
+                      {order.paymentReference}
+                    </span>
+                  </>
+                )}
+              </div>
+            </div>
+
+            <paymentDetailsForm.AppField name="paymentMethod">
+              {(field) => (
+                <field.SelectField
+                  label={tOrders('payment_method')}
+                  placeholder={tOrders('select_payment_method')}
+                  options={[
+                    {
+                      value: 'cash_on_delivery',
+                      label: tOrders('payment_method_cod'),
+                    },
+                    {
+                      value: 'bank_transfer',
+                      label: tOrders('payment_method_bank'),
+                    },
+                    {
+                      value: 'credit_card',
+                      label: tOrders('payment_method_card'),
+                    },
+                    {
+                      value: 'paypal',
+                      label: tOrders('payment_method_paypal'),
+                    },
+                    {
+                      value: 'tamara',
+                      label: tOrders('payment_method_tamara'),
+                    },
+                    {
+                      value: 'tabby',
+                      label: tOrders('payment_method_tabby'),
+                    },
+                  ]}
+                />
+              )}
+            </paymentDetailsForm.AppField>
+
+            <paymentDetailsForm.AppField name="paymentReference">
+              {(field) => (
+                <field.TextField
+                  label={tOrders('payment_reference')}
+                  placeholder={tOrders('payment_reference_placeholder')}
+                />
+              )}
+            </paymentDetailsForm.AppField>
+          </paymentDetailsForm.FormRoot>
+        </BottomSheet>
+      </paymentDetailsForm.AppForm>
 
       <addressForm.AppForm>
         <BottomSheet

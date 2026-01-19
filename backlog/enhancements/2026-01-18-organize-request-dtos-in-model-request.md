@@ -3,7 +3,7 @@ title: "Request DTOs Not Organized in Dedicated model_request.go Files"
 date: 2026-01-18
 priority: low
 category: organization
-status: open
+status: resolved
 domain: backend
 ---
 
