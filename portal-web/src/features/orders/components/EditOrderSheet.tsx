@@ -27,7 +27,7 @@ import { StandaloneAddressSheet } from '@/features/customers/components/Standalo
 import { showSuccessToast } from '@/lib/toast'
 import { businessStore, getSelectedBusiness } from '@/stores/businessStore'
 import { useKyoraForm } from '@/lib/form'
-import { inferShippingZoneFromAddress } from '@/lib/shippingZone'
+import { inferShippingZoneFromAddress } from '../utils/shippingZone'
 
 export interface EditOrderSheetProps {
   isOpen: boolean

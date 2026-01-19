@@ -177,6 +177,38 @@ A utility belongs in `lib/` only if all are true:
 
 If a file is feature-specific (e.g. `inventoryUtils`, `onboarding`, `customers*`), it must live under `features/<feature>/utils/`.
 
+**Anti-Pattern Example (❌ WRONG):**
+
+```typescript
+// ❌ WRONG: shippingZone.ts in lib/ is tied to business domain vocabulary
+// portal-web/src/lib/shippingZone.ts
+export function inferShippingZoneFromAddress(address, zones) { ... }
+export function isCountryInZone(countryCode, zone) { ... }
+```
+
+These utilities are:
+
+- Used only by orders feature (CreateOrderSheet, EditOrderSheet)
+- Tied to shipping zone vocabulary (not cross-cutting generic)
+- Tightly coupled to ShippingZone domain model
+
+**Correct Pattern (✅ RIGHT):**
+
+```typescript
+// ✅ CORRECT: Move to orders feature utils
+// portal-web/src/features/orders/utils/shippingZone.ts
+export function inferShippingZoneFromAddress(address, zones) { ... }
+export function isCountryInZone(countryCode, zone) { ... }
+```
+
+Import in feature components:
+
+```typescript
+import { inferShippingZoneFromAddress } from "../utils/shippingZone";
+// or
+import { inferShippingZoneFromAddress } from "@/features/orders/utils/shippingZone";
+```
+
 ---
 
 ## 3) How to decide: shared vs feature vs route
