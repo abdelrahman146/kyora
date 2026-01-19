@@ -1,0 +1,6 @@
+- analytics
+- business and storefront management
+- account an workspace management
+- billing management
+- dashboard
+- navigation revamp
