@@ -14,9 +14,10 @@ import (
 //-----------------*/
 
 const (
-	WorkspaceTable  = "workspaces"
-	WorkspaceStruct = "Workspace"
-	WorkspacePrefix = "wrk"
+	WorkspaceTable       = "workspaces"
+	WorkspaceStruct      = "Workspace"
+	WorkspacePrefix      = "wrk"
+	WorkspaceUsersStruct = "Users"
 )
 
 type Workspace struct {
@@ -205,9 +206,10 @@ var UserSchema = struct {
 //-----------------------*/
 
 const (
-	UserInvitationTable  = "user_invitations"
-	UserInvitationStruct = "UserInvitation"
-	UserInvitationPrefix = "inv"
+	UserInvitationTable         = "user_invitations"
+	UserInvitationStruct        = "UserInvitation"
+	UserInvitationPrefix        = "inv"
+	UserInvitationInviterStruct = "Inviter"
 )
 
 type InvitationStatus string

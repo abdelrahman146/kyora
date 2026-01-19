@@ -237,7 +237,56 @@ All scope methods are defined in `internal/platform/database/repository.go` and 
 - `ScopeSearchTerm(term, fields...)`
 - `ScopeWhere(sql, vars...)` (bound vars; use sparingly for specialized queries)
 
-Important: `ScopeWorkspaceID` and `ScopeBusinessID` assume the table has `workspace_id` or `business_id` columns.
+**Important:** `ScopeWorkspaceID` and `ScopeBusinessID` assume the table has `workspace_id` or `business_id` columns.
+
+**CRITICAL: Qualified Table Names in JOINs**
+
+`ScopeBusinessID(bizID)` generates unqualified SQL: `WHERE business_id = ?`
+
+This causes **SQL ambiguity errors** when JOINs introduce multiple tables with `business_id` columns.
+
+**When to use `ScopeBusinessID`:**
+
+- ✅ Simple queries with no JOINs
+- ✅ Single-table operations (Create, Update, Delete by ID)
+
+**When to use qualified `ScopeWhere`:**
+
+- ✅ Queries with JOINs (search, filters, aggregations)
+- ✅ When multiple tables in the query have `business_id`
+
+**Example - Order service with customer JOIN:**
+
+```go
+// ❌ WRONG: Causes "column reference 'business_id' is ambiguous" error
+func (s *Service) ListOrders(...) {
+    scopes := []func(*gorm.DB) *gorm.DB{
+        s.storage.order.ScopeBusinessID(biz.ID), // Unqualified!
+    }
+    if req.SearchTerm() != "" {
+        scopes = append(scopes,
+            s.storage.WithOrderCustomerJoin(), // Adds customers table
+            s.storage.ScopeOrderSearch(term),
+        )
+    }
+    // Error: Both orders and customers have business_id
+}
+
+// ✅ CORRECT: Use qualified table name when JOINs exist
+func (s *Service) ListOrders(...) {
+    scopes := []func(*gorm.DB) *gorm.DB{
+        s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID), // Qualified!
+    }
+    if req.SearchTerm() != "" {
+        scopes = append(scopes,
+            s.storage.WithOrderCustomerJoin(),
+            s.storage.ScopeOrderSearch(term),
+        )
+    }
+}
+```
+
+**Rule of thumb:** If your service method calls any `WithJoins()` or custom storage scopes that perform JOINs, use qualified `ScopeWhere("table_name.business_id = ?", bizID)` instead of `ScopeBusinessID(bizID)`.
 
 ### Pagination, ordering, search (canonical pattern)
 

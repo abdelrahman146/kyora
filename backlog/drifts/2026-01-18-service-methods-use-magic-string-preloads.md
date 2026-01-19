@@ -1,10 +1,12 @@
 ---
 title: "Service Methods Use Magic String Preloads Instead of Constants"
 date: 2026-01-18
+resolved-date: 2026-01-19
 priority: medium
 category: consistency
-status: open
+status: resolved
 domain: backend
+resolution-summary: "Replaced all 11 magic string preloads with constants across 5 domains. Added critical documentation about qualified table names in JOIN scenarios."
 ---
 
 # Service Methods Use Magic String Preloads Instead of Constants

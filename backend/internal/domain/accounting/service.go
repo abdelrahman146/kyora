@@ -551,7 +551,7 @@ func (s *Service) GetRecurringExpenseByID(ctx context.Context, actor *account.Us
 	return s.storage.recurringExpense.FindOne(ctx,
 		s.storage.recurringExpense.ScopeID(id),
 		s.storage.recurringExpense.ScopeBusinessID(biz.ID),
-		s.storage.recurringExpense.WithPreload("Expenses"),
+		s.storage.recurringExpense.WithPreload(RecurringExpenseExpensesStruct),
 	)
 }
 

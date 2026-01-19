@@ -47,11 +47,11 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 func (s *Service) orderListPreloads() []func(*gorm.DB) *gorm.DB {
 	return []func(*gorm.DB) *gorm.DB{
 		s.storage.order.WithPreload(customer.CustomerStruct),
-		s.storage.order.WithPreload("ShippingAddress"),
-		s.storage.order.WithPreload("ShippingZone"),
+		s.storage.order.WithPreload(ShippingAddressStruct),
+		s.storage.order.WithPreload(ShippingZoneStruct),
 		s.storage.order.WithPreload(OrderItemStruct),
-		s.storage.order.WithPreload("Items.Product"),
-		s.storage.order.WithPreload("Items.Variant"),
+		s.storage.order.WithPreload(ItemsProductStruct),
+		s.storage.order.WithPreload(ItemsVariantStruct),
 		s.storage.order.WithPreload(OrderNoteStruct),
 	}
 }
@@ -574,7 +574,7 @@ func (s *Service) UpdateOrder(ctx context.Context, actor *account.User, biz *bus
 
 		// load order with items scoped by business
 		ord, err := s.storage.order.FindByID(tctx, id,
-			s.storage.order.ScopeBusinessID(biz.ID),
+			s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 			s.storage.order.WithPreload(OrderItemStruct),
 			s.storage.order.WithLockingStrength(database.LockingStrengthUpdate),
 		)
@@ -738,7 +738,7 @@ func (s *Service) AddOrderPaymentDetails(ctx context.Context, actor *account.Use
 	var updated *Order
 	err := s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
 		ord, err := s.storage.order.FindByID(tctx, id,
-			s.storage.order.ScopeBusinessID(biz.ID),
+			s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 			s.storage.order.WithLockingStrength(database.LockingStrengthUpdate),
 		)
 		if err != nil {
@@ -915,7 +915,7 @@ func (s *Service) prepareOrderItems(ctx context.Context, actor *account.User, bi
 }
 
 func (s *Service) UpdateOrderStatus(ctx context.Context, actor *account.User, biz *business.Business, id string, status OrderStatus) (*Order, error) {
-	order, err := s.storage.order.FindByID(ctx, id, s.storage.order.ScopeBusinessID(biz.ID))
+	order, err := s.storage.order.FindByID(ctx, id, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID))
 	if err != nil {
 		return nil, ErrOrderNotFound(id, err)
 	}
@@ -931,7 +931,7 @@ func (s *Service) UpdateOrderStatus(ctx context.Context, actor *account.User, bi
 }
 
 func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.User, biz *business.Business, id string, paymentStatus OrderPaymentStatus) (*Order, error) {
-	order, err := s.storage.order.FindByID(ctx, id, s.storage.order.ScopeBusinessID(biz.ID))
+	order, err := s.storage.order.FindByID(ctx, id, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID))
 	if err != nil {
 		return nil, ErrOrderNotFound(id, err)
 	}
@@ -969,7 +969,7 @@ func (s *Service) UpdateOrderPaymentStatus(ctx context.Context, actor *account.U
 
 func (s *Service) GetOrderByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*Order, error) {
 	findOpts := []func(*gorm.DB) *gorm.DB{
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 	}
 	findOpts = append(findOpts, s.orderDetailPreloads()...)
 	return s.storage.order.FindByID(ctx, id, findOpts...)
@@ -977,7 +977,7 @@ func (s *Service) GetOrderByID(ctx context.Context, actor *account.User, biz *bu
 
 func (s *Service) GetOrderByOrderNumber(ctx context.Context, actor *account.User, biz *business.Business, orderNumber string) (*Order, error) {
 	findOpts := []func(*gorm.DB) *gorm.DB{
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeEquals(OrderSchema.OrderNumber, orderNumber),
 	}
 	findOpts = append(findOpts, s.orderDetailPreloads()...)
@@ -1065,14 +1065,14 @@ func (s *Service) ListOrders(ctx context.Context, actor *account.User, biz *busi
 
 func (s *Service) CountOrders(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	return s.storage.order.Count(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 	)
 }
 
 // CountOrdersByDateRange returns the number of orders in the provided date range (by OrderedAt)
 func (s *Service) CountOrdersByDateRange(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (int64, error) {
 	return s.storage.order.Count(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 	)
 }
@@ -1080,7 +1080,7 @@ func (s *Service) CountOrdersByDateRange(ctx context.Context, actor *account.Use
 func (s *Service) DeleteOrder(ctx context.Context, actor *account.User, biz *business.Business, id string) error {
 	return s.atomicProcessor.Exec(ctx, func(tctx context.Context) error {
 		order, err := s.storage.order.FindByID(tctx, id,
-			s.storage.order.ScopeBusinessID(biz.ID),
+			s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 			s.storage.order.WithPreload(OrderItemStruct),
 			s.storage.order.WithLockingStrength(database.LockingStrengthUpdate),
 		)
@@ -1106,7 +1106,7 @@ func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz 
 		return nil, ErrOrderRateLimited()
 	}
 
-	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID)); err != nil {
 		return nil, ErrOrderNotFound(orderID, err)
 	}
 	note := &OrderNote{
@@ -1120,7 +1120,7 @@ func (s *Service) CreateOrderNote(ctx context.Context, actor *account.User, biz 
 }
 
 func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, noteID string, req *UpdateOrderNoteRequest) (*OrderNote, error) {
-	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID)); err != nil {
 		return nil, ErrOrderNotFound(orderID, err)
 	}
 	note, err := s.storage.orderNote.FindOne(ctx,
@@ -1141,7 +1141,7 @@ func (s *Service) UpdateOrderNote(ctx context.Context, actor *account.User, biz 
 }
 
 func (s *Service) DeleteOrderNote(ctx context.Context, actor *account.User, biz *business.Business, orderID string, noteID string) error {
-	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeBusinessID(biz.ID)); err != nil {
+	if _, err := s.storage.order.FindByID(ctx, orderID, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID)); err != nil {
 		return ErrOrderNotFound(orderID, err)
 	}
 	note, err := s.storage.orderNote.FindOne(ctx,
@@ -1155,12 +1155,12 @@ func (s *Service) DeleteOrderNote(ctx context.Context, actor *account.User, biz 
 }
 
 func (s *Service) SumOrdersTotal(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (decimal.Decimal, error) {
-	return s.storage.order.Sum(ctx, OrderSchema.Total, s.storage.order.ScopeBusinessID(biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
+	return s.storage.order.Sum(ctx, OrderSchema.Total, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
 }
 
 func (s *Service) CountOpenOrders(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	return s.storage.order.Count(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeIn(OrderSchema.Status, []any{
 			OrderStatusPending,
 			OrderStatusPlaced,
@@ -1170,20 +1170,20 @@ func (s *Service) CountOpenOrders(ctx context.Context, actor *account.User, biz 
 }
 
 func (s *Service) AvgOrdersTotal(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (decimal.Decimal, error) {
-	return s.storage.order.Avg(ctx, OrderSchema.Total, s.storage.order.ScopeBusinessID(biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
+	return s.storage.order.Avg(ctx, OrderSchema.Total, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
 }
 
 func (s *Service) SumOrdersCOGS(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (decimal.Decimal, error) {
-	return s.storage.order.Sum(ctx, OrderSchema.COGS, s.storage.order.ScopeBusinessID(biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
+	return s.storage.order.Sum(ctx, OrderSchema.COGS, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
 }
 
 func (s *Service) AvgOrdersCOGS(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (decimal.Decimal, error) {
-	return s.storage.order.Avg(ctx, OrderSchema.COGS, s.storage.order.ScopeBusinessID(biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
+	return s.storage.order.Avg(ctx, OrderSchema.COGS, s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID), s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to))
 }
 
 func (s *Service) TopOrdersByTotal(ctx context.Context, actor *account.User, biz *business.Business, limit int, from, to time.Time) ([]*Order, error) {
 	return s.storage.order.FindMany(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.WithLimit(limit),
 		s.storage.order.WithOrderBy([]string{OrderSchema.Total.Column() + " DESC"}),
@@ -1192,7 +1192,7 @@ func (s *Service) TopOrdersByTotal(ctx context.Context, actor *account.User, biz
 
 func (s *Service) TopOrdersByCOGS(ctx context.Context, actor *account.User, biz *business.Business, limit int, from, to time.Time) ([]*Order, error) {
 	return s.storage.order.FindMany(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.WithLimit(limit),
 		s.storage.order.WithOrderBy([]string{OrderSchema.COGS.Column() + " DESC"}),
@@ -1202,7 +1202,7 @@ func (s *Service) TopOrdersByCOGS(ctx context.Context, actor *account.User, biz 
 func (s *Service) ComputeRevenueTimeSeries(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (*timeseries.TimeSeries, error) {
 	granularity := timeseries.GetTimeGranularityByDateRange(from, to)
 	return s.storage.order.TimeSeriesSum(ctx, OrderSchema.Total, OrderSchema.OrderedAt, granularity,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 	)
 }
@@ -1211,14 +1211,14 @@ func (s *Service) ComputeRevenueTimeSeries(ctx context.Context, actor *account.U
 func (s *Service) ComputeOrdersCountTimeSeries(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (*timeseries.TimeSeries, error) {
 	granularity := timeseries.GetTimeGranularityByDateRange(from, to)
 	return s.storage.order.TimeSeriesCount(ctx, OrderSchema.OrderedAt, granularity,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 	)
 }
 
 func (s *Service) ComputeLiveOrdersFunnel(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	return s.storage.order.CountBy(ctx, OrderSchema.Status,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.ScopeNotIn(OrderSchema.Status, []any{OrderStatusCancelled, OrderStatusReturned, OrderStatusFulfilled}),
 	)
@@ -1265,7 +1265,7 @@ func (s *Service) ComputeTopSellingProducts(ctx context.Context, actor *account.
 // CountOrdersByStatus returns a breakdown of order counts by status over the given date range.
 func (s *Service) CountOrdersByStatus(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	return s.storage.order.CountBy(ctx, OrderSchema.Status,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 	)
 }
@@ -1273,7 +1273,7 @@ func (s *Service) CountOrdersByStatus(ctx context.Context, actor *account.User, 
 // SumOrdersTotalByChannel returns revenue grouped by sales channel for the given range.
 func (s *Service) SumOrdersTotalByChannel(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	return s.storage.order.SumBy(ctx, OrderSchema.Channel, OrderSchema.Total,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.WithOrderBy([]string{fmt.Sprintf("%s DESC", keyvalue.Schema.Value.Column())}),
 	)
@@ -1283,9 +1283,9 @@ func (s *Service) SumOrdersTotalByChannel(ctx context.Context, actor *account.Us
 func (s *Service) SumOrdersTotalByCountry(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	// Load orders with ShippingAddress to sum in-memory for correctness and simplicity
 	orders, err := s.storage.order.FindMany(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
-		s.storage.order.WithPreload("ShippingAddress"),
+		s.storage.order.WithPreload(ShippingAddressStruct),
 	)
 	if err != nil {
 		return nil, err
@@ -1309,7 +1309,7 @@ func (s *Service) SumOrdersTotalByCountry(ctx context.Context, actor *account.Us
 func (s *Service) SumItemsSold(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) (int64, error) {
 	// Load orders with items and sum quantities to properly scope by business and order time
 	orders, err := s.storage.order.FindMany(ctx,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.WithPreload(OrderItemStruct),
 	)
@@ -1328,7 +1328,7 @@ func (s *Service) SumItemsSold(ctx context.Context, actor *account.User, biz *bu
 // CountOrdersByCustomer returns a breakdown of order counts grouped by CustomerID within the given date range.
 func (s *Service) CountOrdersByCustomer(ctx context.Context, actor *account.User, biz *business.Business, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	return s.storage.order.CountBy(ctx, OrderSchema.CustomerID,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 	)
 }
@@ -1339,7 +1339,7 @@ func (s *Service) CountReturningCustomers(ctx context.Context, actor *account.Us
 		return db.Having("COUNT(*) > ?", 1)
 	}
 	results, err := s.storage.order.CountBy(ctx, OrderSchema.CustomerID,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		havingMoreThanOne,
 	)
@@ -1352,7 +1352,7 @@ func (s *Service) CountReturningCustomers(ctx context.Context, actor *account.Us
 // SumOrdersTotalByCustomer returns revenue grouped by CustomerID within the given range ordered by total DESC with an optional limit.
 func (s *Service) SumOrdersTotalByCustomer(ctx context.Context, actor *account.User, biz *business.Business, limit int, from, to time.Time) ([]keyvalue.KeyValue, error) {
 	return s.storage.order.SumBy(ctx, OrderSchema.CustomerID, OrderSchema.Total,
-		s.storage.order.ScopeBusinessID(biz.ID),
+		s.storage.order.ScopeWhere("orders.business_id = ?", biz.ID),
 		s.storage.order.ScopeTime(OrderSchema.OrderedAt, from, to),
 		s.storage.order.WithOrderBy([]string{fmt.Sprintf("%s DESC", keyvalue.Schema.Value.Column())}),
 		s.storage.order.WithLimit(limit),

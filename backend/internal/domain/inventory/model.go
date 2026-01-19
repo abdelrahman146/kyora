@@ -70,9 +70,10 @@ func (a *AssetReferenceList) Scan(value any) error {
 //---------------*/
 
 const (
-	ProductTable  = "products"
-	ProductStruct = "Product"
-	ProductPrefix = "prod"
+	ProductTable          = "products"
+	ProductStruct         = "Product"
+	ProductPrefix         = "prd"
+	ProductVariantsStruct = "Variants"
 )
 
 type Product struct {

@@ -47,7 +47,7 @@ func (s *Service) GetCustomerByID(ctx context.Context, actor *account.User, biz 
 	return s.storage.customer.FindOne(ctx,
 		s.storage.customer.ScopeBusinessID(biz.ID),
 		s.storage.customer.ScopeID(id),
-		s.storage.customer.WithPreload("Notes"),
+		s.storage.customer.WithPreload(CustomerNotesStruct),
 	)
 }
 

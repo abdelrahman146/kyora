@@ -72,9 +72,13 @@ const (
 )
 
 const (
-	OrderTable  = "orders"
-	OrderStruct = "Order"
-	OrderPrefix = "ord"
+	OrderTable            = "orders"
+	OrderStruct           = "Order"
+	OrderPrefix           = "ord"
+	ShippingAddressStruct = "ShippingAddress"
+	ShippingZoneStruct    = "ShippingZone"
+	ItemsProductStruct    = "Items.Product"
+	ItemsVariantStruct    = "Items.Variant"
 )
 
 type Order struct {

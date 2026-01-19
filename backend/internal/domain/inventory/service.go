@@ -38,15 +38,15 @@ func NewService(storage *Storage, atomicProcessor atomic.AtomicProcessor, bus *b
 
 func (s *Service) GetProductByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*Product, error) {
 	return s.storage.products.FindOne(ctx,
-		s.storage.products.ScopeBusinessID(biz.ID),
+		s.storage.products.ScopeWhere("products.business_id = ?", biz.ID),
 		s.storage.products.ScopeID(id),
-		s.storage.products.WithPreload("Variants"),
+		s.storage.products.WithPreload(ProductVariantsStruct),
 	)
 }
 
 func (s *Service) GetVariantByID(ctx context.Context, actor *account.User, biz *business.Business, id string) (*Variant, error) {
 	return s.storage.variants.FindOne(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.variants.ScopeID(id),
 		s.storage.variants.WithPreload(ProductStruct),
 	)
@@ -178,7 +178,7 @@ func (s *Service) ListProducts(ctx context.Context, actor *account.User, biz *bu
 		findOpts = append(findOpts, s.storage.products.WithOrderBy(req.ParsedOrderBy(ProductSchema)))
 	}
 
-	findOpts = append(findOpts, s.storage.products.WithPreload("Variants"))
+	findOpts = append(findOpts, s.storage.products.WithPreload(ProductVariantsStruct))
 
 	// Execute query
 	items, err := s.storage.products.FindMany(ctx, findOpts...)
@@ -247,14 +247,14 @@ func (s *Service) ListVariants(ctx context.Context, actor *account.User, biz *bu
 
 func (s *Service) GetProductVariants(ctx context.Context, actor *account.User, biz *business.Business, productID string) ([]*Variant, error) {
 	return s.storage.variants.FindMany(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.variants.ScopeEquals(VariantSchema.ProductID, productID),
 	)
 }
 
 func (s *Service) ListProductVariants(ctx context.Context, actor *account.User, biz *business.Business, productID string, req *list.ListRequest) ([]*Variant, int64, error) {
 	scopes := []func(db *gorm.DB) *gorm.DB{
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.variants.ScopeEquals(VariantSchema.ProductID, productID),
 	}
 	items, err := s.storage.variants.FindMany(ctx,
@@ -281,7 +281,7 @@ func (s *Service) ListCategories(ctx context.Context, actor *account.User, biz *
 
 func (s *Service) CountProducts(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	return s.storage.products.Count(ctx,
-		s.storage.products.ScopeBusinessID(biz.ID),
+		s.storage.products.ScopeWhere("products.business_id = ?", biz.ID),
 	)
 }
 
@@ -586,7 +586,7 @@ func (s *Service) DeleteProduct(ctx context.Context, actor *account.User, biz *b
 			return err
 		}
 		if err := s.storage.variants.DeleteMany(tctx,
-			s.storage.variants.ScopeBusinessID(biz.ID),
+			s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 			s.storage.variants.ScopeEquals(VariantSchema.ProductID, product.ID),
 		); err != nil {
 			return err
@@ -613,7 +613,7 @@ func (s *Service) DeleteCategory(ctx context.Context, actor *account.User, biz *
 
 func (s *Service) CountLowStockVariants(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	return s.storage.variants.Count(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.ScopeLowStockVariants(),
 	)
 }
@@ -621,7 +621,7 @@ func (s *Service) CountLowStockVariants(ctx context.Context, actor *account.User
 // CountOutOfStockVariants returns the number of variants with zero stock for the business.
 func (s *Service) CountOutOfStockVariants(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	return s.storage.variants.Count(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.variants.ScopeEquals(VariantSchema.StockQuantity, 0),
 	)
 }
@@ -629,7 +629,7 @@ func (s *Service) CountOutOfStockVariants(ctx context.Context, actor *account.Us
 // SumStockQuantity returns the total units in stock across all variants for the business.
 func (s *Service) SumStockQuantity(ctx context.Context, actor *account.User, biz *business.Business) (int64, error) {
 	sum, err := s.storage.variants.Sum(ctx, VariantSchema.StockQuantity,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 	)
 	if err != nil {
 		return 0, err
@@ -640,7 +640,7 @@ func (s *Service) SumStockQuantity(ctx context.Context, actor *account.User, biz
 // SumInventoryValue returns the total inventory value (sum of cost_price * stock_quantity) for the business.
 func (s *Service) SumInventoryValue(ctx context.Context, actor *account.User, biz *business.Business) (decimal.Decimal, error) {
 	variants, err := s.storage.variants.FindMany(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 	)
 	if err != nil {
 		return decimal.Zero, err
@@ -659,7 +659,7 @@ func (s *Service) ComputeTopProductsByInventoryValueDetailed(ctx context.Context
 		limit = 5
 	}
 	variants, err := s.storage.variants.FindMany(ctx,
-		s.storage.variants.ScopeBusinessID(biz.ID),
+		s.storage.variants.ScopeWhere("variants.business_id = ?", biz.ID),
 		s.storage.variants.WithPreload(ProductStruct),
 	)
 	if err != nil {

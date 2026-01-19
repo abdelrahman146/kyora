@@ -22,9 +22,10 @@ const (
 )
 
 const (
-	CustomerTable  = "customers"
-	CustomerStruct = "Customer"
-	CustomerPrefix = "cus"
+	CustomerTable       = "customers"
+	CustomerStruct      = "Customer"
+	CustomerPrefix      = "cus"
+	CustomerNotesStruct = "Notes"
 )
 
 type Customer struct {

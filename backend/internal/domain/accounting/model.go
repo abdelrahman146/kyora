@@ -372,9 +372,10 @@ var ExpenseSchema = struct {
 //--------------------------------*/
 
 const (
-	RecurringExpenseTable  = "recurring_expenses"
-	RecurringExpenseStruct = "RecurringExpense"
-	RecurringExpensePrefix = "rexp"
+	RecurringExpenseTable          = "recurring_expenses"
+	RecurringExpenseStruct         = "RecurringExpense"
+	RecurringExpensePrefix         = "rex"
+	RecurringExpenseExpensesStruct = "Expenses"
 )
 
 type RecurringExpenseFrequency string
