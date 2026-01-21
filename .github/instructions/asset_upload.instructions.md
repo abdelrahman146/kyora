@@ -1,6 +1,5 @@
 ---
 description: Asset Upload (backend contract + frontend integration flow)
-applyTo: "**/*"
 ---
 
 # Asset Upload System

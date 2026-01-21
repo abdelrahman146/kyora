@@ -1,6 +1,5 @@
 ---
 description: "Kyora accounting SSOT (backend + portal-web): assets, investments, withdrawals, expenses, recurring expenses, summary, automation"
-applyTo: "**/*"
 ---
 
 # Kyora Accounting — Single Source of Truth (SSOT)

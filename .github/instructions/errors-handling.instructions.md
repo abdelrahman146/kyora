@@ -1,6 +1,5 @@
 ---
 description: Errors & Failure Handling SSOT (backend + portal-web)
-applyTo: "**/*"
 ---
 
 # Errors & Failure Handling (SSOT)

@@ -1,6 +1,5 @@
 ---
 description: "Kyora onboarding SSOT (backend + portal-web): stages, endpoint contracts, routing, polling, and do/don't rules"
-applyTo: "**/*"
 ---
 
 # Kyora Onboarding SSOT (Backend + Portal Web)

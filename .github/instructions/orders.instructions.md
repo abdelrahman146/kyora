@@ -1,6 +1,5 @@
 ---
 description: "Kyora orders SSOT (backend + portal-web): endpoints, list/search, status/payment state machines, inventory adjustments, plan gates"
-applyTo: "**/*"
 ---
 
 # Kyora Orders — Single Source of Truth (SSOT)

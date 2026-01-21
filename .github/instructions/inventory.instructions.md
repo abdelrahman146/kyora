@@ -1,6 +1,5 @@
 ---
 description: "Kyora inventory SSOT (backend + portal-web): products, variants, categories, stock semantics, search/sort, summary, RBAC"
-applyTo: "**/*"
 ---
 
 # Kyora Inventory SSOT (Backend + Portal Web)

@@ -1,6 +1,5 @@
 ---
 description: Responses, DTOs & Swagger Generation SSOT (backend + portal-web)
-applyTo: "**/*"
 ---
 
 # Responses, DTOs & Swagger (SSOT)

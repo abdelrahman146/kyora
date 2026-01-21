@@ -1,6 +1,5 @@
 ---
 description: "Kyora customer management SSOT (backend + portal-web): customers, addresses, notes, search/filters, RBAC, tenant isolation"
-applyTo: "**/*"
 ---
 
 # Kyora Customer Management SSOT (Backend + Portal Web)

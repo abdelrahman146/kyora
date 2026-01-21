@@ -1,6 +1,5 @@
 ---
 description: Billing SSOT — Plans, Subscriptions, Invoices, Webhooks (Backend + Portal-Web guidance)
-applyTo: "**/*"
 ---
 
 # Billing — Single Source of Truth (SSOT)
@@ -117,7 +116,6 @@ Paid-plan onboarding is implemented in the onboarding domain:
 ### What exists today
 
 - Plan listing during onboarding uses:
-
   - `GET /v1/billing/plans`
   - `GET /v1/billing/plans/:descriptor`
   - implemented in `portal-web/src/api/onboarding.ts`

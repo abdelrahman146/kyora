@@ -1,6 +1,5 @@
 ---
 description: "Kyora analytics SSOT (backend + portal-web): dashboards, sales/inventory/customer analytics, financial reports, date-range semantics"
-applyTo: "**/*"
 ---
 
 # Kyora Analytics — Single Source of Truth (SSOT)
