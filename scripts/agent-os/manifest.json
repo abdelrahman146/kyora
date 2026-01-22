@@ -1,0 +1,83 @@
+{
+  "$schema": "./manifest.schema.json",
+  "description": "Kyora Agent OS artifact manifest - source of truth for validation. Only OS artifacts created by the Agent OS plan are listed here.",
+  "version": "2026-01-22",
+  "artifacts": {
+    "agents": [
+      ".github/agents/orchestrator.agent.md",
+      ".github/agents/backend-lead.agent.md",
+      ".github/agents/web-lead.agent.md",
+      ".github/agents/design-ux-lead.agent.md",
+      ".github/agents/data-analytics-lead.agent.md",
+      ".github/agents/devops-platform-lead.agent.md",
+      ".github/agents/i18n-localization-lead.agent.md",
+      ".github/agents/content-marketing-lead.agent.md",
+      ".github/agents/security-privacy-reviewer.agent.md",
+      ".github/agents/backend-implementer.agent.md",
+      ".github/agents/web-implementer.agent.md",
+      ".github/agents/shared-platform-implementer.agent.md",
+      ".github/agents/qa-test-specialist.agent.md"
+    ],
+    "prompts": [
+      ".github/prompts/route-task.prompt.md",
+      ".github/prompts/create-delegation-packet.prompt.md",
+      ".github/prompts/create-phase-handoff-packet.prompt.md",
+      ".github/prompts/create-recovery-packet.prompt.md",
+      ".github/prompts/create-drift-ticket.prompt.md",
+      ".github/prompts/promote-to-artifact.prompt.md"
+    ],
+    "skills": [
+      {
+        "name": "lane-playbooks",
+        "root": ".github/skills/lane-playbooks/SKILL.md",
+        "references": [
+          ".github/skills/lane-playbooks/references/lane-discovery.md",
+          ".github/skills/lane-playbooks/references/lane-planning.md",
+          ".github/skills/lane-playbooks/references/lane-recovery.md",
+          ".github/skills/lane-playbooks/references/examples.md"
+        ]
+      },
+      {
+        "name": "cross-stack-feature",
+        "root": ".github/skills/cross-stack-feature/SKILL.md",
+        "references": [
+          ".github/skills/cross-stack-feature/references/quality-gates.md"
+        ]
+      },
+      {
+        "name": "drift-sync",
+        "root": ".github/skills/drift-sync/SKILL.md",
+        "references": [
+          ".github/skills/drift-sync/references/rule-change-ledger.md",
+          ".github/skills/drift-sync/references/artifact-prune.md"
+        ]
+      },
+      {
+        "name": "tool-minimization",
+        "root": ".github/skills/tool-minimization/SKILL.md",
+        "references": [
+          ".github/skills/tool-minimization/references/mcp-safety-checklist.md"
+        ]
+      }
+    ]
+  },
+  "frontmatter_requirements": {
+    "agents": {
+      "required": ["description"],
+      "recommended": ["name", "tools"]
+    },
+    "prompts": {
+      "required": ["description", "agent"],
+      "recommended": ["tools"]
+    },
+    "skills": {
+      "required": ["name", "description"],
+      "recommended": []
+    }
+  },
+  "notes": [
+    "This manifest validates ONLY OS artifacts created by the Agent OS implementation plan.",
+    "Non-OS artifacts in .github/agents/, .github/prompts/, .github/skills/ are intentionally excluded.",
+    "Run `make agent.os.check` to validate all artifacts in this manifest."
+  ]
+}

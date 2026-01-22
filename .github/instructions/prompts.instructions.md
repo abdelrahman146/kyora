@@ -11,6 +11,28 @@ Rules for creating effective, reusable prompt files that define specific tasks w
 
 ---
 
+## ⚠️ Critical: Prompts Are User-Only (PO-Only)
+
+**Prompts are triggered by the user (PO) via `/prompt-name` in chat. Agents CANNOT invoke prompts.**
+
+This is a fundamental capability limitation:
+
+- **Prompts**: User-triggered tasks with input variables
+- **Skills**: Agent-accessible workflows with bundled resources
+- **Agent tool**: How agents delegate to other agents
+
+### Implications for Workflow Design
+
+| Need                              | Use                       |
+| --------------------------------- | ------------------------- |
+| PO triggers a task                | Prompt (`.prompt.md`)     |
+| Agent needs workflow instructions | Skill (`SKILL.md`)        |
+| Agent delegates to another agent  | `agent` tool with handoff |
+
+**Common Mistake**: Creating prompts for agent workflows. If an agent needs to execute a workflow (like creating a delegation packet), that workflow MUST be in a skill, not a prompt.
+
+---
+
 ## 1) Prompt File Structure
 
 ### Required Location

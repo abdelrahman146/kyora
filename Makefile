@@ -281,6 +281,46 @@ lint: backend.vet portal.lint ## Lint-ish checks (go vet + eslint)
 .PHONY: check
 check: lint test.quick portal.type-check ## Fast checks (lint + backend tests + portal type-check)
 
+## ----------------------------
+## Agent OS
+## ----------------------------
+
+.PHONY: agent.os.check
+agent.os.check: ## Validate OS artifacts (manifest.json, frontmatter)
+	@echo "Validating Agent OS artifacts..."
+	@$(ROOT_DIR)/scripts/agent-os/validate.sh
+
+.PHONY: agent.os.help
+agent.os.help: ## Explain what Agent OS validation enforces
+	@echo ""
+	@echo "Kyora Agent OS Validation"
+	@echo "========================="
+	@echo ""
+	@echo "What it validates (OS artifacts only):"
+	@echo "  - Agents defined in scripts/agent-os/manifest.json"
+	@echo "  - Prompts defined in scripts/agent-os/manifest.json"
+	@echo "  - Skills defined in scripts/agent-os/manifest.json"
+	@echo ""
+	@echo "Checks performed:"
+	@echo "  1. File existence - all declared artifacts must exist"
+	@echo "  2. Frontmatter - required keys per artifact type:"
+	@echo "       Agents:  description (required)"
+	@echo "       Prompts: description, agent (required)"
+	@echo "       Skills:  name, description (required)"
+	@echo ""
+	@echo "What it does NOT validate:"
+	@echo "  - Non-OS artifacts (existing agents/prompts not in manifest)"
+	@echo "  - Code quality or content correctness"
+	@echo "  - SSOT instruction files"
+	@echo ""
+	@echo "Usage:"
+	@echo "  make agent.os.check    # Run validation"
+	@echo "  make agent.os.help     # Show this help"
+	@echo ""
+	@echo "Manifest: scripts/agent-os/manifest.json"
+	@echo "Blueprint: KYORA_AGENT_OS.md"
+	@echo ""
+
 .PHONY: doctor
 doctor: ## Check local tooling (go, docker, npm, air)
 	@set -e; \
