@@ -1,5 +1,5 @@
 ---
-agent: "agent"
+agent: "Orchestrator"
 description: "Create a new implementation plan file for new features, refactoring existing code or upgrading packages, design, architecture or infrastructure."
 tools:
   [

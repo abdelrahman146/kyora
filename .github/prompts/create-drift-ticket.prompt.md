@@ -1,6 +1,6 @@
 ---
 description: "Create a Drift Ticket when code behavior differs from SSOT instructions. Use when finding hidden rules, convention changes, or misalignment between code and docs."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 

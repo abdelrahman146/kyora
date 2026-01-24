@@ -1,6 +1,6 @@
 ---
 description: "Resolve drift between code reality and SSOT instructions. Use when fixing inconsistencies, updating outdated instructions, or aligning code with conventions after drift is detected."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search", "edit/editFiles"]
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: "Continue work from a previous session. Use when resuming abandoned or interrupted work, picking up where you left off, or recovering context from a prior conversation."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search", "search/changes"]
 ---
 

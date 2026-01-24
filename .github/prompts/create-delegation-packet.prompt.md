@@ -1,6 +1,6 @@
 ---
 description: "[DEPRECATED for agent use] Create a Delegation Packet for handing off work. Agents should use the agent-workflows skill Workflow 2 instead."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 

@@ -1,6 +1,6 @@
 ---
 description: "[DEPRECATED for agent use] Create a Recovery Packet to resume unfinished work. Agents should use the agent-workflows skill Workflow 4 instead."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 

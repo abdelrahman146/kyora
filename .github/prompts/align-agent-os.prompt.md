@@ -1,6 +1,6 @@
 ---
 description: "Propose improvements to the Kyora Agent OS. Use when suggesting changes to the operating model, agent definitions, skill improvements, or workflow optimizations."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search", "edit/editFiles"]
 ---
 

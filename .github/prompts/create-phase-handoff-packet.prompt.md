@@ -1,6 +1,6 @@
 ---
 description: "[DEPRECATED for agent use] Create a Phase Handoff Packet at the end of a phase. Agents should use the agent-workflows skill Workflow 3 instead."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 

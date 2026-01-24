@@ -1,6 +1,6 @@
 ---
 description: "Maintain SSOT instruction files. Use when updating coding standards, adding new conventions, refactoring instruction structure, or reviewing instruction coverage."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search", "edit/editFiles"]
 ---
 

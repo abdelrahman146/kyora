@@ -1,6 +1,6 @@
 ---
 description: "[DEPRECATED for agent use] Route a task through the Kyora Agent OS. Use when starting any new feature, bug, refactor, or cross-stack work. Agents should use the agent-workflows skill instead."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 

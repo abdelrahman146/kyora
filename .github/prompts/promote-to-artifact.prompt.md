@@ -1,6 +1,6 @@
 ---
 description: "Promote repeated work into a reusable artifact. Use when a task happens 3+ times and should become a prompt, skill, agent, or instruction."
-agent: "agent"
+agent: "Orchestrator"
 tools: ["search/codebase", "search"]
 ---
 
