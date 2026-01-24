@@ -234,7 +234,7 @@ See [Quality Gates](./references/quality-gates.md) for detailed checklists per a
 | Phase 0 skipped | Urgency or oversight | Stop, get Lead agreement before continuing |
 | Contract mismatch | Leads didn't align on DTO/errors | Revisit Phase 0, update contract |
 | Phase 2 blocked by Phase 1 | Backend not ready | Wait for Phase 1 handoff packet |
-| RTL layout broken | `left`/`right` used instead of `start`/`end` | Fix per ui-implementation.instructions.md |
+| RTL layout broken | `left`/`right` used instead of `start`/`end` | Fix per frontend/_general/ui-patterns.instructions.md |
 | i18n keys missing | Copy added without translation | Add keys to both ar/ and en/ locales |
 
 ## Validation Commands Summary
@@ -261,4 +261,4 @@ Do not duplicate; link instead:
 - Cross-stack coordination: [KYORA_AGENT_OS.md#L382-L395](../../../KYORA_AGENT_OS.md#L382-L395)
 - Quality gates: [KYORA_AGENT_OS.md#L701-L789](../../../KYORA_AGENT_OS.md#L701-L789)
 - Backend SSOT: [backend-core.instructions.md](../../instructions/backend-core.instructions.md)
-- Portal SSOT: [portal-web-architecture.instructions.md](../../instructions/portal-web-architecture.instructions.md)
+- Portal SSOT: [frontend/projects/portal-web/architecture.instructions.md](../../instructions/frontend/projects/portal-web/architecture.instructions.md)

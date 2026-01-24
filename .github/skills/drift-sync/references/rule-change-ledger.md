@@ -35,8 +35,8 @@ Add a row when:
 ```markdown
 | Date | Rule changed | SSOT owner file | PO approved | Validation |
 |------|--------------|-----------------|-------------|------------|
-| 2026-01-15 | Translation keys now use dot.case | i18n-translations.instructions.md | Yes | make portal.check |
-| 2026-01-10 | Form validation uses onBlur by default | forms.instructions.md | Yes | make portal.check |
+| 2026-01-15 | Translation keys now use dot.case | frontend/_general/i18n.instructions.md | Yes | make portal.check |
+| 2026-01-10 | Form validation uses onBlur by default | frontend/_general/forms.instructions.md | Yes | make portal.check |
 | 2026-01-05 | API errors include request_id | errors-handling.instructions.md | Yes | make test.quick |
 ```
 
@@ -97,7 +97,7 @@ Current reality (what code does today):
 - Old code uses snake_case: "orders_status_pending"
 
 Current SSOT guidance (what instructions say):
-- i18n-translations.instructions.md says use snake_case
+- frontend/_general/i18n.instructions.md says use snake_case
 
 Proposed new rule:
 - Use dot.case for all new keys
@@ -131,14 +131,14 @@ Quick reference for which SSOT owns which rules:
 | Backend testing | `backend-testing.instructions.md` |
 | Error handling | `errors-handling.instructions.md` |
 | DTOs/Swagger | `responses-dtos-swagger.instructions.md` |
-| Portal architecture | `portal-web-architecture.instructions.md` |
-| Portal structure | `portal-web-code-structure.instructions.md` |
-| UI/RTL | `ui-implementation.instructions.md` |
-| Design tokens | `design-tokens.instructions.md` |
-| Forms | `forms.instructions.md` |
-| i18n | `i18n-translations.instructions.md` |
-| HTTP/Query | `http-tanstack-query.instructions.md` |
-| Charts | `charts.instructions.md` |
+| Portal architecture | `frontend/projects/portal-web/architecture.instructions.md` |
+| Portal structure | `frontend/projects/portal-web/code-structure.instructions.md` |
+| UI/RTL | `frontend/_general/ui-patterns.instructions.md` |
+| Design tokens | `kyora/design-system.instructions.md` |
+| Forms | `frontend/_general/forms.instructions.md` |
+| i18n | `frontend/_general/i18n.instructions.md` |
+| HTTP/Query | `frontend/_general/http-client.instructions.md` |
+| Charts | `frontend/projects/portal-web/charts.instructions.md` |
 
 ## Workflow Integration
 

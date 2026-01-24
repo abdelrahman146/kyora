@@ -60,8 +60,8 @@ If you don't have these, request them from the Orchestrator or Lead.
 
 Use SSOT:
 
-- [.github/instructions/ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md)
-- [.github/instructions/design-tokens.instructions.md](../instructions/design-tokens.instructions.md)
+- [.github/instructions/frontend/\_general/ui-patterns.instructions.md](../instructions/frontend/_general/ui-patterns.instructions.md)
+- [.github/instructions/kyora/design-system.instructions.md](../instructions/kyora/design-system.instructions.md)
 
 Checklist:
 
@@ -76,7 +76,7 @@ Checklist:
 
 Use SSOT:
 
-- [.github/instructions/forms.instructions.md](../instructions/forms.instructions.md)
+- [.github/instructions/frontend/\_general/forms.instructions.md](../instructions/frontend/_general/forms.instructions.md)
 
 Checklist:
 
@@ -88,7 +88,7 @@ Checklist:
 
 Use SSOT:
 
-- [.github/instructions/i18n-translations.instructions.md](../instructions/i18n-translations.instructions.md)
+- [.github/instructions/frontend/\_general/i18n.instructions.md](../instructions/frontend/_general/i18n.instructions.md)
 
 Checklist:
 
@@ -164,8 +164,8 @@ Escalate to Web Lead when:
 ## SSOT References
 
 - [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) — Role spec and gates
-- [.github/instructions/portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
-- [.github/instructions/portal-web-code-structure.instructions.md](../instructions/portal-web-code-structure.instructions.md)
-- [.github/instructions/ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md)
-- [.github/instructions/forms.instructions.md](../instructions/forms.instructions.md)
-- [.github/instructions/http-tanstack-query.instructions.md](../instructions/http-tanstack-query.instructions.md)
+- [.github/instructions/frontend/projects/portal-web/architecture.instructions.md](../instructions/frontend/projects/portal-web/architecture.instructions.md)
+- [.github/instructions/frontend/projects/portal-web/code-structure.instructions.md](../instructions/frontend/projects/portal-web/code-structure.instructions.md)
+- [.github/instructions/frontend/\_general/ui-patterns.instructions.md](../instructions/frontend/_general/ui-patterns.instructions.md)
+- [.github/instructions/frontend/\_general/forms.instructions.md](../instructions/frontend/_general/forms.instructions.md)
+- [.github/instructions/frontend/\_general/http-client.instructions.md](../instructions/frontend/_general/http-client.instructions.md)

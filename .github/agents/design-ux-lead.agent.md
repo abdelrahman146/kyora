@@ -99,5 +99,5 @@ Escalate to PO when:
 
 - [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) — Role spec
 - [.github/instructions/brand-key.instructions.md](../instructions/brand-key.instructions.md) — Brand guidelines
-- [.github/instructions/ui-implementation.instructions.md](../instructions/ui-implementation.instructions.md)
-- [.github/instructions/design-tokens.instructions.md](../instructions/design-tokens.instructions.md)
+- [.github/instructions/frontend/\_general/ui-patterns.instructions.md](../instructions/frontend/_general/ui-patterns.instructions.md)
+- [.github/instructions/kyora/design-system.instructions.md](../instructions/kyora/design-system.instructions.md)

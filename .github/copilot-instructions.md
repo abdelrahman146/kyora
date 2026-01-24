@@ -51,8 +51,75 @@ Current repo has **two active apps**: `backend/` (Go API) and `portal-web/` (Rea
 
 ## Resources (SSOT)
 
-- Backend architecture/patterns: `.github/instructions/backend-core.instructions.md`, `.github/instructions/go-backend-patterns.instructions.md`
-- Backend testing: `.github/instructions/backend-testing.instructions.md`
-- Portal architecture/dev workflow: `.github/instructions/portal-web-architecture.instructions.md`, `.github/instructions/portal-web-development.instructions.md`
-- Portal UI/RTL: `.github/instructions/ui-implementation.instructions.md`, `.github/instructions/design-tokens.instructions.md`
-- Portal forms/HTTP/i18n: `.github/instructions/forms.instructions.md`, `.github/instructions/http-tanstack-query.instructions.md`, `.github/instructions/i18n-translations.instructions.md`
+**Kyora Business/Brand:**
+
+- `.github/instructions/kyora/brand-key.instructions.md` — Brand key model
+- `.github/instructions/kyora/business-model.instructions.md` — Business model
+- `.github/instructions/kyora/target-customer.instructions.md` — Target customer
+- `.github/instructions/kyora/ux-strategy.instructions.md` — UX strategy
+- `.github/instructions/kyora/design-system.instructions.md` — Design system
+
+**Backend (General Patterns):**
+
+- `.github/instructions/backend/_general/architecture.instructions.md` — Architecture
+- `.github/instructions/backend/_general/go-patterns.instructions.md` — Go patterns
+- `.github/instructions/backend/_general/api-contracts.instructions.md` — API contracts
+- `.github/instructions/backend/_general/errors.instructions.md` — Error handling
+- `.github/instructions/backend/_general/testing.instructions.md` — Testing
+
+**Backend (Kyora Project-Specific):**
+
+- `.github/instructions/backend/projects/kyora-backend/domain-modules.instructions.md` — Domain modules
+- `.github/instructions/backend/projects/kyora-backend/integrations.instructions.md` — Integrations
+- `.github/instructions/backend/projects/kyora-backend/testing-specifics.instructions.md` — Testing specifics
+
+**Frontend (General Patterns):**
+
+- `.github/instructions/frontend/_general/architecture.instructions.md` — Architecture
+- `.github/instructions/frontend/_general/ui-patterns.instructions.md` — UI/RTL patterns
+- `.github/instructions/frontend/_general/forms.instructions.md` — Forms (core)
+- `.github/instructions/frontend/_general/forms-validation.instructions.md` — Forms validation
+- `.github/instructions/frontend/_general/http-client.instructions.md` — HTTP/Ky/TanStack Query
+- `.github/instructions/frontend/_general/i18n.instructions.md` — i18n
+- `.github/instructions/frontend/_general/testing.instructions.md` — Testing
+
+**Frontend (Portal Web Project-Specific):**
+
+- `.github/instructions/frontend/projects/portal-web/architecture.instructions.md` — Architecture
+- `.github/instructions/frontend/projects/portal-web/code-structure.instructions.md` — Code structure
+- `.github/instructions/frontend/projects/portal-web/ui-components.instructions.md` — UI components (daisyUI)
+- `.github/instructions/frontend/projects/portal-web/charts.instructions.md` — Charts (Chart.js)
+- `.github/instructions/frontend/projects/portal-web/development.instructions.md` — Development workflow
+
+**Domain Modules:**
+
+- `.github/instructions/domain/account.instructions.md` — Account/auth/workspace
+- `.github/instructions/domain/accounting.instructions.md` — Accounting
+- `.github/instructions/domain/analytics.instructions.md` — Analytics
+- `.github/instructions/domain/billing.instructions.md` — Billing
+- `.github/instructions/domain/business.instructions.md` — Business management
+- `.github/instructions/domain/customer.instructions.md` — Customer management
+- `.github/instructions/domain/inventory.instructions.md` — Inventory
+- `.github/instructions/domain/onboarding.instructions.md` — Onboarding
+- `.github/instructions/domain/orders.instructions.md` — Orders
+
+**Platform/Infrastructure:**
+
+- `.github/instructions/platform/asset-upload.instructions.md` — Asset upload
+- `.github/instructions/platform/errors-handling.instructions.md` — Error handling (cross-cutting)
+- `.github/instructions/platform/tenant-isolation.instructions.md` — Tenant isolation
+
+**Monorepo:**
+
+- `.github/instructions/monorepo/structure.instructions.md` — Structure
+- `.github/instructions/monorepo/workflows.instructions.md` — Workflows
+- `.github/instructions/monorepo/adding-projects.instructions.md` — Adding projects
+
+**Meta (AI Artifacts):**
+
+- `.github/instructions/_meta/ai-artifacts.instructions.md` — Artifact selection matrix
+- `.github/instructions/_meta/agents.instructions.md` — Agent authoring
+- `.github/instructions/_meta/prompts.instructions.md` — Prompt authoring
+- `.github/instructions/_meta/skills.instructions.md` — Skill authoring
+- `.github/instructions/_meta/writing-instructions.instructions.md` — Writing instructions
+- `.github/instructions/_meta/copilot-instructions.instructions.md` — Copilot instructions

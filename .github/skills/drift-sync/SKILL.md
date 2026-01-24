@@ -47,12 +47,12 @@ Determine which `.instructions.md` file governs the rule.
 | Backend patterns | `go-backend-patterns.instructions.md` |
 | Error handling | `errors-handling.instructions.md` |
 | DTOs/Swagger | `responses-dtos-swagger.instructions.md` |
-| Portal architecture | `portal-web-architecture.instructions.md` |
-| Portal structure | `portal-web-code-structure.instructions.md` |
-| UI/RTL | `ui-implementation.instructions.md` |
-| Forms | `forms.instructions.md` |
-| i18n | `i18n-translations.instructions.md` |
-| HTTP/Query | `http-tanstack-query.instructions.md` |
+| Portal architecture | `frontend/projects/portal-web/architecture.instructions.md` |
+| Portal structure | `frontend/projects/portal-web/code-structure.instructions.md` |
+| UI/RTL | `frontend/_general/ui-patterns.instructions.md` |
+| Forms | `frontend/_general/forms.instructions.md` |
+| i18n | `frontend/_general/i18n.instructions.md` |
+| HTTP/Query | `frontend/_general/http-client.instructions.md` |
 
 If unclear, check [KYORA_AGENT_OS.md Section 2.1](../../../KYORA_AGENT_OS.md) for SSOT entry points.
 

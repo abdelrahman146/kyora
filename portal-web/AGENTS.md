@@ -249,13 +249,13 @@ t('Order Status')                    // Hardcoded
 
 ## SSOT Entry Points
 
-- [.github/instructions/portal-web-architecture.instructions.md](../.github/instructions/portal-web-architecture.instructions.md) — Architecture
-- [.github/instructions/portal-web-code-structure.instructions.md](../.github/instructions/portal-web-code-structure.instructions.md) — Code structure
-- [.github/instructions/ui-implementation.instructions.md](../.github/instructions/ui-implementation.instructions.md) — UI/RTL
-- [.github/instructions/forms.instructions.md](../.github/instructions/forms.instructions.md) — Forms
-- [.github/instructions/i18n-translations.instructions.md](../.github/instructions/i18n-translations.instructions.md) — i18n
-- [.github/instructions/http-tanstack-query.instructions.md](../.github/instructions/http-tanstack-query.instructions.md) — HTTP/TanStack Query
-- [.github/instructions/design-tokens.instructions.md](../.github/instructions/design-tokens.instructions.md) — Design tokens
+- [.github/instructions/frontend/projects/portal-web/architecture.instructions.md](../.github/instructions/frontend/projects/portal-web/architecture.instructions.md) — Architecture
+- [.github/instructions/frontend/projects/portal-web/code-structure.instructions.md](../.github/instructions/frontend/projects/portal-web/code-structure.instructions.md) — Code structure
+- [.github/instructions/frontend/_general/ui-patterns.instructions.md](../.github/instructions/frontend/_general/ui-patterns.instructions.md) — UI/RTL
+- [.github/instructions/frontend/_general/forms.instructions.md](../.github/instructions/frontend/_general/forms.instructions.md) — Forms
+- [.github/instructions/frontend/_general/i18n.instructions.md](../.github/instructions/frontend/_general/i18n.instructions.md) — i18n
+- [.github/instructions/frontend/_general/http-client.instructions.md](../.github/instructions/frontend/_general/http-client.instructions.md) — HTTP/TanStack Query
+- [.github/instructions/kyora/design-system.instructions.md](../.github/instructions/kyora/design-system.instructions.md) — Design system
 
 ## Agent Routing Hints
 

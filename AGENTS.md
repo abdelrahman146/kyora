@@ -163,22 +163,40 @@ function OrderStatusBadge({ status }: { status: OrderStatus }) {
 
 Core artifact guidance:
 - [.github/copilot-instructions.md](.github/copilot-instructions.md) — Repo baseline
-- [.github/instructions/ai-artifacts.instructions.md](.github/instructions/ai-artifacts.instructions.md) — Artifact selection matrix
+- [.github/instructions/_meta/ai-artifacts.instructions.md](.github/instructions/_meta/ai-artifacts.instructions.md) — Artifact selection matrix
 
-Backend:
-- [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md) — Architecture
-- [.github/instructions/go-backend-patterns.instructions.md](.github/instructions/go-backend-patterns.instructions.md) — Go patterns
-- [.github/instructions/backend-testing.instructions.md](.github/instructions/backend-testing.instructions.md) — Testing
-- [.github/instructions/errors-handling.instructions.md](.github/instructions/errors-handling.instructions.md) — Error patterns
-- [.github/instructions/responses-dtos-swagger.instructions.md](.github/instructions/responses-dtos-swagger.instructions.md) — DTOs/OpenAPI
+Kyora Business/Brand:
+- [.github/instructions/kyora/brand-key.instructions.md](.github/instructions/kyora/brand-key.instructions.md) — Brand key
+- [.github/instructions/kyora/business-model.instructions.md](.github/instructions/kyora/business-model.instructions.md) — Business model
+- [.github/instructions/kyora/design-system.instructions.md](.github/instructions/kyora/design-system.instructions.md) — Design system
 
-Portal:
-- [.github/instructions/portal-web-architecture.instructions.md](.github/instructions/portal-web-architecture.instructions.md) — Architecture
-- [.github/instructions/portal-web-code-structure.instructions.md](.github/instructions/portal-web-code-structure.instructions.md) — Code structure
-- [.github/instructions/ui-implementation.instructions.md](.github/instructions/ui-implementation.instructions.md) — UI/RTL
-- [.github/instructions/forms.instructions.md](.github/instructions/forms.instructions.md) — Forms
-- [.github/instructions/i18n-translations.instructions.md](.github/instructions/i18n-translations.instructions.md) — i18n
-- [.github/instructions/http-tanstack-query.instructions.md](.github/instructions/http-tanstack-query.instructions.md) — HTTP/TanStack Query
+Backend (General):
+- [.github/instructions/backend/_general/architecture.instructions.md](.github/instructions/backend/_general/architecture.instructions.md) — Architecture
+- [.github/instructions/backend/_general/go-patterns.instructions.md](.github/instructions/backend/_general/go-patterns.instructions.md) — Go patterns
+- [.github/instructions/backend/_general/testing.instructions.md](.github/instructions/backend/_general/testing.instructions.md) — Testing
+- [.github/instructions/backend/projects/kyora-backend/domain-modules.instructions.md](.github/instructions/backend/projects/kyora-backend/domain-modules.instructions.md) — Domain modules
+
+Frontend (General):
+- [.github/instructions/frontend/_general/architecture.instructions.md](.github/instructions/frontend/_general/architecture.instructions.md) — Architecture
+- [.github/instructions/frontend/_general/ui-patterns.instructions.md](.github/instructions/frontend/_general/ui-patterns.instructions.md) — UI/RTL
+- [.github/instructions/frontend/_general/forms.instructions.md](.github/instructions/frontend/_general/forms.instructions.md) — Forms
+- [.github/instructions/frontend/_general/http-client.instructions.md](.github/instructions/frontend/_general/http-client.instructions.md) — HTTP/TanStack Query
+- [.github/instructions/frontend/_general/i18n.instructions.md](.github/instructions/frontend/_general/i18n.instructions.md) — i18n
+
+Domain Modules:
+- [.github/instructions/domain/account.instructions.md](.github/instructions/domain/account.instructions.md) — Account/auth
+- [.github/instructions/domain/orders.instructions.md](.github/instructions/domain/orders.instructions.md) — Orders
+- [.github/instructions/domain/inventory.instructions.md](.github/instructions/domain/inventory.instructions.md) — Inventory
+- [.github/instructions/domain/customer.instructions.md](.github/instructions/domain/customer.instructions.md) — Customers
+
+Platform/Infrastructure:
+- [.github/instructions/platform/tenant-isolation.instructions.md](.github/instructions/platform/tenant-isolation.instructions.md) — Tenant isolation
+- [.github/instructions/platform/errors-handling.instructions.md](.github/instructions/platform/errors-handling.instructions.md) — Error patterns
+- [.github/instructions/platform/asset-upload.instructions.md](.github/instructions/platform/asset-upload.instructions.md) — Asset upload
+
+Monorepo:
+- [.github/instructions/monorepo/structure.instructions.md](.github/instructions/monorepo/structure.instructions.md) — Structure
+- [.github/instructions/monorepo/workflows.instructions.md](.github/instructions/monorepo/workflows.instructions.md) — Workflows
 
 Agent OS:
 - [KYORA_AGENT_OS.md](./KYORA_AGENT_OS.md) — Operating model, routing, lanes, handoffs

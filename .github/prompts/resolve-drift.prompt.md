@@ -38,10 +38,10 @@ If SSOT file not provided, search for it:
 
 3. Determine which file is authoritative:
    - Backend patterns → `go-backend-patterns.instructions.md`
-   - Portal structure → `portal-web-code-structure.instructions.md`
-   - Forms → `forms.instructions.md`
-   - UI/RTL → `ui-implementation.instructions.md`
-   - i18n → `i18n-translations.instructions.md`
+   - Portal structure → `frontend/projects/portal-web/code-structure.instructions.md`
+   - Forms → `frontend/_general/forms.instructions.md`
+   - UI/RTL → `frontend/_general/ui-patterns.instructions.md`
+   - i18n → `frontend/_general/i18n.instructions.md`
    - Errors → `errors-handling.instructions.md`
 
 ### Step 2: Validate Current State

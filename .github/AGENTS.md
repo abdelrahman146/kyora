@@ -27,10 +27,17 @@ AI artifacts — agents, prompts, skills, and instruction files for GitHub Copil
 │   ├── lane-playbooks/     # Lane-specific guidance
 │   └── ...
 ├── instructions/           # Always-on coding standards (.instructions.md)
-│   ├── ai-artifacts.instructions.md      # Artifact selection matrix
-│   ├── backend-core.instructions.md      # Backend patterns
-│   ├── portal-web-architecture.instructions.md
-│   └── ...
+│   ├── _meta/              # AI artifact guidelines
+│   ├── kyora/              # Business/brand guidelines
+│   ├── backend/            # Backend patterns
+│   │   ├── _general/       # Cross-project
+│   │   └── projects/       # Project-specific
+│   ├── frontend/           # Frontend patterns
+│   │   ├── _general/       # Cross-project
+│   │   └── projects/       # Project-specific
+│   ├── domain/             # Business domains
+│   ├── platform/           # Cross-cutting infrastructure
+│   └── monorepo/           # Monorepo maintenance
 └── copilot-instructions.md # Repo-wide baseline
 ```
 

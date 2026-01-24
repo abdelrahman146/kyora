@@ -187,4 +187,4 @@ Cross-stack contract (if applicable):
 - Routing algorithm: [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) Section 4
 - Role specs: [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) Section 3
 - Backend patterns: [.github/instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md)
-- Portal patterns: [.github/instructions/portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
+- Portal patterns: [.github/instructions/frontend/projects/portal-web/architecture.instructions.md](../instructions/frontend/projects/portal-web/architecture.instructions.md)

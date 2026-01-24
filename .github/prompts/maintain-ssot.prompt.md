@@ -47,12 +47,12 @@ Input:
    |--------|-----------|
    | Backend core | `backend-core.instructions.md` |
    | Go patterns | `go-backend-patterns.instructions.md` |
-   | Portal architecture | `portal-web-architecture.instructions.md` |
-   | Portal structure | `portal-web-code-structure.instructions.md` |
-   | Forms | `forms.instructions.md` |
-   | UI/RTL | `ui-implementation.instructions.md` |
-   | i18n | `i18n-translations.instructions.md` |
-   | HTTP/queries | `http-tanstack-query.instructions.md` |
+   | Portal architecture | `frontend/projects/portal-web/architecture.instructions.md` |
+   | Portal structure | `frontend/projects/portal-web/code-structure.instructions.md` |
+   | Forms | `frontend/_general/forms.instructions.md` |
+   | UI/RTL | `frontend/_general/ui-patterns.instructions.md` |
+   | i18n | `frontend/_general/i18n.instructions.md` |
+   | HTTP/queries | `frontend/_general/http-client.instructions.md` |
    | Errors | `errors-handling.instructions.md` |
    | Testing | `backend-testing.instructions.md` |
 

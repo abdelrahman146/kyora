@@ -86,23 +86,23 @@ Appendix C. Prompt + Skill Design Checklist
 Core SSOT entry points:
 
 - Repo baseline: [.github/copilot-instructions.md](.github/copilot-instructions.md)
-- Artifact selection: [.github/instructions/ai-artifacts.instructions.md](.github/instructions/ai-artifacts.instructions.md)
-- Prompt spec: [.github/instructions/prompts.instructions.md](.github/instructions/prompts.instructions.md)
-- Agents spec: [.github/instructions/agents.instructions.md](.github/instructions/agents.instructions.md)
-- Skills spec: [.github/instructions/agent-skills.instructions.md](.github/instructions/agent-skills.instructions.md)
+- Artifact selection: [.github/instructions/_meta/ai-artifacts.instructions.md](.github/instructions/_meta/ai-artifacts.instructions.md)
+- Prompt spec: [.github/instructions/_meta/prompts.instructions.md](.github/instructions/_meta/prompts.instructions.md)
+- Agents spec: [.github/instructions/_meta/agents.instructions.md](.github/instructions/_meta/agents.instructions.md)
+- Skills spec: [.github/instructions/_meta/skills.instructions.md](.github/instructions/_meta/skills.instructions.md)
 
 Kyora domain SSOTs (examples; not exhaustive):
 
-- Backend core: [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md)
-- Backend patterns: [.github/instructions/go-backend-patterns.instructions.md](.github/instructions/go-backend-patterns.instructions.md)
-- Errors: [.github/instructions/errors-handling.instructions.md](.github/instructions/errors-handling.instructions.md)
+- Backend core: [.github/instructions/backend/_general/architecture.instructions.md](.github/instructions/backend/_general/architecture.instructions.md)
+- Backend patterns: [.github/instructions/backend/_general/go-patterns.instructions.md](.github/instructions/backend/_general/go-patterns.instructions.md)
+- Errors: [.github/instructions/platform/errors-handling.instructions.md](.github/instructions/platform/errors-handling.instructions.md)
 - DTOs/Swagger: [.github/instructions/responses-dtos-swagger.instructions.md](.github/instructions/responses-dtos-swagger.instructions.md)
-- Portal architecture: [.github/instructions/portal-web-architecture.instructions.md](.github/instructions/portal-web-architecture.instructions.md)
-- Portal structure: [.github/instructions/portal-web-code-structure.instructions.md](.github/instructions/portal-web-code-structure.instructions.md)
-- UI/RTL: [.github/instructions/ui-implementation.instructions.md](.github/instructions/ui-implementation.instructions.md)
-- Forms: [.github/instructions/forms.instructions.md](.github/instructions/forms.instructions.md)
-- i18n: [.github/instructions/i18n-translations.instructions.md](.github/instructions/i18n-translations.instructions.md)
-- HTTP/TanStack Query: [.github/instructions/http-tanstack-query.instructions.md](.github/instructions/http-tanstack-query.instructions.md)
+- Portal architecture: [.github/instructions/frontend/projects/portal-web/architecture.instructions.md](.github/instructions/frontend/projects/portal-web/architecture.instructions.md)
+- Portal structure: [.github/instructions/frontend/projects/portal-web/code-structure.instructions.md](.github/instructions/frontend/projects/portal-web/code-structure.instructions.md)
+- UI/RTL: [.github/instructions/frontend/_general/ui-implementation.instructions.md](.github/instructions/frontend/_general/ui-implementation.instructions.md)
+- Forms: [.github/instructions/frontend/_general/forms.instructions.md](.github/instructions/frontend/_general/forms.instructions.md)
+- i18n: [.github/instructions/frontend/_general/i18n-translations.instructions.md](.github/instructions/frontend/_general/i18n-translations.instructions.md)
+- HTTP/TanStack Query: [.github/instructions/frontend/_general/http-tanstack-query.instructions.md](.github/instructions/frontend/_general/http-tanstack-query.instructions.md)
 
 ### 2.2 Artifact decision table
 
@@ -794,9 +794,9 @@ These gates prevent the common failure modes: inconsistency, wrong assumptions, 
 
 Use SSOT:
 
-- [.github/instructions/ui-implementation.instructions.md](.github/instructions/ui-implementation.instructions.md)
-- [.github/instructions/design-tokens.instructions.md](.github/instructions/design-tokens.instructions.md)
-- [.github/instructions/portal-web-ui-guidelines.instructions.md](.github/instructions/portal-web-ui-guidelines.instructions.md)
+- [.github/instructions/frontend/_general/ui-implementation.instructions.md](.github/instructions/frontend/_general/ui-implementation.instructions.md)
+- [.github/instructions/frontend/_general/design-tokens.instructions.md](.github/instructions/frontend/_general/design-tokens.instructions.md)
+- [.github/instructions/frontend/projects/portal-web/ui-guidelines.instructions.md](.github/instructions/frontend/projects/portal-web/ui-guidelines.instructions.md)
 
 Checklist:
 
@@ -814,7 +814,7 @@ Reuse-first verification (required):
 
 Use SSOT:
 
-- [.github/instructions/forms.instructions.md](.github/instructions/forms.instructions.md)
+- [.github/instructions/frontend/_general/forms.instructions.md](.github/instructions/frontend/_general/forms.instructions.md)
 
 Checklist:
 
@@ -826,7 +826,7 @@ Checklist:
 
 Use SSOT:
 
-- [.github/instructions/i18n-translations.instructions.md](.github/instructions/i18n-translations.instructions.md)
+- [.github/instructions/frontend/_general/i18n-translations.instructions.md](.github/instructions/frontend/_general/i18n-translations.instructions.md)
 
 Checklist:
 
@@ -838,8 +838,8 @@ Checklist:
 
 Use SSOT:
 
-- [.github/instructions/backend-core.instructions.md](.github/instructions/backend-core.instructions.md)
-- [.github/instructions/errors-handling.instructions.md](.github/instructions/errors-handling.instructions.md)
+- [.github/instructions/backend/_general/architecture.instructions.md](.github/instructions/backend/_general/architecture.instructions.md)
+- [.github/instructions/platform/errors-handling.instructions.md](.github/instructions/platform/errors-handling.instructions.md)
 - [.github/instructions/responses-dtos-swagger.instructions.md](.github/instructions/responses-dtos-swagger.instructions.md)
 
 Checklist:

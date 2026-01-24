@@ -18,9 +18,9 @@ Consolidated quality gates for cross-stack features. These gates prevent common 
 ## Gate 3: UI Consistency (Portal)
 
 **SSOT References**:
-- [ui-implementation.instructions.md](../../instructions/ui-implementation.instructions.md)
-- [design-tokens.instructions.md](../../instructions/design-tokens.instructions.md)
-- [portal-web-ui-guidelines.instructions.md](../../instructions/portal-web-ui-guidelines.instructions.md)
+- [frontend/_general/ui-patterns.instructions.md](../../instructions/frontend/_general/ui-patterns.instructions.md)
+- [kyora/design-system.instructions.md](../../instructions/kyora/design-system.instructions.md)
+- [kyora/ux-strategy.instructions.md](../../instructions/kyora/ux-strategy.instructions.md)
 
 ### Checklist
 
@@ -39,7 +39,7 @@ Before building a new component/pattern:
 
 ## Gate 4: Forms
 
-**SSOT Reference**: [forms.instructions.md](../../instructions/forms.instructions.md)
+**SSOT Reference**: [frontend/_general/forms.instructions.md](../../instructions/frontend/_general/forms.instructions.md)
 
 ### Checklist
 
@@ -50,7 +50,7 @@ Before building a new component/pattern:
 
 ## Gate 5: i18n
 
-**SSOT Reference**: [i18n-translations.instructions.md](../../instructions/i18n-translations.instructions.md)
+**SSOT Reference**: [frontend/_general/i18n.instructions.md](../../instructions/frontend/_general/i18n.instructions.md)
 
 ### Checklist
 

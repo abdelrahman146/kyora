@@ -123,4 +123,4 @@ Escalate to relevant Lead when:
 
 - [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) — Role spec
 - [.github/instructions/backend-core.instructions.md](../instructions/backend-core.instructions.md)
-- [.github/instructions/portal-web-architecture.instructions.md](../instructions/portal-web-architecture.instructions.md)
+- [.github/instructions/frontend/projects/portal-web/architecture.instructions.md](../instructions/frontend/projects/portal-web/architecture.instructions.md)

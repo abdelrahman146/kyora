@@ -64,7 +64,7 @@ When scoping/reviewing work, you MUST auto-involve supporting roles:
 
 Use SSOT:
 
-- [.github/instructions/i18n-translations.instructions.md](../instructions/i18n-translations.instructions.md)
+- [.github/instructions/frontend/\_general/i18n.instructions.md](../instructions/frontend/_general/i18n.instructions.md)
 
 Checklist:
 
@@ -99,5 +99,5 @@ Escalate to PO when:
 ## SSOT References
 
 - [KYORA_AGENT_OS.md](../../KYORA_AGENT_OS.md) — Role spec
-- [.github/instructions/i18n-translations.instructions.md](../instructions/i18n-translations.instructions.md)
-- [.github/instructions/brand-key.instructions.md](../instructions/brand-key.instructions.md)
+- [.github/instructions/frontend/\_general/i18n.instructions.md](../instructions/frontend/_general/i18n.instructions.md)
+- [.github/instructions/kyora/brand-key.instructions.md](../instructions/kyora/brand-key.instructions.md)
