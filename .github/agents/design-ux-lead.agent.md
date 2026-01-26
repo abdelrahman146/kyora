@@ -1,7 +1,7 @@
 ---
 description: "Design/UX Lead for Kyora Agent OS. Owns redesign/revamp, theming, UI consistency. Use for UX specs, states/variants definitions, RTL notes, acceptance criteria for UI work."
 name: "Design/UX Lead"
-tools: ["read", "search", "edit", "agent"]
+tools: ["read", "edit", "search", "context7/*", "agent", "playwright/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

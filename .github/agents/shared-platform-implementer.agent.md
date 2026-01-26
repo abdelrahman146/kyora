@@ -1,7 +1,7 @@
 ---
 description: "Shared/Platform Implementer for Kyora Agent OS. Implements shared libs/utilities across apps/services. Use for reusable utilities, cross-app patterns, and platform code."
 name: "Shared/Platform Implementer"
-tools: ["read", "search", "edit", "execute", "agent"]
+tools: ["read", "search", "edit", "execute", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

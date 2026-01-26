@@ -166,7 +166,6 @@ export function FieldArray<T = any>(props: FieldArrayProps<T>) {
   const field = useFieldContext<Array<T>>()
   const { t } = useTranslation(['common', 'errors'])
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const items = field.state.value || []
   const [activeId, setActiveId] = useState<string | null>(null)
 

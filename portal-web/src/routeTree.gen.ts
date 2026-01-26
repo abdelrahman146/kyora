@@ -18,6 +18,7 @@ import { Route as OnboardingOauthCallbackRouteImport } from './routes/onboarding
 import { Route as OnboardingEmailRouteImport } from './routes/onboarding/email'
 import { Route as OnboardingCompleteRouteImport } from './routes/onboarding/complete'
 import { Route as OnboardingBusinessRouteImport } from './routes/onboarding/business'
+import { Route as DemoChartsRouteImport } from './routes/demo.charts'
 import { Route as BusinessBusinessDescriptorRouteImport } from './routes/business/$businessDescriptor'
 import { Route as AuthResetPasswordRouteImport } from './routes/auth/reset-password'
 import { Route as AuthLoginRouteImport } from './routes/auth/login'
@@ -81,6 +82,11 @@ const OnboardingCompleteRoute = OnboardingCompleteRouteImport.update({
 const OnboardingBusinessRoute = OnboardingBusinessRouteImport.update({
   id: '/onboarding/business',
   path: '/onboarding/business',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DemoChartsRoute = DemoChartsRouteImport.update({
+  id: '/demo/charts',
+  path: '/demo/charts',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BusinessBusinessDescriptorRoute =
@@ -200,6 +206,7 @@ export interface FileRoutesByFullPath {
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/business/$businessDescriptor': typeof BusinessBusinessDescriptorRouteWithChildren
+  '/demo/charts': typeof DemoChartsRoute
   '/onboarding/business': typeof OnboardingBusinessRoute
   '/onboarding/complete': typeof OnboardingCompleteRoute
   '/onboarding/email': typeof OnboardingEmailRoute
@@ -229,6 +236,7 @@ export interface FileRoutesByTo {
   '/auth/forgot-password': typeof AuthForgotPasswordRoute
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
+  '/demo/charts': typeof DemoChartsRoute
   '/onboarding/business': typeof OnboardingBusinessRoute
   '/onboarding/complete': typeof OnboardingCompleteRoute
   '/onboarding/email': typeof OnboardingEmailRoute
@@ -260,6 +268,7 @@ export interface FileRoutesById {
   '/auth/login': typeof AuthLoginRoute
   '/auth/reset-password': typeof AuthResetPasswordRoute
   '/business/$businessDescriptor': typeof BusinessBusinessDescriptorRouteWithChildren
+  '/demo/charts': typeof DemoChartsRoute
   '/onboarding/business': typeof OnboardingBusinessRoute
   '/onboarding/complete': typeof OnboardingCompleteRoute
   '/onboarding/email': typeof OnboardingEmailRoute
@@ -292,6 +301,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/reset-password'
     | '/business/$businessDescriptor'
+    | '/demo/charts'
     | '/onboarding/business'
     | '/onboarding/complete'
     | '/onboarding/email'
@@ -321,6 +331,7 @@ export interface FileRouteTypes {
     | '/auth/forgot-password'
     | '/auth/login'
     | '/auth/reset-password'
+    | '/demo/charts'
     | '/onboarding/business'
     | '/onboarding/complete'
     | '/onboarding/email'
@@ -351,6 +362,7 @@ export interface FileRouteTypes {
     | '/auth/login'
     | '/auth/reset-password'
     | '/business/$businessDescriptor'
+    | '/demo/charts'
     | '/onboarding/business'
     | '/onboarding/complete'
     | '/onboarding/email'
@@ -382,6 +394,7 @@ export interface RootRouteChildren {
   AuthLoginRoute: typeof AuthLoginRoute
   AuthResetPasswordRoute: typeof AuthResetPasswordRoute
   BusinessBusinessDescriptorRoute: typeof BusinessBusinessDescriptorRouteWithChildren
+  DemoChartsRoute: typeof DemoChartsRoute
   OnboardingBusinessRoute: typeof OnboardingBusinessRoute
   OnboardingCompleteRoute: typeof OnboardingCompleteRoute
   OnboardingEmailRoute: typeof OnboardingEmailRoute
@@ -456,6 +469,13 @@ declare module '@tanstack/react-router' {
       path: '/onboarding/business'
       fullPath: '/onboarding/business'
       preLoaderRoute: typeof OnboardingBusinessRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/demo/charts': {
+      id: '/demo/charts'
+      path: '/demo/charts'
+      fullPath: '/demo/charts'
+      preLoaderRoute: typeof DemoChartsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/business/$businessDescriptor': {
@@ -653,6 +673,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthLoginRoute: AuthLoginRoute,
   AuthResetPasswordRoute: AuthResetPasswordRoute,
   BusinessBusinessDescriptorRoute: BusinessBusinessDescriptorRouteWithChildren,
+  DemoChartsRoute: DemoChartsRoute,
   OnboardingBusinessRoute: OnboardingBusinessRoute,
   OnboardingCompleteRoute: OnboardingCompleteRoute,
   OnboardingEmailRoute: OnboardingEmailRoute,

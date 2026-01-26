@@ -1,7 +1,17 @@
 ---
 description: "Chief-of-Staff / Orchestrator for Kyora Agent OS. Routes tasks, enforces lanes + gates + handoffs. Use for ambiguous, cross-stack, or large work requiring classification, planning, and owner assignment."
 name: "Orchestrator"
-tools: ["read", "search", "todo", "edit", "agent"]
+tools:
+  [
+    "read",
+    "search",
+    "todo",
+    "edit",
+    "agent",
+    "context7/*",
+    "playwright/*",
+    "io.github.chromedevtools/chrome-devtools-mcp/*",
+  ]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

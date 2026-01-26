@@ -69,7 +69,7 @@ export const ChartCard = ({
           <ChartSkeleton variant={chartType} height={height} />
         ) : error ? (
           <div
-            className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-lg bg-error/5 p-8 text-center"
+            className="flex min-h-[280px] w-full flex-col items-center justify-center gap-4 rounded-lg border border-error/20 bg-error/5 p-8 text-center"
             style={{ height }}
           >
             <div className="flex flex-col gap-2">
@@ -90,7 +90,7 @@ export const ChartCard = ({
         ) : isEmpty ? (
           <ChartEmptyState chartType={chartType} />
         ) : (
-          <div className="relative" style={{ height }}>
+          <div className="relative p-3 sm:p-4" style={{ height }}>
             {children}
           </div>
         )}

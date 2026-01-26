@@ -1,7 +1,7 @@
 ---
 description: "Data/Analytics Lead for Kyora Agent OS. Owns dashboards, metric definitions, reporting semantics. Use for metric definitions, date-range semantics, query shapes for analytics."
 name: "Data/Analytics Lead"
-tools: ["read", "search", "agent"]
+tools: ["read", "search", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

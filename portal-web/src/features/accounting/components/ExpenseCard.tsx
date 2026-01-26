@@ -38,10 +38,8 @@ export function ExpenseCard({
 }: ExpenseCardProps) {
   const { t } = useTranslation('accounting')
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const CategoryIcon = categoryIcons[expense.category] ?? Receipt
   const colorClass =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     categoryColors[expense.category] ?? 'bg-base-200 text-base-content/70'
 
   const amount = parseFloat(expense.amount)

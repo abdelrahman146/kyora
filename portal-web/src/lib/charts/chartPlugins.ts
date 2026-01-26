@@ -87,6 +87,7 @@ export function createGradientPlugin(
 
 /**
  * Plugin that adds a center label to doughnut/pie charts
+ * Enhanced styling: 600 weight, 24px font following design system
  */
 export function createCenterLabelPlugin(
   text: string,
@@ -108,6 +109,44 @@ export function createCenterLabelPlugin(
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(text, centerX, centerY)
+      ctx.restore()
+    },
+  }
+}
+
+/**
+ * Plugin that adds a center label with subtitle to gauge charts
+ */
+export function createGaugeCenterLabelPlugin(
+  value: string,
+  subtitle: string,
+  color: string,
+  subtitleColor: string,
+): Plugin<any> {
+  return {
+    id: 'gaugeCenterLabel',
+    afterDraw(chart) {
+      const { ctx, chartArea } = chart
+      // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
+      if (!chartArea) return
+
+      const centerX = (chartArea.left + chartArea.right) / 2
+      const centerY = (chartArea.top + chartArea.bottom) / 2
+
+      ctx.save()
+
+      // Main value
+      ctx.font = "600 28px 'IBM Plex Sans Arabic', -apple-system, sans-serif"
+      ctx.fillStyle = color
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(value, centerX, centerY - 10)
+
+      // Subtitle
+      ctx.font = "400 12px 'IBM Plex Sans Arabic', -apple-system, sans-serif"
+      ctx.fillStyle = subtitleColor
+      ctx.fillText(subtitle, centerX, centerY + 14)
+
       ctx.restore()
     },
   }

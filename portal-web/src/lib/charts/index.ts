@@ -3,6 +3,11 @@ export {
   buildThemedOptions,
   createCanvasBackgroundPlugin,
   useChartTheme,
+  getMultiSeriesColors,
+  colorWithOpacity,
+  isTranslucentColor,
+  AREA_FILL_OPACITY_SPARKLINE,
+  AREA_FILL_OPACITY_NORMAL,
   type ChartTokens,
   type UseChartThemeResult,
 } from './chartTheme'
@@ -12,6 +17,7 @@ export {
   createRTLPlugin,
   createGradientPlugin,
   createCenterLabelPlugin,
+  createGaugeCenterLabelPlugin,
 } from './chartPlugins'
 
 export {

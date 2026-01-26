@@ -171,7 +171,6 @@ export function OrderCard({
           >
             {t(`payment_status_${order.paymentStatus}`)}
           </span>
-          {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
           {order.paymentMethod && order.paymentStatus === 'paid' && (
             <span className="badge badge-ghost">
               {t(`payment_method_${order.paymentMethod}`)}

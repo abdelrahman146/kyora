@@ -218,11 +218,9 @@ export function CapitalListPage({
             <Pagination
               currentPage={investmentsPage}
               totalPages={Math.ceil(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 (investmentsData.totalCount ?? 0) / pageSize,
               )}
               pageSize={pageSize}
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               totalItems={investmentsData.totalCount ?? 0}
               itemsName={t('items.investments')}
               onPageChange={setInvestmentsPage}
@@ -232,11 +230,9 @@ export function CapitalListPage({
             <Pagination
               currentPage={withdrawalsPage}
               totalPages={Math.ceil(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
                 (withdrawalsData.totalCount ?? 0) / pageSize,
               )}
               pageSize={pageSize}
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               totalItems={withdrawalsData.totalCount ?? 0}
               itemsName={t('items.withdrawals')}
               onPageChange={setWithdrawalsPage}

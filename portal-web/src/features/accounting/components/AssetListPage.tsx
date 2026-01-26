@@ -129,12 +129,8 @@ export function AssetListPage({
           {assetsData && (
             <Pagination
               currentPage={page}
-              totalPages={Math.ceil(
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
-                (assetsData.totalCount ?? 0) / pageSize,
-              )}
+              totalPages={Math.ceil((assetsData.totalCount ?? 0) / pageSize)}
               pageSize={pageSize}
-              // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
               totalItems={assetsData.totalCount ?? 0}
               itemsName={t('items.assets')}
               onPageChange={setPage}

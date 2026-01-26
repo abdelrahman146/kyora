@@ -1,7 +1,12 @@
 import { useMemo } from 'react'
 import { Line } from 'react-chartjs-2'
 import type { ChartData, ChartOptions } from 'chart.js'
-import { useChartTheme } from '@/lib/charts'
+import {
+  AREA_FILL_OPACITY_NORMAL,
+  colorWithOpacity,
+  isTranslucentColor,
+  useChartTheme,
+} from '@/lib/charts'
 import { cn } from '@/lib/utils'
 
 export interface LineChartProps {
@@ -58,11 +63,37 @@ export function LineChart({
 
     return {
       ...data,
-      datasets: data.datasets.map((dataset) => ({
-        ...dataset,
-        fill: true,
-        tension: 0.4,
-      })),
+      datasets: data.datasets.map((dataset) => {
+        const borderColor =
+          typeof dataset.borderColor === 'string'
+            ? dataset.borderColor
+            : 'rgb(13, 148, 136)'
+
+        // Determine backgroundColor:
+        // - If already translucent, keep it
+        // - Otherwise use subtle fill (0.12 opacity)
+        let backgroundColor: string
+        if (
+          typeof dataset.backgroundColor === 'string' &&
+          isTranslucentColor(dataset.backgroundColor)
+        ) {
+          backgroundColor = dataset.backgroundColor
+        } else {
+          backgroundColor = colorWithOpacity(
+            borderColor,
+            AREA_FILL_OPACITY_NORMAL,
+          )
+        }
+
+        return {
+          ...dataset,
+          fill: true,
+          tension: dataset.tension ?? 0.4,
+          backgroundColor,
+          borderWidth: dataset.borderWidth ?? 4, // Bold line for area charts - drawn on top
+          order: 0, // Draw line on top of fill
+        }
+      }),
     }
   }, [data, enableArea])
 

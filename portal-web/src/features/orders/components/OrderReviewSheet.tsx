@@ -192,7 +192,6 @@ export function OrderReviewSheet({
           </div>
         )}
 
-        {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
         {order.paymentMethod && (
           <div className="bg-base-100 border border-base-300 rounded-lg p-3">
             <div className="flex justify-between text-sm">

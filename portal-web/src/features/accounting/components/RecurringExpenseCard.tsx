@@ -46,10 +46,8 @@ export function RecurringExpenseCard({
 }: RecurringExpenseCardProps) {
   const { t } = useTranslation('accounting')
 
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const CategoryIcon = categoryIcons[recurringExpense.category] ?? Receipt
   const colorClass =
-    // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
     categoryColors[recurringExpense.category] ??
     'bg-base-200 text-base-content/70'
 

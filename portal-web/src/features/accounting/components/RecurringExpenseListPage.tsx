@@ -238,10 +238,8 @@ export function RecurringExpenseListPage() {
         sortable: true,
         width: 'w-48',
         render: (item) => {
-          // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
           const CategoryIcon = categoryIcons[item.category] ?? Receipt
           const colorClass =
-            // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
             categoryColors[item.category] ?? 'bg-base-200 text-base-content/70'
           return (
             <div className="flex items-center gap-3">

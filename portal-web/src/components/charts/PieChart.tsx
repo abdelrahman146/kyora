@@ -37,6 +37,14 @@ export function PieChart({
           position: 'bottom',
         },
       },
+      scales: {
+        x: {
+          display: false,
+        },
+        y: {
+          display: false,
+        },
+      },
     } as ChartOptions<'pie'>
   }, [themedOptions, options])
 

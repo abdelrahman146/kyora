@@ -80,6 +80,7 @@ export default [
           ],
         },
       ],
+      '@typescript-eslint/no-unnecessary-condition': 'off',
     },
   },
 ]

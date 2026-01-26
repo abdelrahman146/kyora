@@ -3,6 +3,13 @@ import { useMemo } from 'react'
 import type { ChartOptions, Plugin } from 'chart.js'
 
 /**
+ * Area chart fill opacity constants
+ * Design spec: Subtle fills with no gradients
+ */
+export const AREA_FILL_OPACITY_SPARKLINE = 0.1 // Ultra-compact sparklines
+export const AREA_FILL_OPACITY_NORMAL = 0.08 // Standard area charts - very light translucent fill, bold line on top
+
+/**
  * Resolves a background color from a daisyUI className by rendering a hidden element
  * and reading its computed style. This ensures colors are always derived from the active theme.
  */
@@ -73,7 +80,138 @@ export function getChartTokens(): ChartTokens {
 }
 
 /**
+ * Returns the multi-series color palette sequence following design specs
+ * Sequence: primary → info → secondary → success → warning → accent
+ */
+export function getMultiSeriesColors(tokens: ChartTokens): Array<string> {
+  return [
+    tokens.primary,
+    tokens.info,
+    tokens.secondary,
+    tokens.success,
+    tokens.warning,
+    tokens.accent,
+  ]
+}
+
+/**
+ * Checks if a color string is already translucent (alpha < 1)
+ * @param color - Color string to check
+ * @returns true if the color has alpha < 1
+ */
+export function isTranslucentColor(color: string): boolean {
+  const trimmed = color.trim()
+
+  // Match rgba(r, g, b, a) with comma or space separator
+  const rgbaMatch = trimmed.match(
+    /rgba?\([^,]+,\s*[^,]+,\s*[^,]+(?:[,/]\s*0?\.\d+|[,/]\s*0)\s*\)/,
+  )
+  if (rgbaMatch) return true
+
+  // Match rgb(r g b / alpha) modern format
+  const modernMatch = trimmed.match(/rgb\([^)]+\/\s*0?\.\d+\s*\)/)
+  if (modernMatch) return true
+
+  return false
+}
+
+/**
+ * Converts a color to RGBA with specified opacity
+ * Used for area fills (subtly tinted surfaces as per design specs)
+ *
+ * Handles modern CSS Color Level 4 formats:
+ * - rgb(r, g, b) and rgba(r, g, b, a) (comma-separated)
+ * - rgb(r g b) and rgb(r g b / a) (space-separated)
+ * - #rgb and #rrggbb (hex)
+ * - Other formats (hsl, oklch, css vars): resolved via hidden element
+ *
+ * Always returns comma-separated rgba(r, g, b, opacity)
+ */
+export function colorWithOpacity(color: string, opacity: number): string {
+  const trimmed = color.trim()
+
+  // Handle hex colors
+  if (trimmed.startsWith('#')) {
+    const hex = trimmed.slice(1)
+    let r: number, g: number, b: number
+
+    if (hex.length === 3) {
+      // #rgb → #rrggbb
+      r = parseInt(hex[0] + hex[0], 16)
+      g = parseInt(hex[1] + hex[1], 16)
+      b = parseInt(hex[2] + hex[2], 16)
+    } else if (hex.length === 6) {
+      r = parseInt(hex.slice(0, 2), 16)
+      g = parseInt(hex.slice(2, 4), 16)
+      b = parseInt(hex.slice(4, 6), 16)
+    } else {
+      // Invalid hex, fallback to original
+      return color
+    }
+
+    return `rgba(${r}, ${g}, ${b}, ${opacity})`
+  }
+
+  // Handle rgb/rgba formats
+  if (trimmed.startsWith('rgb')) {
+    // Extract content inside parentheses
+    const match = trimmed.match(/rgba?\(([^)]+)\)/)
+    if (!match) return color
+
+    const content = match[1]
+    // Replace forward slash with space, then split on comma or whitespace
+    const normalized = content.replace(/\//g, ' ')
+    const parts = normalized
+      .split(/[\s,]+/)
+      .map((s) => s.trim())
+      .filter(Boolean)
+
+    if (parts.length >= 3) {
+      const r = parseFloat(parts[0])
+      const g = parseFloat(parts[1])
+      const b = parseFloat(parts[2])
+
+      if (!isNaN(r) && !isNaN(g) && !isNaN(b)) {
+        return `rgba(${r}, ${g}, ${b}, ${opacity})`
+      }
+    }
+
+    // Failed to parse, return original
+    return color
+  }
+
+  // Fallback: resolve other formats (hsl, oklch, css vars) via hidden element
+  try {
+    const el = document.createElement('div')
+    el.style.position = 'absolute'
+    el.style.left = '-9999px'
+    el.style.visibility = 'hidden'
+    el.style.color = trimmed
+    document.body.appendChild(el)
+
+    const resolvedColor = getComputedStyle(el).color
+    document.body.removeChild(el)
+
+    // Recursively parse the resolved color
+    if (resolvedColor && resolvedColor !== trimmed) {
+      return colorWithOpacity(resolvedColor, opacity)
+    }
+  } catch {
+    // If DOM manipulation fails, return original
+  }
+
+  // Ultimate fallback
+  return color
+}
+
+/**
  * Builds themed Chart.js options that automatically use colors from the active daisyUI theme
+ * Following design specs:
+ * - Bar charts: 8px border radius
+ * - Line charts: 0.4 tension (smooth curves)
+ * - Grid lines: 30% opacity on base-300, Y-axis only
+ * - Axis ticks: 60% opacity on base-content, 12px font, 8px padding
+ * - Tooltips: 8px radius, 12px padding, base-100 bg with base-300 border
  */
 export function buildThemedOptions(tokens: ChartTokens): ChartOptions {
   return {
@@ -83,6 +221,26 @@ export function buildThemedOptions(tokens: ChartTokens): ChartOptions {
     font: {
       family: "'IBM Plex Sans Arabic', -apple-system, sans-serif",
       size: 12,
+    },
+    datasets: {
+      line: {
+        pointRadius: 0,
+        pointHoverRadius: 4,
+        pointHitRadius: 10,
+      },
+    },
+    elements: {
+      bar: {
+        borderRadius: 8,
+      },
+      line: {
+        tension: 0.4,
+      },
+      point: {
+        radius: 0,
+        hitRadius: 10,
+        hoverRadius: 4,
+      },
     },
     plugins: {
       legend: {
@@ -103,6 +261,7 @@ export function buildThemedOptions(tokens: ChartTokens): ChartOptions {
         borderColor: tokens.base300,
         borderWidth: 1,
         padding: 12,
+        cornerRadius: 8,
         boxPadding: 6,
         usePointStyle: true,
         titleFont: {
@@ -119,34 +278,35 @@ export function buildThemedOptions(tokens: ChartTokens): ChartOptions {
     scales: {
       x: {
         ticks: {
-          color: tokens.baseContent,
+          color: colorWithOpacity(tokens.baseContent, 0.6),
           font: {
             family: "'IBM Plex Sans Arabic', -apple-system, sans-serif",
             size: 12,
           },
+          padding: 8,
         },
         grid: {
-          color: tokens.base300,
-          lineWidth: 1,
+          display: false,
         },
         border: {
-          color: tokens.base300,
+          display: false,
         },
       },
       y: {
         ticks: {
-          color: tokens.baseContent,
+          color: colorWithOpacity(tokens.baseContent, 0.6),
           font: {
             family: "'IBM Plex Sans Arabic', -apple-system, sans-serif",
             size: 12,
           },
+          padding: 8,
         },
         grid: {
-          color: tokens.base300,
+          color: colorWithOpacity(tokens.base300, 0.2),
           lineWidth: 1,
         },
         border: {
-          color: tokens.base300,
+          display: false,
         },
       },
     },

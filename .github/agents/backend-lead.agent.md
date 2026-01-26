@@ -1,7 +1,7 @@
 ---
 description: "Backend Lead for Kyora Agent OS. Owns API contracts, domain modeling, backend architecture decisions. Use for endpoint shapes, DTO decisions, error semantics, migration approach."
 name: "Backend Lead"
-tools: ["read", "search", "edit", "execute", "agent"]
+tools: ["read", "search", "edit", "execute", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

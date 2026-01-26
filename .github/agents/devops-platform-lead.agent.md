@@ -1,7 +1,7 @@
 ---
 description: "DevOps/Platform Lead for Kyora Agent OS. Owns CI/CD, infra, env configs, tooling/MCP setup. Use for reproducible steps, env var matrix, rollout/rollback planning."
 name: "DevOps/Platform Lead"
-tools: ["read", "search", "edit", "execute", "agent"]
+tools: ["read", "search", "edit", "execute", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

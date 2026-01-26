@@ -1,7 +1,8 @@
 ---
 description: "QA/Test Specialist for Kyora Agent OS. Adds tests, E2E coverage, and triages flakiness. Use for test plans, stable test implementation, and failure triage."
 name: "QA/Test Specialist"
-tools: ["read", "search", "edit", "execute", "agent"]
+tools:
+  ["read", "search", "edit", "execute", "agent", "context7/*", "playwright/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

@@ -29,7 +29,6 @@ export const ChartEmptyState = ({
   className,
 }: ChartEmptyStateProps) => {
   const { t } = useTranslation('analytics')
-  // eslint-disable-next-line @typescript-eslint/no-unnecessary-condition
   const Icon = chartIcons[chartType] || TrendingUp
 
   return (

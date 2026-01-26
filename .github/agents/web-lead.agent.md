@@ -1,7 +1,17 @@
 ---
 description: "Web Lead for Kyora Agent OS. Owns portal architecture, routing/state, UI patterns, cross-stack UI integration. Use for UI approach, component placement, i18n plan, query/mutation planning."
 name: "Web Lead"
-tools: ["read", "search", "edit", "execute", "agent"]
+tools:
+  [
+    "execute",
+    "read",
+    "edit",
+    "search",
+    "context7/*",
+    "agent",
+    "playwright/*",
+    "io.github.chromedevtools/chrome-devtools-mcp/*",
+  ]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
 handoffs:

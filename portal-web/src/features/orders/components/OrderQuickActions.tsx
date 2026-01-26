@@ -133,7 +133,6 @@ export function OrderQuickActions({
   const paymentForm = useKyoraForm({
     defaultValues: {
       paymentStatus: order.paymentStatus,
-      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
       paymentMethod: order.paymentMethod || 'cash_on_delivery',
       paymentReference: order.paymentReference || '',
     },
@@ -143,7 +142,6 @@ export function OrderQuickActions({
         await updatePaymentStatusMutation.mutateAsync({
           paymentStatus: value.paymentStatus,
         })
-        /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
         if (value.paymentStatus === 'paid' && value.paymentMethod) {
           await updateOrderMutation.mutateAsync({
             items:
@@ -168,7 +166,6 @@ export function OrderQuickActions({
 
   const paymentDetailsForm = useKyoraForm({
     defaultValues: {
-      /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
       paymentMethod: order.paymentMethod || 'cash_on_delivery',
       paymentReference: order.paymentReference || '',
     },
@@ -354,7 +351,6 @@ export function OrderQuickActions({
                   }}
                 >
                   <CreditCard size={18} />
-                  {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
                   {order.paymentMethod
                     ? tOrders('update_payment_details')
                     : tOrders('add_payment_details')}
@@ -579,7 +575,6 @@ export function OrderQuickActions({
           isOpen={showPaymentDetailsSheet}
           onClose={() => setShowPaymentDetailsSheet(false)}
           title={
-            /* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */
             order.paymentMethod
               ? tOrders('update_payment_details')
               : tOrders('add_payment_details')
@@ -605,7 +600,6 @@ export function OrderQuickActions({
                   {tOrders('current_payment_details')}:{' '}
                 </span>
                 <span className="font-medium">
-                  {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
                   {order.paymentMethod
                     ? tOrders(`payment_method_${order.paymentMethod}`)
                     : tOrders('no_payment_method')}

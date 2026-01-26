@@ -316,7 +316,6 @@ export function OrdersListPage() {
             <span className={`badge badge-sm ${paymentConfig.class}`}>
               {paymentConfig.label}
             </span>
-            {/* eslint-disable-next-line @typescript-eslint/no-unnecessary-condition */}
             {order.paymentMethod && order.paymentStatus === 'paid' && (
               <span className="badge badge-sm badge-ghost">
                 {tOrders(`payment_method_${order.paymentMethod}`)}

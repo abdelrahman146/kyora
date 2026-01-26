@@ -42,6 +42,14 @@ export function DoughnutChart({
           position: 'bottom',
         },
       },
+      scales: {
+        x: {
+          display: false,
+        },
+        y: {
+          display: false,
+        },
+      },
       cutout: '70%',
     } as ChartOptions<'doughnut'>
   }, [themedOptions, options])
