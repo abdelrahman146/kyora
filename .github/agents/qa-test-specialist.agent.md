@@ -5,16 +5,6 @@ tools:
   ["read", "search", "edit", "execute", "agent", "context7/*", "playwright/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Report to Backend Lead"
-    agent: Backend Lead
-    prompt: "Test review complete. Findings attached."
-  - label: "Report to Web Lead"
-    agent: Web Lead
-    prompt: "Test review complete. Findings attached."
-  - label: "Return to Orchestrator"
-    agent: "Orchestrator"
-    prompt: "QA work complete."
 ---
 
 # QA/Test Specialist

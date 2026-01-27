@@ -4,13 +4,6 @@ name: "Security/Privacy Reviewer"
 tools: ["read", "search", "agent"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Report to Backend Lead"
-    agent: Backend Lead
-    prompt: "Security review complete. Findings attached."
-  - label: "Return to Orchestrator"
-    agent: "Orchestrator"
-    prompt: "Security review complete."
 ---
 
 # Security/Privacy Reviewer

@@ -4,13 +4,6 @@ name: "Design/UX Lead"
 tools: ["read", "edit", "search", "context7/*", "agent", "playwright/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Hand off to Web Lead"
-    agent: Web Lead
-    prompt: "UX spec complete. Ready for implementation planning."
-  - label: "Return to Orchestrator"
-    agent: Orchestrator
-    prompt: "Design work complete. Ready for next phase."
 ---
 
 # Design/UX Lead

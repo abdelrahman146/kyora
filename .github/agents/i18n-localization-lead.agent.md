@@ -4,13 +4,6 @@ name: "i18n/Localization Lead"
 tools: ["read", "search", "edit", "agent"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Hand off to Web Implementer"
-    agent: "Web Implementer"
-    prompt: "i18n keys defined. Implement in portal."
-  - label: "Return to Orchestrator"
-    agent: "Orchestrator"
-    prompt: "i18n work complete."
 ---
 
 # i18n/Localization Lead

@@ -4,16 +4,6 @@ name: "Shared/Platform Implementer"
 tools: ["read", "search", "edit", "execute", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Request Backend Lead Review"
-    agent: Backend Lead
-    prompt: "Shared utility implementation complete. Ready for review."
-  - label: "Request Web Lead Review"
-    agent: Web Lead
-    prompt: "Shared utility implementation complete. Ready for review."
-  - label: "Return to Orchestrator"
-    agent: Orchestrator
-    prompt: "Platform implementation complete."
 ---
 
 # Shared/Platform Implementer

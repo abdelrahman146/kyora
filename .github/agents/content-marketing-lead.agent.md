@@ -4,13 +4,6 @@ name: "Content/Marketing Lead"
 tools: ["read", "search", "agent"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Consult i18n Lead"
-    agent: "i18n/Localization Lead"
-    prompt: "Content ready for translation review."
-  - label: "Return to Orchestrator"
-    agent: Orchestrator
-    prompt: "Content work complete."
 ---
 
 # Content/Marketing Lead

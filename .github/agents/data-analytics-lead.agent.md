@@ -4,13 +4,6 @@ name: "Data/Analytics Lead"
 tools: ["read", "search", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Coordinate with Backend Lead"
-    agent: "Backend Lead"
-    prompt: "Analytics requirements defined. Coordinate backend implementation."
-  - label: "Return to Orchestrator"
-    agent: Orchestrator
-    prompt: "Analytics planning complete."
 ---
 
 # Data/Analytics Lead

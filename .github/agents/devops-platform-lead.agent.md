@@ -4,10 +4,6 @@ name: "DevOps/Platform Lead"
 tools: ["read", "search", "edit", "execute", "agent", "context7/*"]
 infer: true
 model: Claude Sonnet 4.5 (copilot)
-handoffs:
-  - label: "Return to Orchestrator"
-    agent: Orchestrator
-    prompt: "DevOps planning complete."
 ---
 
 # DevOps/Platform Lead
