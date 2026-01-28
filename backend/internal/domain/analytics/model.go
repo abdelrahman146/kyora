@@ -33,12 +33,12 @@ type SalesAnalytics struct {
 	TotalOrders           int64                  `json:"totalOrders"`
 	AverageOrderValue     decimal.Decimal        `json:"averageOrderValue"`
 	ItemsSold             int64                  `json:"itemsSold"`
-	NumberOfSalesOverTime *timeseries.TimeSeries `json:"numberOfSalesOverTime"` // line chart
-	RevenueOverTime       *timeseries.TimeSeries `json:"revenueOverTime"`       // line chart
-	TopSellingProducts    []*inventory.Product   `json:"topSellingProducts"`    // pie chart
-	OrderStatusBreakdown  []keyvalue.KeyValue    `json:"orderStatusBreakdown"`  // donut chart
-	SalesByCountry        []keyvalue.KeyValue    `json:"salesByCountry"`        // Table
-	SalesByChannel        []keyvalue.KeyValue    `json:"salesByChannel"`        // Table
+	NumberOfSalesOverTime *timeseries.TimeSeries `json:"numberOfSalesOverTime"`
+	RevenueOverTime       *timeseries.TimeSeries `json:"revenueOverTime"`
+	TopSellingProducts    []*inventory.Product   `json:"topSellingProducts"`
+	OrderStatusBreakdown  []keyvalue.KeyValue    `json:"orderStatusBreakdown"`
+	SalesByCountry        []keyvalue.KeyValue    `json:"salesByCountry"`
+	SalesByChannel        []keyvalue.KeyValue    `json:"salesByChannel"`
 }
 
 type InventoryAnalytics struct {

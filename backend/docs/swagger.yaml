@@ -1019,32 +1019,24 @@ definitions:
       itemsSold:
         type: integer
       numberOfSalesOverTime:
-        allOf:
-        - $ref: '#/definitions/timeseries.TimeSeries'
-        description: line chart
+        $ref: '#/definitions/timeseries.TimeSeries'
       orderStatusBreakdown:
-        description: donut chart
         items:
           $ref: '#/definitions/keyvalue.KeyValue'
         type: array
       revenueOverTime:
-        allOf:
-        - $ref: '#/definitions/timeseries.TimeSeries'
-        description: line chart
+        $ref: '#/definitions/timeseries.TimeSeries'
       salesByChannel:
-        description: Table
         items:
           $ref: '#/definitions/keyvalue.KeyValue'
         type: array
       salesByCountry:
-        description: Table
         items:
           $ref: '#/definitions/keyvalue.KeyValue'
         type: array
       to:
         type: string
       topSellingProducts:
-        description: pie chart
         items:
           $ref: '#/definitions/inventory.Product'
         type: array

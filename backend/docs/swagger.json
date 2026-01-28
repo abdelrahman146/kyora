@@ -11157,37 +11157,24 @@
                     "type": "integer"
                 },
                 "numberOfSalesOverTime": {
-                    "description": "line chart",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/timeseries.TimeSeries"
-                        }
-                    ]
+                    "$ref": "#/definitions/timeseries.TimeSeries"
                 },
                 "orderStatusBreakdown": {
-                    "description": "donut chart",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/keyvalue.KeyValue"
                     }
                 },
                 "revenueOverTime": {
-                    "description": "line chart",
-                    "allOf": [
-                        {
-                            "$ref": "#/definitions/timeseries.TimeSeries"
-                        }
-                    ]
+                    "$ref": "#/definitions/timeseries.TimeSeries"
                 },
                 "salesByChannel": {
-                    "description": "Table",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/keyvalue.KeyValue"
                     }
                 },
                 "salesByCountry": {
-                    "description": "Table",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/keyvalue.KeyValue"
@@ -11197,7 +11184,6 @@
                     "type": "string"
                 },
                 "topSellingProducts": {
-                    "description": "pie chart",
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/inventory.Product"

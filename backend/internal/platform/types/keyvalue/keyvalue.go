@@ -3,8 +3,8 @@ package keyvalue
 import "github.com/abdelrahman146/kyora/internal/platform/types/schema"
 
 type KeyValue struct {
-	Key   any
-	Value any
+	Key   any `json:"key"`
+	Value any `json:"value"`
 }
 
 func New(key any, value any) KeyValue {
