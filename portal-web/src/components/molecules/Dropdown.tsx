@@ -123,7 +123,7 @@ export function Dropdown({
     if (isOpen && isMobile) {
       const originalStyle = window.getComputedStyle(document.body).overflow
       document.body.style.overflow = 'hidden'
-      
+
       return () => {
         document.body.style.overflow = originalStyle
       }
@@ -137,7 +137,7 @@ export function Dropdown({
       const focusableElements = modalElement.querySelectorAll<HTMLElement>(
         'a[href], button:not([disabled]), textarea:not([disabled]), input:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])',
       )
-      
+
       if (focusableElements.length === 0) return
 
       const firstElement = focusableElements[0]
@@ -215,16 +215,19 @@ export function Dropdown({
 
   const handleClose = useCallback(() => {
     setIsAnimating(false)
-    
+
     // Wait for animation to complete before removing from DOM
-    setTimeout(() => {
-      setIsOpen(false)
-      onClose?.()
-      
-      // Restore focus to trigger
-      triggerRef.current?.focus()
-    }, 200)
-  }, [onClose])
+    setTimeout(
+      () => {
+        setIsOpen(false)
+        onClose?.()
+
+        // Restore focus to trigger
+        triggerRef.current?.focus()
+      },
+      isMobile ? 300 : 200,
+    ) // Longer for mobile sheet animation
+  }, [onClose, isMobile])
 
   const handleToggle = () => {
     if (isOpen) {
@@ -245,7 +248,7 @@ export function Dropdown({
     // Allow clicks inside content to propagate (e.g., menu items)
     // Close only if clicking directly on menu items or explicitly closing
     const target = event.target as HTMLElement
-    
+
     // Close if clicking on a link or button inside the dropdown
     if (
       target.tagName === 'A' ||
@@ -283,27 +286,29 @@ export function Dropdown({
         <div
           ref={modalContentRef}
           className={cn(
-            'relative w-full max-h-[85vh]',
-            'bg-base-100 rounded-t-xl',
+            'relative w-full max-h-[70vh]',
+            'bg-base-100 rounded-t-2xl',
             'overflow-hidden flex flex-col',
-            'transition-transform duration-200 ease-out',
-            isAnimating
-              ? 'translate-y-0'
-              : 'translate-y-full',
+            'transition-transform duration-300 ease-out',
+            'pb-[env(safe-area-inset-bottom)]',
+            isAnimating ? 'translate-y-0' : 'translate-y-full',
             contentClassName,
           )}
           onClick={handleContentClick}
         >
           {/* Drag Handle */}
-          <div className="flex justify-center py-2 px-4 shrink-0">
-            <div className="w-12 h-1 bg-base-300 rounded-full" aria-hidden="true" />
+          <div className="flex justify-center pt-3 pb-2 px-4 shrink-0">
+            <div
+              className="w-10 h-1 bg-base-300 rounded-full"
+              aria-hidden="true"
+            />
           </div>
 
           {/* Header (if title provided) */}
           {(mobileTitle || showMobileClose) && (
-            <div className="flex items-center justify-between px-4 pb-3 shrink-0 border-b border-base-300">
+            <div className="flex items-center justify-between h-14 px-4 pb-2 shrink-0">
               {mobileTitle && (
-                <h2 className="text-lg font-semibold text-base-content">
+                <h2 className="text-base font-semibold text-base-content">
                   {mobileTitle}
                 </h2>
               )}
@@ -351,11 +356,9 @@ export function Dropdown({
       <div
         className={cn(
           'absolute top-full mt-2 z-50',
-          'bg-base-100 rounded-lg border border-base-300',
-          'transition-all duration-200 origin-top',
-          isAnimating
-            ? 'opacity-100 scale-100'
-            : 'opacity-0 scale-95',
+          'bg-base-100 rounded-xl border border-base-300',
+          'transition-all duration-300 ease-out origin-top',
+          isAnimating ? 'opacity-100 scale-100' : 'opacity-0 scale-95',
           align === 'end' && 'end-0',
           align === 'start' && 'start-0',
           contentClassName,

@@ -1,0 +1,21 @@
+{
+  "dashboard": "لوحة التحكم",
+  "inventory": "المخزون",
+  "orders": "الطلبات",
+  "customers": "العملاء",
+  "accounting": "المحاسبة",
+  "reports": "التقارير المالية",
+  "reports.health": "صحة العمل",
+  "reports.profit": "الأرباح والإيرادات",
+  "reports.cashflow": "حركة النقد",
+  "analytics": "التحليلات",
+  "analytics.customers": "تحليلات العملاء",
+  "analytics.sales": "تحليلات المبيعات",
+  "analytics.inventory": "تحليلات المخزون",
+  "settings_section": "الإعدادات",
+  "settings.business": "إدارة الأعمال",
+  "settings.workspace": "إعدادات مساحة العمل",
+  "settings.billing": "الفواتير والاشتراك",
+  "settings.profile": "إعدادات المستخدم",
+  "badges.new": "جديد"
+}

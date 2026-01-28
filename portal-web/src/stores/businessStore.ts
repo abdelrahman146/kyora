@@ -13,13 +13,14 @@ import { createPersistencePlugin } from '@/lib/storePersistence'
  * `selectedBusinessDescriptor` is persisted only as a convenience preference
  * for redirects (e.g., from homepage to last visited business).
  *
- * Only selectedBusinessDescriptor and sidebarCollapsed are persisted.
+ * Only selectedBusinessDescriptor, sidebarCollapsed, and navGroupsExpanded are persisted.
  */
 interface BusinessState {
   businesses: Array<Business>
   selectedBusinessDescriptor: string | null // Convenience preference, NOT source of truth
   sidebarCollapsed: boolean // Desktop: collapsed (icon-only) state
   sidebarOpen: boolean // Mobile: drawer open state
+  navGroupsExpanded: Record<string, boolean> // key = group.key, value = expanded
 }
 
 const initialState: BusinessState = {
@@ -27,6 +28,7 @@ const initialState: BusinessState = {
   selectedBusinessDescriptor: null,
   sidebarCollapsed: false,
   sidebarOpen: false,
+  navGroupsExpanded: {},
 }
 
 /**
@@ -52,11 +54,13 @@ const persistencePlugin = createPersistencePlugin({
   select: (state: BusinessState) => ({
     selectedBusinessDescriptor: state.selectedBusinessDescriptor,
     sidebarCollapsed: state.sidebarCollapsed,
+    navGroupsExpanded: state.navGroupsExpanded,
   }),
   restore: (persisted, currentState) => ({
     ...currentState,
     selectedBusinessDescriptor: persisted.selectedBusinessDescriptor,
     sidebarCollapsed: persisted.sidebarCollapsed,
+    navGroupsExpanded: persisted.navGroupsExpanded,
   }),
   // No TTL - preferences persist until explicitly changed
 })
@@ -68,6 +72,7 @@ if (persistedPrefs) {
     ...state,
     selectedBusinessDescriptor: persistedPrefs.selectedBusinessDescriptor,
     sidebarCollapsed: persistedPrefs.sidebarCollapsed,
+    navGroupsExpanded: persistedPrefs.navGroupsExpanded,
   }))
 }
 
@@ -180,6 +185,62 @@ export function getSelectedBusiness(): Business | null {
   return (
     businesses.find((b) => b.descriptor === selectedBusinessDescriptor) ?? null
   )
+}
+
+/**
+ * Toggle navigation group expanded/collapsed
+ */
+export function toggleNavGroup(groupKey: string): void {
+  businessStore.setState((state) => ({
+    ...state,
+    navGroupsExpanded: {
+      ...state.navGroupsExpanded,
+      [groupKey]: !state.navGroupsExpanded[groupKey],
+    },
+  }))
+}
+
+/**
+ * Set navigation group expanded state explicitly
+ */
+export function setNavGroupExpanded(groupKey: string, expanded: boolean): void {
+  businessStore.setState((state) => ({
+    ...state,
+    navGroupsExpanded: {
+      ...state.navGroupsExpanded,
+      [groupKey]: expanded,
+    },
+  }))
+}
+
+/**
+ * Initialize nav group expanded state from config defaults
+ */
+export function initNavGroups(
+  config: Array<{
+    key: string
+    collapsible?: boolean
+    defaultExpanded?: boolean
+    items?: unknown
+  }>,
+): void {
+  const defaults = config
+    .filter((item) => item.collapsible === true && item.items !== undefined)
+    .reduce(
+      (acc, group) => {
+        acc[group.key] = group.defaultExpanded ?? false
+        return acc
+      },
+      {} as Record<string, boolean>,
+    )
+
+  businessStore.setState((state) => ({
+    ...state,
+    navGroupsExpanded: {
+      ...defaults,
+      ...state.navGroupsExpanded, // Preserve user preferences
+    },
+  }))
 }
 
 // Re-export Business type for convenience

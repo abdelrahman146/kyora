@@ -105,7 +105,14 @@
     "reports": "Reports",
     "reports_health": "Business Health",
     "reports_profit": "Profit & Earnings",
-    "reports_cashflow": "Cash Movement"
+    "reports_cashflow": "Cash Movement",
+    "analytics_customers": "Customer Analytics",
+    "analytics_sales": "Sales Analytics",
+    "analytics_inventory": "Inventory Analytics",
+    "business_management": "Business Management",
+    "workspace_settings": "Workspace Settings",
+    "billing_subscription": "Billing & Subscription",
+    "user_settings": "User Settings"
   },
   "customer": {
     "customers": "Customers",

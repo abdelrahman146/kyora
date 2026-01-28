@@ -1,45 +1,23 @@
 import { useTranslation } from 'react-i18next'
-import { Link, useLocation } from '@tanstack/react-router'
 import { useStore } from '@tanstack/react-store'
-import {
-  Calculator,
-  ChevronLeft,
-  ChevronRight,
-  FileBarChart,
-  LayoutDashboard,
-  Package,
-  ShoppingCart,
-  Users,
-  X,
-} from 'lucide-react'
+import { useEffect } from 'react'
+import { ChevronLeft, ChevronRight, X } from 'lucide-react'
 import { Logo } from '../atoms/Logo'
 import { IconButton } from '../atoms/IconButton'
+import { NavGroup } from './NavGroup'
 import {
   businessStore,
   closeSidebar,
   getSelectedBusiness,
+  initNavGroups,
   toggleSidebar,
 } from '@/stores/businessStore'
 import { useLanguage } from '@/hooks/useLanguage'
 import { useMediaQuery } from '@/hooks/useMediaQuery'
 import { cn } from '@/lib/utils'
-
-interface NavItem {
-  key: string
-  icon: typeof LayoutDashboard
-  path: string
-}
+import { navigationConfig } from '@/config/navigation'
 
 export type SidebarProps = Record<string, never>
-
-const navItems: Array<NavItem> = [
-  { key: 'dashboard', icon: LayoutDashboard, path: '' },
-  { key: 'inventory', icon: Package, path: '/inventory' },
-  { key: 'orders', icon: ShoppingCart, path: '/orders' },
-  { key: 'customers', icon: Users, path: '/customers' },
-  { key: 'accounting', icon: Calculator, path: '/accounting' },
-  { key: 'reports', icon: FileBarChart, path: '/reports' },
-]
 
 /**
  * Sidebar Component
@@ -49,18 +27,18 @@ const navItems: Array<NavItem> = [
  * - Mobile: Drawer overlay (slides from start)
  *
  * Features:
+ * - Collapsible groups with nested items
  * - Collapsible on desktop (full width ↔ icon-only)
  * - Drawer overlay on mobile with slide animation
  * - Active route highlighting
  * - RTL support with proper directional logic
  * - Smooth transitions
  * - Touch-friendly targets (min 44px)
- * - Business descriptor from props for navigation
+ * - Business descriptor from store for navigation
  */
 export function Sidebar(_props: SidebarProps) {
   const { t: tDashboard } = useTranslation('dashboard')
   const { t: tCommon } = useTranslation('common')
-  const location = useLocation()
   const { isRTL } = useLanguage()
   const isDesktop = useMediaQuery('(min-width: 768px)')
 
@@ -72,13 +50,20 @@ export function Sidebar(_props: SidebarProps) {
   )
   const selectedBusiness = getSelectedBusiness()
 
-  // Get business name for display
-  const businessName = selectedBusiness?.name ?? 'Kyora'
+  // Initialize nav group expanded state on mount
+  useEffect(() => {
+    initNavGroups(navigationConfig)
+  }, [])
+
+  // Build base path for navigation
+  const basePath = selectedBusinessDescriptor
+    ? `/business/${selectedBusinessDescriptor}`
+    : ''
 
   return (
     <aside
       className={cn(
-        'fixed top-0 h-screen bg-base-100 border-base-300 z-50',
+        'fixed top-0 h-screen bg-base-100 border-base-300 z-50 flex flex-col',
         // Desktop: Always visible, collapsible width, smooth transition
         isDesktop && 'start-0 border-e transition-all duration-300',
         isDesktop && !sidebarCollapsed && 'w-64',
@@ -93,7 +78,7 @@ export function Sidebar(_props: SidebarProps) {
       {/* Header Section */}
       <div
         className={cn(
-          'h-16 flex items-center border-b border-base-300',
+          'h-16 flex items-center border-b border-base-300 shrink-0',
           isDesktop && sidebarCollapsed
             ? 'justify-center'
             : 'justify-between px-4',
@@ -138,64 +123,72 @@ export function Sidebar(_props: SidebarProps) {
         )}
       </div>
 
-      {/* Business Name */}
-      {(!isDesktop || !sidebarCollapsed) && (
-        <div className="px-4 py-3 border-b border-base-300">
-          <h2 className="text-sm font-semibold text-base-content truncate">
-            {businessName}
-          </h2>
-        </div>
-      )}
+      {/* Main Navigation - Scrollable */}
+      <nav
+        className="flex-1 p-2 space-y-1 overflow-y-auto min-h-0"
+        onWheel={(e) => {
+          // Prevent scroll from bubbling to parent when nav is scrollable
+          const target = e.currentTarget
+          const isScrollable = target.scrollHeight > target.clientHeight
+          const isAtTop = target.scrollTop === 0
+          const isAtBottom =
+            target.scrollTop + target.clientHeight >= target.scrollHeight
 
-      {/* Navigation Links */}
-      <nav className="p-2 space-y-1 overflow-y-auto h-[calc(100vh-8rem)]">
-        {navItems.map((item) => {
-          // Build full path using selected business descriptor
-          const basePath = selectedBusinessDescriptor
-            ? `/business/${selectedBusinessDescriptor}`
-            : ''
-          const itemPath = `${basePath}${item.path}`
-          const isActive =
-            item.path === ''
-              ? !!selectedBusinessDescriptor &&
-                (location.pathname ===
-                  `/business/${selectedBusinessDescriptor}` ||
-                  location.pathname ===
-                    `/business/${selectedBusinessDescriptor}/`)
-              : location.pathname.startsWith(itemPath)
-          const Icon = item.icon
-
-          return (
-            <Link
-              key={item.key}
-              to={itemPath}
-              onClick={() => {
+          if (isScrollable) {
+            // Stop propagation if scrolling within bounds
+            if ((e.deltaY < 0 && !isAtTop) || (e.deltaY > 0 && !isAtBottom)) {
+              e.stopPropagation()
+            }
+          }
+        }}
+      >
+        {navigationConfig
+          .filter((item) => {
+            // Exclude settings separator and settings items from main nav
+            if ('type' in item && item.type === 'separator') return false
+            if ('key' in item && item.key.startsWith('settings.')) return false
+            return true
+          })
+          .map((config) => (
+            <NavGroup
+              key={config.key}
+              config={config}
+              basePath={basePath}
+              sidebarCollapsed={sidebarCollapsed}
+              onItemClick={() => {
                 // Close drawer on mobile after navigation
                 if (!isDesktop) closeSidebar()
               }}
-              disabled={!selectedBusinessDescriptor}
-              aria-disabled={!selectedBusinessDescriptor}
-              className={cn(
-                'flex items-center gap-3 px-4 py-3 rounded-lg transition-colors',
-                'hover:bg-base-200 active:scale-98',
-                // Active state styling
-                isActive && 'bg-primary/10 text-primary font-semibold',
-                !isActive && 'text-base-content',
-                !selectedBusinessDescriptor && 'pointer-events-none opacity-60',
-                // Desktop collapsed: center icon
-                isDesktop && sidebarCollapsed && 'justify-center px-0',
-              )}
-              title={sidebarCollapsed ? tDashboard(item.key) : undefined}
-            >
-              <Icon size={20} className="shrink-0" />
-              {/* Hide text when collapsed on desktop */}
-              {(!isDesktop || !sidebarCollapsed) && (
-                <span className="text-sm truncate">{tDashboard(item.key)}</span>
-              )}
-            </Link>
-          )
-        })}
+            />
+          ))}
       </nav>
+
+      {/* Bottom Section - Fixed */}
+      <div className="border-t border-base-300 bg-base-100 shrink-0">
+        {(!isDesktop || !sidebarCollapsed) && (
+          <div className="px-4 py-3">
+            <span className="text-xs font-semibold uppercase text-base-content/50">
+              {tCommon('settings_section')}
+            </span>
+          </div>
+        )}
+        <div className="p-2 space-y-1">
+          {navigationConfig
+            .filter((item) => 'key' in item && item.key.startsWith('settings.'))
+            .map((config) => (
+              <NavGroup
+                key={config.key}
+                config={config}
+                basePath={basePath}
+                sidebarCollapsed={sidebarCollapsed}
+                onItemClick={() => {
+                  // Close drawer on mobile after navigation
+                  if (!isDesktop) closeSidebar()
+                }}
+              />
+            ))}
+        </div>
+      </div>
     </aside>
   )
 }

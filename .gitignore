@@ -138,3 +138,11 @@ backend/build-errors.log
 
 /node_modules/
 /template/
+
+
+# AGENT OS GENERATED FILES 
+.playwright-mcp/
+tasks/
+specs/
+handoffs/
+docs/

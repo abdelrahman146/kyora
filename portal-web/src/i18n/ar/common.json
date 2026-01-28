@@ -105,7 +105,14 @@
     "reports": "التقارير",
     "reports_health": "صحة عملك",
     "reports_profit": "أرباحك",
-    "reports_cashflow": "حركة النقد"
+    "reports_cashflow": "حركة النقد",
+    "analytics_customers": "تحليلات العملاء",
+    "analytics_sales": "تحليلات المبيعات",
+    "analytics_inventory": "تحليلات المخزون",
+    "business_management": "إدارة الأعمال",
+    "workspace_settings": "إعدادات مساحة العمل",
+    "billing_subscription": "الفواتير والاشتراك",
+    "user_settings": "إعدادات المستخدم"
   },
   "customer": {
     "customers": "العملاء",

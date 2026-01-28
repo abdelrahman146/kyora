@@ -14,6 +14,7 @@ import arPagination from './ar/pagination.json'
 import arHome from './ar/home.json'
 import arAccounting from './ar/accounting.json'
 import arReports from './ar/reports.json'
+import arNavigation from './ar/navigation.json'
 import enCommon from './en/common.json'
 import enErrors from './en/errors.json'
 import enOnboarding from './en/onboarding.json'
@@ -28,6 +29,7 @@ import enPagination from './en/pagination.json'
 import enHome from './en/home.json'
 import enAccounting from './en/accounting.json'
 import enReports from './en/reports.json'
+import enNavigation from './en/navigation.json'
 import { getCookie } from '@/lib/cookies'
 
 /**
@@ -86,6 +88,7 @@ void i18n.use(initReactI18next).init({
       home: arHome,
       accounting: arAccounting,
       reports: arReports,
+      navigation: arNavigation,
     },
     en: {
       common: enCommon,
@@ -102,6 +105,7 @@ void i18n.use(initReactI18next).init({
       home: enHome,
       accounting: enAccounting,
       reports: enReports,
+      navigation: enNavigation,
     },
   },
   lng: detectedLanguage,
@@ -122,6 +126,7 @@ void i18n.use(initReactI18next).init({
     'home',
     'accounting',
     'reports',
+    'navigation',
   ],
   interpolation: {
     escapeValue: false,

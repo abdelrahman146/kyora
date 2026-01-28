@@ -1,0 +1,21 @@
+{
+  "dashboard": "Dashboard",
+  "inventory": "Inventory",
+  "orders": "Orders",
+  "customers": "Customers",
+  "accounting": "Accounting",
+  "reports": "Financial Reports",
+  "reports.health": "Business Health",
+  "reports.profit": "Profit & Earnings",
+  "reports.cashflow": "Cash Movement",
+  "analytics": "Analytics",
+  "analytics.customers": "Customer Analytics",
+  "analytics.sales": "Sales Analytics",
+  "analytics.inventory": "Inventory Analytics",
+  "settings_section": "SETTINGS",
+  "settings.business": "Business Management",
+  "settings.workspace": "Workspace Settings",
+  "settings.billing": "Billing & Subscription",
+  "settings.profile": "User Settings",
+  "badges.new": "NEW"
+}
