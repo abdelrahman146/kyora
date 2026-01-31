@@ -1,24 +1,24 @@
 import { createFileRoute } from '@tanstack/react-router'
 import { useTranslation } from 'react-i18next'
-import { Briefcase, Package } from 'lucide-react'
+import { CreditCard, Package } from 'lucide-react'
 
-export const Route = createFileRoute(
-  '/workspace/$workspaceDescriptor/settings',
-)({
+export const Route = createFileRoute('/settings/billing')({
   staticData: {
-    titleKey: 'pages.workspace_settings',
+    titleKey: 'pages.billing_subscription',
   },
-  component: WorkspaceSettingsPage,
+  component: BillingSubscriptionPage,
 })
 
-function WorkspaceSettingsPage() {
+function BillingSubscriptionPage() {
   const { t } = useTranslation('common')
 
   return (
     <div className="space-y-6">
       <div className="flex items-center gap-3">
-        <Briefcase className="size-8 text-primary" />
-        <h1 className="text-2xl font-bold">{t('pages.workspace_settings')}</h1>
+        <CreditCard className="size-8 text-primary" />
+        <h1 className="text-2xl font-bold">
+          {t('pages.billing_subscription')}
+        </h1>
       </div>
 
       <div className="card bg-base-200 border border-base-300">
@@ -28,7 +28,7 @@ function WorkspaceSettingsPage() {
             {t('coming_soon')}
           </h2>
           <p className="text-base-content/60 max-w-md mx-auto">
-            Manage workspace members, permissions, and collaboration settings.
+            Manage your subscription plan, payment methods, and billing history.
           </p>
         </div>
       </div>
